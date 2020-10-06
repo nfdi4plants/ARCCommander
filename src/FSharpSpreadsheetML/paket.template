@@ -1,0 +1,25 @@
+type project
+id
+    FSharpSpreadsheetML
+authors 
+    HLWeil
+description
+	description
+owners
+    HLWeil
+licenseUrl
+    https://github.com/HLWeil/FSharpSpreadsheetML/blob/master/LICENSE
+requireLicenseAcceptance
+    False
+language
+    F#
+copyright
+    Copyright 2020
+tags
+    F#,OOXML,SpreadsheetML,OpenXML,Excel
+summary
+    FSharp Library
+repositoryType
+    git
+repositoryUrl
+    https://github.com/HLWeil/FSharpSpreadsheetML
