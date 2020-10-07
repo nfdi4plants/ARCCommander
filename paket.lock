@@ -1,0 +1,8 @@
+STORAGE: NONE
+RESTRICTION: == netstandard2.1
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    DocumentFormat.OpenXml (2.11.3)
+      System.IO.Packaging (>= 4.7)
+    FSharp.Core (4.7.2) - redirects: force
+    System.IO.Packaging (4.7)
