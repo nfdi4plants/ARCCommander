@@ -181,5 +181,6 @@ paket-files
 *.orig
 .fake
 docsrc/tools/FSharp.Formatting.svclog
-docs
+output
+.fsdocs/
 /temp
