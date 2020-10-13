@@ -8,21 +8,29 @@ module H = let notImplemented() = failwith "function not yet implemented"
 open H
 
 
+//module CellType = 
+
+//    let empty = CellType()
+
+
 module CellValue = 
 
     let empty = CellValue()
 
-    let create (value:'T) = notImplemented() //CellValue(value)
+    let inline createString (value:string) = CellValue(value)
 
-    let getValue (cellValue:CellValue) = notImplemented()
+    let getValue (cellValue:CellValue) = cellValue.InnerText
     let setValue (value:'T) (cellValue:CellValue) =  notImplemented()
+
 
 
 module Cell =
 
     let empty = Cell()
 
-    let create (reference) (value:CellValue) = Cell(CellReference = reference,CellValue = value)
+    /// reference in "A1"-Style
+    let create (dataType : CellValues) (reference) (value:CellValue) = 
+        Cell(CellReference = reference, DataType = EnumValue(dataType), CellValue = value)
 
     /// "A1"-Style
     let getReference (cell:Cell) = cell.CellReference
@@ -34,6 +42,11 @@ module Cell =
     let getValue (cell:Cell) = cell.CellValue
     let setValue (value:CellValue) (cell:Cell) = 
         cell.CellValue <- value
+        cell
+
+    let getType (cell:Cell) = cell.DataType
+    let setType (dataType:CellValues) (cell:Cell) = 
+        cell.DataType <- EnumValue(dataType)
         cell
 
 module Row =
@@ -86,11 +99,12 @@ module SheetData =
 /// Stores data of the sheet 
 module Worksheet = 
 
-    let empty = Worksheet(new SheetData())
+    let empty = Worksheet()
 
-    let containsSheetData (sheetData:SheetData) = notImplemented()
-    let ofSheetData (sheetData:SheetData) = notImplemented()
-    let getSheetData (worksheet:Worksheet) = notImplemented()
+    let containsSheetData (worksheet:Worksheet) = worksheet.HasChildren
+    let ofSheetData (sheetData:SheetData) = Worksheet(sheetData)
+    let getSheetData (worksheet:Worksheet) = worksheet.GetFirstChild<SheetData>()
+      
     let setSheetData (sheetData:SheetData) (worksheet:Worksheet) = notImplemented()
 
     ///Convenience
@@ -115,13 +129,15 @@ module Worksheet =
 
 module WorksheetPart = 
 
-    let containsWorksheet (worksheetPart : WorksheetPart) = notImplemented()
-    let addWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = notImplemented()
-    let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = notImplemented()
-    let getWorksheet (worksheetPart : WorksheetPart) = notImplemented()
+    let containsWorksheet (worksheetPart : WorksheetPart) = worksheetPart.Worksheet
+    //let addWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = worksheetPart.
+    let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = worksheetPart.Worksheet <- worksheet
+    let getWorksheet (worksheetPart : WorksheetPart) = worksheetPart.Worksheet
 
     //let setID id (worksheetPart : WorksheetPart) = notImplemented()
     //let getID (worksheetPart : WorksheetPart) = notImplemented()
+
+
 
 
 /// Part of the Workbook, stores name and other additional info of the sheet
@@ -129,28 +145,39 @@ module Sheet =
     
     let empty = Sheet()
 
-    let setName name (sheet : Sheet) = notImplemented()
-    let getName (sheet : Sheet) = notImplemented()
+    let setName (name:string) (sheet : Sheet) = sheet.Name <- StringValue.FromString name
+    let getName (sheet : Sheet) = sheet.Name.Value
 
     /// ID shared with worksheet
-    let setID id (sheet : Sheet) = notImplemented()
+    let setID id (sheet : Sheet) = sheet.Id <- StringValue.FromString id
     /// ID shared with worksheet
-    let getID (sheet : Sheet) = notImplemented()
+    let getID (sheet : Sheet) = sheet.Id.Value
 
     /// ID used for sorting
-    let setSheetID id (sheet : Sheet) = notImplemented()
+    let setSheetID id (sheet : Sheet) = sheet.SheetId <- id
     /// ID used for sorting
-    let getSheetID (sheet : Sheet) = notImplemented()
+    let getSheetID (sheet : Sheet) = sheet.SheetId
 
 module Sheets = 
 
     let empty = new Sheets()
 
-    let getSheets (sheets:Sheets) = notImplemented()
-    let addSheets (sheets:Sheets) (newSheets:Sheet seq) = notImplemented()
-    let addSheet (sheets:Sheets) (newSheet:Sheet) = notImplemented()
+    let getFirstSheet (sheets:Sheets) = sheets.GetFirstChild<Sheet>()
+    let getSheets (sheets:Sheets) = sheets.Elements<Sheet>()
+    let addSheets (sheets:Sheets) (newSheets:Sheet seq) = 
+        newSheets |> Seq.iter (fun sheet -> sheets.Append sheet) 
+        sheets
 
-    let countSheets (sheets:Sheets) = notImplemented()
+    let addSheet (sheets:Sheets) (newSheet:Sheet) = 
+        sheets.Append(newSheet)
+        sheets
+
+    /// Id Name SheetID -> bool
+    let findSheet (f:string -> string -> uint32 -> bool) (sheets:Sheets) =
+        getSheets sheets
+        |> Seq.find (fun sheet -> f sheet.Id.Value sheet.Name.Value sheet.SheetId.Value)
+
+    let countSheets (sheets:Sheets) = getSheets sheets |> Seq.length
     let mapSheets f (sheets:Sheets) = notImplemented()
     let iterSheets f (sheets:Sheets) = notImplemented()
     let filterSheets f (sheets:Sheets) = notImplemented()
@@ -158,11 +185,11 @@ module Sheets =
 module Workbook =
 
     let empty = new Workbook()
-    let initSheets (workbook:Workbook) = notImplemented()
+    let initSheets (workbook:Workbook) = workbook.AppendChild<Sheets>(new Sheets());
     let getSheets (workbook:Workbook) = workbook.Sheets
     let containsSheets (workbook:Workbook) = workbook.Sheets
 
-    let addSheets (sheets:Sheets) (workbook:Workbook) = notImplemented()
+    let addSheets (sheets:Sheets) (workbook:Workbook) = workbook.AppendChild<Sheets>(sheets);
 
     let ofWorkbookPart (workbookPart:WorkbookPart) = workbookPart.Workbook 
 
@@ -173,6 +200,8 @@ module SharedStringItem =
 
 module SharedStringTable = 
 
+    let empty = SharedStringTable() 
+
     let getIndexByString (s:string) (sst:SharedStringTable) = notImplemented()
     let getItem (sst:SharedStringTable) = notImplemented()
     let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = notImplemented()
@@ -180,14 +209,15 @@ module SharedStringTable =
     let exists f (sst:SharedStringTable) = notImplemented()
     let getItems (sst:SharedStringTable) = notImplemented()
     let getMappings (sst:SharedStringTable) = notImplemented()
-    let count (sst:SharedStringTable) = notImplemented()
+    let count (sst:SharedStringTable) = sst.Count
 
 
 module SharedStringTablePart = 
     
-    let addEmptySharedStringTable (sstPart:SharedStringTablePart) = notImplemented()
-    let getSharedStringTable (sstPart:SharedStringTablePart) = notImplemented()
-    let setSharedStringTable (sst:SharedStringTable) (sstPart:SharedStringTablePart) = notImplemented()
+
+    let addEmptySharedStringTable (sstPart:SharedStringTablePart) = sstPart.SharedStringTable <- SharedStringTable.empty
+    let getSharedStringTable (sstPart:SharedStringTablePart) = sstPart.SharedStringTable
+    let setSharedStringTable (sst:SharedStringTable) (sstPart:SharedStringTablePart) = sstPart.SharedStringTable <- sst
 
 
 
@@ -199,18 +229,21 @@ module WorkbookPart =
     let addWorkBook (workbookPart:WorkbookPart) = notImplemented()
     let containsWorkBook (workbookPart:WorkbookPart) = notImplemented()
 
-    let addWorksheetPart (worksheetPart : WorksheetPart) (workbookPart:WorkbookPart) = notImplemented()
+    let addWorksheetPart (worksheetPart : WorksheetPart) (workbookPart:WorkbookPart) = workbookPart.AddPart(worksheetPart)
     let addEmptyWorksheetPart (workbookPart:WorkbookPart) = workbookPart.AddNewPart<WorksheetPart>()
     let getWorkSheetParts (workbookPart:WorkbookPart) = workbookPart.WorksheetParts
-    let containsWorkSheetParts (workbookPart:WorkbookPart) = notImplemented()
+    let containsWorkSheetParts (workbookPart:WorkbookPart) = workbookPart.GetPartsOfType<WorksheetPart>() |> Seq.length |> (<>) 0
+    let getWorkSheetPartById (id:string) (workbookPart:WorkbookPart) = workbookPart.GetPartById(id) :?> WorksheetPart 
 
     //let addworkSheet (workbookPart:WorkbookPart) (worksheet : Worksheet) = 
     //    let emptySheet = (addNewWorksheetPart workbookPart)
     //    emptySheet.Worksheet <- worksheet
     
-    let addEmptySharedStringTablePart (workbookPart:WorkbookPart) = notImplemented()
-    let getSharedStringTablePart (workbookPart:WorkbookPart) = notImplemented()
-    let containsSharedStringTablePart (workbookPart:WorkbookPart) = notImplemented()
+    let addEmptySharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.AddNewPart<SharedStringTablePart>();
+    let getSharedStringTableParts (workbookPart:WorkbookPart) = workbookPart.GetPartsOfType<SharedStringTablePart>()
+    let getFirstSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart
+    let containsSharedStringTablePart (workbookPart:WorkbookPart) = getSharedStringTableParts workbookPart |> Seq.length |> (<>) 0
+    
 
 module Spreadsheet = 
 
