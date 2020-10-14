@@ -4,7 +4,7 @@ open DocumentFormat.OpenXml
 open DocumentFormat.OpenXml.Packaging
 open DocumentFormat.OpenXml.Spreadsheet
 
-module H = let notImplemented() = failwith "function not yet implemented"
+module internal H = let notImplemented() = failwith "function not yet implemented"
 open H
 
 
@@ -17,10 +17,10 @@ module CellValue =
 
     let empty = CellValue()
 
-    let inline createString (value:string) = CellValue(value)
+    let create (value:string) = CellValue(value)
 
-    let getValue (cellValue:CellValue) = cellValue.InnerText
-    let setValue (value:'T) (cellValue:CellValue) =  notImplemented()
+    let getValue (cellValue:CellValue) = cellValue.Text
+    let setValue (value:string) (cellValue:CellValue) =  cellValue.Text <- value
 
 
 
@@ -29,14 +29,14 @@ module Cell =
     let empty = Cell()
 
     /// reference in "A1"-Style
-    let create (dataType : CellValues) (reference) (value:CellValue) = 
-        Cell(CellReference = reference, DataType = EnumValue(dataType), CellValue = value)
+    let create (dataType : CellValues) (reference:string) (value:CellValue) = 
+        Cell(CellReference = StringValue.FromString reference, DataType = EnumValue(dataType), CellValue = value)
 
     /// "A1"-Style
-    let getReference (cell:Cell) = cell.CellReference
+    let getReference (cell:Cell) = cell.CellReference.Value
     /// "A1"-Style
     let setReference (reference) (cell:Cell) = 
-        cell.CellReference <- reference
+        cell.CellReference <- StringValue.FromString reference
         cell
 
     let getValue (cell:Cell) = cell.CellValue
@@ -49,30 +49,86 @@ module Cell =
         cell.DataType <- EnumValue(dataType)
         cell
 
+module Spans =
+
+    let fromBoundaries fromColumnIndex toColumnIndex = 
+        sprintf "%i:%i" fromColumnIndex toColumnIndex
+        |> StringValue.FromString
+        |> List.singleton
+        |> ListValue
+
+    let toBoundaries (spans:ListValue<StringValue>) = 
+        spans.Items
+        |> Seq.head
+        |> fun x -> x.Value.Split ':'
+        |> fun a -> uint32 a.[0],uint32 a.[1]
+
 module Row =
 
-    let emtpy = Row()
+    let empty = Row()
 
-    let getCells (row:Row) = notImplemented()
-    let mapCells (f) (row:Row) = notImplemented()
+    let getCells (row:Row) = row.Descendants<Cell>()
+    let mapCells (f : Cell -> Cell) (row:Row) = 
+        //getCells row
+        //|> Seq.toArray
+        //|> Array.map (fun cell -> cell <- f cell)
+        notImplemented()
+
     let iterCells (f) (row:Row) = notImplemented()
 
-    ///Reference in 
-    let insertBefore () (reference) (row:Row) = 
-        notImplemented()
-        //row.Insert
+    let findCell (f : Cell -> bool) (row:Row) =
+        getCells row
+        |> Seq.find f
 
+    ///Reference in 
+    let insertCellBefore newCell refCell (row:Row) = 
+        row.InsertBefore(newCell, refCell) |> ignore
+        row
+
+    let getIndex (row:Row) = row.RowIndex
+
+    let setIndex (index) (row:Row) =
+        row.RowIndex <- index
+        row
+
+    let getSpan (row:Row) = row.Spans
+
+    let setSpan spans (row:Row) = 
+        row.Spans <- spans
+        row
+
+    let addCell (cell:Cell) (row:Row) = 
+        row.AppendChild(cell) |> ignore
+        row
+
+    let create index spans (cells:Cell seq) = 
+        Row(childElements = (cells |> Seq.map (fun x -> x :> OpenXmlElement)))
+        |> setIndex (UInt32Value.FromUInt32 index)
+        |> setSpan spans
 
 module SheetData = 
 
     let empty = new SheetData()
 
     let appendRow (row:Row) (sheetData:SheetData) = 
-        sheetData.Append row
+        sheetData.AppendChild row |> ignore
         sheetData
 
-    let getRow (sheetData:SheetData) = 
-        notImplemented()
+    let getRows (sheetData:SheetData) = 
+        sheetData.Descendants<Row>()
+
+    let countRows (sheetData:SheetData) = 
+        getRows sheetData
+        |> Seq.length
+        
+
+    let tryGetRowAt index (sheetData:SheetData) = 
+        getRows sheetData
+        |> Seq.tryFind (Row.getIndex >> (=) index)
+
+    let getRowAt index (sheetData:SheetData) = 
+        getRows sheetData
+        |> Seq.find (Row.getIndex >> (=) index)
         //sheetData.
         //sheetData
 
@@ -100,6 +156,10 @@ module SheetData =
 module Worksheet = 
 
     let empty = Worksheet()
+
+    let addSheetData (sheetData:SheetData) (worksheet:Worksheet) = 
+        worksheet.AppendChild sheetData |> ignore
+        worksheet
 
     let containsSheetData (worksheet:Worksheet) = worksheet.HasChildren
     let ofSheetData (sheetData:SheetData) = Worksheet(sheetData)
@@ -130,9 +190,14 @@ module Worksheet =
 module WorksheetPart = 
 
     let containsWorksheet (worksheetPart : WorksheetPart) = worksheetPart.Worksheet
+
     //let addWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = worksheetPart.
-    let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = worksheetPart.Worksheet <- worksheet
-    let getWorksheet (worksheetPart : WorksheetPart) = worksheetPart.Worksheet
+    let getWorksheet (worksheetPart : WorksheetPart) = 
+        worksheetPart.Worksheet
+
+    let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = 
+        worksheetPart.Worksheet <- worksheet
+        worksheetPart
 
     //let setID id (worksheetPart : WorksheetPart) = notImplemented()
     //let getID (worksheetPart : WorksheetPart) = notImplemented()
@@ -145,18 +210,28 @@ module Sheet =
     
     let empty = Sheet()
 
-    let setName (name:string) (sheet : Sheet) = sheet.Name <- StringValue.FromString name
+    let setName (name:string) (sheet : Sheet) = 
+        sheet.Name <- StringValue.FromString name
+        sheet
     let getName (sheet : Sheet) = sheet.Name.Value
 
     /// ID shared with worksheet
-    let setID id (sheet : Sheet) = sheet.Id <- StringValue.FromString id
+    let setID id (sheet : Sheet) = 
+        sheet.Id <- StringValue.FromString id
+        sheet
     /// ID shared with worksheet
     let getID (sheet : Sheet) = sheet.Id.Value
 
     /// ID used for sorting
-    let setSheetID id (sheet : Sheet) = sheet.SheetId <- id
+    let setSheetID id (sheet : Sheet) = 
+        sheet.SheetId <- UInt32Value.FromUInt32 id
+        sheet
+
     /// ID used for sorting
     let getSheetID (sheet : Sheet) = sheet.SheetId
+
+    let create = 
+        Sheet()
 
 module Sheets = 
 
@@ -164,12 +239,16 @@ module Sheets =
 
     let getFirstSheet (sheets:Sheets) = sheets.GetFirstChild<Sheet>()
     let getSheets (sheets:Sheets) = sheets.Elements<Sheet>()
-    let addSheets (sheets:Sheets) (newSheets:Sheet seq) = 
+    let addSheets (newSheets:Sheet seq) (sheets:Sheets) = 
         newSheets |> Seq.iter (fun sheet -> sheets.Append sheet) 
         sheets
 
-    let addSheet (sheets:Sheets) (newSheet:Sheet) = 
-        sheets.Append(newSheet)
+    let addSheet (newSheet:Sheet) (sheets:Sheets) = 
+        sheets.AppendChild(newSheet) |> ignore
+        sheets
+
+    let removeSheet (sheetToDelete:Sheet) (sheets:Sheets)  = 
+        sheets.RemoveChild(sheetToDelete) |> ignore
         sheets
 
     /// Id Name SheetID -> bool
@@ -178,18 +257,20 @@ module Sheets =
         |> Seq.find (fun sheet -> f sheet.Id.Value sheet.Name.Value sheet.SheetId.Value)
 
     let countSheets (sheets:Sheets) = getSheets sheets |> Seq.length
-    let mapSheets f (sheets:Sheets) = notImplemented()
-    let iterSheets f (sheets:Sheets) = notImplemented()
-    let filterSheets f (sheets:Sheets) = notImplemented()
+    let mapSheets f (sheets:Sheets) = getSheets sheets |> Seq.toArray |> Array.map f
+    let iterSheets f (sheets:Sheets) = getSheets sheets |> Seq.toArray |> Array.iter f
+    let filterSheets f (sheets:Sheets) = 
+        getSheets sheets |> Seq.toArray |> Array.filter (f >> not)
+        |> Array.fold (fun st sheet -> removeSheet sheet st) sheets
 
 module Workbook =
 
     let empty = new Workbook()
     let initSheets (workbook:Workbook) = workbook.AppendChild<Sheets>(new Sheets());
     let getSheets (workbook:Workbook) = workbook.Sheets
-    let containsSheets (workbook:Workbook) = workbook.Sheets
+    //let containsSheets (workbook:Workbook) = workbook.Sheets
 
-    let addSheets (sheets:Sheets) (workbook:Workbook) = workbook.AppendChild<Sheets>(sheets);
+    let addEmptySheets (sheets:Sheets) (workbook:Workbook) = workbook.AppendChild<Sheets>(sheets);
 
     let ofWorkbookPart (workbookPart:WorkbookPart) = workbookPart.Workbook 
 
@@ -257,9 +338,11 @@ module Spreadsheet =
     // Only if none there
     let addNewWorkbookPart (spreadsheet:SpreadsheetDocument) = spreadsheet.AddWorkbookPart()
 
-    let saveChanges (spreadsheet:SpreadsheetDocument) = notImplemented()
+    let saveChanges (spreadsheet:SpreadsheetDocument) = spreadsheet.Save()
 
-    let close (spreadsheet:SpreadsheetDocument) = notImplemented()
+    let saveAs path (spreadsheet:SpreadsheetDocument) = spreadsheet.SaveAs(path)
+
+    let close (spreadsheet:SpreadsheetDocument) = spreadsheet.Close()
 
     //let getWorksheets = ""
 
