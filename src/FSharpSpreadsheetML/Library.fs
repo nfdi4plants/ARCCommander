@@ -165,7 +165,8 @@ module Worksheet =
     let ofSheetData (sheetData:SheetData) = Worksheet(sheetData)
     let getSheetData (worksheet:Worksheet) = worksheet.GetFirstChild<SheetData>()
       
-    let setSheetData (sheetData:SheetData) (worksheet:Worksheet) = notImplemented()
+    //let setSheetData (sheetData:SheetData) (worksheet:Worksheet) = worksheet.sh
+
 
     ///Convenience
 
@@ -189,7 +190,6 @@ module Worksheet =
 
 module WorksheetPart = 
 
-    let containsWorksheet (worksheetPart : WorksheetPart) = worksheetPart.Worksheet
 
     //let addWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = worksheetPart.
     let getWorksheet (worksheetPart : WorksheetPart) = 
@@ -198,6 +198,18 @@ module WorksheetPart =
     let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = 
         worksheetPart.Worksheet <- worksheet
         worksheetPart
+
+    let initWorksheet (worksheetPart:WorksheetPart) = 
+        setWorksheet (Worksheet.empty) worksheetPart
+
+    let containsWorksheet (worksheetPart:WorksheetPart) = worksheetPart.Worksheet <> null  
+
+    let getWorksheetOrInitWorksheet (worksheetPart:WorksheetPart) =
+        if containsWorksheet worksheetPart then
+            getWorksheet worksheetPart
+        else 
+            initWorksheet worksheetPart
+            |> getWorksheet
 
     //let setID id (worksheetPart : WorksheetPart) = notImplemented()
     //let getID (worksheetPart : WorksheetPart) = notImplemented()
@@ -228,10 +240,13 @@ module Sheet =
         sheet
 
     /// ID used for sorting
-    let getSheetID (sheet : Sheet) = sheet.SheetId
+    let getSheetID (sheet : Sheet) = sheet.SheetId.Value
 
-    let create = 
+    let create id name sheetID = 
         Sheet()
+        |> setID id
+        |> setName name
+        |> setSheetID sheetID
 
 module Sheets = 
 
@@ -263,16 +278,12 @@ module Sheets =
         getSheets sheets |> Seq.toArray |> Array.filter (f >> not)
         |> Array.fold (fun st sheet -> removeSheet sheet st) sheets
 
-module Workbook =
 
-    let empty = new Workbook()
-    let initSheets (workbook:Workbook) = workbook.AppendChild<Sheets>(new Sheets());
-    let getSheets (workbook:Workbook) = workbook.Sheets
-    //let containsSheets (workbook:Workbook) = workbook.Sheets
 
-    let addEmptySheets (sheets:Sheets) (workbook:Workbook) = workbook.AppendChild<Sheets>(sheets);
 
-    let ofWorkbookPart (workbookPart:WorkbookPart) = workbookPart.Workbook 
+
+
+
 
 module SharedStringItem = 
 
@@ -307,24 +318,81 @@ module WorkbookPart =
     let ofSpreadsheet (spreadsheet:SpreadsheetDocument) = spreadsheet.WorkbookPart
 
     let getWorkbook (workbookPart:WorkbookPart) = workbookPart.Workbook 
-    let addWorkBook (workbookPart:WorkbookPart) = notImplemented()
-    let containsWorkBook (workbookPart:WorkbookPart) = notImplemented()
+
+    let setWorkbook (workbook:Workbook) (workbookPart:WorkbookPart) = 
+        workbookPart.Workbook <- workbook
+        workbookPart
+
+    let initWorkbook (workbookPart:WorkbookPart) = 
+        setWorkbook (Workbook()) workbookPart
+
+    let containsWorkbook (workbookPart:WorkbookPart) = workbookPart.Workbook <> null  
+
+    let getWorkbookOrInitWorkbook (workbookPart:WorkbookPart) =
+        if containsWorkbook workbookPart then
+            getWorkbook workbookPart
+        else 
+            initWorkbook workbookPart
+            |> getWorkbook
 
     let addWorksheetPart (worksheetPart : WorksheetPart) (workbookPart:WorkbookPart) = workbookPart.AddPart(worksheetPart)
-    let addEmptyWorksheetPart (workbookPart:WorkbookPart) = workbookPart.AddNewPart<WorksheetPart>()
+    let initWorksheetPart (workbookPart:WorkbookPart) = workbookPart.AddNewPart<WorksheetPart>()
     let getWorkSheetParts (workbookPart:WorkbookPart) = workbookPart.WorksheetParts
     let containsWorkSheetParts (workbookPart:WorkbookPart) = workbookPart.GetPartsOfType<WorksheetPart>() |> Seq.length |> (<>) 0
-    let getWorkSheetPartById (id:string) (workbookPart:WorkbookPart) = workbookPart.GetPartById(id) :?> WorksheetPart 
-
+    let getWorksheetPartById (id:string) (workbookPart:WorkbookPart) = workbookPart.GetPartById(id) :?> WorksheetPart 
+    let getWorksheetPartID (worksheetPart:WorksheetPart) (workbookPart:WorkbookPart) = workbookPart.GetIdOfPart worksheetPart
     //let addworkSheet (workbookPart:WorkbookPart) (worksheet : Worksheet) = 
     //    let emptySheet = (addNewWorksheetPart workbookPart)
     //    emptySheet.Worksheet <- worksheet
-    
-    let addEmptySharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.AddNewPart<SharedStringTablePart>();
+
+    let initSharedStringTablePart (workbookPart:WorkbookPart) = 
+        workbookPart.AddNewPart<SharedStringTablePart>() |> ignore
+        workbookPart
     let getSharedStringTableParts (workbookPart:WorkbookPart) = workbookPart.GetPartsOfType<SharedStringTablePart>()
     let getFirstSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart
     let containsSharedStringTablePart (workbookPart:WorkbookPart) = getSharedStringTableParts workbookPart |> Seq.length |> (<>) 0
+
+
+module Workbook =
+
+    let empty = new Workbook()
     
+    let getSheets (workbook:Workbook) = workbook.Sheets
+    let containsSheets (workbook:Workbook) = 
+        workbook.Sheets <> null
+
+    let initSheets (workbook:Workbook) = 
+        workbook.AppendChild<Sheets>(Sheets()) |> ignore
+        workbook
+
+    let getSheetsOrInitSheets (workbook:Workbook) =
+        if containsSheets workbook then
+            getSheets workbook
+        else 
+            initSheets workbook
+            |> getSheets
+
+
+    let ofWorkbookPart (workbookPart:WorkbookPart) = workbookPart.Workbook 
+
+    let addSheet (name : string) (data : SheetData) (workbook : Workbook) =
+        let workbookPart = workbook.WorkbookPart
+
+        let worksheetPart = WorkbookPart.initWorksheetPart workbookPart
+
+        WorksheetPart.getWorksheetOrInitWorksheet worksheetPart
+        |> Worksheet.addSheetData data
+        |> ignore
+        
+        let sheets = getSheetsOrInitSheets workbook
+        let id = WorkbookPart.getWorksheetPartID worksheetPart workbookPart
+        let sheetID = sheets |> Sheets.getSheets |> Seq.map Sheet.getSheetID |> Seq.max |> (+) 1ul
+        let sheet = Sheet.create id name sheetID
+
+        Sheets.addSheet sheet sheets |> ignore
+        workbook
+
+
 
 module Spreadsheet = 
 
