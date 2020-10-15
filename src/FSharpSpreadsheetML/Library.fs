@@ -8,9 +8,9 @@ module internal H = let notImplemented() = failwith "function not yet implemente
 open H
 
 
-//module CellType = 
 
-//    let empty = CellType()
+
+
 
 
 module CellValue = 
@@ -22,11 +22,84 @@ module CellValue =
     let getValue (cellValue:CellValue) = cellValue.Text
     let setValue (value:string) (cellValue:CellValue) =  cellValue.Text <- value
 
+module Reference =
 
+    let letterToIndex (l:string) = 
+        l.ToCharArray()
+        |> Array.rev
+        |> Array.mapi (fun i c -> 
+            let factor = 26. ** (float i) |> int
+            System.Char.ToUpper c
+            |> int 
+            |> (+) -64
+            |> (*) factor
+            )
+        |> Array.sum
+
+    let indexToLetter i =
+        let sb = System.Text.StringBuilder()
+        let rec loop residual = 
+            if residual = 0 then
+                ()
+            else
+                let modulo = (residual - 1) % 26
+                sb.Insert(0, char (modulo + 65)) |> ignore
+                loop ((residual - modulo) / 26)
+        loop i
+        sb.ToString()
+
+    /// 1 Based indices
+    let ofIndices column row = 
+        sprintf "%s%i" (indexToLetter column) row
+
+    /// reference in "A1" style, returns 1 Based indices (column*row)
+    let toIndices (reference : string) = 
+        let inp = reference.ToUpper()
+        let pattern = "([A-Z]*)(\d*)"
+        let regex = System.Text.RegularExpressions.Regex.Match(inp,pattern)
+        
+        if regex.Success then
+            regex.Groups
+            |> fun a -> letterToIndex a.[1].Value, int a.[2].Value
+        else 
+            failwithf "Reference %s does not match Excel A1-style" reference
+
+    let moveHorizontal amount reference = 
+        reference
+        |> toIndices
+        |> fun (c,r) -> c + amount, r
+        ||> ofIndices
+
+    let moveVertical amount reference = 
+        reference
+        |> toIndices
+        |> fun (c,r) -> c, r + amount
+        ||> ofIndices
 
 module Cell =
 
     let empty = Cell()
+
+
+    let getCellValue (value : 'T) = 
+        let value = box value
+        match value with
+        | :? char as c -> CellValues.String,c.ToString()
+        | :? string as s -> CellValues.String,s.ToString()
+        | :? bool as c -> CellValues.Boolean,c.ToString()
+        | :? byte as i -> CellValues.Number,i.ToString()
+        | :? sbyte as i -> CellValues.Number,i.ToString()
+        | :? int as i -> CellValues.Number,i.ToString()
+        | :? int16 as i -> CellValues.Number,i.ToString()
+        | :? int64 as i -> CellValues.Number,i.ToString()
+        | :? uint as i -> CellValues.Number,i.ToString()
+        | :? uint16 as i -> CellValues.Number,i.ToString()
+        | :? uint64 as i -> CellValues.Number,i.ToString()
+        | :? single as i -> CellValues.Number,i.ToString()
+        | :? float as i -> CellValues.Number,i.ToString()
+        | :? decimal as i -> CellValues.Number,i.ToString()
+        | :? System.DateTime as d -> CellValues.Date,d.Date.ToString()
+        | _ ->  CellValues.String,value.ToString()
 
     /// reference in "A1"-Style
     let create (dataType : CellValues) (reference:string) (value:CellValue) = 
@@ -63,6 +136,25 @@ module Spans =
         |> fun x -> x.Value.Split ':'
         |> fun a -> uint32 a.[0],uint32 a.[1]
 
+    let moveHorizontal amount (spans:ListValue<StringValue>) =
+        spans
+        |> toBoundaries
+        |> fun (f,t) -> amount + f, amount + t
+        ||> fromBoundaries
+
+    let extendRight amount (spans:ListValue<StringValue>) =
+        spans
+        |> toBoundaries
+        |> fun (f,t) -> f, amount + t
+        ||> fromBoundaries
+
+    let extendLeft amount (spans:ListValue<StringValue>) =
+        spans
+        |> toBoundaries
+        |> fun (f,t) -> f - amount, t
+        ||> fromBoundaries
+
+
 module Row =
 
     let empty = Row()
@@ -85,10 +177,10 @@ module Row =
         row.InsertBefore(newCell, refCell) |> ignore
         row
 
-    let getIndex (row:Row) = row.RowIndex
+    let getIndex (row:Row) = row.RowIndex.Value
 
     let setIndex (index) (row:Row) =
-        row.RowIndex <- index
+        row.RowIndex <- UInt32Value.FromUInt32 index
         row
 
     let getSpan (row:Row) = row.Spans
@@ -103,7 +195,7 @@ module Row =
 
     let create index spans (cells:Cell seq) = 
         Row(childElements = (cells |> Seq.map (fun x -> x :> OpenXmlElement)))
-        |> setIndex (UInt32Value.FromUInt32 index)
+        |> setIndex index
         |> setSpan spans
 
 module SheetData = 
@@ -121,7 +213,6 @@ module SheetData =
         getRows sheetData
         |> Seq.length
         
-
     let tryGetRowAt index (sheetData:SheetData) = 
         getRows sheetData
         |> Seq.tryFind (Row.getIndex >> (=) index)
@@ -131,6 +222,81 @@ module SheetData =
         |> Seq.find (Row.getIndex >> (=) index)
         //sheetData.
         //sheetData
+
+    let containsRowAt index (sheetData:SheetData) = 
+        getRows sheetData
+        |> Seq.exists (Row.getIndex >> (=) index)
+
+module SheetTransformation =
+
+    let moveRowVertical amount (rowIndex:int) (sheet:SheetData) = 
+        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
+        | Some row -> 
+            Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
+            |> Row.getCells
+            |> Seq.iter (fun cell -> 
+                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
+                |> ignore            
+            )
+            sheet
+        | None -> 
+            printfn "Warning: Row with index %i does not exist" rowIndex
+            sheet
+       
+    let rec shoveRowsDownward rowIndex (sheet) =
+        if SheetData.containsRowAt (uint32 rowIndex) sheet then             
+            shoveRowsDownward (rowIndex+1) sheet
+            |> moveRowVertical 1 rowIndex 
+        else
+            sheet
+
+    let moveRowHorizontal amount rowIndex (sheet:SheetData) = 
+        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
+        | Some row -> 
+            Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
+            |> Row.getCells
+            |> Seq.iter (fun cell -> 
+                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
+                |> ignore            
+            )
+            sheet
+        | None -> 
+            printfn "Warning: Row with index %i does not exist" rowIndex
+            sheet  
+      
+    /// 1 based index   
+    let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
+        let uiO = uint32 offset
+        let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+        let newRow = 
+            vals
+            |> Seq.mapi (fun i v -> 
+                let valType,value = Cell.getCellValue v
+                let reference = Reference.ofIndices (i+1) rowIndex
+                CellValue.create value
+                |> Cell.create valType reference
+            )
+            |> Row.create (uint32 rowIndex) spans
+        shoveRowsDownward rowIndex sheet
+        |> SheetData.appendRow newRow  
+
+    /// 1 based index   
+    let insertRowAt (vals: 'T seq) rowIndex (sheet:SheetData) =
+        insertRowWithHorizontalOffsetAt 0 vals rowIndex sheet
+
+    let appendRow (vals: 'T seq) (sheet:SheetData) =
+        let i = 
+            sheet
+            |> SheetData.getRows
+            |> Seq.map (Row.getIndex)
+            |> Seq.max
+            |> int
+            |> (+) 1
+        insertRowAt vals i sheet
+
+    type DataTransformations =
+    
+        | LEL of DataTransformations
 
 
     ///Convenience
@@ -280,36 +446,45 @@ module Sheets =
 
 
 
-
-
-
-
-
 module SharedStringItem = 
 
-    let f (x:SharedStringItem) = x
-    
+    let getText (ssi:SharedStringItem) = ssi.InnerText
+
+    let setText text (ssi:SharedStringItem) = 
+        ssi.Text <- Text(text)
+        ssi
+
+    let create text = 
+        SharedStringItem()
+        |> setText text
+
 
 module SharedStringTable = 
 
     let empty = SharedStringTable() 
 
-    let getIndexByString (s:string) (sst:SharedStringTable) = notImplemented()
-    let getItem (sst:SharedStringTable) = notImplemented()
-    let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = notImplemented()
-
-    let exists f (sst:SharedStringTable) = notImplemented()
-    let getItems (sst:SharedStringTable) = notImplemented()
-    let getMappings (sst:SharedStringTable) = notImplemented()
+    let getItems (sst:SharedStringTable) = sst.Elements<SharedStringItem>()
+    let tryGetIndexByString (s:string) (sst:SharedStringTable) = 
+        getItems sst 
+        |> Seq.tryFindIndex (fun x -> x.Text.Text = s)
+    let getText i (sst:SharedStringTable) = 
+        getItems sst
+        |> Seq.item i
+    let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = 
+        sst.Append(sharedStringItem)
+        sst
     let count (sst:SharedStringTable) = sst.Count
 
 
 module SharedStringTablePart = 
     
-
-    let addEmptySharedStringTable (sstPart:SharedStringTablePart) = sstPart.SharedStringTable <- SharedStringTable.empty
+    let initSharedStringTable (sstPart:SharedStringTablePart) = 
+        sstPart.SharedStringTable <- SharedStringTable.empty
+        sstPart
     let getSharedStringTable (sstPart:SharedStringTablePart) = sstPart.SharedStringTable
-    let setSharedStringTable (sst:SharedStringTable) (sstPart:SharedStringTablePart) = sstPart.SharedStringTable <- sst
+    let setSharedStringTable (sst:SharedStringTable) (sstPart:SharedStringTablePart) = 
+        sstPart.SharedStringTable <- sst
+        sstPart
 
 
 
@@ -348,9 +523,15 @@ module WorkbookPart =
     let initSharedStringTablePart (workbookPart:WorkbookPart) = 
         workbookPart.AddNewPart<SharedStringTablePart>() |> ignore
         workbookPart
-    let getSharedStringTableParts (workbookPart:WorkbookPart) = workbookPart.GetPartsOfType<SharedStringTablePart>()
-    let getFirstSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart
-    let containsSharedStringTablePart (workbookPart:WorkbookPart) = getSharedStringTableParts workbookPart |> Seq.length |> (<>) 0
+    let getSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart
+    let containsSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart <> null
+
+    let getSharedStringTablePartOrInitSharedStringTablePart (workbookPart:WorkbookPart) =
+        if containsSharedStringTablePart workbookPart then
+            getSharedStringTablePart workbookPart
+        else 
+            initSharedStringTablePart workbookPart
+            |> getSharedStringTablePart
 
 
 module Workbook =
