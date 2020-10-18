@@ -24,10 +24,10 @@ module Reference =
         l.ToCharArray()
         |> Array.rev
         |> Array.mapi (fun i c -> 
-            let factor = 26. ** (float i) |> int
+            let factor = 26. ** (float i) |> uint
             System.Char.ToUpper c
-            |> int 
-            |> (+) -64
+            |> uint 
+            |> fun u -> u - 64u
             |> (*) factor
             )
         |> Array.sum
@@ -35,17 +35,17 @@ module Reference =
     let indexToLetter i =
         let sb = System.Text.StringBuilder()
         let rec loop residual = 
-            if residual = 0 then
+            if residual = 0u then
                 ()
             else
-                let modulo = (residual - 1) % 26
-                sb.Insert(0, char (modulo + 65)) |> ignore
-                loop ((residual - modulo) / 26)
+                let modulo = (residual - 1u) % 26u
+                sb.Insert(0, char (modulo + 65u)) |> ignore
+                loop ((residual - modulo) / 26u)
         loop i
         sb.ToString()
 
     /// 1 Based indices
-    let ofIndices column row = 
+    let ofIndices column (row:uint32) = 
         sprintf "%s%i" (indexToLetter column) row
 
     /// reference in "A1" style, returns 1 Based indices (column*row)
@@ -56,20 +56,20 @@ module Reference =
         
         if regex.Success then
             regex.Groups
-            |> fun a -> letterToIndex a.[1].Value, int a.[2].Value
+            |> fun a -> letterToIndex a.[1].Value, uint a.[2].Value
         else 
             failwithf "Reference %s does not match Excel A1-style" reference
 
     let moveHorizontal amount reference = 
         reference
         |> toIndices
-        |> fun (c,r) -> c + amount, r
+        |> fun (c,r) -> (int64 c) + (int64 amount) |> uint32, r
         ||> ofIndices
 
     let moveVertical amount reference = 
         reference
         |> toIndices
-        |> fun (c,r) -> c, r + amount
+        |> fun (c,r) -> c, (int64 r) + (int64 amount) |> uint32
         ||> ofIndices
 
 module Cell =
@@ -77,7 +77,7 @@ module Cell =
     let empty = Cell()
 
 
-    let getCellValue (value : 'T) = 
+    let inferCellValue (value : 'T) = 
         let value = box value
         match value with
         | :? char as c -> CellValues.String,c.ToString()
@@ -102,7 +102,7 @@ module Cell =
         Cell(CellReference = StringValue.FromString reference, DataType = EnumValue(dataType), CellValue = value)
 
     let createGeneric columnIndex rowIndex (value:'T) =
-        let valType,value = getCellValue value
+        let valType,value = inferCellValue value
         let reference = Reference.ofIndices columnIndex (rowIndex)
         create valType reference (CellValue.create value)
 
@@ -118,12 +118,13 @@ module Cell =
         cell.CellValue <- value
         cell
 
-    let getType (cell:Cell) = cell.DataType
+    let getType (cell:Cell) = cell.DataType.Value
     let setType (dataType:CellValues) (cell:Cell) = 
         cell.DataType <- EnumValue(dataType)
         cell
 
 module Spans =
+
 
     let fromBoundaries fromColumnIndex toColumnIndex = 
         sprintf "%i:%i" fromColumnIndex toColumnIndex
@@ -131,11 +132,19 @@ module Spans =
         |> List.singleton
         |> ListValue
 
+    // System.MissingMethodException: Method not found: 'System.String[] System.String.Split(Char, System.StringSplitOptions)'.
+    //let toBoundaries (spans:ListValue<StringValue>) = 
+    //    spans.Items
+    //    |> Seq.head
+    //    |> fun x -> x.Value.Split ':'
+    //    |> fun a -> uint32 a.[0],uint32 a.[1]
+
     let toBoundaries (spans:ListValue<StringValue>) = 
         spans.Items
         |> Seq.head
-        |> fun x -> x.Value.Split ':'
-        |> fun a -> uint32 a.[0],uint32 a.[1]
+        |> fun x -> System.Text.RegularExpressions.Regex.Matches(x.Value,@"\d*")
+        |> fun a -> uint32 a.[0].Value,uint32 a.[2].Value
+
 
     let rightBoundary (spans:ListValue<StringValue>) = 
         toBoundaries spans
@@ -165,7 +174,7 @@ module Spans =
 
     let referenceExtendsSpansToRight reference spans = 
         (reference |> Reference.toIndices |> fst) 
-            > (spans |> toBoundaries |> snd |> int)
+            > (spans |> toBoundaries |> snd |> uint)
         
         
 module Row =
@@ -196,6 +205,11 @@ module Row =
         row
         |> getCells
         |> Seq.exists (Cell.getReference >> Reference.toIndices >> fst >> (=) columnIndex)
+
+    let getCellAt (columnIndex) (row:Row) =
+        row
+        |> getCells
+        |> Seq.find (Cell.getReference >> Reference.toIndices >> fst >> (=) columnIndex)
 
     let tryGetCellAt (columnIndex) (row:Row) =
         row
@@ -274,138 +288,6 @@ module SheetData =
         getRows sheetData
         |> Seq.exists (Row.getIndex >> (=) index)
 
-module SheetTransformation =
-
-    let moveRowVertical amount (rowIndex:int) (sheet:SheetData) = 
-        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
-        | Some row -> 
-            Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
-            |> Row.getCells
-            |> Seq.iter (fun cell -> 
-                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
-                |> ignore            
-            )
-            sheet
-        | None -> 
-            printfn "Warning: Row with index %i does not exist" rowIndex
-            sheet
-     
-    let rec shoveValuesInRowToRight columnIndex (row:Row) : Row=
-        let spans = Row.getSpan row
-        match Row.tryGetCellAt columnIndex row with
-        | Some cell ->
-            shoveValuesInRowToRight (columnIndex+1) row |> ignore
-            let newReference = (Cell.getReference cell |> Reference.moveHorizontal 1)            
-            Cell.setReference newReference cell |> ignore
-            if Spans.referenceExtendsSpansToRight newReference spans then
-                Row.extendSpanRight 1u row
-            else row
-        | None -> row
-
-    let rec shoveRowsDownward rowIndex (sheet) =
-        if SheetData.containsRowAt (uint32 rowIndex) sheet then             
-            shoveRowsDownward (rowIndex+1) sheet
-            |> moveRowVertical 1 rowIndex 
-        else
-            sheet
-
-    let moveRowHorizontal amount rowIndex (sheet:SheetData) = 
-        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
-        | Some row -> 
-            Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
-            |> Row.getCells
-            |> Seq.iter (fun cell -> 
-                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
-                |> ignore            
-            )
-            sheet
-        | None -> 
-            printfn "Warning: Row with index %i does not exist" rowIndex
-            sheet  
-      
-    /// 1 based index   
-    let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
-        let uiO = uint32 offset
-        let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
-        let newRow = 
-            vals
-            |> Seq.mapi (fun i v -> 
-                Cell.createGeneric (i+1+offset) rowIndex v
-            )
-            |> Row.create (uint32 rowIndex) spans
-        let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
-        match refRow with
-        | Some ref -> 
-            shoveRowsDownward rowIndex sheet
-            |> SheetData.insertBefore newRow ref
-        | None ->
-            SheetData.appendRow newRow sheet
-            
-    let insertValueIntoRow index (value:'T) (row:Row) = 
-        let refCell = Row.tryGetCellAfter index row
-
-        let cell = Cell.createGeneric index (Row.getIndex row |> int) value
-
-        match refCell with
-        | Some ref -> 
-            shoveValuesInRowToRight index row
-            |> Row.insertCellBefore cell ref
-        | None ->
-            let spans = Row.getSpan row
-            let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
-                               
-            Row.extendSpanRight spanExceedance row
-            |> Row.appendCell cell
-
-    /// 1 based index   
-    let insertRowAt (vals: 'T seq) rowIndex (sheet:SheetData) =
-        insertRowWithHorizontalOffsetAt 0 vals rowIndex sheet
-
-    /// 1 based index   
-    let insertValue columnIndex rowIndex (value:'T) (sheet:SheetData) =
-        match SheetData.tryGetRowAt rowIndex sheet with
-        | Some row -> 
-            insertValueIntoRow columnIndex value row |> ignore
-            sheet
-        | None -> insertRowAt [value] (int rowIndex) sheet
-
-    let getRow
-
-
-    let appendRow (vals: 'T seq) (sheet:SheetData) =
-        let i = 
-            sheet
-            |> SheetData.getRows
-            |> Seq.map (Row.getIndex)
-            |> Seq.max
-            |> int
-            |> (+) 1
-        insertRowAt vals i sheet
-    
-    type DataTransformations =
-    
-        | LEL of DataTransformations
-
-
-    ///Convenience
-
-    //let insertRow (rowIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
-    //let overWriteRow (rowIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
-    //let appendRow (values: 'T seq) (sheetData:SheetData) = notImplemented()
-    //let getRow (rowIndex) (sheetData:SheetData) = notImplemented()
-    //let deleteRow rowIndex (sheetData:SheetData) = notImplemented()
-
-    //let insertColumn (columnIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
-    //let overWriteColumn (columnIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
-    //let appendColumn (values: 'T seq) (sheetData:SheetData) = notImplemented()
-    //let getColumn (columnIndex) (sheetData:SheetData) = notImplemented()
-    //let deleteColumn (columnIndex) (sheetData:SheetData) = notImplemented()
-
-    ////let setCellValue (rowIndex,columnIndex) value (sheetData:SheetData) = notImplemented()
-    //let setCellValue adress value (sheetData:SheetData) = notImplemented()
-    //let getCellValue adress (sheetData:SheetData) = notImplemented()
-    //let deleteCellValue adress (sheetData:SheetData) = notImplemented()
-
 /// Stores data of the sheet 
 module Worksheet = 
 
@@ -438,7 +320,7 @@ module Worksheet =
 
     ////let setCellValue (rowIndex,columnIndex) value (worksheet:Worksheet) = notImplemented()
     //let setCellValue adress value (worksheet:Worksheet) = notImplemented()
-    //let getCellValue adress (worksheet:Worksheet) = notImplemented()
+    //let inferCellValue adress (worksheet:Worksheet) = notImplemented()
     //let deleteCellValue adress (worksheet:Worksheet) = notImplemented()
 
 
@@ -662,6 +544,202 @@ module Workbook =
         workbook
 
 
+module SheetTransformation =
+
+    let private getValueSST (sst:SharedStringTable) cell =
+        if cell |> Cell.getType = CellValues.SharedString then
+            cell
+            |> Cell.getValue
+            |> CellValue.getValue
+            |> int
+            |> fun i -> SharedStringTable.getText i sst
+            |> SharedStringItem.getText
+        else
+            cell
+            |> Cell.getValue
+            |> CellValue.getValue   
+            
+
+    let getCellValueAt columnIndex rowIndex (sheet:SheetData) =
+        SheetData.getRowAt rowIndex sheet
+        |> Row.getCellAt columnIndex
+        |> Cell.getValue
+        |> CellValue.getValue
+      
+    let getCellValueSSTAt (workbookPart:WorkbookPart) (columnIndex :uint32) rowIndex (sheet:SheetData) =
+        let sst = 
+            workbookPart 
+            |> WorkbookPart.getSharedStringTablePart 
+            |> SharedStringTablePart.getSharedStringTable
+        SheetData.getRowAt rowIndex sheet
+        |> Row.getCellAt columnIndex
+        |> getValueSST sst
+
+    let getRowValuesAt rowIndex (sheet:SheetData) =
+        sheet
+        |> SheetData.getRowAt rowIndex
+        |> Row.getCells
+        |> Seq.map (Cell.getValue >> CellValue.getValue)
+
+    let getRowValuesSSTAt (workbookPart:WorkbookPart) rowIndex (sheet:SheetData) =
+        let sst = 
+            workbookPart 
+            |> WorkbookPart.getSharedStringTablePart 
+            |> SharedStringTablePart.getSharedStringTable
+        sheet
+        |> SheetData.getRowAt rowIndex
+        |> Row.getCells
+        |> Seq.map (getValueSST sst)
+
+    ///If the row with index rowIndex exists in the sheet, moves it downwards by amount. Negative amounts will move the row upwards
+    let moveRowVertical (amount:int) rowIndex (sheet:SheetData) = 
+        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
+        | Some row -> 
+            Row.setIndex (Row.getIndex row |> int64 |> (+) (int64 amount) |> uint32) row
+            |> Row.getCells
+            |> Seq.iter (fun cell -> 
+                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
+                |> ignore            
+            )
+            sheet
+        | None -> 
+            printfn "Warning: Row with index %i does not exist" rowIndex
+            sheet
+     
+    ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
+    ///
+    /// If there already was a cell at the new postion, moves that one too. Repeats until a value is moved into a position previously unoccupied.
+    let rec shoveValuesInRowToRight columnIndex (row:Row) : Row=
+        let spans = Row.getSpan row
+        match Row.tryGetCellAt columnIndex row with
+        | Some cell ->
+            shoveValuesInRowToRight (columnIndex+1u) row |> ignore
+            let newReference = (Cell.getReference cell |> Reference.moveHorizontal 1)            
+            Cell.setReference newReference cell |> ignore
+            if Spans.referenceExtendsSpansToRight newReference spans then
+                Row.extendSpanRight 1u row
+            else row
+        | None -> row
+    ///If a row with the given rowIndex exists in the sheet, moves it one position downwards. 
+    ///
+    /// If there already was a row at the new postion, moves that one too. Repeats until a row is moved into a position previously unoccupied.
+    let rec shoveRowsDownward rowIndex (sheet) =
+        if SheetData.containsRowAt rowIndex sheet then             
+            shoveRowsDownward (rowIndex+1u) sheet
+            |> moveRowVertical 1 rowIndex
+        else
+            sheet
+
+    ///If a row with the given rowIndex exists in the sheet, moves all values inside it to the right by the specified amount. Negative amounts will move the values to the left.
+    let moveRowHorizontal amount rowIndex (sheet:SheetData) = 
+        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
+        | Some row -> 
+            Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
+            |> Row.getCells
+            |> Seq.iter (fun cell -> 
+                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
+                |> ignore            
+            )
+            sheet
+        | None -> 
+            printfn "Warning: Row with index %i does not exist" rowIndex
+            sheet  
+      
+    /// 1 based index   
+    let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
+        let uiO = uint32 offset
+        let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+        let newRow = 
+            vals
+            |> Seq.mapi (fun i v -> 
+                Cell.createGeneric ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex v
+            )
+            |> Row.create (uint32 rowIndex) spans
+        let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
+        match refRow with
+        | Some ref -> 
+            shoveRowsDownward rowIndex sheet
+            |> SheetData.insertBefore newRow ref
+        | None ->
+            SheetData.appendRow newRow sheet
+            
+    let insertValueIntoRow index (value:'T) (row:Row) = 
+        let refCell = Row.tryGetCellAfter index row
+
+        let cell = Cell.createGeneric index (Row.getIndex row) value
+
+        match refCell with
+        | Some ref -> 
+            shoveValuesInRowToRight index row
+            |> Row.insertCellBefore cell ref
+        | None ->
+            let spans = Row.getSpan row
+            let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+                               
+            Row.extendSpanRight spanExceedance row
+            |> Row.appendCell cell
+
+    let appendValueToRow (value:'T) (row:Row) = 
+        row
+        |> Row.getSpan
+        |> Spans.rightBoundary
+        |> fun col -> Cell.createGeneric (col + 1u) (row |> Row.getIndex) value
+        |> fun c -> Row.appendCell c row
+        |> Row.extendSpanRight 1u 
+
+    /// 1 based index   
+    let insertRowAt (vals: 'T seq) rowIndex (sheet:SheetData) =
+        insertRowWithHorizontalOffsetAt 0 vals rowIndex sheet
+
+    /// 1 based index   
+    let insertValue columnIndex rowIndex (value:'T) (sheet:SheetData) =
+        match SheetData.tryGetRowAt rowIndex sheet with
+        | Some row -> 
+            insertValueIntoRow columnIndex value row |> ignore
+            sheet
+        | None -> insertRowWithHorizontalOffsetAt (columnIndex - 1u |> int) [value] rowIndex sheet
+
+    /// 1 based index 
+    let appendValueToRowAt rowIndex (value:'T) (sheet:SheetData) =
+        match SheetData.tryGetRowAt rowIndex sheet with
+        | Some row -> 
+            appendValueToRow value row |> ignore
+            sheet
+        | None -> insertRowAt [value] rowIndex sheet    
+
+
+    let appendRow (vals: 'T seq) (sheet:SheetData) =
+        let i = 
+            sheet
+            |> SheetData.getRows
+            |> Seq.map (Row.getIndex)
+            |> Seq.max
+            |> (+) 1u
+        insertRowAt vals i sheet
+    
+    type DataTransformations =
+    
+        | LEL of DataTransformations
+
+
+    ///Convenience
+
+    //let insertRow (rowIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
+    //let overWriteRow (rowIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
+    //let appendRow (values: 'T seq) (sheetData:SheetData) = notImplemented()
+    //let getRow (rowIndex) (sheetData:SheetData) = notImplemented()
+    //let deleteRow rowIndex (sheetData:SheetData) = notImplemented()
+
+    //let insertColumn (columnIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
+    //let overWriteColumn (columnIndex) (values: 'T seq) (sheetData:SheetData) = notImplemented()
+    //let appendColumn (values: 'T seq) (sheetData:SheetData) = notImplemented()
+    //let getColumn (columnIndex) (sheetData:SheetData) = notImplemented()
+    //let deleteColumn (columnIndex) (sheetData:SheetData) = notImplemented()
+
+    ////let setCellValue (rowIndex,columnIndex) value (sheetData:SheetData) = notImplemented()
+    //let setCellValue adress value (sheetData:SheetData) = notImplemented()
+    //let inferCellValue adress (sheetData:SheetData) = notImplemented()
+    //let deleteCellValue adress (sheetData:SheetData) = notImplemented()
 
 module Spreadsheet = 
 
