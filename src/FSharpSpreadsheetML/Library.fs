@@ -117,6 +117,12 @@ module Cell =
     let setValue (value:CellValue) (cell:Cell) = 
         cell.CellValue <- value
         cell
+ 
+    let tryGetType (cell:Cell) = 
+        if cell.DataType <> null then
+            Some cell.DataType.Value
+        else
+            None
 
     let getType (cell:Cell) = cell.DataType.Value
     let setType (dataType:CellValues) (cell:Cell) = 
@@ -443,7 +449,7 @@ module SharedStringTable =
     let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = 
         sst.Append(sharedStringItem)
         sst
-    let count (sst:SharedStringTable) = sst.Count
+    let count (sst:SharedStringTable) = sst.Count.Value
 
 
 module SharedStringTablePart = 
@@ -545,52 +551,7 @@ module Workbook =
 
 
 module SheetTransformation =
-
-    let private getValueSST (sst:SharedStringTable) cell =
-        if cell |> Cell.getType = CellValues.SharedString then
-            cell
-            |> Cell.getValue
-            |> CellValue.getValue
-            |> int
-            |> fun i -> SharedStringTable.getText i sst
-            |> SharedStringItem.getText
-        else
-            cell
-            |> Cell.getValue
-            |> CellValue.getValue   
-            
-
-    let getCellValueAt columnIndex rowIndex (sheet:SheetData) =
-        SheetData.getRowAt rowIndex sheet
-        |> Row.getCellAt columnIndex
-        |> Cell.getValue
-        |> CellValue.getValue
-      
-    let getCellValueSSTAt (workbookPart:WorkbookPart) (columnIndex :uint32) rowIndex (sheet:SheetData) =
-        let sst = 
-            workbookPart 
-            |> WorkbookPart.getSharedStringTablePart 
-            |> SharedStringTablePart.getSharedStringTable
-        SheetData.getRowAt rowIndex sheet
-        |> Row.getCellAt columnIndex
-        |> getValueSST sst
-
-    let getRowValuesAt rowIndex (sheet:SheetData) =
-        sheet
-        |> SheetData.getRowAt rowIndex
-        |> Row.getCells
-        |> Seq.map (Cell.getValue >> CellValue.getValue)
-
-    let getRowValuesSSTAt (workbookPart:WorkbookPart) rowIndex (sheet:SheetData) =
-        let sst = 
-            workbookPart 
-            |> WorkbookPart.getSharedStringTablePart 
-            |> SharedStringTablePart.getSharedStringTable
-        sheet
-        |> SheetData.getRowAt rowIndex
-        |> Row.getCells
-        |> Seq.map (getValueSST sst)
-
+       
     ///If the row with index rowIndex exists in the sheet, moves it downwards by amount. Negative amounts will move the row upwards
     let moveRowVertical (amount:int) rowIndex (sheet:SheetData) = 
         match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
@@ -605,7 +566,7 @@ module SheetTransformation =
         | None -> 
             printfn "Warning: Row with index %i does not exist" rowIndex
             sheet
-     
+
     ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
     ///
     /// If there already was a cell at the new postion, moves that one too. Repeats until a value is moved into a position previously unoccupied.
@@ -620,6 +581,7 @@ module SheetTransformation =
                 Row.extendSpanRight 1u row
             else row
         | None -> row
+
     ///If a row with the given rowIndex exists in the sheet, moves it one position downwards. 
     ///
     /// If there already was a row at the new postion, moves that one too. Repeats until a row is moved into a position previously unoccupied.
@@ -644,83 +606,246 @@ module SheetTransformation =
         | None -> 
             printfn "Warning: Row with index %i does not exist" rowIndex
             sheet  
-      
-    /// 1 based index   
-    let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
-        let uiO = uint32 offset
-        let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
-        let newRow = 
-            vals
-            |> Seq.mapi (fun i v -> 
-                Cell.createGeneric ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex v
-            )
-            |> Row.create (uint32 rowIndex) spans
-        let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
-        match refRow with
-        | Some ref -> 
-            shoveRowsDownward rowIndex sheet
-            |> SheetData.insertBefore newRow ref
-        | None ->
-            SheetData.appendRow newRow sheet
+
+    module SSTSheets =
+        let private getValueSST (sst:SharedStringTable) cell =
+            match cell |> Cell.tryGetType with
+            | Some (CellValues.SharedString) ->
+                cell
+                |> Cell.getValue
+                |> CellValue.getValue
+                |> int
+                |> fun i -> SharedStringTable.getText i sst
+                |> SharedStringItem.getText
+            | _ ->
+                cell
+                |> Cell.getValue
+                |> CellValue.getValue   
             
-    let insertValueIntoRow index (value:'T) (row:Row) = 
-        let refCell = Row.tryGetCellAfter index row
+        let getValuesOfRowSST (workbookPart:WorkbookPart) (row:Row) =
+            let sst = 
+                workbookPart 
+                |> WorkbookPart.getSharedStringTablePart 
+                |> SharedStringTablePart.getSharedStringTable
+            row
+            |> Row.getCells
+            |> Seq.map (getValueSST sst)
+        
+        let getIndexedValuesOfRowSST (workbookPart:WorkbookPart) (row:Row) =
+            let sst = 
+                workbookPart 
+                |> WorkbookPart.getSharedStringTablePart 
+                |> SharedStringTablePart.getSharedStringTable
+            row
+            |> Row.getCells
+            |> Seq.map (fun c -> c |> Cell.getReference |> Reference.toIndices |> fst, getValueSST sst c)
+        
+        let getCellValueSSTAt (workbookPart:WorkbookPart) (columnIndex : uint32) rowIndex (sheet:SheetData) =
+               let sst = 
+                   workbookPart 
+                   |> WorkbookPart.getSharedStringTablePart 
+                   |> SharedStringTablePart.getSharedStringTable
+               SheetData.getRowAt rowIndex sheet
+               |> Row.getCellAt columnIndex
+               |> getValueSST sst
 
-        let cell = Cell.createGeneric index (Row.getIndex row) value
+        let getRowValuesSSTAt (workbookPart:WorkbookPart) rowIndex (sheet:SheetData) =
+            let sst = 
+                workbookPart 
+                |> WorkbookPart.getSharedStringTablePart 
+                |> SharedStringTablePart.getSharedStringTable
+            sheet
+            |> SheetData.getRowAt rowIndex
+            |> Row.getCells
+            |> Seq.map (getValueSST sst)
 
-        match refCell with
-        | Some ref -> 
-            shoveValuesInRowToRight index row
-            |> Row.insertCellBefore cell ref
-        | None ->
-            let spans = Row.getSpan row
-            let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+        let tryGetRowValuesSSTAt (workbookPart:WorkbookPart) rowIndex (sheet:SheetData) =
+            let sst = 
+                workbookPart 
+                |> WorkbookPart.getSharedStringTablePart 
+                |> SharedStringTablePart.getSharedStringTable
+            sheet
+            |> SheetData.tryGetRowAt rowIndex
+            |> Option.map (
+                Row.getCells
+                >> Seq.map (getValueSST sst)
+            )
+
+        let tryGetIndexedRowValuesSSTAt (workbookPart:WorkbookPart) rowIndex (sheet:SheetData) =
+            let sst = 
+                workbookPart 
+                |> WorkbookPart.getSharedStringTablePart 
+                |> SharedStringTablePart.getSharedStringTable
+            sheet
+            |> SheetData.tryGetRowAt rowIndex
+            |> Option.map (
+                Row.getCells
+                >> Seq.map (fun c -> Cell.getReference c |> Reference.toIndices |> fst,getValueSST sst c)
+            )
+
+        let createSSTCell (sst:SharedStringTable) columnIndex rowIndex  (value:'T) = 
+            let value = box value
+            match value with
+            | :? string as s -> 
+                let reference = Reference.ofIndices columnIndex (rowIndex)
+                match SharedStringTable.tryGetIndexByString s sst with
+                | Some i -> 
+                    sst,Cell.create CellValues.SharedString reference (i |> string |> CellValue.create)
+                | None ->
+                    let sst = SharedStringTable.addItem (SharedStringItem.create s) sst
+                    sst, Cell.create CellValues.SharedString reference (SharedStringTable.count sst |> (+) 1u |> string |> CellValue.create)
+            | _  -> 
+                sst,Cell.createGeneric columnIndex rowIndex (value.ToString())
+
+        
+        let insertRowWithHorizontalOffsetSSTAt (workbookPart) (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
+    
+            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
+
+            let uiO = uint32 offset
+            let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+            let newRow = 
+                vals
+                |> Seq.mapi (fun i v -> 
+                    createSSTCell sst ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex v
+                    |> snd
+                )
+                |> Row.create (uint32 rowIndex) spans
+            let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
+            match refRow with
+            | Some ref -> 
+                shoveRowsDownward rowIndex sheet
+                |> SheetData.insertBefore newRow ref
+            | None ->
+                SheetData.appendRow newRow sheet
+               
+        let insertValueIntoRowSST workbookPart index (value:'T) (row:Row) = 
+
+            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
+            let refCell = Row.tryGetCellAfter index row
+
+            let updatedSST,cell = createSSTCell sst index (Row.getIndex row) value
+
+            match refCell with
+            | Some ref -> 
+                shoveValuesInRowToRight index row
+                |> Row.insertCellBefore cell ref
+            | None ->
+                let spans = Row.getSpan row
+                let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+                                   
+                Row.extendSpanRight spanExceedance row
+                |> Row.appendCell cell
+
+        let appendValueToRowSST workbookPart (value:'T) (row:Row) = 
+            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
+            row
+            |> Row.getSpan
+            |> Spans.rightBoundary
+            |> fun col -> createSSTCell sst (col + 1u) (row |> Row.getIndex) value
+            |> fun (newSST,c) -> Row.appendCell c row
+            |> Row.extendSpanRight 1u 
+
+        let insertRowSSTAt workbookpart (vals: 'T seq) rowIndex (sheet:SheetData) =
+            insertRowWithHorizontalOffsetSSTAt workbookpart 0 vals rowIndex sheet
+
+    module DirectSheets = 
+        let getCellValueAt columnIndex rowIndex (sheet:SheetData) =
+            SheetData.getRowAt rowIndex sheet
+            |> Row.getCellAt columnIndex
+            |> Cell.getValue
+            |> CellValue.getValue
+ 
+
+        let getRowValuesAt rowIndex (sheet:SheetData) =
+            sheet
+            |> SheetData.getRowAt rowIndex
+            |> Row.getCells
+            |> Seq.map (Cell.getValue >> CellValue.getValue)
+
+
+        let tryGetRowValuesAt rowIndex (sheet:SheetData) =
+            sheet 
+            |> SheetData.tryGetRowAt rowIndex
+            |> Option.map (
+                Row.getCells
+                >> Seq.map (Cell.getValue >> CellValue.getValue)
+            )
+     
+        /// 1 based index   
+        let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
+        
+            let uiO = uint32 offset
+            let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+            let newRow = 
+                vals
+                |> Seq.mapi (fun i v -> 
+                    Cell.createGeneric ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex v
+                )
+                |> Row.create (uint32 rowIndex) spans
+            let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
+            match refRow with
+            | Some ref -> 
+                shoveRowsDownward rowIndex sheet
+                |> SheetData.insertBefore newRow ref
+            | None ->
+                SheetData.appendRow newRow sheet
+
+        let insertValueIntoRow index (value:'T) (row:Row) = 
+            let refCell = Row.tryGetCellAfter index row
+
+            let cell = Cell.createGeneric index (Row.getIndex row) value
+
+            match refCell with
+            | Some ref -> 
+                shoveValuesInRowToRight index row
+                |> Row.insertCellBefore cell ref
+            | None ->
+                let spans = Row.getSpan row
+                let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
                                
-            Row.extendSpanRight spanExceedance row
-            |> Row.appendCell cell
+                Row.extendSpanRight spanExceedance row
+                |> Row.appendCell cell
 
-    let appendValueToRow (value:'T) (row:Row) = 
-        row
-        |> Row.getSpan
-        |> Spans.rightBoundary
-        |> fun col -> Cell.createGeneric (col + 1u) (row |> Row.getIndex) value
-        |> fun c -> Row.appendCell c row
-        |> Row.extendSpanRight 1u 
+        let appendValueToRow (value:'T) (row:Row) = 
+            row
+            |> Row.getSpan
+            |> Spans.rightBoundary
+            |> fun col -> Cell.createGeneric (col + 1u) (row |> Row.getIndex) value
+            |> fun c -> Row.appendCell c row
+            |> Row.extendSpanRight 1u 
 
-    /// 1 based index   
-    let insertRowAt (vals: 'T seq) rowIndex (sheet:SheetData) =
-        insertRowWithHorizontalOffsetAt 0 vals rowIndex sheet
-
-    /// 1 based index   
-    let insertValue columnIndex rowIndex (value:'T) (sheet:SheetData) =
-        match SheetData.tryGetRowAt rowIndex sheet with
-        | Some row -> 
-            insertValueIntoRow columnIndex value row |> ignore
-            sheet
-        | None -> insertRowWithHorizontalOffsetAt (columnIndex - 1u |> int) [value] rowIndex sheet
-
-    /// 1 based index 
-    let appendValueToRowAt rowIndex (value:'T) (sheet:SheetData) =
-        match SheetData.tryGetRowAt rowIndex sheet with
-        | Some row -> 
-            appendValueToRow value row |> ignore
-            sheet
-        | None -> insertRowAt [value] rowIndex sheet    
+        /// 1 based index   
+        let insertRowAt (vals: 'T seq) rowIndex (sheet:SheetData) =
+            insertRowWithHorizontalOffsetAt 0 vals rowIndex sheet
 
 
-    let appendRow (vals: 'T seq) (sheet:SheetData) =
-        let i = 
-            sheet
-            |> SheetData.getRows
-            |> Seq.map (Row.getIndex)
-            |> Seq.max
-            |> (+) 1u
-        insertRowAt vals i sheet
-    
-    type DataTransformations =
-    
-        | LEL of DataTransformations
+        /// 1 based index   
+        let insertValue columnIndex rowIndex (value:'T) (sheet:SheetData) =
+            match SheetData.tryGetRowAt rowIndex sheet with
+            | Some row -> 
+                insertValueIntoRow columnIndex value row |> ignore
+                sheet
+            | None -> insertRowWithHorizontalOffsetAt (columnIndex - 1u |> int) [value] rowIndex sheet
 
+        /// 1 based index 
+        let appendValueToRowAt rowIndex (value:'T) (sheet:SheetData) =
+            match SheetData.tryGetRowAt rowIndex sheet with
+            | Some row -> 
+                appendValueToRow value row |> ignore
+                sheet
+            | None -> insertRowAt [value] rowIndex sheet    
+
+
+        let appendRow (vals: 'T seq) (sheet:SheetData) =
+            let i = 
+                sheet
+                |> SheetData.getRows
+                |> Seq.map (Row.getIndex)
+                |> Seq.max
+                |> (+) 1u
+            insertRowAt vals i sheet
+  
 
     ///Convenience
 
