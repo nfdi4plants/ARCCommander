@@ -607,6 +607,18 @@ module SheetTransformation =
             printfn "Warning: Row with index %i does not exist" rowIndex
             sheet  
 
+    let maxRowIndex (sheet) =
+        SheetData.getRows sheet
+        |> Seq.map (Row.getIndex)
+        |> Seq.max
+
+    let firstSheetOfWorkbookPart (workbookPart) = 
+        workbookPart
+        |> WorkbookPart.getWorkSheetParts
+        |> Seq.head
+        |> WorksheetPart.getWorksheet
+        |> Worksheet.getSheetData
+
     module SSTSheets =
         let private getValueSST (sst:SharedStringTable) cell =
             match cell |> Cell.tryGetType with
@@ -736,6 +748,16 @@ module SheetTransformation =
                                    
                 Row.extendSpanRight spanExceedance row
                 |> Row.appendCell cell
+
+        
+        let appendRowSST workbookPart (vals: 'T seq) (sheet:SheetData) =
+            let i = 
+                sheet
+                |> SheetData.getRows
+                |> Seq.map (Row.getIndex)
+                |> Seq.max
+                |> (+) 1u
+            insertRowWithHorizontalOffsetSSTAt workbookPart 0 vals i sheet
 
         let appendValueToRowSST workbookPart (value:'T) (row:Row) = 
             let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
