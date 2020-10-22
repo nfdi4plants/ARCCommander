@@ -447,7 +447,7 @@ module SharedStringTable =
         getItems sst
         |> Seq.item i
     let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = 
-        sst.Append(sharedStringItem)
+        sst.Append(sharedStringItem.CloneNode(false) :?> SharedStringItem)
         sst
     let count (sst:SharedStringTable) = sst.Count.Value
 
@@ -543,7 +543,11 @@ module Workbook =
         
         let sheets = getSheetsOrInitSheets workbook
         let id = WorkbookPart.getWorksheetPartID worksheetPart workbookPart
-        let sheetID = sheets |> Sheets.getSheets |> Seq.map Sheet.getSheetID |> Seq.max |> (+) 1ul
+        let sheetID = 
+            sheets |> Sheets.getSheets |> Seq.map Sheet.getSheetID
+            |> fun s -> 
+                if Seq.length s = 0 then 1u
+                else s |> Seq.max |> (+) 1ul
         let sheet = Sheet.create id name sheetID
 
         Sheets.addSheet sheet sheets |> ignore
@@ -609,8 +613,13 @@ module SheetTransformation =
 
     let maxRowIndex (sheet) =
         SheetData.getRows sheet
-        |> Seq.map (Row.getIndex)
-        |> Seq.max
+        |> fun s -> 
+            if Seq.isEmpty s then 
+                0u
+            else 
+                s
+                |> Seq.map (Row.getIndex)
+                |> Seq.max
 
     let firstSheetOfWorkbookPart (workbookPart) = 
         workbookPart
@@ -721,8 +730,10 @@ module SheetTransformation =
                 |> Seq.mapi (fun i v -> 
                     createSSTCell sst ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex v
                     |> snd
+                    |> fun r -> r.CloneNode(true) :?> Cell
                 )
                 |> Row.create (uint32 rowIndex) spans
+                |> fun r -> r.CloneNode(true) :?> Row
             let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
             match refRow with
             | Some ref -> 
@@ -753,9 +764,7 @@ module SheetTransformation =
         let appendRowSST workbookPart (vals: 'T seq) (sheet:SheetData) =
             let i = 
                 sheet
-                |> SheetData.getRows
-                |> Seq.map (Row.getIndex)
-                |> Seq.max
+                |> maxRowIndex
                 |> (+) 1u
             insertRowWithHorizontalOffsetSSTAt workbookPart 0 vals i sheet
 
@@ -770,6 +779,14 @@ module SheetTransformation =
 
         let insertRowSSTAt workbookpart (vals: 'T seq) rowIndex (sheet:SheetData) =
             insertRowWithHorizontalOffsetSSTAt workbookpart 0 vals rowIndex sheet
+
+        /// 1 based index   
+        let insertValueSST workbookPart columnIndex rowIndex (value:'T) (sheet:SheetData) =
+            match SheetData.tryGetRowAt rowIndex sheet with
+            | Some row -> 
+                insertValueIntoRowSST workbookPart columnIndex value row |> ignore
+                sheet
+            | None -> insertRowWithHorizontalOffsetSSTAt workbookPart (columnIndex - 1u |> int) [value] rowIndex sheet
 
     module DirectSheets = 
         let getCellValueAt columnIndex rowIndex (sheet:SheetData) =
@@ -862,9 +879,7 @@ module SheetTransformation =
         let appendRow (vals: 'T seq) (sheet:SheetData) =
             let i = 
                 sheet
-                |> SheetData.getRows
-                |> Seq.map (Row.getIndex)
-                |> Seq.max
+                |> maxRowIndex
                 |> (+) 1u
             insertRowAt vals i sheet
   
@@ -905,6 +920,17 @@ module Spreadsheet =
     let saveAs path (spreadsheet:SpreadsheetDocument) = spreadsheet.SaveAs(path)
 
     let close (spreadsheet:SpreadsheetDocument) = spreadsheet.Close()
+
+    let createEmptySSTSpreadsheet sheetName (path:string) = 
+        let doc = createSpreadsheet path
+        let workbookPart = addNewWorkbookPart doc
+
+        let sharedStringTablePart = WorkbookPart.getSharedStringTablePartOrInitSharedStringTablePart workbookPart
+        SharedStringTablePart.initSharedStringTable sharedStringTablePart |> ignore
+
+        let workbook = WorkbookPart.getWorkbookOrInitWorkbook workbookPart
+        Workbook.addSheet sheetName (SheetData.empty) workbook |> ignore
+        doc
 
     //let getWorksheets = ""
 

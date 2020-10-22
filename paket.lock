@@ -1,8 +1,28 @@
 STORAGE: NONE
-RESTRICTION: == netstandard2.1
+RESTRICTION: == netstandard2.0
 NUGET
   remote: https://api.nuget.org/v3/index.json
+    Argu (6.1.1)
+      FSharp.Core (>= 4.3.2)
+      System.Configuration.ConfigurationManager (>= 4.4)
     DocumentFormat.OpenXml (2.11.3)
       System.IO.Packaging (>= 4.7)
-    FSharp.Core (4.7.2) - redirects: force
+    FSharp.Core (4.7.2)
+    System.Buffers (4.5.1)
+    System.Configuration.ConfigurationManager (4.7)
+      System.Security.Cryptography.ProtectedData (>= 4.7)
+      System.Security.Permissions (>= 4.7)
     System.IO.Packaging (4.7)
+    System.Memory (4.5.4)
+      System.Buffers (>= 4.5.1)
+      System.Numerics.Vectors (>= 4.4)
+      System.Runtime.CompilerServices.Unsafe (>= 4.5.3)
+    System.Numerics.Vectors (4.5)
+    System.Runtime.CompilerServices.Unsafe (4.7.1)
+    System.Security.AccessControl (4.7)
+      System.Security.Principal.Windows (>= 4.7)
+    System.Security.Cryptography.ProtectedData (4.7)
+      System.Memory (>= 4.5.3)
+    System.Security.Permissions (4.7)
+      System.Security.AccessControl (>= 4.7)
+    System.Security.Principal.Windows (4.7)

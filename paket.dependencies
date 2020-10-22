@@ -1,7 +1,8 @@
 source https://api.nuget.org/v3/index.json
 
 storage: none
-framework: netstandard2.1
+framework: netstandard2.0
 
-nuget FSharp.Core redirects:force
+nuget FSharp.Core 4.7.2
 nuget DocumentFormat.OpenXml
+nuget Argu
