@@ -21,6 +21,12 @@ type Scope =
 
 module Scope = 
 
+    let splitString (c:char) (s:string) = 
+        let r = System.Text.RegularExpressions.Regex.Matches(s,sprintf "[^%c]*" c)
+        [for i = 0 to r.Count - 1 do
+            if (r.Item i).Value <> "" then yield (r.Item i).Value
+        ]
+
     let create name level f t = 
         {
             Name = name
@@ -38,8 +44,10 @@ module Scope =
 
     let trySplitTitle (s : string) = 
         if s.ToUpper() = s then
-            let vals = s.Split ' ' |> Array.toList
+            //let vals = s.Split ' ' |> Array.toList
+            let vals = s |> splitString ' '
             match vals with
+            | ["ONTOLOGY"; "SOURCE"; "REFERENCE"] -> Some(s,1)
             | [v] when List.contains v terms -> Some(v,1)
             | v :: t when List.contains v terms  -> Some(List.reduce (fun a b -> a + " " + b) vals,2)
             | _ -> None
@@ -54,8 +62,8 @@ module Scope =
             let r = SheetTransformation.SSTSheets.tryGetRowValuesSSTAt workbookPart i sheet
             match r |> Option.map (Seq.head >> trySplitTitle) with
             | Some (Some (v,l)) -> Some (i,v,l)
-            | Some (None) | None-> tryUpwards (i - 1u)
             | _ when i = 0u -> None
+            | _ -> tryUpwards (i - 1u)
 
         let rec downWards level lastIndex i = 
             let r = SheetTransformation.SSTSheets.tryGetRowValuesSSTAt workbookPart i sheet
@@ -69,6 +77,9 @@ module Scope =
         |> Option.map (fun (f,v,l) -> 
             downWards l (f + 1u) (f + 1u)
             |> create v l f)
+
+    let extendScope (scope:Scope) =
+        {scope with To = scope.To + 1u}
 
 module ISA_Sheet  = 
    
@@ -229,7 +240,24 @@ module ISA_Investigation  =
 
     open DataModel.InvestigationFile
 
-    let emptyStudy id = StudyItem(Identifier = id)
+    let createInvestigationFile = 
+        1
+
+    let createEmpty path (investigation : ISA.DataModel.InvestigationFile.InvestigationItem) = 
+        let doc = Spreadsheet.createEmptySSTSpreadsheet "i_investigation" path
+        let workbookPart = doc |> Spreadsheet.getWorkbookPart
+        let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+        SheetTransformation.SSTSheets.appendRowSST workbookPart ["INVESTIGATION"] sheet |> ignore
+        [
+            "Investigation Identifier", investigation.Identifier
+        ]
+        |> List.map (fun (k,v) -> SheetTransformation.SSTSheets.appendRowSST workbookPart [k;v] sheet)
+        |> ignore
+
+        doc.Save()
+        doc.Close()
+
+    let emptyStudy id = Study(Info=StudyItem(Identifier = id))
 
     let studyExists studyIdentifier (investigationFilePath:string) =
         let doc = Spreadsheet.openSpreadsheet investigationFilePath true
@@ -265,15 +293,50 @@ module ISA_Investigation  =
         doc
         |> Spreadsheet.close
 
-    //let addAssayToStudy (assay:Assay) (study:string) (investigationFilePath:string) = 
-    //    let doc = Spreadsheet.openSpreadsheet investigationFilePath true
-    //    let workbookPart = doc |> Spreadsheet.getWorkbookPart
-    //    let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+    let addAssayInto workbookPart scope (assay:Assay) sheet =         
+        //MAP assayItems FIELDS
+        [
+            "Study Assay Measurement Type",assay.MeasurementType
+            "Study Assay File Name",assay.FileName
+        ]
+        |> List.fold (fun scope (key,value) -> 
+            match ISA_Sheet.tryFindIndexOfKeyBetween scope.From scope.To workbookPart key sheet with
+            | Some i ->
+                SheetTransformation.SSTSheets.insertValueSST workbookPart 2u i value  sheet
+                scope
+            | None -> 
+                SheetTransformation.SSTSheets.insertRowSSTAt workbookPart [key;value] (scope.To + 1u)
+                Scope.extendScope scope
+        ) scope
+        |> ignore
 
 
-    //    match ISA_Sheet.SingleTrait.tryFindIndexOfKeyValue workbookPart (KeyValuePair.Create("Study Identifier",study)) sheet with
-    //    | Some i -> 
-    //        let scope = Scope.tryFindScopeAt workbookPart i sheet
-    //        1
+    let addAssayToStudy (assay:Assay) (study:string) (investigationFilePath:string) = 
+        let doc = Spreadsheet.openSpreadsheet investigationFilePath true
+        let workbookPart = doc |> Spreadsheet.getWorkbookPart
+        let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
 
-    //    | None -> addStudy emptyStudy investigationFilePath
+        let studyScope = 
+            match ISA_Sheet.SingleTrait.tryFindIndexOfKeyValue workbookPart (KeyValuePair.Create("Study Identifier",study)) sheet with
+            | Some studyIndex -> 
+                match Scope.tryFindScopeAt workbookPart studyIndex sheet with
+                | Some scope -> scope
+                | None -> failwith "Corrupt Investigation file"
+            | None -> 
+                addStudy (emptyStudy study) investigationFilePath
+                Scope.tryFindScopeAt workbookPart (SheetTransformation.maxRowIndex sheet) sheet |> Option.get
+
+        let assayScope = 
+            match ISA_Sheet.tryFindIndexOfKeyBetween studyScope.From studyScope.To workbookPart ("STUDY ASSAYS") sheet with
+            | Some assayIndex ->
+                Scope.tryFindScopeAt workbookPart assayIndex sheet |> Option.get
+            | None -> 
+                SheetTransformation.SSTSheets.insertRowSSTAt workbookPart ["STUDY ASSAYS"] (studyScope.To + 1u)
+                Scope.create "STUDY ASSAYS" 2 (studyScope.To + 1u) (studyScope.To + 1u)
+
+        addAssayInto workbookPart assayScope assay sheet
+
+module ISA_Assay  = 
+
+    let createAssayFile (filePath) =
+        1

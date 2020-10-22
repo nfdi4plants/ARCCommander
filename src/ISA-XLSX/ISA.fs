@@ -5,6 +5,11 @@ module DataModel =
 
     module InvestigationFile = 
 
+        type ISAItem =
+            abstract member Header : string
+            abstract member KeyPrefix : string
+            abstract member KeyValues : unit -> (string*string) list
+
         type TermSource (?name,?file,?version,?description) =
             member val Name = defaultArg name "" with get,set
             member val File = defaultArg file "" with get,set
