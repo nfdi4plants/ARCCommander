@@ -303,10 +303,11 @@ module ISA_Investigation  =
         |> List.fold (fun scope (key,value) -> 
             match ISA_Sheet.tryFindIndexOfKeyBetween scope.From scope.To workbookPart key sheet with
             | Some i ->
-                SheetIO.insertValue 2u i value  sheet
+                //TODO/TO-DO: does the item only shove the other items to the right? If so another function should be used
+                SheetIO.insertValue 2u i value  sheet |> ignore
                 scope
             | None -> 
-                SheetIO.insertRowAt [key;value] (scope.To + 1u) sheet
+                SheetIO.insertRowAt [key;value] (scope.To + 1u) sheet |> ignore
                 Scope.extendScope scope
         ) scope
         |> ignore
@@ -334,7 +335,7 @@ module ISA_Investigation  =
                 | Some assayIndex ->
                     Scope.tryFindScopeAt workbookPart assayIndex sheet |> Option.get
                 | None -> 
-                    SheetIO.insertRowAt [itemHeader] (studyScope.To + 1u) sheet
+                    SheetIO.insertRowAt [itemHeader] (studyScope.To + 1u) sheet |> ignore
                     Scope.create itemHeader 2 (studyScope.To + 1u) (studyScope.To + 1u)
 
             insertItemValuesIntoStudy workbookPart itemScope item sheet
