@@ -240,7 +240,7 @@ module ISA_Investigation  =
 
     let createEmpty path (investigation : InvestigationItem) = 
 
-        let doc = Spreadsheet.createEmptySSTSpreadsheet "i_investigation" path
+        let doc = SheetTransformation.createEmptySSTSpreadsheet "i_investigation" path
         try 
             let workbookPart = doc |> Spreadsheet.getWorkbookPart
             let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
