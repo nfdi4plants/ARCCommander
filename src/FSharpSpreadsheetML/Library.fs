@@ -238,6 +238,9 @@ module Row =
     /// Returns a sequence of cells contained in the row
     let getCells (row:Row) = row.Descendants<Cell>()
 
+    /// Returns true,if the row contains no cells
+    let isEmpty (row:Row)= getCells row |> Seq.length |> (=) 0
+    
     //let mapCells (f : Cell -> Cell) (row:Row) = 
     //    //getCells row
     //    //|> Seq.toArray
@@ -319,6 +322,20 @@ module Row =
         |> setIndex index
         |> setSpan spans
 
+    /// Removes the cell at the given columnIndex from the row
+    let removeCellAt index (row:Row) =
+        getCellAt index row
+        |> row.RemoveChild
+        |> ignore
+        row
+
+    /// Removes the cell at the given columnIndex from the row
+    let tryRemoveCellAt index (row:Row) =
+        tryGetCellAt index row
+        |> Option.map (fun cell -> 
+            row.RemoveChild(cell) |> ignore
+            row)
+
 /// Functions for working with sheetdata (unmanaged: rowindices and cell references do not get automatically updated)
 module SheetData = 
 
@@ -363,6 +380,20 @@ module SheetData =
     let containsRowAt index (sheetData:SheetData) = 
         getRows sheetData
         |> Seq.exists (Row.getIndex >> (=) index)
+
+    /// Removes the row at the given rowIndex
+    let removeRowAt index (sheetData:SheetData) = 
+        let r = sheetData |> getRowAt index
+        sheetData.RemoveChild(r) |> ignore
+        sheetData
+
+    /// Removes the row at the given rowIndex
+    let tryRemoveRowAt index (sheetData:SheetData) = 
+        sheetData |> tryGetRowAt index
+        |> Option.map (fun r ->
+            sheetData.RemoveChild(r) |> ignore
+            sheetData
+        )
 
 /// Stores data of the sheet and the index of the sheet
 module Worksheet = 
@@ -720,6 +751,13 @@ module SheetTransformation =
             printfn "Warning: Row with index %i does not exist" rowIndex
             sheet
 
+    /// Matches the rowSpans to the cellreferences inside the row
+    let updateRowSpans (row:Row) : Row=
+        let columnIndices =
+            Row.getCells row
+            |> Seq.map (Cell.getReference >> Reference.toIndices >> fst)
+        Row.setSpan (Spans.fromBoundaries (Seq.min columnIndices) (Seq.max columnIndices)) row
+
     ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
     ///
     /// If there already was a cell at the new postion, moves that one too. Repeats until a value is moved into a position previously unoccupied.
@@ -831,7 +869,8 @@ module SheetTransformation =
                 cell
                 |> Cell.getValue
                 |> CellValue.getValue   
-        
+       
+
         /// Maps the cells of the given row to the value strings using a shared string table
         let getValuesOfRowSST (workbookPart:WorkbookPart) (row:Row) =
             let sst = 
@@ -995,6 +1034,10 @@ module SheetTransformation =
                 sheet
             | None -> insertRowWithHorizontalOffsetSSTAt workbookPart (columnIndex - 1u |> int) [value] rowIndex sheet
 
+        /// Removes row
+        let removeRowAt workbookPart rowIndex (sheet:SheetData) =
+            H.notImplemented()
+
     /// Sheet manipulation without using a shared string table (directly writing the string into the worksheet file)
     module DirectSheets = 
 
@@ -1062,6 +1105,28 @@ module SheetTransformation =
                 Row.extendSpanRight spanExceedance row
                 |> Row.appendCell cell
         
+        /// Add a value as a cell to the row at the given columnindex.
+        ///
+        /// If a cell exists at the given columnindex, Overwrites it
+        let setValueInRow index (value:'T) (row:Row) = 
+            let refCell = Row.tryGetCellAfter index row
+
+            let cell = Cell.createGeneric index (Row.getIndex row) value
+
+            match refCell with
+            | Some ref when Cell.getReference ref = Cell.getReference cell ->
+                Cell.setType (Cell.getType cell) ref |> ignore
+                Cell.setValue ((Cell.getValue cell).Clone() :?> CellValue) ref |> ignore
+                row 
+            | Some ref -> 
+                Row.insertCellBefore cell ref row
+            | None ->
+                let spans = Row.getSpan row
+                let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+                               
+                Row.extendSpanRight spanExceedance row
+                |> Row.appendCell cell
+
         /// Add a value as a cell to the end of the row.
         let appendValueToRow (value:'T) (row:Row) = 
             row
@@ -1088,6 +1153,16 @@ module SheetTransformation =
                 sheet
             | None -> insertRowWithHorizontalOffsetAt (columnIndex - 1u |> int) [value] rowIndex sheet
 
+        /// Add a value at the given row and columnindex to sheet using a shared string table.
+        ///
+        /// If a cell exists in the given postion, overwrites it
+        let setValue columnIndex rowIndex (value:'T) (sheet:SheetData) =
+            match SheetData.tryGetRowAt rowIndex sheet with
+            | Some row -> 
+                setValueInRow columnIndex value row |> ignore
+                sheet
+            | None -> insertRowWithHorizontalOffsetAt (columnIndex - 1u |> int) [value] rowIndex sheet
+
         /// Append the value as a cell to the end of the row
         let appendValueToRowAt rowIndex (value:'T) (sheet:SheetData) =
             match SheetData.tryGetRowAt rowIndex sheet with
@@ -1104,3 +1179,40 @@ module SheetTransformation =
                 |> (+) 1u
             insertRowAt vals i sheet
   
+        /// Removes the value from the sheet
+        let removeValueAt columnIndex rowIndex sheet : SheetData =
+            let row = 
+                sheet 
+                |> SheetData.getRowAt rowIndex 
+                |> Row.removeCellAt columnIndex
+            if Row.isEmpty row then
+                SheetData.removeRowAt rowIndex sheet
+            else
+                updateRowSpans row |> ignore
+                sheet
+
+        /// Removes the value from the sheet
+        let tryRemoveValueAt columnIndex rowIndex sheet : SheetData Option=
+            let row = 
+                sheet 
+                |> SheetData.getRowAt rowIndex 
+                |> Row.tryRemoveCellAt columnIndex
+            row
+            |> Option.map (fun row ->
+                if Row.isEmpty row then
+                    SheetData.removeRowAt rowIndex sheet                   
+                else
+                    updateRowSpans row |> ignore
+                    sheet
+            )
+
+
+        /// Removes row from sheet and move the following rows up
+        let removeRowAt rowIndex (sheet:SheetData) : SheetData =
+            sheet 
+            |> SheetData.removeRowAt rowIndex
+            |> SheetData.getRows
+            |> Seq.filter (Row.getIndex >> (<) rowIndex)
+            |> Seq.fold (fun sheetData row -> 
+                moveRowVertical -1 (Row.getIndex row) sheetData           
+            ) sheet

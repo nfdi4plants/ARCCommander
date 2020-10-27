@@ -9,6 +9,7 @@ module DataModel =
             abstract member Header : string
             abstract member KeyPrefix : string
             abstract member KeyValues : unit -> (string*string) list
+            abstract member KeyValuesOfInterest : unit -> (string*string) list
 
         type TermSource (?name,?file,?version,?description) =
             member val Name = defaultArg name "" with get,set
@@ -25,7 +26,9 @@ module DataModel =
                     "Version",this.Version
                     "Description",this.Description
                     ]
-        
+                member this.KeyValuesOfInterest () = ["Name",this.Name]
+
+
         type Publication (?pubMedID,?doi,?authorList,?title,?status,?statusTermAccessionNumber,?statusTermSourceREF) =
             member val PubMedID = defaultArg pubMedID "" with get,set
             member val DOI = defaultArg doi "" with get,set
@@ -47,7 +50,8 @@ module DataModel =
                     "Status Term Accession Number",this.StatusTermAccessionNumber
                     "Status Term Source REF",this.StatusTermSourceREF
                     ]
-        
+                member this.KeyValuesOfInterest () = ["DOI",this.DOI]
+
         type Person (?lastName,?firstName,?midInitials,?email,?phone,?fax,?address,?affiliation,?roles,?rolesTermAccessionNumber,?rolesTermSourceREF) =
             member val LastName = defaultArg lastName "" with get,set
             member val FirstName = defaultArg firstName "" with get,set
@@ -77,7 +81,9 @@ module DataModel =
                     "Roles Term Accession Number",this.RolesTermAccessionNumber
                     "Roles Term Source REF",this.RolesTermSourceREF
                     ]
-        
+                member this.KeyValuesOfInterest () = ["First Name",this.FirstName; "Last Name",this.LastName]
+
+
         type Design (?designType,?typeTermAccessionNumber,?typeTermSourceREF) =
             member val DesignType = defaultArg designType "" with get,set
             member val TypeTermAccessionNumber = defaultArg typeTermAccessionNumber "" with get,set
@@ -91,7 +97,8 @@ module DataModel =
                     "Type Term Accession Number",this.TypeTermAccessionNumber
                     "Type Term Source REF",this.TypeTermSourceREF
                     ]
-        
+                member this.KeyValuesOfInterest () = ["Type Term Accession Number",this.TypeTermAccessionNumber]
+
         type Factor (?name,?factorType,?typeTermAccessionNumber,?typeTermSourceREF) =
             member val Name = defaultArg name "" with get,set
             member val FactorType = defaultArg factorType "" with get,set
@@ -107,7 +114,8 @@ module DataModel =
                     "Type Term Accession Number",this.TypeTermAccessionNumber
                     "Type Term Source REF",this.TypeTermSourceREF
                     ]
-        
+                member this.KeyValuesOfInterest () = ["Name",this.Name]
+
         type Assay (?measurementType,?measurementTypeTermAccessionNumber,?measurementTypeTermSourceREF,?technologyType,?technologyTypeTermAccessionNumber,?technologyTypeTermSourceREF,?technologyPlatform,?fileName) =
             member val MeasurementType = defaultArg measurementType "" with get,set
             member val MeasurementTypeTermAccessionNumber = defaultArg measurementTypeTermAccessionNumber "" with get,set
@@ -131,7 +139,8 @@ module DataModel =
                     "Technology Platform",this.TechnologyPlatform
                     "File Name",this.FileName
                     ]
-        
+                member this.KeyValuesOfInterest () = ["File Name",this.FileName]
+
         type Protocol (?name,?protocolType,?typeTermAccessionNumber,?typeTermSourceREF,?description,?uri,?version,?parametersName,?parametersTermAccessionNumber,?parametersTermSourceREF,?componentsName,?componentsType,?componentsTypeTermAccessionNumber,?componentsTypeTermSourceREF) =
             member val Name = defaultArg name "" with get,set
             member val ProtocolType = defaultArg protocolType "" with get,set
@@ -167,7 +176,8 @@ module DataModel =
                     "Components Type Term Accession Number",this.ComponentsTypeTermAccessionNumber
                     "Components Type Term Source REF",this.ComponentsTypeTermSourceREF
                     ]
-        
+                member this.KeyValuesOfInterest () = ["Name",this.Name]
+
         type InvestigationItem (?identifier,?title,?description,?submissionDate,?publicReleaseDate) =
             member val Identifier = defaultArg identifier "" with get,set
             member val Title = defaultArg title "" with get,set
@@ -185,7 +195,8 @@ module DataModel =
                     "Submission Date",this.SubmissionDate
                     "Public Release Date",this.PublicReleaseDate
                     ]
-        
+                member this.KeyValuesOfInterest () = ["Identifier",this.Identifier]
+
         type StudyItem (?identifier,?title,?description,?submissionDate,?publicReleaseDate,?fileName) =
             member val Identifier = defaultArg identifier "" with get,set
             member val Title = defaultArg title "" with get,set
@@ -205,5 +216,5 @@ module DataModel =
                     "Public Release Date",this.PublicReleaseDate
                     "File Name",this.FileName
                     ]
-    
+                member this.KeyValuesOfInterest () = ["Identifier",this.Identifier]
     
