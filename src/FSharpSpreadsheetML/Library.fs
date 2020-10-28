@@ -724,13 +724,18 @@ module Spreadsheet =
     let initWorkbookPart (spreadsheet:SpreadsheetDocument) = spreadsheet.AddWorkbookPart()
 
     /// Save changes made to the spreadsheet
-    let saveChanges (spreadsheet:SpreadsheetDocument) = spreadsheet.Save()
-
-    /// Save changes made to the spreadsheet to the given path
-    let saveAs path (spreadsheet:SpreadsheetDocument) = spreadsheet.SaveAs(path)
+    let saveChanges (spreadsheet:SpreadsheetDocument) = 
+        spreadsheet.Save() 
+        spreadsheet
 
     /// Closes the stream to the spreadsheet
     let close (spreadsheet:SpreadsheetDocument) = spreadsheet.Close()
+
+    /// Save changes made to the spreadsheet to the given path
+    let saveAs path (spreadsheet:SpreadsheetDocument) = 
+        spreadsheet.SaveAs(path) :?> SpreadsheetDocument
+        |> close
+        spreadsheet
 
 
 /// Value based manipulation of sheets. Functions in this module automatically make the necessary adjustments  needed to change the excel sheet the way the function states.
