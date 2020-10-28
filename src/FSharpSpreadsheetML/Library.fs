@@ -241,11 +241,11 @@ module Row =
     /// Returns true,if the row contains no cells
     let isEmpty (row:Row)= getCells row |> Seq.length |> (=) 0
     
-    //let mapCells (f : Cell -> Cell) (row:Row) = 
-    //    //getCells row
-    //    //|> Seq.toArray
-    //    //|> Array.map (fun cell -> cell <- f cell)
-    //    notImplemented()
+    let mapCells (f : Cell -> Cell) (row:Row) = 
+        row
+        |> getCells
+        |> Seq.iter (f >> ignore)
+        row
 
     //let iterCells (f) (row:Row) = notImplemented()
 
@@ -773,6 +773,18 @@ module SheetTransformation =
             else row
         | None -> row
 
+    /// Moves all cells starting with from the given columnindex in the row to the right
+    let moveValuesInRowToRight columnIndex (row:Row) : Row=
+        row
+        |> Row.mapCells (fun c -> 
+            let cellCol,cellRow = Cell.getReference c |> Reference.toIndices
+            if cellCol >= columnIndex then
+                Cell.setReference (Reference.ofIndices (cellCol+1u) cellRow) c
+            else c
+        )
+        |> Row.extendSpanRight 1u
+       
+
     ///If a row with the given rowIndex exists in the sheet, moves it one position downwards. 
     ///
     /// If there already was a row at the new postion, moves that one too. Repeats until a row is moved into a position previously unoccupied.
@@ -991,7 +1003,7 @@ module SheetTransformation =
 
             match refCell with
             | Some ref -> 
-                shoveValuesInRowToRight index row
+                moveValuesInRowToRight index row
                 |> Row.insertCellBefore cell ref
             | None ->
                 let spans = Row.getSpan row
@@ -1096,7 +1108,7 @@ module SheetTransformation =
 
             match refCell with
             | Some ref -> 
-                shoveValuesInRowToRight index row
+                moveValuesInRowToRight index row
                 |> Row.insertCellBefore cell ref
             | None ->
                 let spans = Row.getSpan row
