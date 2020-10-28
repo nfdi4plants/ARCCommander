@@ -21,6 +21,15 @@ type Scope =
 
 module SheetIO = SheetTransformation.DirectSheets
 
+module Option = 
+    let pipe (f : 'T -> 'U option) (v : 'T  Option) : 'U Option = 
+        Option.map f v 
+        |> Option.flatten
+
+    let equals (f : 'T -> bool) (v : 'T  Option) = 
+        Option.map f v
+        |> (=) (Some true)
+
 module Scope = 
 
     let create name level f t = 
@@ -77,14 +86,18 @@ module Scope =
         {scope with To = scope.To + 1u}
 
 module ISA_Sheet  = 
-   
+    
+    let tryParseKey workbookPart row =
+        SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart row       
+        |> Seq.tryFind (fst >> (=) 1u)
+        |> Option.map snd
+
     let findIndexOfKey workbookPart key sheet = 
         sheet
         |> SheetData.getRows
         |> Seq.find (
-            SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart
-            >> Seq.head
-            >> (=) key
+            tryParseKey workbookPart
+            >> Option.equals ((=) key) 
         )
         |> Row.getIndex
 
@@ -92,9 +105,8 @@ module ISA_Sheet  =
         sheet
         |> SheetData.getRows
         |> Seq.tryFind (
-            SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart
-            >> Seq.head
-            >> (=) key
+            tryParseKey workbookPart
+            >> Option.equals ((=) key) 
         )
         |> Option.map Row.getIndex
 
@@ -107,9 +119,8 @@ module ISA_Sheet  =
             |> fun i -> i >= startI && i <= endI
         )
         |> Seq.tryFind (
-            SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart
-            >> Seq.head
-            >> (=) key
+            tryParseKey workbookPart
+            >> Option.equals ((=) key)
         )
         |> Option.map Row.getIndex
 
@@ -118,39 +129,39 @@ module ISA_Sheet  =
         |> Option.isSome   
 
     module SingleTrait = 
-        
-        let getKeyValueAt workbookPart rowIndex sheet : KeyValuePair<string,string> = 
-            SheetTransformation.SSTSheets.getRowValuesSSTAt workbookPart rowIndex sheet
+                
+        let tryParseKeyValue workbookPart row =
+            SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart row       
             |> fun s -> 
-                KeyValuePair(Seq.item 0 s, Seq.item 1 s)
+                match Seq.tryFind (fst >> (=) 1u) s, Seq.tryFind (fst >> (=) 2u) s with
+                | Some (_,k), Some (_,v) -> KeyValuePair(k,v) |> Some
+                | _ -> None
+
+
+        let getKeyValueAt workbookPart rowIndex sheet : KeyValuePair<string,string> = 
+            SheetData.getRowAt rowIndex sheet
+            |> tryParseKeyValue workbookPart
+            |> Option.get
 
         let tryGetKeyValueAt workbookPart rowIndex sheet: KeyValuePair<string,string> Option = 
-            SheetTransformation.SSTSheets.tryGetRowValuesSSTAt workbookPart rowIndex sheet
-            |> Option.map (
-                fun s -> KeyValuePair(Seq.item 0 s, Seq.item 1 s)
-            )
+            SheetData.tryGetRowAt rowIndex sheet
+            |> Option.pipe (tryParseKeyValue workbookPart)
 
         let findIndexOfKeyValue workbookPart (kv:KeyValuePair<string,string>) sheet = 
             sheet
             |> SheetData.getRows
-            |> Seq.find (fun r ->
-                SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r
-                |> fun s -> 
-                    Seq.head s = kv.Key
-                    &&
-                    Seq.item 1 s = kv.Value
+            |> Seq.find (
+                tryParseKeyValue workbookPart
+                >> Option.equals ((=) kv)
             )
             |> Row.getIndex
 
         let tryFindIndexOfKeyValue workbookPart (kv:KeyValuePair<string,string>) sheet = 
             sheet
             |> SheetData.getRows
-            |> Seq.tryFind (fun r ->
-                SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r
-                |> fun s -> 
-                    Seq.head s = kv.Key
-                    &&
-                    Seq.item 1 s = kv.Value
+            |> Seq.tryFind (
+                tryParseKeyValue workbookPart
+                >> Option.equals ((=) kv)
             )
             |> Option.map Row.getIndex
 
@@ -162,12 +173,9 @@ module ISA_Sheet  =
                 |> Row.getIndex 
                 |> fun i -> i >= startI && i <= endI
             )
-            |> Seq.tryFind (fun r ->
-                SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r
-                |> fun s -> 
-                    Seq.head s = kv.Key
-                    &&
-                    Seq.item 1 s = kv.Value
+            |> Seq.tryFind (
+                tryParseKeyValue workbookPart
+                >> Option.equals ((=) kv) 
             )
             |> Option.map Row.getIndex
 
@@ -177,25 +185,34 @@ module ISA_Sheet  =
 
     module MultiTrait = 
          
-        let getKeyValuesAt workbookPart rowIndex sheet : KeyValuePair<string,string seq> = 
-            SheetTransformation.SSTSheets.getRowValuesSSTAt workbookPart rowIndex sheet
-            |> fun s -> 
-                KeyValuePair(Seq.item 0 s, Seq.skip 1 s)
 
-        let tryGetKeyValueAt workbookPart rowIndex sheet: KeyValuePair<string,string seq> Option = 
-            SheetTransformation.SSTSheets.tryGetRowValuesSSTAt workbookPart rowIndex sheet
-            |> Option.map (
-                fun s -> KeyValuePair(Seq.item 0 s, Seq.skip 1 s)
-            )
+        let tryParseKeyValues workbookPart row =
+            SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart row       
+            |> fun s -> 
+                match Seq.tryFind (fst >> (=) 1u) s with
+                | Some (_,k) -> 
+                    KeyValuePair(k,Seq.skip 1 s) |> Some                                     
+                | _ -> None
+
+        let getKeyValuesAt workbookPart rowIndex sheet : KeyValuePair<string,(uint*string) seq> = 
+            SheetData.getRowAt rowIndex sheet
+            |> tryParseKeyValues workbookPart
+            |> Option.get
+
+        let tryGetKeyValuesAt workbookPart rowIndex sheet: KeyValuePair<string,(uint*string) seq> Option = 
+            SheetData.getRowAt rowIndex sheet
+            |> tryParseKeyValues workbookPart
 
         let findIndexOfKeyValue workbookPart (kv:KeyValuePair<string,string>) sheet = 
             sheet
             |> SheetData.getRows
             |> Seq.find (fun r ->
-                let (k,vs) = SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r |> fun s -> Seq.head s, Seq.skip 1 s
-                k = kv.Key
-                &&
-                Seq.contains kv.Value vs
+                tryParseKeyValues workbookPart r 
+                |> Option.equals (fun kvs' ->
+                    kvs'.Key = kv.Key
+                    &&
+                    (kvs'.Value |> Seq.exists (snd >> (=) kv.Value))
+                )
             )
             |> Row.getIndex
 
@@ -203,10 +220,12 @@ module ISA_Sheet  =
             sheet
             |> SheetData.getRows
             |> Seq.tryFind (fun r ->
-                let (k,vs) = SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r |> fun s -> Seq.head s, Seq.skip 1 s
-                k = kv.Key
-                &&
-                Seq.contains kv.Value vs
+                tryParseKeyValues workbookPart r 
+                |> Option.equals (fun kvs' ->
+                    kvs'.Key = kv.Key
+                    &&
+                    (kvs'.Value |> Seq.exists (snd >> (=) kv.Value))
+                )
             )
             |> Option.map Row.getIndex
 
@@ -219,10 +238,12 @@ module ISA_Sheet  =
                 |> fun i -> i >= startI && i <= endI
             )
             |> Seq.tryFind (fun r ->
-                let (k,vs) = SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r |> fun s -> Seq.head s, Seq.skip 1 s
-                k = kv.Key
-                &&
-                Seq.contains kv.Value vs
+                tryParseKeyValues workbookPart r 
+                |> Option.equals (fun kvs' ->
+                    kvs'.Key = kv.Key
+                    &&
+                    (kvs'.Value |> Seq.exists (snd >> (=) kv.Value))
+                )
             )
             |> Option.map Row.getIndex
 
@@ -235,16 +256,19 @@ module ISA_Sheet  =
                 |> fun i -> i >= startI && i <= endI
             )
             |> Seq.tryFind (fun r ->
-                let (k,vs) = SheetTransformation.SSTSheets.getValuesOfRowSST workbookPart r |> fun s -> Seq.head s, Seq.skip 1 s
-                k = kv.Key
+                tryParseKey workbookPart r 
+                |> Option.equals ((=) kv.Key)
             )
-            |> Option.map (fun r -> 
-                let (k,vs) = SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart r |> fun s -> Seq.head s, Seq.skip 1 s
-                match Seq.choose (fun (i,v) -> if v = kv.Value then Some i else None) vs with
+            |> Option.pipe (fun r -> 
+                tryParseKeyValues workbookPart r
+            )
+            |> Option.pipe (fun kvs -> 
+                match Seq.choose (fun (i,v) -> if v = kv.Value then Some i else None) kvs.Value with
                 | s when Seq.isEmpty s -> None
                 | s -> Some s
             )
-            |> Option.flatten
+            
+            
            
 
         let keyValueExists workbookPart (kv:KeyValuePair<string,string>) sheet = 
@@ -255,9 +279,6 @@ module ISA_Sheet  =
 module ISA_Investigation  = 
 
     open DataModel.InvestigationFile
-
-    let createInvestigationFile = 
-        1
 
     let createEmpty path (investigation : InvestigationItem) = 
 
@@ -273,8 +294,9 @@ module ISA_Investigation  =
                 SheetIO.appendRow vs sheet
             )
             |> ignore
-            doc |> Spreadsheet.saveChanges
-            doc |> Spreadsheet.close
+            doc
+            |> Spreadsheet.saveChanges
+            |> Spreadsheet.close
         with 
         | err -> 
             doc |> Spreadsheet.close
@@ -291,12 +313,7 @@ module ISA_Investigation  =
 
         let res = ISA_Sheet.SingleTrait.keyValueExists workbookPart kv sheet
 
-        doc
-        |> Spreadsheet.saveChanges
-
         res
-
-
 
     let addStudy (study:StudyItem) (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
@@ -325,7 +342,7 @@ module ISA_Investigation  =
             printfn "study %s does not exist in the spreadsheet" study
             None
 
-    let tryGetItemScope workbookPart study studyScope (item:#ISAItem) sheet =
+    let private tryGetItemScope workbookPart study studyScope (item:#ISAItem) sheet =
             let itemHeader = studyScope.Name + " " + item.Header
             match ISA_Sheet.tryFindIndexOfKeyBetween studyScope.From studyScope.To workbookPart itemHeader sheet with
             | Some assayIndex ->
@@ -338,7 +355,7 @@ module ISA_Investigation  =
                 //None
 
 
-    let tryFindColumnInItemScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet =
+    let private tryFindColumnInItemScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet =
         let keyValuesOfInterest = 
             item.KeyValuesOfInterest()
             |> List.map (fun (key,value) ->
@@ -358,7 +375,7 @@ module ISA_Investigation  =
             else 
                 seq s |> Seq.head |> Some
 
-    let removeScopeIfEmpty workbookPart (scope:Scope) sheet =
+    let private removeScopeIfEmpty workbookPart (scope:Scope) sheet =
         let rowWithValueExists = 
             [scope.From .. scope.To]
             |> List.exists (fun i -> 
@@ -373,7 +390,7 @@ module ISA_Investigation  =
             |> List.fold (fun s i -> SheetTransformation.DirectSheets.removeRowAt i s) sheet
             
 
-    let updateItemValuesInStudy workbookPart scope columnIndex (item:#ISAItem) sheet = 
+    let private updateItemValuesInStudy workbookPart scope columnIndex (item:#ISAItem) sheet = 
         let keyValues = 
             item.KeyValues()
             |> List.map (fun (key,value) ->
@@ -405,7 +422,7 @@ module ISA_Investigation  =
         ) scope
         |> ignore
 
-    let insertItemValuesIntoStudy workbookPart scope (item:#ISAItem) sheet =         
+    let private insertItemValuesIntoStudy workbookPart scope (item:#ISAItem) sheet =         
         //MAP assayItems FIELDS
         item.KeyValues()
         |> List.map (fun (key,value) ->
@@ -432,11 +449,11 @@ module ISA_Investigation  =
                        
             let itemScope = 
                 studyScope
-                |> Option.map (fun studyScope -> tryGetItemScope workbookPart study studyScope item sheet) 
-                |> Option.flatten
+                |> Option.pipe (fun studyScope -> tryGetItemScope workbookPart study studyScope item sheet) 
+                
                 
             itemScope
-            |> Option.map (fun itemScope -> 
+            |> Option.pipe (fun itemScope -> 
                 tryFindColumnInItemScope workbookPart "Study" itemScope item sheet
                 |> Option.map (fun colI ->
                     [itemScope.From .. itemScope.To]
@@ -446,7 +463,7 @@ module ISA_Investigation  =
                     |> removeScopeIfEmpty workbookPart itemScope
                 )
             )
-            |> Option.flatten
+            
             |> Option.map (fun x -> 
                 spreadSheet.Save()
                 spreadSheet               
@@ -467,8 +484,7 @@ module ISA_Investigation  =
                    
             let itemScope = 
                 studyScope
-                |> Option.map (fun studyScope -> tryGetItemScope workbookPart study studyScope item sheet) 
-                |> Option.flatten
+                |> Option.pipe (fun studyScope -> tryGetItemScope workbookPart study studyScope item sheet) 
             
             itemScope
             |> Option.map (fun itemScope -> 
@@ -533,17 +549,16 @@ module ISA_Investigation  =
            
             let itemScope = 
                 studyScope
-                |> Option.map (fun studyScope -> tryGetItemScope workbookPart study studyScope item sheet) 
-                |> Option.flatten
+                |> Option.pipe (fun studyScope -> tryGetItemScope workbookPart study studyScope item sheet) 
+               
     
             itemScope
-            |> Option.map (fun itemScope -> 
+            |> Option.pipe (fun itemScope -> 
                 tryFindColumnInItemScope workbookPart "Study" itemScope item sheet
                 |> Option.map (fun colI ->
                     updateItemValuesInStudy workbookPart itemScope colI item sheet
                 )
             )
-            |> Option.flatten
             |> Option.map (fun x -> 
                 spreadSheet.Save()
                 spreadSheet               
