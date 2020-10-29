@@ -1,7 +1,7 @@
 (*** hide ***)
 // This block of code is omitted in the generated HTML documentation. Use 
 // it to define helpers that you do not want to show in the documentation.
-#I @"../../src/ArcCommander\bin\Release\netcoreapp3.1"
+#I @"../../bin\ArcCommander\netcoreapp3.1"
 #r "DocumentFormat.OpenXml.dll"
 #r"FSharpSpreadsheetML.dll"
 

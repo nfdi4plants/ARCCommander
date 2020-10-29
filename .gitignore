@@ -180,7 +180,10 @@ localpackages/
 paket-files
 *.orig
 .fake
-docsrc/tools/FSharp.Formatting.svclog
-output
-.fsdocs/
+
+# Formatting outputs
+.fsdocs
+output/
+codeCov.xml
+coverage.xml
 /temp
