@@ -119,3 +119,4 @@ NUGET
     System.ValueTuple (4.5)
     System.Windows.Extensions (4.7) - restriction: || (== netcoreapp3.1) (&& (== netstandard2.0) (>= netcoreapp3.0))
       System.Drawing.Common (>= 4.7) - restriction: || (== netcoreapp3.1) (&& (== netstandard2.0) (>= netcoreapp3.0))
+    YamlDotNet (8.1.2)

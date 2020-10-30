@@ -2,7 +2,11 @@
 open ArcCommander
 open System
 open Argu 
+
+open CLIArguments
 open ArgumentMatching
+open Assay
+
 
 [<EntryPoint>]
 let main argv =
@@ -10,17 +14,28 @@ let main argv =
         let parser = ArgumentParser.Create<ArcArgs>(programName = "ArcCommander.exe")
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
 
+        let editorPath = "notepad++"
+
         let workingDir = 
             match results.TryGetResult(WorkingDir) with
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
         printfn "WorkDir: %s" workingDir
+        ()
 
         match results with
-        | InitArc investigation -> Arc.init workingDir investigation
-        | AddAssay (studyID,assay) -> Arc.addAssay workingDir studyID assay
-        | AddStudy r -> ()
+        | AssayNoSubCommand -> ()
+        | Assay (fields,subCommand) ->            
+            match subCommand with
+            | Add fields a -> 
+                let a = 
+                    a 
+                    |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                Arc.addAssay workingDir a.StudyIdentifier (a |> ArgumentQuery.toISAAssay)
+                ()
+            | _ -> ()
         | _ -> ()
+
     with e ->
         printfn "%s" e.Message
     0
@@ -33,5 +48,4 @@ let main argv =
     //| AddAssay :: args -> 
     //    let parser = ArgumentParser.Create<AssayArgs>
     //    let results = parser.Parse args
-    
     
