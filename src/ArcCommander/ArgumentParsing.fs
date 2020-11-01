@@ -38,56 +38,61 @@ module ArgumentMatching =
     
 
     module Assay =
+
+        open ArgumentQuery.Assay
+
+        let transformAssayParams<'U,'T when 'U :> IArgParserTemplate> (unionFlags : (string*obj []) list) (parseResults:ParseResults<'U>) = 
+            parseResults.GetAllResults()
+            |> List.map unionToString
+            |> List.append unionFlags
+            |> alignRecordOnUnions<'T>           
+
         let (|Add|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
             match results.TryGetResult(Assay.Add) with
             | Some (r) -> 
-                r.GetAllResults()
-                |> List.map unionToString
-                |> List.append unionFlags
-                |> alignRecordOnUnions<ArgumentQuery.AssayFull>
+                transformAssayParams<AssayParams,AssayFull> unionFlags r
                 |> Some
             | _ -> None
         let (|Update|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
             match results.TryGetResult(Assay.Update) with
             | Some (r) -> 
-                r.GetAllResults()
-                |> List.map unionToString
-                |> List.append unionFlags
-                |> alignRecordOnUnions<ArgumentQuery.AssayFull>
+                transformAssayParams<AssayParams,AssayFull> unionFlags r
                 |> Some
             | _ -> None
         let (|Register|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
             match results.TryGetResult(Assay.Register) with
             | Some (r) -> 
-                r.GetAllResults()
-                |> List.map unionToString
-                |> List.append unionFlags
-                |> alignRecordOnUnions<ArgumentQuery.AssayFull>
+                transformAssayParams<AssayParams,AssayFull> unionFlags r
                 |> Some
             | _ -> None
         let (|Move|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
             match results.TryGetResult(Assay.Move) with
             | Some (r) -> 
-                r.GetAllResults()
-                |> List.map unionToString
-                |> List.append unionFlags
-                |> alignRecordOnUnions<ArgumentQuery.AssayMove>
+                transformAssayParams<TargetStudy,AssayMove> unionFlags r
                 |> Some
             | _ -> None
         let (|Create|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
             match results.TryGetResult(Assay.Create) with
             | Some (r) -> 
                 unionFlags
-                |> alignRecordOnUnions<ArgumentQuery.AssayBasic>
+                |> alignRecordOnUnions<AssayBasic>
                 |> Some
             | _ -> None
         let (|Remove|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
             match results.TryGetResult(Assay.Remove) with
             | Some (r) -> 
                 unionFlags
-                |> alignRecordOnUnions<ArgumentQuery.AssayBasic>
+                |> alignRecordOnUnions<AssayBasic>
                 |> Some
             | _ -> None
+        let (|Edit|_|) (unionFlags : (string*obj []) list) (results: ParseResults<Assay>) =
+            match results.TryGetResult(Assay.Remove) with
+            | Some (r) -> 
+                unionFlags
+                |> alignRecordOnUnions<AssayBasic>
+                |> Some
+            | _ -> None
+
 
     let (|AssayNoSubCommand|_|) (results: ParseResults<ArcArgs>) =
         match results.TryGetResult(ArcArgs.Assay) with
@@ -152,50 +157,4 @@ module ArgumentMatching =
     //        |> Some
     //    | _ -> None
 
-module Arc =
-
-    // Creates Arc specific folder structure 
-    let init workingDir (inv : InvestigationFile.InvestigationItem) =
-
-        let dir = System.IO.Directory.CreateDirectory workingDir
-        dir.CreateSubdirectory "assays"     |> ignore
-        dir.CreateSubdirectory "codecaps"   |> ignore
-        dir.CreateSubdirectory "externals"  |> ignore
-        dir.CreateSubdirectory "runs"       |> ignore
-        dir.CreateSubdirectory ".arc"       |> ignore
-
-        let investigationFilePath = dir.FullName + "/" + inv.Identifier + ".xlsx"
-
-        inv
-        |> ISA_XLSX.IO.ISA_Investigation.createEmpty investigationFilePath 
-
-    // Returns true if called anywhere in an arc 
-    let isArc () =
-        NotImplementedException() |> raise
-
-    let findInvestigationFile (dir) =
-        System.IO.DirectoryInfo(dir).GetFiles()
-        |> Seq.find (fun fi -> 
-            fi.Name.StartsWith "i_"
-            &&
-            fi.Name.EndsWith ".xlsx"
-        )
-        |> fun x -> x.FullName
-
-    let addAssay workingDir studyIdentifier (assay : InvestigationFile.Assay) =
-
-        let name = assay.FileName
-
-        let dir = System.IO.Directory.CreateDirectory (workingDir + @"\assays\" + name)
-
-        System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
-        System.IO.File.Create (dir.FullName + "\protocols") |> ignore
-        System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
-
-        let investigationFilePath = findInvestigationFile workingDir
-        
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-        ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
-        doc.Save()
-        doc.Close()
 

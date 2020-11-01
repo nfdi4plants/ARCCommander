@@ -14,7 +14,7 @@ let main argv =
         let parser = ArgumentParser.Create<ArcArgs>(programName = "ArcCommander.exe")
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
 
-        let editorPath = "notepad++"
+        let editorPath = "notepad"
 
         let workingDir = 
             match results.TryGetResult(WorkingDir) with
@@ -28,11 +28,34 @@ let main argv =
         | Assay (fields,subCommand) ->            
             match subCommand with
             | Add fields a -> 
-                let a = 
-                    a 
-                    |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                Arc.addAssay workingDir a.StudyIdentifier (a |> ArgumentQuery.toISAAssay)
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.add workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
                 ()
+            | Register fields a -> 
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.register workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
+                ()
+            | Update fields a -> 
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.update workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
+                ()
+            | Create fields a -> 
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.create workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
+                ()
+            | Remove fields a -> 
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.remove workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
+                ()
+            | Edit fields a -> 
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.edit workingDir editorPath a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
+                ()
+            | Move fields a -> 
+                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
+                ArcCommander.Assay.move workingDir a.StudyIdentifier a.TargetStudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
+                ()
+
             | _ -> ()
         | _ -> ()
 

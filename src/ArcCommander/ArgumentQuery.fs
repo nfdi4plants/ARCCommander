@@ -14,65 +14,67 @@ type NotRequiredAttribute() =
     inherit Attribute()
 
 module ArgumentQuery = 
+    
+    module Assay = 
 
-    type IAssay =
-        abstract ToAssay : unit -> InvestigationFile.Assay
+        type IAssay =
+            abstract ToAssay : unit -> InvestigationFile.Assay
 
-    [<CLIMutable>]
-    type AssayMove = 
-        { 
-            AssayIdentifier : string
-            StudyIdentifier : string
-            TargetStudyIdentifier : string 
-        }
-        interface IAssay with
-            member this.ToAssay() = InvestigationFile.Assay(fileName = this.AssayIdentifier)
+        [<CLIMutable>]
+        type AssayMove = 
+            { 
+                AssayIdentifier : string
+                StudyIdentifier : string
+                TargetStudyIdentifier : string 
+            }
+            interface IAssay with
+                member this.ToAssay() = InvestigationFile.Assay(fileName = this.AssayIdentifier)
 
 
-    [<CLIMutable>]
-    type AssayBasic = 
-        {
-            AssayIdentifier : string
-            StudyIdentifier : string
-        }
-        interface IAssay with
-            member this.ToAssay() = InvestigationFile.Assay(fileName = this.AssayIdentifier)
+        [<CLIMutable>]
+        type AssayBasic = 
+            {
+                AssayIdentifier : string
+                StudyIdentifier : string
+            }
+            interface IAssay with
+                member this.ToAssay() = InvestigationFile.Assay(fileName = this.AssayIdentifier)
 
-    [<CLIMutable>]
-    type AssayFull = 
-        {
-            AssayIdentifier                       : string
-            StudyIdentifier                       : string
-            [<NotRequired>]  
-            MeasurementType                       : string
-            [<NotRequired>]  
-            MeasurementTypeTermAccessionNumber    : string
-            [<NotRequired>]  
-            MeasurementTypeTermSourceREF          : string
-            [<NotRequired>]  
-            TechnologyType                        : string
-            [<NotRequired>]  
-            TechnologyTypeTermAccessionNumber     : string
-            [<NotRequired>]  
-            TechnologyTypeTermSourceREF           : string
-            [<NotRequired>]  
-            TechnologyPlatform                    : string
-        }
-        interface IAssay with
-            member this.ToAssay() = 
-                InvestigationFile.Assay(
-                    this.MeasurementType,
-                    this.MeasurementTypeTermAccessionNumber,
-                    this.MeasurementTypeTermSourceREF,
-                    this.TechnologyType,
-                    this.TechnologyTypeTermAccessionNumber,
-                    this.TechnologyTypeTermSourceREF,
-                    this.TechnologyTypeTermSourceREF,
-                    this.AssayIdentifier                      
-            )
+        [<CLIMutable>]
+        type AssayFull = 
+            {
+                AssayIdentifier                       : string
+                StudyIdentifier                       : string
+                [<NotRequired>]  
+                MeasurementType                       : string
+                [<NotRequired>]  
+                MeasurementTypeTermAccessionNumber    : string
+                [<NotRequired>]  
+                MeasurementTypeTermSourceREF          : string
+                [<NotRequired>]  
+                TechnologyType                        : string
+                [<NotRequired>]  
+                TechnologyTypeTermAccessionNumber     : string
+                [<NotRequired>]  
+                TechnologyTypeTermSourceREF           : string
+                [<NotRequired>]  
+                TechnologyPlatform                    : string
+            }
+            interface IAssay with
+                member this.ToAssay() = 
+                    InvestigationFile.Assay(
+                        this.MeasurementType,
+                        this.MeasurementTypeTermAccessionNumber,
+                        this.MeasurementTypeTermSourceREF,
+                        this.TechnologyType,
+                        this.TechnologyTypeTermAccessionNumber,
+                        this.TechnologyTypeTermSourceREF,
+                        this.TechnologyTypeTermSourceREF,
+                        this.AssayIdentifier                      
+                )
 
-    let toISAAssay (assay : #IAssay) =
-        assay.ToAssay()
+        let toISAAssay (assay : #IAssay) =
+            assay.ToAssay()
 
     /// Returns given attribute from property info as optional 
     let private tryGetCustomAttribute<'a> (findAncestor:bool) (propInfo :PropertyInfo) =   
@@ -140,10 +142,17 @@ module ArgumentQuery =
         runProcess editorPath filePath
         read filePath
         |> deserializer.Deserialize<'T>
-        finally delete filePath
+
+        with
+        | err -> 
+            failwithf "could not read query: %s" err.Message
     
     let askForFilloutIfNeeded (editorPath) (arcPath) (item:'T) =
+        printfn "initial input: %O" item
         if containsAllRequiredValues item then
+            printfn "is complete"
             item
         else 
-            askForFillout editorPath arcPath item
+            let inp = askForFillout editorPath arcPath item
+            printfn "after querying input: %O" item
+            inp

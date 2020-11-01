@@ -30,27 +30,25 @@ module CLIArguments =
     /// ------------ Investigation Arguments ------------ ///
 
     type InvestigationParams = 
-        | [<Unique>]Identifier of string
-        | [<Unique>]Title of string
-        | [<Unique>]Description of string
-    
+        | [<Unique>] Identifier of string
+        | [<Unique>] Title of string
+        | [<Unique>] Description of string
+        | [<Unique>] SubmissionDate of string
+        | [<Unique>] PublicReleaseDate of string
+
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
                 | Identifier _->    "Identifier of the investigation, will be used as the file name of the investigation file"
                 | Title _->         "Title of the investigation"
                 | Description _->   "Description of the investigation"
-    
-        member this.mapInvestigation(inv:InvestigationFile.InvestigationItem) =
-            match this with
-            | Identifier x -> inv.Identifier <- x
-            | Title x -> inv.Title <- x
-            | Description x -> inv.Description <- x
+                | SubmissionDate _->   "Submission Date of the investigation"
+                | PublicReleaseDate _->   "Public Release Date of the investigation"
     
     and Investigation = 
         
         | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<InvestigationParams>
-        | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<InvestigationParams>
+        | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<InvestigationParams>
         | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Remove
         | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Edit
 
@@ -58,7 +56,7 @@ module CLIArguments =
             member this.Usage =
                 match this with
                 | Update            _ -> "The investigation gets updated with the given parameters"
-                | Add               _ -> "Create a new investigation file with the given parameters"
+                | Init               _ -> "Create a new investigation file with the given parameters"
                 | Remove            _ -> "Removes the investigation from the arc"
                 | Edit              _ -> "Open an editor window to directly edit the isa investigation file"
 
@@ -129,10 +127,10 @@ module CLIArguments =
     and ArcArgs =
         | [<AltCommandLine("-p")>][<Unique>] WorkingDir of string
         | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init
-        | [<CliPrefix(CliPrefix.None)>] Investigation of ParseResults<Investigation>
+        | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation of ParseResults<Investigation>
         //| [<CliPrefix(CliPrefix.None)>] AddAssay of ParseResults<AssayParams>
         //| [<CliPrefix(CliPrefix.None)>] AddWorkflow of ParseResults<WorkflowArgs>
-        | [<CliPrefix(CliPrefix.None)>] Assay of ParseResults<Assay>
+        | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of ParseResults<Assay>
 
         interface IArgParserTemplate with
             member this.Usage =
