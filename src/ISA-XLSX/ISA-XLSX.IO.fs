@@ -38,6 +38,13 @@ module Option =
         Option.map f v
         |> (=) (Some true)
 
+/// KeyValuePair helper functions
+module KeyValuePair =
+
+    let mapValue (f : 'T -> 'U) (kv : KeyValuePair<'Key,'T>) =
+        (kv.Key, f kv.Value)
+        |> KeyValuePair
+
 /// Functions for working with scopes 
 module Scope = 
 
@@ -102,7 +109,7 @@ module Scope =
         {scope with To = scope.To + 1u}
 
 
-module internal ISA_Investigation_Helpers  = 
+module ISA_Investigation_Helpers  = 
     
     /// If existing, returns the key of the row
     let tryParseKey workbookPart row =
@@ -239,6 +246,17 @@ module internal ISA_Investigation_Helpers  =
             SheetData.getRowAt rowIndex sheet
             |> tryParseKeyValues workbookPart
 
+        
+        /// If the row at the given rowindex contains a key and a value at the given column index, returns them
+        let tryGetKeyValueAtCol workbookPart rowIndex colIndex sheet : KeyValuePair<string,string> Option = 
+            SheetData.getRowAt rowIndex sheet
+            |> tryParseKeyValues workbookPart
+            |> Option.pipe (fun kv -> 
+                match kv.Value |> Seq.tryFind (fst >> (=) colIndex) with
+                | Some (colI,v) -> Some (KeyValuePair (kv.Key,v))
+                | None -> None
+            )
+
         /// If a row with the given key and value exists, returns its rowkey
         let findIndexOfKeyValue workbookPart (kv:KeyValuePair<string,string>) sheet = 
             sheet
@@ -344,7 +362,7 @@ module ISA_Investigation  =
             printfn "Could not create investigation file %s: %s" path err.Message
 
     /// Study with only an identifier
-    let internal emptyStudy id = StudyItem(Identifier = id)
+    let emptyStudy id = StudyItem(Identifier = id)
 
     /// Returns true, if the study exists in the investigation file
     let studyExists studyIdentifier (spreadSheet:SpreadsheetDocument) =
@@ -422,7 +440,7 @@ module ISA_Investigation  =
                 seq s |> Seq.head |> Some
     
     /// Removes a section descirbed by the given scope, if it is empty
-    let private removeScopeIfEmpty workbookPart (scope:Scope) sheet =
+    let removeScopeIfEmpty workbookPart (scope:Scope) sheet =
         let rowWithValueExists = 
             [scope.From .. scope.To]
             |> List.exists (fun i -> 
@@ -486,6 +504,19 @@ module ISA_Investigation  =
                 Scope.extendScope scope
         ) scope
         |> ignore
+
+    let private getItemValuesFromStudy workbookPart (scope : Scope) columnIndex (item:#ISAItem) sheet = 
+        [scope.From .. scope.To]
+        |> List.iter (fun i ->
+            match MultiTrait.tryGetKeyValueAtCol workbookPart i columnIndex sheet with
+            | Some kv when kv.Key.Contains("Study" + " " + item.KeyPrefix) ->
+                setKeyValue (KeyValuePair(kv.Key.Replace("Study" + " " + item.KeyPrefix + " ",""),kv.Value)) item
+                |> ignore
+            | _ -> 
+                ()
+            )
+        item
+
 
     /// If the item exists in the study, removes it from the investigation file
     let tryRemoveItemFromStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
@@ -576,6 +607,31 @@ module ISA_Investigation  =
                 spreadSheet               
             )
 
+        with 
+        | err -> 
+            printfn "Could not add %s to study %s: %s" item.KeyPrefix study err.Message
+            None
+
+    /// If the item exists in the study, Returns its values
+    let tryGetItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
+        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        try
+            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+
+            let studyScope = tryGetStudyScope workbookPart study sheet
+           
+            let itemScope = 
+                studyScope
+                |> Option.pipe (fun studyScope -> tryGetItemScope workbookPart studyScope item sheet) 
+               
+    
+            itemScope
+            |> Option.pipe (fun itemScope -> 
+                tryFindColumnInItemScope workbookPart "Study" itemScope item sheet
+                |> Option.map (fun colI ->
+                    getItemValuesFromStudy workbookPart itemScope colI item sheet
+                )
+            )
         with 
         | err -> 
             printfn "Could not add %s to study %s: %s" item.KeyPrefix study err.Message

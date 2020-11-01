@@ -20,7 +20,7 @@ module DataModel =
             abstract member KeyPrefix : string
 
         type TermSource (?name,?file,?version,?description) =
-            [<Label("Name")>][<IsIdentifier>] 
+            [<Label("Name")>][<IsIdentifier>]
             member val Name = defaultArg name "" with get,set
             [<Label("File")>]
             member val File = defaultArg file "" with get,set
@@ -37,7 +37,7 @@ module DataModel =
         type Publication (?pubMedID,?doi,?authorList,?title,?status,?statusTermAccessionNumber,?statusTermSourceREF) =
             [<Label("PubMed ID")>]
             member val PubMedID = defaultArg pubMedID "" with get,set
-            [<Label("DOI")>][<IsIdentifier>] 
+            [<Label("DOI")>][<IsIdentifier>]
             member val DOI = defaultArg doi "" with get,set
             [<Label("Author List")>]
             member val AuthorList = defaultArg authorList "" with get,set
@@ -56,9 +56,9 @@ module DataModel =
 
 
         type Person (?lastName,?firstName,?midInitials,?email,?phone,?fax,?address,?affiliation,?roles,?rolesTermAccessionNumber,?rolesTermSourceREF) =
-            [<Label("Last Name")>][<IsIdentifier>] 
+            [<Label("Last Name")>][<IsIdentifier>]
             member val LastName = defaultArg lastName "" with get,set
-            [<Label("First Name")>][<IsIdentifier>] 
+            [<Label("First Name")>][<IsIdentifier>]
             member val FirstName = defaultArg firstName "" with get,set
             [<Label("Mid Initials")>]
             member val MidInitials = defaultArg midInitials "" with get,set
@@ -85,7 +85,7 @@ module DataModel =
 
 
         type Design (?designType,?typeTermAccessionNumber,?typeTermSourceREF) =
-            [<Label("Design Type")>][<IsIdentifier>] 
+            [<Label("Type")>][<IsIdentifier>]
             member val DesignType = defaultArg designType "" with get,set
             [<Label("Type Term Accession Number")>]
             member val TypeTermAccessionNumber = defaultArg typeTermAccessionNumber "" with get,set
@@ -98,9 +98,9 @@ module DataModel =
 
 
         type Factor (?name,?factorType,?typeTermAccessionNumber,?typeTermSourceREF) =
-            [<Label("Name")>][<IsIdentifier>] 
+            [<Label("Name")>][<IsIdentifier>]
             member val Name = defaultArg name "" with get,set
-            [<Label("Factor Type")>]
+            [<Label("Type")>]
             member val FactorType = defaultArg factorType "" with get,set
             [<Label("Type Term Accession Number")>]
             member val TypeTermAccessionNumber = defaultArg typeTermAccessionNumber "" with get,set
@@ -127,7 +127,7 @@ module DataModel =
             member val TechnologyTypeTermSourceREF = defaultArg technologyTypeTermSourceREF "" with get,set
             [<Label("Technology Platform")>]
             member val TechnologyPlatform = defaultArg technologyPlatform "" with get,set
-            [<Label("File Name")>][<IsIdentifier>] 
+            [<Label("File Name")>][<IsIdentifier>]
             member val FileName = defaultArg fileName "" with get,set
             interface ISAItem with
                 member this.Header = "ASSAYS"
@@ -136,9 +136,9 @@ module DataModel =
 
 
         type Protocol (?name,?protocolType,?typeTermAccessionNumber,?typeTermSourceREF,?description,?uri,?version,?parametersName,?parametersTermAccessionNumber,?parametersTermSourceREF,?componentsName,?componentsType,?componentsTypeTermAccessionNumber,?componentsTypeTermSourceREF) =
-            [<Label("Name")>][<IsIdentifier>] 
+            [<Label("Name")>][<IsIdentifier>]
             member val Name = defaultArg name "" with get,set
-            [<Label("Protocol Type")>]
+            [<Label("Type")>]
             member val ProtocolType = defaultArg protocolType "" with get,set
             [<Label("Type Term Accession Number")>]
             member val TypeTermAccessionNumber = defaultArg typeTermAccessionNumber "" with get,set
@@ -171,7 +171,7 @@ module DataModel =
 
 
         type InvestigationItem (?identifier,?title,?description,?submissionDate,?publicReleaseDate) =
-            [<Label("Identifier")>][<IsIdentifier>] 
+            [<Label("Identifier")>][<IsIdentifier>]
             member val Identifier = defaultArg identifier "" with get,set
             [<Label("Title")>]
             member val Title = defaultArg title "" with get,set
@@ -183,12 +183,12 @@ module DataModel =
             member val PublicReleaseDate = defaultArg publicReleaseDate "" with get,set
             interface ISAItem with
                 member this.Header = "INVESTIGATION"
-                member this.KeyPrefix = "InvestigationItem"
+                member this.KeyPrefix = "Investigation"
 
 
 
         type StudyItem (?identifier,?title,?description,?submissionDate,?publicReleaseDate,?fileName) =
-            [<Label("Identifier")>][<IsIdentifier>] 
+            [<Label("Identifier")>][<IsIdentifier>]
             member val Identifier = defaultArg identifier "" with get,set
             [<Label("Title")>]
             member val Title = defaultArg title "" with get,set
@@ -202,7 +202,7 @@ module DataModel =
             member val FileName = defaultArg fileName "" with get,set
             interface ISAItem with
                 member this.Header = "STUDY"
-                member this.KeyPrefix = "StudyItem"
+                member this.KeyPrefix = "Study"
     
         let private tryGetCustomAttribute<'a> (findAncestor:bool) (propInfo :PropertyInfo) =   
             let attributeType = typeof<'a>
