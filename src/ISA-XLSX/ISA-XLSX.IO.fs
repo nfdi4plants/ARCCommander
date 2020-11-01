@@ -329,9 +329,9 @@ module ISA_Investigation  =
             let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
         
             SheetIO.appendRow ["INVESTIGATION"] sheet |> ignore
-            (investigation :> ISAItem).KeyValues()
-            |> List.map (fun (k,v) -> 
-                let vs = [(investigation :> ISAItem).KeyPrefix + " " + k; v]
+            getKeyValues investigation
+            |> Array.map (fun (k,v) -> 
+                let vs = [(investigation :> ISAItem).KeyPrefix + " " + k; string v]
                 SheetIO.appendRow vs sheet
             )
             |> ignore
@@ -366,9 +366,9 @@ module ISA_Investigation  =
     
         SheetIO.appendRow ["STUDY"] sheet |> ignore
         
-        (study :> ISAItem).KeyValues()
-        |> List.map (fun (k,v) -> 
-            let vs = [(study :> ISAItem).KeyPrefix + " " + k; v]
+        getKeyValues study
+        |> Array.map (fun (k,v) -> 
+            let vs = [(study :> ISAItem).KeyPrefix + " " + k; string v]
             SheetIO.appendRow vs sheet
         )
         |> ignore
@@ -403,18 +403,18 @@ module ISA_Investigation  =
     /// If the item exists in the studyscope, returns its column
     let private tryFindColumnInItemScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet =
         let keyValuesOfInterest = 
-            item.KeyValuesOfInterest()
-            |> List.map (fun (key,value) ->
-                prefix + " " + item.KeyPrefix + " " + key, value
+            getIdentificationKeyValues item
+            |> Array.map (fun (key,value) ->
+                prefix + " " + item.KeyPrefix + " " + key, string value
             )
         keyValuesOfInterest
-        |> List.map (fun (k,v) -> 
+        |> Array.map (fun (k,v) -> 
             let kv = KeyValuePair(k,v)
             match MultiTrait.tryFindColumnIndicesOfKeyValueBetween scope.From scope.To workbookPart kv sheet with
             | Some s -> set s
             | None -> Set.empty           
         )
-        |> List.reduce Set.intersect
+        |> Array.reduce Set.intersect
         |> fun s ->
             if Set.isEmpty s then
                 None
@@ -439,11 +439,11 @@ module ISA_Investigation  =
     /// Replaces the values of the item at the scope with the given values
     let private updateItemValuesInStudy workbookPart scope columnIndex (item:#ISAItem) sheet = 
         let keyValues = 
-            item.KeyValues()
-            |> List.map (fun (key,value) ->
-                "Study" + " " + item.KeyPrefix + " " + key, value
+            getKeyValues item
+            |> Array.map (fun (key,value) ->
+                "Study" + " " + item.KeyPrefix + " " + key, string value
             )
-            |> List.filter (snd >> (<>) "")
+            |> Array.filter (snd >> (<>) "")
         let itemCount = 
             [scope.From .. scope.To]
             |> Seq.map (fun i -> 
@@ -452,7 +452,7 @@ module ISA_Investigation  =
             |> Seq.max 
 
         keyValues
-        |> List.fold (fun scope (key,value) -> 
+        |> Array.fold (fun scope (key,value) -> 
             match tryFindIndexOfKeyBetween scope.From scope.To workbookPart key sheet with
             | Some i ->
                 SheetIO.setValue columnIndex i value  sheet |> ignore
@@ -471,11 +471,11 @@ module ISA_Investigation  =
     /// Adds the given values to the scope
     let private insertItemValuesIntoStudy workbookPart scope (item:#ISAItem) sheet =         
         //MAP assayItems FIELDS
-        item.KeyValues()
-        |> List.map (fun (key,value) ->
-            "Study" + " " + item.KeyPrefix + " " + key, value
+        getKeyValues item
+        |> Array.map (fun (key,value) ->
+            "Study" + " " + item.KeyPrefix + " " + key, string value
         )
-        |> List.fold (fun scope (key,value) -> 
+        |> Array.fold (fun scope (key,value) -> 
             match tryFindIndexOfKeyBetween scope.From scope.To workbookPart key sheet with
             | Some i ->
                 //TODO/TO-DO: does the item only shove the other items to the right? If so another function should be used
