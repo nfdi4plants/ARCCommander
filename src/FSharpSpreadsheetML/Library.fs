@@ -8,156 +8,14 @@ open DocumentFormat.OpenXml.Spreadsheet
 
 module internal H = let notImplemented() = failwith "function not yet implemented"
 open H
+open Cell
 
 
-/// Functions for manipulating CellValues
-module CellValue = 
 
-    /// Empty cellvalue
-    let empty = CellValue()
 
-    /// Create a new cellValue containing the given string
-    let create (value:string) = CellValue(value)
 
-    /// Returns the value stored inside the cellValue
-    let getValue (cellValue:CellValue) = cellValue.Text
 
-    /// Sets the value inside the cellValue
-    let setValue (value:string) (cellValue:CellValue) =  cellValue.Text <- value
 
-/// Helper functions for working with "A1" style excel cell references
-module Reference =
-
-    /// Transforms excel column string indices (e.g. A, B, Z, AA, CD) to index number (starting with A = 1)
-    let letterToIndex (l:string) = 
-        l.ToCharArray()
-        |> Array.rev
-        |> Array.mapi (fun i c -> 
-            let factor = 26. ** (float i) |> uint
-            System.Char.ToUpper c
-            |> uint 
-            |> fun u -> u - 64u
-            |> (*) factor
-            )
-        |> Array.sum
-
-    /// Transforms number index to excel column string indices (e.g. A, B, Z, AA, CD) (starting with A = 1)
-    let indexToLetter i =
-        let sb = System.Text.StringBuilder()
-        let rec loop residual = 
-            if residual = 0u then
-                ()
-            else
-                let modulo = (residual - 1u) % 26u
-                sb.Insert(0, char (modulo + 65u)) |> ignore
-                loop ((residual - modulo) / 26u)
-        loop i
-        sb.ToString()
-
-    /// Maps 1 based column and row indices to "A1" style reference 
-    let ofIndices column (row:uint32) = 
-        sprintf "%s%i" (indexToLetter column) row
-
-    /// Maps a "A1" style excel cell reference to a column*row index tuple (1 Based indices)
-    let toIndices (reference : string) = 
-        let inp = reference.ToUpper()
-        let pattern = "([A-Z]*)(\d*)"
-        let regex = System.Text.RegularExpressions.Regex.Match(inp,pattern)
-        
-        if regex.Success then
-            regex.Groups
-            |> fun a -> letterToIndex a.[1].Value, uint a.[2].Value
-        else 
-            failwithf "Reference %s does not match Excel A1-style" reference
-
-    /// Changes the column portion of a "A1"-style reference by the given amount (positite amount = increase and vice versa)
-    let moveHorizontal amount reference = 
-        reference
-        |> toIndices
-        |> fun (c,r) -> (int64 c) + (int64 amount) |> uint32, r
-        ||> ofIndices
-
-    /// Changes the row portion of a "A1"-style reference by the given amount (positite amount = increase and vice versa)
-    let moveVertical amount reference = 
-        reference
-        |> toIndices
-        |> fun (c,r) -> c, (int64 r) + (int64 amount) |> uint32
-        ||> ofIndices
-
-/// Functions for creating and manipulating cells
-module Cell =
-
-    /// Empty cell
-    let empty = Cell()
-
-    /// Returns the proper CellValues case for the given value
-    let inferCellValue (value : 'T) = 
-        let value = box value
-        match value with
-        | :? char as c -> CellValues.String,c.ToString()
-        | :? string as s -> CellValues.String,s.ToString()
-        | :? bool as c -> CellValues.Boolean,c.ToString()
-        | :? byte as i -> CellValues.Number,i.ToString()
-        | :? sbyte as i -> CellValues.Number,i.ToString()
-        | :? int as i -> CellValues.Number,i.ToString()
-        | :? int16 as i -> CellValues.Number,i.ToString()
-        | :? int64 as i -> CellValues.Number,i.ToString()
-        | :? uint as i -> CellValues.Number,i.ToString()
-        | :? uint16 as i -> CellValues.Number,i.ToString()
-        | :? uint64 as i -> CellValues.Number,i.ToString()
-        | :? single as i -> CellValues.Number,i.ToString()
-        | :? float as i -> CellValues.Number,i.ToString()
-        | :? decimal as i -> CellValues.Number,i.ToString()
-        | :? System.DateTime as d -> CellValues.Date,d.Date.ToString()
-        | _ ->  CellValues.String,value.ToString()
-
-    /// Creates a cell, from a CellValues type case, a "A1" style reference and a cellValue containing the value string
-    let create (dataType : CellValues) (reference:string) (value:CellValue) = 
-        Cell(CellReference = StringValue.FromString reference, DataType = EnumValue(dataType), CellValue = value)
-
-    /// Creates a cell from the 1 based column and row indices and a value
-    let createGeneric columnIndex rowIndex (value:'T) =
-        let valType,value = inferCellValue value
-        let reference = Reference.ofIndices columnIndex (rowIndex)
-        create valType reference (CellValue.create value)
-
-    /// Gets "A1"-Style cell reference
-    let getReference (cell:Cell) = cell.CellReference.Value
-
-    /// Sets "A1"-Style cell reference
-    let setReference (reference) (cell:Cell) = 
-        cell.CellReference <- StringValue.FromString reference
-        cell
-
-    /// Gets Some cellValue if cellValue is existent. Else returns None
-    let tryGetValue (cell:Cell) = 
-        if cell.CellValue <> null then
-            Some cell.CellValue
-        else
-            None
-
-    /// Gets cellValue
-    let getValue (cell:Cell) = cell.CellValue
-
-    /// Sets cellValue
-    let setValue (value:CellValue) (cell:Cell) = 
-        cell.CellValue <- value
-        cell
-    
-    /// Gets Some type if existent. Else returns None
-    let tryGetType (cell:Cell) = 
-        if cell.DataType <> null then
-            Some cell.DataType.Value
-        else
-            None
-    
-    /// Gets Cell type
-    let getType (cell:Cell) = cell.DataType.Value
-
-    /// sets Cell type
-    let setType (dataType:CellValues) (cell:Cell) = 
-        cell.DataType <- EnumValue(dataType)
-        cell
 
 /// Helper functions for working with "1:1" style row spans
 ///
@@ -217,12 +75,12 @@ module Spans =
 
     /// Returns true if the column index of the reference is exceeds the right boundary of the spans
     let referenceExceedsSpansToRight reference spans = 
-        (reference |> Reference.toIndices |> fst) 
+        (reference |> CellReference.toIndices |> fst) 
             > (spans |> rightBoundary)
         
     /// Returns true if the column index of the reference is exceeds the left boundary of the spans
     let referenceExceedsSpansToLeft reference spans = 
-        (reference |> Reference.toIndices |> fst) 
+        (reference |> CellReference.toIndices |> fst) 
             < (spans |> leftBoundary)  
      
     /// Returns true if the column index of the reference does not lie in the boundary of the spans
@@ -273,25 +131,25 @@ module Row =
     let containsCellAt (columnIndex) (row:Row) =
         row
         |> getCells
-        |> Seq.exists (Cell.getReference >> Reference.toIndices >> fst >> (=) columnIndex)
+        |> Seq.exists (Cell.getReference >> CellReference.toIndices >> fst >> (=) columnIndex)
 
     /// Returns cell with the given columnIndex
     let getCellAt (columnIndex) (row:Row) =
         row
         |> getCells
-        |> Seq.find (Cell.getReference >> Reference.toIndices >> fst >> (=) columnIndex)
+        |> Seq.find (Cell.getReference >> CellReference.toIndices >> fst >> (=) columnIndex)
 
     /// Returns cell with the given columnIndex if it exists, else returns none
     let tryGetCellAt (columnIndex) (row:Row) =
         row
         |> getCells
-        |> Seq.tryFind (Cell.getReference >> Reference.toIndices >> fst >> (=) columnIndex)
+        |> Seq.tryFind (Cell.getReference >> CellReference.toIndices >> fst >> (=) columnIndex)
 
     /// Returns cell matching or exceeding the given column index if it exists, else returns none      
     let tryGetCellAfter (columnIndex) (row:Row) =
         row
         |> getCells
-        |> Seq.tryFind (Cell.getReference >> Reference.toIndices >> fst >> (<=) columnIndex)
+        |> Seq.tryFind (Cell.getReference >> CellReference.toIndices >> fst >> (<=) columnIndex)
 
     /// Returns the spans of the row
     let getSpan (row:Row) = row.Spans
@@ -399,100 +257,12 @@ module SheetData =
 
 
 
-/// Part of the Workbook, stores name and other additional info of the sheet (Unmanaged: changing a sheet does not alter the associated worksheet which stores the data)
-module Sheet = 
-    
-    /// Empty Sheet
-    let empty = Sheet()
-
-    /// Sets the name of the sheet (This is the name displayed in excel)
-    let setName (name:string) (sheet : Sheet) = 
-        sheet.Name <- StringValue.FromString name
-        sheet
-
-    /// Gets the name of the sheet (This is the name displayed in excel)
-    let getName (sheet : Sheet) = sheet.Name.Value
-
-    /// Sets the ID of the sheet (This ID associates the sheet with the worksheet)
-    let setID id (sheet : Sheet) = 
-        sheet.Id <- StringValue.FromString id
-        sheet
-
-    /// Gets the ID of the sheet (This ID associates the sheet with the worksheet)
-    let getID (sheet : Sheet) = sheet.Id.Value
-
-    /// Sets the SheetID of the sheet (This ID determines the position of the sheet tab in excel)
-    let setSheetID id (sheet : Sheet) = 
-        sheet.SheetId <- UInt32Value.FromUInt32 id
-        sheet
-
-    /// Gets the SheetID of the sheet (This ID determines the position of the sheet tab in excel)
-    let getSheetID (sheet : Sheet) = sheet.SheetId.Value
-
-    /// Create a sheet from the id, the name and the sheetID
-    let create id name sheetID = 
-        Sheet()
-        |> setID id
-        |> setName name
-        |> setSheetID sheetID
-
-/// Functions for working with Sheets (Unmanaged: changing a sheet does not alter the associated worksheet which stores the data)
-module Sheets = 
-
-    /// Empty sheets
-    let empty = new Sheets()
-
-    /// Returns the first child sheet of the sheets
-    let getFirstSheet (sheets:Sheets) = sheets.GetFirstChild<Sheet>()
-
-    /// Returns the sheets of the sheets
-    let getSheets (sheets:Sheets) = sheets.Elements<Sheet>()
-
-    /// Adds a list of sheets to the sheets
-    let addSheets (newSheets:Sheet seq) (sheets:Sheets) = 
-        newSheets |> Seq.iter (fun sheet -> sheets.Append sheet) 
-        sheets
-
-    /// Adds a new sheet to the sheets
-    let addSheet (newSheet:Sheet) (sheets:Sheets) = 
-        sheets.AppendChild(newSheet) |> ignore
-        sheets
-
-    /// Remove the given sheet from the sheets
-    let removeSheet (sheetToDelete:Sheet) (sheets:Sheets)  = 
-        sheets.RemoveChild(sheetToDelete) |> ignore
-        sheets
-
-    /// Returns the sheet for which the predicate returns true (Id Name SheetID -> bool)
-    let tryFindSheet (predicate:string -> string -> uint32 -> bool) (sheets:Sheets) =
-        getSheets sheets
-        |> Seq.tryFind (fun sheet -> predicate sheet.Id.Value sheet.Name.Value sheet.SheetId.Value)
-
-    /// Number of sheets in the sheets
-    let countSheets (sheets:Sheets) = getSheets sheets |> Seq.length
-
-    //let mapSheets f (sheets:Sheets) = getSheets sheets |> Seq.toArray |> Array.map f
-    //let iterSheets f (sheets:Sheets) = getSheets sheets |> Seq.toArray |> Array.iter f
-    //let filterSheets f (sheets:Sheets) = 
-    //    getSheets sheets |> Seq.toArray |> Array.filter (f >> not)
-    //    |> Array.fold (fun st sheet -> removeSheet sheet st) sheets
 
 
-/// Functions for working with sharedstringitems
-module SharedStringItem = 
 
-    /// Gets the string contained in the sharedstringitem
-    let getText (ssi:SharedStringItem) = ssi.InnerText
 
-    /// Sets the string contained in the sharedstringitem
-    let setText text (ssi:SharedStringItem) = 
-        ssi.Text <- Text(text)
-        ssi
 
-    /// Creates a sharedstringitem containing the given string
-    let create text = 
-        SharedStringItem()
-        |> setText text
+
 
 
 
@@ -513,7 +283,7 @@ module SheetTransformation =
             Row.setIndex (Row.getIndex row |> int64 |> (+) (int64 amount) |> uint32) row
             |> Row.getCells
             |> Seq.iter (fun cell -> 
-                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
+                Cell.setReference (Cell.getReference cell |> CellReference.moveVertical amount) cell
                 |> ignore            
             )
             sheet
@@ -525,7 +295,7 @@ module SheetTransformation =
     let updateRowSpans (row:Row) : Row=
         let columnIndices =
             Row.getCells row
-            |> Seq.map (Cell.getReference >> Reference.toIndices >> fst)
+            |> Seq.map (Cell.getReference >> CellReference.toIndices >> fst)
         Row.setSpan (Spans.fromBoundaries (Seq.min columnIndices) (Seq.max columnIndices)) row
 
     ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
@@ -536,7 +306,7 @@ module SheetTransformation =
         match Row.tryGetCellAt columnIndex row with
         | Some cell ->
             shoveValuesInRowToRight (columnIndex+1u) row |> ignore
-            let newReference = (Cell.getReference cell |> Reference.moveHorizontal 1)            
+            let newReference = (Cell.getReference cell |> CellReference.moveHorizontal 1)            
             Cell.setReference newReference cell |> ignore
             if Spans.referenceExceedsSpansToRight newReference spans then
                 Row.extendSpanRight 1u row
@@ -547,9 +317,9 @@ module SheetTransformation =
     let moveValuesInRowToRight columnIndex (row:Row) : Row=
         row
         |> Row.mapCells (fun c -> 
-            let cellCol,cellRow = Cell.getReference c |> Reference.toIndices
+            let cellCol,cellRow = Cell.getReference c |> CellReference.toIndices
             if cellCol >= columnIndex then
-                Cell.setReference (Reference.ofIndices (cellCol+1u) cellRow) c
+                Cell.setReference (CellReference.ofIndices (cellCol+1u) cellRow) c
             else c
         )
         |> Row.extendSpanRight 1u
@@ -572,7 +342,7 @@ module SheetTransformation =
             Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
             |> Row.getCells
             |> Seq.iter (fun cell -> 
-                Cell.setReference (Cell.getReference cell |> Reference.moveVertical amount) cell
+                Cell.setReference (Cell.getReference cell |> CellReference.moveVertical amount) cell
                 |> ignore            
             )
             sheet
@@ -596,30 +366,30 @@ module SheetTransformation =
         workbookPart
         |> WorkbookPart.getWorkSheetParts
         |> Seq.head
-        |> WorksheetPart.getWorksheet
+        |> Worksheet.get
         |> Worksheet.getSheetData
 
     /// Appends a new sheet to the excel document
     let addSheetToWorkbookPart (name : string) (data : SheetData) (workbookPart : WorkbookPart) =
 
-        let workbook = WorkbookPart.getOrInitWorkbook  workbookPart
+        let workbook = Workbook.getOrInit  workbookPart
 
         let worksheetPart = WorkbookPart.initWorksheetPart workbookPart
 
-        WorksheetPart.getWorksheet worksheetPart
+        Worksheet.get worksheetPart
         |> Worksheet.addSheetData data
         |> ignore
         
-        let sheets = Workbook.getOrInitSheets workbook
+        let sheets = Sheet.Sheets.getOrInit workbook
         let id = WorkbookPart.getWorksheetPartID worksheetPart workbookPart
         let sheetID = 
-            sheets |> Sheets.getSheets |> Seq.map Sheet.getSheetID
+            sheets |> Sheet.Sheets.getSheets |> Seq.map Sheet.getSheetID
             |> fun s -> 
                 if Seq.length s = 0 then 1u
                 else s |> Seq.max |> (+) 1ul
         let sheet = Sheet.create id name sheetID
 
-        Sheets.addSheet sheet sheets |> ignore
+        sheets.AppendChild(sheet) |> ignore
         workbookPart
 
   
@@ -630,7 +400,7 @@ module SheetTransformation =
         let sharedStringTablePart = WorkbookPart.getOrInitSharedStringTablePart workbookPart
         SharedStringTable.init sharedStringTablePart |> ignore
 
-        let workbook = WorkbookPart.getOrInitWorkbook workbookPart
+        let workbook = Workbook.getOrInit workbookPart
         addSheetToWorkbookPart sheetName (SheetData.empty) workbookPart |> ignore
         doc
 
@@ -646,7 +416,7 @@ module SheetTransformation =
                 |> CellValue.getValue
                 |> int
                 |> fun i -> SharedStringTable.getText i sst
-                |> SharedStringItem.getText
+                |> SharedStringTable.SharedStringItem.getText
             | _ ->
                 cell
                 |> Cell.getValue
@@ -671,7 +441,7 @@ module SheetTransformation =
                 |> SharedStringTable.get
             row
             |> Row.getCells
-            |> Seq.map (fun c -> c |> Cell.getReference |> Reference.toIndices |> fst, getValueSST sst c)
+            |> Seq.map (fun c -> c |> Cell.getReference |> CellReference.toIndices |> fst, getValueSST sst c)
         
         /// Gets the string value of the cell at the given 1 based column and row index using a shared string table
         let getCellValueSSTAt (workbookPart:WorkbookPart) (columnIndex : uint32) rowIndex (sheet:SheetData) =
@@ -717,7 +487,7 @@ module SheetTransformation =
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
                 Row.getCells
-                >> Seq.map (fun c -> Cell.getReference c |> Reference.toIndices |> fst,getValueSST sst c)
+                >> Seq.map (fun c -> Cell.getReference c |> CellReference.toIndices |> fst,getValueSST sst c)
             )
 
         /// Create a cell using a shared string table 
@@ -725,12 +495,12 @@ module SheetTransformation =
             let value = box value
             match value with
             | :? string as s -> 
-                let reference = Reference.ofIndices columnIndex (rowIndex)
+                let reference = CellReference.ofIndices columnIndex (rowIndex)
                 match SharedStringTable.tryGetIndexByString s sst with
                 | Some i -> 
                     sst,Cell.create CellValues.SharedString reference (i |> string |> CellValue.create)
                 | None ->
-                    let sst = SharedStringTable.addItem (SharedStringItem.create s) sst
+                    let sst = SharedStringTable.SharedStringItem.add (SharedStringTable.SharedStringItem.create s) sst
                     sst, Cell.create CellValues.SharedString reference (SharedStringTable.count sst |> (+) 1u |> string |> CellValue.create)
             | _  -> 
                 sst,Cell.createGeneric columnIndex rowIndex (value.ToString())

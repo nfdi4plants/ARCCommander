@@ -9,62 +9,40 @@ module Workbook =
     /// Empty workbook
     let empty = new Workbook()
     
-    /// Gets the sheets of the workbook
-    let getSheets (workbook:Workbook) = workbook.Sheets
-
-    /// Returns true, if the workbook contains a sheets element
-    let isNotNull (workbook:Workbook) = 
-        workbook.Sheets <> null
-
-    /// Add an empty sheets elemtent to the workboot
-    let initSheets (workbook:Workbook) = 
-        workbook.AppendChild<Sheets>(Sheets()) |> ignore
-        workbook
-
-    /// Returns the existing or a newly created sheets associated with the worksheet
-    let getOrInitSheets (workbook:Workbook) =
-        if isNotNull workbook then
-            getSheets workbook
-        else 
-            initSheets workbook
-            |> getSheets
-
-    /// Returns the existing or a newly created shetts associated with the worksheet
-    let ofWorkbookPart (workbookPart:WorkbookPart) = workbookPart.Workbook 
-
-
-
-
-
-
-/// Functions for manipulating the workbookpart (Unmanaged: changing the sheets does not alter the associated worksheets which store the data and vice versa)
-module WorkbookPart = 
-
     /// Gets the workbook of the workbookpart
-    let getWorkbook (workbookPart:WorkbookPart) = workbookPart.Workbook 
+    let get (workbookPart:WorkbookPart) = workbookPart.Workbook 
 
     /// Sets the workbook of the workbookpart
-    let setWorkbook (workbook:Workbook) (workbookPart:WorkbookPart) = 
+    let set (workbook:Workbook) (workbookPart:WorkbookPart) = 
         workbookPart.Workbook <- workbook
         workbookPart
 
     /// Set an empty workbook
-    let initWorkbook (workbookPart:WorkbookPart) = 
-        setWorkbook (Workbook()) workbookPart
-
-    /// Returns true, if the workbookpart contains a workbook
-    let containsWorkbook (workbookPart:WorkbookPart) = workbookPart.Workbook <> null  
+    let init (workbookPart:WorkbookPart) = 
+        set (Workbook()) workbookPart
 
     /// Returns the existing or a newly created workbook associated with the workbookpart
-    let getOrInitWorkbook (workbookPart:WorkbookPart) =
-        if containsWorkbook workbookPart then
-            getWorkbook workbookPart
+    let getOrInit (workbookPart:WorkbookPart) =
+        if workbookPart.Workbook <> null then
+            get workbookPart
         else 
-            initWorkbook workbookPart
-            |> getWorkbook
+            workbookPart
+            |> init
+            |> get
+
+    //// Adds sheet to workbook
+    //let addSheet (sheet : Sheet) (workbook:Workbook) =
+    //    let sheets = Sheet.Sheets.getOrInit workbook
+    //    Sheet.Sheets.addSheet sheet sheets |> ignore
+    //    workbook
+
+
+
+module WorkbookPart = 
 
     /// Add a worksheetpart to the workbookpart
-    let addWorksheetPart (worksheetPart : WorksheetPart) (workbookPart:WorkbookPart) = workbookPart.AddPart(worksheetPart)
+    let addWorksheetPart (worksheetPart : WorksheetPart) (workbookPart:WorkbookPart) = 
+        workbookPart.AddPart(worksheetPart)
 
     /// Add a empty worksheetpart to the workbookpart
     let initWorksheetPart (workbookPart:WorkbookPart) = workbookPart.AddNewPart<WorksheetPart>()
@@ -89,9 +67,11 @@ module WorkbookPart =
     //    let emptySheet = (addNewWorksheetPart workbookPart)
     //    emptySheet.Worksheet <- worksheet
 
+
+
     /// Gets the sharedstringtablepart
     let getSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart
-
+    
     /// Sets an empty sharedstringtablepart
     let initSharedStringTablePart (workbookPart:WorkbookPart) = 
         workbookPart.AddNewPart<SharedStringTablePart>() |> ignore

@@ -5,9 +5,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CellData.fs" />
     <Compile Include="CellReference.fs" />
+    <Compile Include="Cell.fs" />
     <Compile Include="SharedStringTable.fs" />
+    <Compile Include="Sheet.fs" />
     <Compile Include="WorkSheet.fs" />
     <Compile Include="Workbook.fs" />
     <Compile Include="Spreadsheet.fs" />

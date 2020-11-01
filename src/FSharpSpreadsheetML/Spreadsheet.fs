@@ -35,17 +35,6 @@ module Spreadsheet =
         |> close
         spreadsheet
 
-    let trySheet (index:uint) (spreadsheetDocument:SpreadsheetDocument) : option<Sheet> = 
-        let workbookPart = spreadsheetDocument.WorkbookPart    
-        workbookPart.Workbook.Descendants<Sheet>()
-        |> Seq.tryItem (int index) 
-
-
-    let trySheetByName (name:string) (spreadsheetDocument:SpreadsheetDocument) : option<Sheet> = 
-        let workbookPart = spreadsheetDocument.WorkbookPart    
-        workbookPart.Workbook.Descendants<Sheet>()
-        |> Seq.tryFind (fun s -> s.Name.HasValue && s.Name.Value = name)
-
     
     // Get the SharedStringTablePart. If it does not exist, create a new one.
     let getOrInitSharedStringTablePart (spreadsheetDocument:SpreadsheetDocument) =
@@ -62,9 +51,9 @@ module Spreadsheet =
 
     type Seq =
 
-        static member fromESpreadsheet (spreadsheetDocument:SpreadsheetDocument,?sheetIndex:uint) =
+        static member fromSpreadsheet (spreadsheetDocument:SpreadsheetDocument,?sheetIndex:uint) =
             let sheetIndex' = defaultArg sheetIndex 0u
-            match (trySheet sheetIndex' spreadsheetDocument) with
+            match (Sheet.tryItem sheetIndex' spreadsheetDocument) with
             | Some (sheet) ->
                 let workbookPart = spreadsheetDocument.WorkbookPart
                 let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
@@ -76,7 +65,7 @@ module Spreadsheet =
                     if (reader.ElementType = typeof<Cell>) then 
                         let cell    = reader.LoadCurrentElement() :?> Cell 
                         let cellRef = if cell.CellReference.HasValue then cell.CellReference.Value else ""
-                        yield (cellRef,CellData.ofCell stringTablePart.SharedStringTable cell)
+                        yield Cell.includeSharedStringValue stringTablePart.SharedStringTable cell
                 }
             | None -> seq {()}
 
@@ -84,7 +73,7 @@ module Spreadsheet =
         static member fromSpreadsheetbyRow (spreadsheetDocument:SpreadsheetDocument,?sheetIndex:uint) =
             //let worksheetPart = sheet.Value.Parent.Parent.Ancestors<Worksheet>()
             let sheetIndex' = defaultArg sheetIndex 0u
-            match (trySheet sheetIndex' spreadsheetDocument) with
+            match (Sheet.tryItem sheetIndex' spreadsheetDocument) with
             | Some (sheet) ->
                 let workbookPart = spreadsheetDocument.WorkbookPart
                 let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
@@ -95,10 +84,14 @@ module Spreadsheet =
                 while reader.Read() do
                     if (reader.ElementType = typeof<Row>) then 
                         let row = reader.LoadCurrentElement() :?> Row
-                        yield [for e in row.Elements() do
-                                let cell = e :?> Cell
-                                let stringData = CellData.ofCell stringTablePart.SharedStringTable cell
-                                (cell.CellReference.Value, stringData) ] 
+                        row.Elements()
+                        |> Seq.iter (fun item -> 
+                            let cell = item :?> Cell
+                            Cell.includeSharedStringValue stringTablePart.SharedStringTable cell |> ignore
+                            )
+                        yield row 
                 }
-            | None -> seq {[]}
+            | None -> seq {[]} :?> seq<Row>
+
+
 
