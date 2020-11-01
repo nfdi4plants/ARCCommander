@@ -10,7 +10,7 @@ open DocumentFormat.OpenXml.Spreadsheet
 module Spreadsheet = 
 
     /// Opens the spreadsheet located at the given path
-    let openSpreadsheet (path:string) isEditable = SpreadsheetDocument.Open(path,isEditable)
+    let fromFile (path:string) isEditable = SpreadsheetDocument.Open(path,isEditable)
 
     /// Creates a new spreadsheet at the given path
     let createSpreadsheet (path:string) = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
@@ -48,7 +48,7 @@ module Spreadsheet =
 
     
     // Get the SharedStringTablePart. If it does not exist, create a new one.
-    let getSharedStringTablePart (spreadsheetDocument:SpreadsheetDocument) =
+    let getOrInitSharedStringTablePart (spreadsheetDocument:SpreadsheetDocument) =
         let workbookPart = spreadsheetDocument.WorkbookPart    
         let sstp = workbookPart.GetPartsOfType<SharedStringTablePart>()
         match sstp |> Seq.tryHead with
@@ -68,7 +68,7 @@ module Spreadsheet =
             | Some (sheet) ->
                 let workbookPart = spreadsheetDocument.WorkbookPart
                 let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
-                let stringTablePart = getSharedStringTablePart spreadsheetDocument
+                let stringTablePart = getOrInitSharedStringTablePart spreadsheetDocument
                 seq {
                 use reader = OpenXmlReader.Create(worksheetPart)
         
@@ -88,7 +88,7 @@ module Spreadsheet =
             | Some (sheet) ->
                 let workbookPart = spreadsheetDocument.WorkbookPart
                 let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
-                let stringTablePart = getSharedStringTablePart spreadsheetDocument
+                let stringTablePart = getOrInitSharedStringTablePart spreadsheetDocument
                 seq {
                 use reader = OpenXmlReader.Create(worksheetPart)
           

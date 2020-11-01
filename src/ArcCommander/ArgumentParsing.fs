@@ -194,7 +194,7 @@ module Arc =
 
         let investigationFilePath = findInvestigationFile workingDir
         
-        let doc = FSharpSpreadsheetML.Spreadsheet.openSpreadsheet investigationFilePath true
+        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
         doc.Save()
         doc.Close()
