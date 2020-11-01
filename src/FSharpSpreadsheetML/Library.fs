@@ -4,273 +4,11 @@ open DocumentFormat.OpenXml
 open DocumentFormat.OpenXml.Packaging
 open DocumentFormat.OpenXml.Spreadsheet
 
+open Cell
 
 
 module internal H = let notImplemented() = failwith "function not yet implemented"
 open H
-open Cell
-
-
-
-
-
-
-
-
-/// Helper functions for working with "1:1" style row spans
-///
-/// The spans marks the column wise area in which the row lies. 
-module Spans =
-
-    /// Given 1 based column start and end indices, returns a "1:1" style spans
-    let fromBoundaries fromColumnIndex toColumnIndex = 
-        sprintf "%i:%i" fromColumnIndex toColumnIndex
-        |> StringValue.FromString
-        |> List.singleton
-        |> ListValue
-
-    /// Given a "1:1" style spans , returns 1 based column start and end indices
-    let toBoundaries (spans:ListValue<StringValue>) = 
-        spans.Items
-        |> Seq.head
-        |> fun x -> x.Value.Split ':'
-        |> fun a -> uint32 a.[0],uint32 a.[1]
-
-    //let toBoundaries (spans:ListValue<StringValue>) = 
-    //    spans.Items
-    //    |> Seq.head
-    //    |> fun x -> System.Text.RegularExpressions.Regex.Matches(x.Value,@"\d*")
-    //    |> fun a -> uint32 a.[0].Value,uint32 a.[2].Value
-
-    /// Gets the right boundary of the spans
-    let rightBoundary (spans:ListValue<StringValue>) = 
-        toBoundaries spans
-        |> snd
-
-    /// Gets the left boundary of the spans
-    let leftBoundary (spans:ListValue<StringValue>) = 
-        toBoundaries spans
-        |> fst
-
-    /// Moves both start and end of the spans by the given amount (positive amount moves spans to right and vice versa)
-    let moveHorizontal amount (spans:ListValue<StringValue>) =
-        spans
-        |> toBoundaries
-        |> fun (f,t) -> amount + f, amount + t
-        ||> fromBoundaries
-
-    /// Extends the righ boundary of the spans by the given amount (positive amount increases spans to right and vice versa)
-    let extendRight amount (spans:ListValue<StringValue>) =
-        spans
-        |> toBoundaries
-        |> fun (f,t) -> f, amount + t
-        ||> fromBoundaries
-
-    /// Extends the left boundary of the spans by the given amount (positive amount decreases the spans to left and vice versa)
-    let extendLeft amount (spans:ListValue<StringValue>) =
-        spans
-        |> toBoundaries
-        |> fun (f,t) -> f - amount, t
-        ||> fromBoundaries
-
-    /// Returns true if the column index of the reference is exceeds the right boundary of the spans
-    let referenceExceedsSpansToRight reference spans = 
-        (reference |> CellReference.toIndices |> fst) 
-            > (spans |> rightBoundary)
-        
-    /// Returns true if the column index of the reference is exceeds the left boundary of the spans
-    let referenceExceedsSpansToLeft reference spans = 
-        (reference |> CellReference.toIndices |> fst) 
-            < (spans |> leftBoundary)  
-     
-    /// Returns true if the column index of the reference does not lie in the boundary of the spans
-    let referenceExceedsSpans reference spans = 
-        referenceExceedsSpansToRight reference spans
-        ||
-        referenceExceedsSpansToLeft reference spans
-
-/// Functions for working with rows (unmanaged: spans and cell references do not get automatically updated)
-module Row =
-
-    /// Empty Row
-    let empty = Row()
-
-    /// Returns a sequence of cells contained in the row
-    let getCells (row:Row) = row.Descendants<Cell>()
-
-    /// Returns true,if the row contains no cells
-    let isEmpty (row:Row)= getCells row |> Seq.length |> (=) 0
-    
-    let mapCells (f : Cell -> Cell) (row:Row) = 
-        row
-        |> getCells
-        |> Seq.iter (f >> ignore)
-        row
-
-    //let iterCells (f) (row:Row) = notImplemented()
-
-    /// Returns the first cell in the row for which the predicate returns true
-    let findCell (predicate : Cell -> bool) (row:Row) =
-        getCells row
-        |> Seq.find predicate
-
-    /// Inserts a cell into the row before a reference cell
-    let insertCellBefore newCell refCell (row:Row) = 
-        row.InsertBefore(newCell, refCell) |> ignore
-        row
-
-    /// Returns the rowindex of the row
-    let getIndex (row:Row) = row.RowIndex.Value
-
-    /// Sets the row index of the row
-    let setIndex (index) (row:Row) =
-        row.RowIndex <- UInt32Value.FromUInt32 index
-        row
-    
-    /// Returns true, if the row contains a cell with the given columnIndex
-    let containsCellAt (columnIndex) (row:Row) =
-        row
-        |> getCells
-        |> Seq.exists (Cell.getReference >> CellReference.toIndices >> fst >> (=) columnIndex)
-
-    /// Returns cell with the given columnIndex
-    let getCellAt (columnIndex) (row:Row) =
-        row
-        |> getCells
-        |> Seq.find (Cell.getReference >> CellReference.toIndices >> fst >> (=) columnIndex)
-
-    /// Returns cell with the given columnIndex if it exists, else returns none
-    let tryGetCellAt (columnIndex) (row:Row) =
-        row
-        |> getCells
-        |> Seq.tryFind (Cell.getReference >> CellReference.toIndices >> fst >> (=) columnIndex)
-
-    /// Returns cell matching or exceeding the given column index if it exists, else returns none      
-    let tryGetCellAfter (columnIndex) (row:Row) =
-        row
-        |> getCells
-        |> Seq.tryFind (Cell.getReference >> CellReference.toIndices >> fst >> (<=) columnIndex)
-
-    /// Returns the spans of the row
-    let getSpan (row:Row) = row.Spans
-
-    /// Sets the spans of the row
-    let setSpan spans (row:Row) = 
-        row.Spans <- spans
-        row
-
-    /// Extends the righ boundary of the spans of the row by the given amount (positive amount increases spans to right and vice versa)
-    let extendSpanRight amount row = 
-        getSpan row
-        |> Spans.extendRight amount
-        |> fun s -> setSpan s row
-
-    /// Extends the left boundary of the spans of the row by the given amount (positive amount decreases the spans to left and vice versa)
-    let extendSpanLeft amount row = 
-        getSpan row
-        |> Spans.extendLeft amount
-        |> fun s -> setSpan s row
-
-    /// Append cell to the end of the row
-    let appendCell (cell:Cell) (row:Row) = 
-        row.AppendChild(cell) |> ignore
-        row
-
-    /// Creates a row from the given rowIndex, columnSpans and cells
-    let create index spans (cells:Cell seq) = 
-        Row(childElements = (cells |> Seq.map (fun x -> x :> OpenXmlElement)))
-        |> setIndex index
-        |> setSpan spans
-
-    /// Removes the cell at the given columnIndex from the row
-    let removeCellAt index (row:Row) =
-        getCellAt index row
-        |> row.RemoveChild
-        |> ignore
-        row
-
-    /// Removes the cell at the given columnIndex from the row
-    let tryRemoveCellAt index (row:Row) =
-        tryGetCellAt index row
-        |> Option.map (fun cell -> 
-            row.RemoveChild(cell) |> ignore
-            row)
-
-/// Functions for working with sheetdata (unmanaged: rowindices and cell references do not get automatically updated)
-module SheetData = 
-
-    /// Empty SheetData
-    let empty = new SheetData()
-
-    /// Inserts a row into the sheetdata before a reference row
-    let insertBefore (row:Row) (refRow:Row) (sheetData:SheetData) = 
-        sheetData.InsertBefore(row,refRow) |> ignore
-        sheetData
-
-    /// Append row to the end of the sheetData
-    let appendRow (row:Row) (sheetData:SheetData) = 
-        sheetData.AppendChild row |> ignore
-        sheetData
-
-    /// Returns a sequence of row contained in the sheetdata
-    let getRows (sheetData:SheetData) = 
-        sheetData.Descendants<Row>()
-
-    /// Returns the number of rows contained in the sheetdata
-    let countRows (sheetData:SheetData) = 
-        getRows sheetData
-        |> Seq.length
-    
-    /// Returns row matching or exceeding the given row index if it exists, else returns none      
-    let tryGetRowAfter index (sheetData:SheetData) = 
-        getRows sheetData
-        |> Seq.tryFind (Row.getIndex >> (<=) index)
-
-    /// Returns row with the given rowIndex if it exists, else returns none
-    let tryGetRowAt index (sheetData:SheetData) = 
-        getRows sheetData
-        |> Seq.tryFind (Row.getIndex >> (=) index)
-
-    /// Returns row with the given rowIndex
-    let getRowAt index (sheetData:SheetData) = 
-        getRows sheetData
-        |> Seq.find (Row.getIndex >> (=) index)
-
-    /// Returns true, if the sheetdata contains a row with the given rowindex
-    let containsRowAt index (sheetData:SheetData) = 
-        getRows sheetData
-        |> Seq.exists (Row.getIndex >> (=) index)
-
-    /// Removes the row at the given rowIndex
-    let removeRowAt index (sheetData:SheetData) = 
-        let r = sheetData |> getRowAt index
-        sheetData.RemoveChild(r) |> ignore
-        sheetData
-
-    /// Removes the row at the given rowIndex
-    let tryRemoveRowAt index (sheetData:SheetData) = 
-        sheetData |> tryGetRowAt index
-        |> Option.map (fun r ->
-            sheetData.RemoveChild(r) |> ignore
-            sheetData
-        )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /// Value based manipulation of sheets. Functions in this module automatically make the necessary adjustments  needed to change the excel sheet the way the function states.
@@ -281,7 +19,7 @@ module SheetTransformation =
         match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
         | Some row -> 
             Row.setIndex (Row.getIndex row |> int64 |> (+) (int64 amount) |> uint32) row
-            |> Row.getCells
+            |> Row.toSeq
             |> Seq.iter (fun cell -> 
                 Cell.setReference (Cell.getReference cell |> CellReference.moveVertical amount) cell
                 |> ignore            
@@ -294,9 +32,9 @@ module SheetTransformation =
     /// Matches the rowSpans to the cellreferences inside the row
     let updateRowSpans (row:Row) : Row=
         let columnIndices =
-            Row.getCells row
+            Row.toSeq row
             |> Seq.map (Cell.getReference >> CellReference.toIndices >> fst)
-        Row.setSpan (Spans.fromBoundaries (Seq.min columnIndices) (Seq.max columnIndices)) row
+        Row.setSpan (Row.Spans.fromBoundaries (Seq.min columnIndices) (Seq.max columnIndices)) row
 
     ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
     ///
@@ -308,7 +46,7 @@ module SheetTransformation =
             shoveValuesInRowToRight (columnIndex+1u) row |> ignore
             let newReference = (Cell.getReference cell |> CellReference.moveHorizontal 1)            
             Cell.setReference newReference cell |> ignore
-            if Spans.referenceExceedsSpansToRight newReference spans then
+            if Row.Spans.referenceExceedsSpansToRight newReference spans then
                 Row.extendSpanRight 1u row
             else row
         | None -> row
@@ -340,7 +78,7 @@ module SheetTransformation =
         match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
         | Some row -> 
             Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
-            |> Row.getCells
+            |> Row.toSeq
             |> Seq.iter (fun cell -> 
                 Cell.setReference (Cell.getReference cell |> CellReference.moveVertical amount) cell
                 |> ignore            
@@ -430,7 +168,7 @@ module SheetTransformation =
                 |> WorkbookPart.getSharedStringTablePart 
                 |> SharedStringTable.get
             row
-            |> Row.getCells
+            |> Row.toSeq
             |> Seq.map (getValueSST sst)
         
         /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
@@ -440,7 +178,7 @@ module SheetTransformation =
                 |> WorkbookPart.getSharedStringTablePart 
                 |> SharedStringTable.get
             row
-            |> Row.getCells
+            |> Row.toSeq
             |> Seq.map (fun c -> c |> Cell.getReference |> CellReference.toIndices |> fst, getValueSST sst c)
         
         /// Gets the string value of the cell at the given 1 based column and row index using a shared string table
@@ -461,7 +199,7 @@ module SheetTransformation =
                 |> SharedStringTable.get
             sheet
             |> SheetData.getRowAt rowIndex
-            |> Row.getCells
+            |> Row.toSeq
             |> Seq.map (getValueSST sst)
 
         /// Gets the string value of the cell at the given 1 based column and row index using a shared string table, if it exists, else returns None
@@ -473,7 +211,7 @@ module SheetTransformation =
             sheet
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
-                Row.getCells
+                Row.toSeq
                 >> Seq.map (getValueSST sst)
             )
 
@@ -486,7 +224,7 @@ module SheetTransformation =
             sheet
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
-                Row.getCells
+                Row.toSeq
                 >> Seq.map (fun c -> Cell.getReference c |> CellReference.toIndices |> fst,getValueSST sst c)
             )
 
@@ -513,7 +251,7 @@ module SheetTransformation =
             let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTable.get
 
             let uiO = uint32 offset
-            let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+            let spans = Row.Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
             let newRow = 
                 vals
                 |> Seq.mapi (fun i v -> 
@@ -547,7 +285,7 @@ module SheetTransformation =
                 |> Row.insertCellBefore cell ref
             | None ->
                 let spans = Row.getSpan row
-                let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+                let spanExceedance = (uint index) - (spans |> Row.Spans.rightBoundary)
                                    
                 Row.extendSpanRight spanExceedance row
                 |> Row.appendCell cell
@@ -565,7 +303,7 @@ module SheetTransformation =
             let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTable.get
             row
             |> Row.getSpan
-            |> Spans.rightBoundary
+            |> Row.Spans.rightBoundary
             |> fun col -> createSSTCell sst (col + 1u) (row |> Row.getIndex) value
             |> fun (newSST,c) -> Row.appendCell c row
             |> Row.extendSpanRight 1u 
@@ -604,7 +342,7 @@ module SheetTransformation =
         let getRowValuesAt rowIndex (sheet:SheetData) =
             sheet
             |> SheetData.getRowAt rowIndex
-            |> Row.getCells
+            |> Row.toSeq
             |> Seq.map (Cell.getValue >> CellValue.getValue)
 
         /// Gets the string value of the cell at the given 1 based column and row index, if it exists, else returns None
@@ -612,7 +350,7 @@ module SheetTransformation =
             sheet 
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
-                Row.getCells
+                Row.toSeq
                 >> Seq.map (Cell.getValue >> CellValue.getValue)
             )
      
@@ -622,7 +360,7 @@ module SheetTransformation =
         let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
         
             let uiO = uint32 offset
-            let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+            let spans = Row.Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
             let newRow = 
                 vals
                 |> Seq.mapi (fun i v -> 
@@ -652,7 +390,7 @@ module SheetTransformation =
                 |> Row.insertCellBefore cell ref
             | None ->
                 let spans = Row.getSpan row
-                let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+                let spanExceedance = (uint index) - (spans |> Row.Spans.rightBoundary)
                                
                 Row.extendSpanRight spanExceedance row
                 |> Row.appendCell cell
@@ -674,7 +412,7 @@ module SheetTransformation =
                 Row.insertCellBefore cell ref row
             | None ->
                 let spans = Row.getSpan row
-                let spanExceedance = (uint index) - (spans |> Spans.rightBoundary)
+                let spanExceedance = (uint index) - (spans |> Row.Spans.rightBoundary)
                                
                 Row.extendSpanRight spanExceedance row
                 |> Row.appendCell cell
@@ -683,7 +421,7 @@ module SheetTransformation =
         let appendValueToRow (value:'T) (row:Row) = 
             row
             |> Row.getSpan
-            |> Spans.rightBoundary
+            |> Row.Spans.rightBoundary
             |> fun col -> Cell.createGeneric (col + 1u) (row |> Row.getIndex) value
             |> fun c -> Row.appendCell c row
             |> Row.extendSpanRight 1u 
