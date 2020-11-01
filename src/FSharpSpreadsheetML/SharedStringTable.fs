@@ -10,7 +10,8 @@ module SharedStringTable =
     let empty = SharedStringTable() 
 
     /// Returns the sharedstringitems contained in the sharedstringtable
-    let getItems (sst:SharedStringTable) = sst.Elements<SharedStringItem>()
+    let getItems (sst:SharedStringTable) = 
+        sst.Elements<SharedStringItem>()
 
     /// If the string is contained in the sharedstringtable, contains the index of its position
     let tryGetIndexByString (s:string) (sst:SharedStringTable) = 
@@ -28,22 +29,21 @@ module SharedStringTable =
         sst
 
     /// Number of sharedstringitems in the sharedstringtable
-    let count (sst:SharedStringTable) = sst.Count.Value
+    let count (sst:SharedStringTable) = 
+        if sst.Count.HasValue then sst.Count.Value else 0u
 
 
-/// Functions for working with sharedstringtableparts
-module SharedStringTablePart = 
-    
     /// Sets an empty sharedstringtable
-    let initSharedStringTable (sstPart:SharedStringTablePart) = 
-        sstPart.SharedStringTable <- SharedStringTable.empty
+    let init (sstPart:SharedStringTablePart) = 
+        sstPart.SharedStringTable <- empty
         sstPart
 
     /// Gets the sharedstringtable of the sharedstringtablepart
-    let getSharedStringTable (sstPart:SharedStringTablePart) = sstPart.SharedStringTable
+    let get (sstPart:SharedStringTablePart) = 
+        sstPart.SharedStringTable
 
     /// Sets the sharedstringtable of the sharedstringtablepart
-    let setSharedStringTable (sst:SharedStringTable) (sstPart:SharedStringTablePart) = 
+    let set (sst:SharedStringTable) (sstPart:SharedStringTablePart) = 
         sstPart.SharedStringTable <- sst
         sstPart
 

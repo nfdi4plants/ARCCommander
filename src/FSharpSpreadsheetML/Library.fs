@@ -397,77 +397,7 @@ module SheetData =
             sheetData
         )
 
-/// Stores data of the sheet and the index of the sheet
-module Worksheet = 
 
-    /// Empty Worksheet
-    let empty = Worksheet()
-
-    /// Associates a sheetData with the worksheet
-    let addSheetData (sheetData:SheetData) (worksheet:Worksheet) = 
-        worksheet.AppendChild sheetData |> ignore
-        worksheet
-
-    /// Returns true, if the worksheet contains sheetdata
-    let containsSheetData (worksheet:Worksheet) = worksheet.HasChildren
-
-    /// Creates a worksheet containing the given sheetdata
-    let ofSheetData (sheetData:SheetData) = Worksheet(sheetData)
-
-    /// Returns the sheetdata associated with the worksheet
-    let getSheetData (worksheet:Worksheet) = worksheet.GetFirstChild<SheetData>()
-      
-    //let setSheetData (sheetData:SheetData) (worksheet:Worksheet) = worksheet.sh
-
-
-    ///Convenience
-
-    //let insertRow (rowIndex) (values: 'T seq) (worksheet:Worksheet) = notImplemented()
-    //let overWriteRow (rowIndex) (values: 'T seq) (worksheet:Worksheet) = notImplemented()
-    //let appendRow (values: 'T seq) (worksheet:Worksheet) = notImplemented()
-    //let getRow (rowIndex) (worksheet:Worksheet) = notImplemented()
-    //let deleteRow rowIndex (worksheet:Worksheet) = notImplemented()
-
-    //let insertColumn (columnIndex) (values: 'T seq) (worksheet:Worksheet) = notImplemented()
-    //let overWriteColumn (columnIndex) (values: 'T seq) (worksheet:Worksheet) = notImplemented()
-    //let appendColumn (values: 'T seq) (worksheet:Worksheet) = notImplemented()
-    //let getColumn (columnIndex) (worksheet:Worksheet) = notImplemented()
-    //let deleteColumn (columnIndex) (worksheet:Worksheet) = notImplemented()
-
-    ////let setCellValue (rowIndex,columnIndex) value (worksheet:Worksheet) = notImplemented()
-    //let setCellValue adress value (worksheet:Worksheet) = notImplemented()
-    //let inferCellValue adress (worksheet:Worksheet) = notImplemented()
-    //let deleteCellValue adress (worksheet:Worksheet) = notImplemented()
-
-/// Functions for working with the worksheetpart (Unmanaged: changing a worksheet does not alter the sheet which links the worksheet to the excel workbook)
-module WorksheetPart = 
-
-    // Returns the worksheet associated with the worksheetpart
-    let getWorksheet (worksheetPart : WorksheetPart) = 
-        worksheetPart.Worksheet
-
-    /// Sets the given worksheet with the worksheetpart
-    let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = 
-        worksheetPart.Worksheet <- worksheet
-        worksheetPart
-
-    /// Associates an empty worksheet with the worksheetpart
-    let initWorksheet (worksheetPart:WorksheetPart) = 
-        setWorksheet (Worksheet.empty) worksheetPart
-
-    /// Returns true, if the worksheetpart contains a worksheet
-    let containsWorksheet (worksheetPart:WorksheetPart) = worksheetPart.Worksheet <> null  
-
-    /// Returns the existing or a newly created worksheet associated with the worksheetpart
-    let getWorksheetOrInitWorksheet (worksheetPart:WorksheetPart) =
-        if containsWorksheet worksheetPart then
-            getWorksheet worksheetPart
-        else 
-            initWorksheet worksheetPart
-            |> getWorksheet
-
-    //let setID id (worksheetPart : WorksheetPart) = notImplemented()
-    //let getID (worksheetPart : WorksheetPart) = notImplemented()
 
 /// Part of the Workbook, stores name and other additional info of the sheet (Unmanaged: changing a sheet does not alter the associated worksheet which stores the data)
 module Sheet = 
@@ -676,7 +606,7 @@ module SheetTransformation =
 
         let worksheetPart = WorkbookPart.initWorksheetPart workbookPart
 
-        WorksheetPart.getWorksheetOrInitWorksheet worksheetPart
+        WorksheetPart.getWorksheet worksheetPart
         |> Worksheet.addSheetData data
         |> ignore
         
@@ -698,7 +628,7 @@ module SheetTransformation =
         let workbookPart = Spreadsheet.initWorkbookPart doc
 
         let sharedStringTablePart = WorkbookPart.getOrInitSharedStringTablePart workbookPart
-        SharedStringTablePart.initSharedStringTable sharedStringTablePart |> ignore
+        SharedStringTable.init sharedStringTablePart |> ignore
 
         let workbook = WorkbookPart.getOrInitWorkbook workbookPart
         addSheetToWorkbookPart sheetName (SheetData.empty) workbookPart |> ignore
@@ -728,7 +658,7 @@ module SheetTransformation =
             let sst = 
                 workbookPart 
                 |> WorkbookPart.getSharedStringTablePart 
-                |> SharedStringTablePart.getSharedStringTable
+                |> SharedStringTable.get
             row
             |> Row.getCells
             |> Seq.map (getValueSST sst)
@@ -738,7 +668,7 @@ module SheetTransformation =
             let sst = 
                 workbookPart 
                 |> WorkbookPart.getSharedStringTablePart 
-                |> SharedStringTablePart.getSharedStringTable
+                |> SharedStringTable.get
             row
             |> Row.getCells
             |> Seq.map (fun c -> c |> Cell.getReference |> Reference.toIndices |> fst, getValueSST sst c)
@@ -748,7 +678,7 @@ module SheetTransformation =
                let sst = 
                    workbookPart 
                    |> WorkbookPart.getSharedStringTablePart 
-                   |> SharedStringTablePart.getSharedStringTable
+                   |> SharedStringTable.get
                SheetData.getRowAt rowIndex sheet
                |> Row.getCellAt columnIndex
                |> getValueSST sst
@@ -758,7 +688,7 @@ module SheetTransformation =
             let sst = 
                 workbookPart 
                 |> WorkbookPart.getSharedStringTablePart 
-                |> SharedStringTablePart.getSharedStringTable
+                |> SharedStringTable.get
             sheet
             |> SheetData.getRowAt rowIndex
             |> Row.getCells
@@ -769,7 +699,7 @@ module SheetTransformation =
             let sst = 
                 workbookPart 
                 |> WorkbookPart.getSharedStringTablePart 
-                |> SharedStringTablePart.getSharedStringTable
+                |> SharedStringTable.get
             sheet
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
@@ -782,7 +712,7 @@ module SheetTransformation =
             let sst = 
                 workbookPart 
                 |> WorkbookPart.getSharedStringTablePart 
-                |> SharedStringTablePart.getSharedStringTable
+                |> SharedStringTable.get
             sheet
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
@@ -810,7 +740,7 @@ module SheetTransformation =
         /// If a row exists at the given rowindex, shoves it downwards
         let insertRowWithHorizontalOffsetSSTAt (workbookPart) (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
     
-            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
+            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTable.get
 
             let uiO = uint32 offset
             let spans = Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
@@ -836,7 +766,7 @@ module SheetTransformation =
         /// If a cell exists at the given columnindex, shoves it to the right
         let insertValueIntoRowSST workbookPart index (value:'T) (row:Row) = 
 
-            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
+            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTable.get
             let refCell = Row.tryGetCellAfter index row
 
             let updatedSST,cell = createSSTCell sst index (Row.getIndex row) value
@@ -862,7 +792,7 @@ module SheetTransformation =
 
         /// Append the value as a cell to the end of the row using a shared string table
         let appendValueToRowSST workbookPart (value:'T) (row:Row) = 
-            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTablePart.getSharedStringTable
+            let sst = workbookPart |> WorkbookPart.getSharedStringTablePart |> SharedStringTable.get
             row
             |> Row.getSpan
             |> Spans.rightBoundary
