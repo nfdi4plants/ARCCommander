@@ -5,6 +5,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CellData.fs" />
+    <Compile Include="CellReference.fs" />
+    <Compile Include="SharedStringTable.fs" />
+    <Compile Include="Spreadsheet.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

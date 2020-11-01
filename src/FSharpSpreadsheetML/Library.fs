@@ -4,6 +4,8 @@ open DocumentFormat.OpenXml
 open DocumentFormat.OpenXml.Packaging
 open DocumentFormat.OpenXml.Spreadsheet
 
+
+
 module internal H = let notImplemented() = failwith "function not yet implemented"
 open H
 
@@ -563,49 +565,7 @@ module SharedStringItem =
         |> setText text
 
 
-/// Functions for working with sharedstringtables
-module SharedStringTable = 
 
-    /// Empty sharedstringtable
-    let empty = SharedStringTable() 
-
-    /// Returns the sharedstringitems contained in the sharedstringtable
-    let getItems (sst:SharedStringTable) = sst.Elements<SharedStringItem>()
-
-    /// If the string is contained in the sharedstringtable, contains the index of its position
-    let tryGetIndexByString (s:string) (sst:SharedStringTable) = 
-        getItems sst 
-        |> Seq.tryFindIndex (fun x -> x.Text.Text = s)
-
-    /// Returns the sharedstringitem at the given index
-    let getText i (sst:SharedStringTable) = 
-        getItems sst
-        |> Seq.item i
-
-    /// Adds the sharedstringitem to the sharedstringtable
-    let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = 
-        sst.Append(sharedStringItem.CloneNode(false) :?> SharedStringItem)
-        sst
-
-    /// Number of sharedstringitems in the sharedstringtable
-    let count (sst:SharedStringTable) = sst.Count.Value
-
-
-/// Functions for working with sharedstringtableparts
-module SharedStringTablePart = 
-    
-    /// Sets an empty sharedstringtable
-    let initSharedStringTable (sstPart:SharedStringTablePart) = 
-        sstPart.SharedStringTable <- SharedStringTable.empty
-        sstPart
-
-    /// Gets the sharedstringtable of the sharedstringtablepart
-    let getSharedStringTable (sstPart:SharedStringTablePart) = sstPart.SharedStringTable
-
-    /// Sets the sharedstringtable of the sharedstringtablepart
-    let setSharedStringTable (sst:SharedStringTable) (sstPart:SharedStringTablePart) = 
-        sstPart.SharedStringTable <- sst
-        sstPart
 
 /// Functions for manipulating the workbook (Unmanaged: changing the sheets does not alter the associated worksheets which store the data)
 module Workbook =
@@ -708,34 +668,7 @@ module WorkbookPart =
             |> getSharedStringTablePart
 
 
-/// Functions for working the spreadsheet document
-module Spreadsheet = 
 
-    /// Opens the spreadsheet located at the given path
-    let openSpreadsheet (path:string) isEditable = SpreadsheetDocument.Open(path,isEditable)
-
-    /// Creates a new spreadsheet at the given path
-    let createSpreadsheet (path:string) = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
-
-    // Gets the workbookpart of the spreadsheet
-    let getWorkbookPart (spreadsheet:SpreadsheetDocument) = spreadsheet.WorkbookPart
-
-    // Only if none there
-    let initWorkbookPart (spreadsheet:SpreadsheetDocument) = spreadsheet.AddWorkbookPart()
-
-    /// Save changes made to the spreadsheet
-    let saveChanges (spreadsheet:SpreadsheetDocument) = 
-        spreadsheet.Save() 
-        spreadsheet
-
-    /// Closes the stream to the spreadsheet
-    let close (spreadsheet:SpreadsheetDocument) = spreadsheet.Close()
-
-    /// Save changes made to the spreadsheet to the given path
-    let saveAs path (spreadsheet:SpreadsheetDocument) = 
-        spreadsheet.SaveAs(path) :?> SpreadsheetDocument
-        |> close
-        spreadsheet
 
 
 /// Value based manipulation of sheets. Functions in this module automatically make the necessary adjustments  needed to change the excel sheet the way the function states.
