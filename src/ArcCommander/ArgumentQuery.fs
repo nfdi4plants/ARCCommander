@@ -9,98 +9,55 @@ open System.Diagnostics
 open YamlDotNet.Serialization;
 
 open ISA.DataModel
-
-type NotRequiredAttribute() =    
-    inherit Attribute()
+open Argu.ArguAttributes
 
 module ArgumentQuery = 
+
     
-    module Assay = 
 
-        type IAssay =
-            abstract ToAssay : unit -> InvestigationFile.Assay
+    let splitUnion (x:'a) = 
+        match FSharpValue.GetUnionFields(x, typeof<'a>) with
+        | case, v -> case.Name,v
 
-        [<CLIMutable>]
-        type AssayMove = 
-            { 
-                AssayIdentifier : string
-                StudyIdentifier : string
-                TargetStudyIdentifier : string 
-            }
-            interface IAssay with
-                member this.ToAssay() = InvestigationFile.Assay(fileName = this.AssayIdentifier)
+    let unionToString (x:'a) = 
+        match splitUnion x with
+        | (field,value) -> field, string value.[0]
 
-
-        [<CLIMutable>]
-        type AssayBasic = 
-            {
-                AssayIdentifier : string
-                StudyIdentifier : string
-            }
-            interface IAssay with
-                member this.ToAssay() = InvestigationFile.Assay(fileName = this.AssayIdentifier)
-
-        [<CLIMutable>]
-        type AssayFull = 
-            {
-                AssayIdentifier                       : string
-                StudyIdentifier                       : string
-                [<NotRequired>]  
-                MeasurementType                       : string
-                [<NotRequired>]  
-                MeasurementTypeTermAccessionNumber    : string
-                [<NotRequired>]  
-                MeasurementTypeTermSourceREF          : string
-                [<NotRequired>]  
-                TechnologyType                        : string
-                [<NotRequired>]  
-                TechnologyTypeTermAccessionNumber     : string
-                [<NotRequired>]  
-                TechnologyTypeTermSourceREF           : string
-                [<NotRequired>]  
-                TechnologyPlatform                    : string
-            }
-            interface IAssay with
-                member this.ToAssay() = 
-                    InvestigationFile.Assay(
-                        this.MeasurementType,
-                        this.MeasurementTypeTermAccessionNumber,
-                        this.MeasurementTypeTermSourceREF,
-                        this.TechnologyType,
-                        this.TechnologyTypeTermAccessionNumber,
-                        this.TechnologyTypeTermSourceREF,
-                        this.TechnologyTypeTermSourceREF,
-                        this.AssayIdentifier                      
-                )
-
-        let toISAAssay (assay : #IAssay) =
-            assay.ToAssay()
 
     /// Returns given attribute from property info as optional 
-    let private tryGetCustomAttribute<'a> (findAncestor:bool) (propInfo :PropertyInfo) =   
+    let containsCustomAttribute<'a> (case : UnionCaseInfo) =   
         let attributeType = typeof<'a>
-        let attrib = propInfo.GetCustomAttribute(attributeType, findAncestor)
-        match box attrib with
-        | (:? 'a) as customAttribute -> Some(unbox<'a> customAttribute)
-        | _ -> None
+        match case.GetCustomAttributes (attributeType) with
+        | [||] -> false
+        | _ -> true
+   
+    
+    let missingMandatoryAttribute (parameters : 'T []) =
+        parameters
 
-    /// Returns given attribute from property info as optional 
-    let private getAllRequiredValues (record:'T) =
-      let schemaType = typeof<'T>
-      let fields = FSharpType.GetRecordFields(schemaType)
+        |> Seq.exists (fun p ->
+            let unionCaseInfo,s = FSharpValue.GetUnionFields(p,typeof<'T>)
+            containsCustomAttribute<MandatoryAttribute> unionCaseInfo
+            &&
+            s = [|box ""|]
+        )
 
-      fields 
-      |> Array.choose ( fun field -> 
-          match tryGetCustomAttribute<NotRequiredAttribute> true field with 
-          | Some x -> None
-          | None   -> FSharpValue.GetRecordField (record,field) |> Some 
-          )
-        
-    let internal containsAllRequiredValues (record:'T) =
-        getAllRequiredValues record
-        |> Array.contains (box null)
-        |> not
-      
+
+    let groupArguments (args : 'T list) =
+        let m = 
+            args 
+            |> List.map splitUnion
+            |> Map.ofList
+        FSharpType.GetUnionCases(typeof<'T>)
+        |> Array.map (fun unionCase ->      
+            let v = 
+                match Map.tryFind unionCase.Name m with
+                | Some value -> value
+                | None -> [|box ""|]
+            FSharpValue.MakeUnion (unionCase,v) :?> 'T
+        )
+
+
     let private MD5Hash (input : string) =
         use md5 = System.Security.Cryptography.MD5.Create()
         input
@@ -128,12 +85,17 @@ module ArgumentQuery =
     
     let private delete (path:string) = 
         System.IO.File.Delete(path)
-        
-    let askForFillout (editorPath) (arcPath) (item:'T) =
+ 
+    let createParameterQuery editorPath arcPath (parameters : 'T []) = 
+        let m =
+            parameters
+            |> Array.map unionToString
+            |> Map.ofArray
+
         let serializer = SerializerBuilder().Build();
         let deserializer = DeserializerBuilder().Build();
          
-        let yamlString = serializer.Serialize(item);
+        let yamlString = serializer.Serialize(m);
         let hash = MD5Hash yamlString
         let filePath = sprintf "%s/.arc/%s.txt" arcPath hash
     
@@ -141,18 +103,37 @@ module ArgumentQuery =
         try
         runProcess editorPath filePath
         read filePath
-        |> deserializer.Deserialize<'T>
+        |> deserializer.Deserialize<Map<string,string>>
+        |> Map.toArray
 
         with
         | err -> 
             failwithf "could not read query: %s" err.Message
+
+    //let askForFillout (editorPath) (arcPath) (item:'T) =
+    //    let serializer = SerializerBuilder().Build();
+    //    let deserializer = DeserializerBuilder().Build();
+         
+    //    let yamlString = serializer.Serialize(item);
+    //    let hash = MD5Hash yamlString
+    //    let filePath = sprintf "%s/.arc/%s.txt" arcPath hash
     
-    let askForFilloutIfNeeded (editorPath) (arcPath) (item:'T) =
-        printfn "initial input: %O" item
-        if containsAllRequiredValues item then
-            printfn "is complete"
-            item
-        else 
-            let inp = askForFillout editorPath arcPath item
-            printfn "after querying input: %O" item
-            inp
+    //    write filePath yamlString
+    //    try
+    //    runProcess editorPath filePath
+    //    read filePath
+    //    |> deserializer.Deserialize<'T>
+
+    //    with
+    //    | err -> 
+    //        failwithf "could not read query: %s" err.Message
+    
+    //let askForFilloutIfNeeded (editorPath) (arcPath) (item:'T) =
+    //    printfn "initial input: %O" item
+    //    if containsAllRequiredValues item then
+    //        printfn "is complete"
+    //        item
+    //    else 
+    //        let inp = askForFillout editorPath arcPath item
+    //        printfn "after querying input: %O" item
+    //        inp

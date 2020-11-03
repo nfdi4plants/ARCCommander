@@ -5,8 +5,8 @@ open System
 open ISA
 open DataModel
 open ISA_XLSX.IO
-module CLIArguments = 
 
+module CLIArguments = 
 
 //[<CliPrefix(CliPrefix.Dash)>]
 //type StudyArgs =
@@ -27,10 +27,27 @@ module CLIArguments =
 //        | Title x -> study.Title <- x
 //        | Description x -> study.Description <- x
 
+
+    /// ------------ Arc Arguments ------------ ///
+
+    type ArcParams = 
+
+        | [<Unique>] Owner of string
+        | [<Unique>] RepositoryAdress of string
+        | [<Unique>] EditorPath of string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | Owner _               ->  "Owner of the arc"
+                | RepositoryAdress _    ->  "Github adress"
+                | EditorPath _          ->  "The path leading to the editor used for text prompts (Default in Windows is notepad)"
+
+
     /// ------------ Investigation Arguments ------------ ///
 
     type InvestigationParams = 
-        | [<Unique>] Identifier of string
+        | [<Mandatory>][<Unique>] Identifier of string
         | [<Unique>] Title of string
         | [<Unique>] Description of string
         | [<Unique>] SubmissionDate of string
@@ -60,30 +77,88 @@ module CLIArguments =
                 | Remove            _ -> "Removes the investigation from the arc"
                 | Edit              _ -> "Open an editor window to directly edit the isa investigation file"
 
-    /// ------------ ASSAY ARGUMENTS ------------ ///
+    /// ------------ STUDY ARGUMENTS ------------ ///
 
-    type TargetStudy =
-        | [<Unique>] TargetStudyIdentifier of string
+    type StudyFull =
+        | [<Mandatory>][<Unique>] Identifier of string
+        | [<Unique>] Title of string
+        | [<Unique>] Description of string
+        | [<Unique>] SubmissionDate of string
+        | [<Unique>] PublicReleaseDate of string
 
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
+                | Identifier _->    "Identifier of the study, will be used as the file name of the study file"
+                | Title _->         "Title of the study"
+                | Description _->   "Description of the study"
+                | SubmissionDate _->   "Submission Date of the study"
+                | PublicReleaseDate _->   "Public Release Date of the study"
+
+    and StudyBasic =
+        | [<Mandatory>][<Unique>] Identifier of string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | Identifier _->    "Identifier of the study, will be used as the file name of the study file"
+
+    and Study =
+
+        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<StudyFull>
+        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<StudyFull>
+        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<StudyBasic>
+        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<StudyBasic>
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | Update    _ -> "The study gets updated with the given parameters"
+                | Register  _ -> "Create a new Study"
+                | Remove    _ -> "Removes the Study from the arc"
+                | Edit      _ -> "Open an editor window to directly edit the isa Study file"
+
+    /// ------------ ASSAY ARGUMENTS ------------ ///
+
+
+    type AssayBasic =
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier   _ -> "Name of the study in which the assay is situated"
+                | AssayIdentifier   _ -> "Name of the assay of interest"
+
+    and AssayMove =
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-t")>][<Unique>] TargetStudyIdentifier of string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier   _ -> "Name of the study in which the assay is situated"
+                | AssayIdentifier   _ -> "Name of the assay of interest"
                 | TargetStudyIdentifier _-> "Target study"
 
-
-
-    and AssayParams =  
-        | [<Unique>]MeasurementType of string
-        | [<Unique>]MeasurementTypeTermAccessionNumber of string
-        | [<Unique>]MeasurementTypeTermSourceREF of string
-        | [<Unique>]TechnologyType of string
-        | [<Unique>]TechnologyTypeTermAccessionNumber of string
-        | [<Unique>]TechnologyTypeTermSourceREF of string
-        | [<Unique>]TechnologyPlatform of string
+    and AssayFull =  
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
+        | [<Mandatory>][<Unique>]MeasurementType of string
+        | [<Mandatory>][<Unique>]MeasurementTypeTermAccessionNumber of string
+        | [<Mandatory>][<Unique>]MeasurementTypeTermSourceREF of string
+        | [<Mandatory>][<Unique>]TechnologyType of string
+        | [<Mandatory>][<Unique>]TechnologyTypeTermAccessionNumber of string
+        | [<Mandatory>][<Unique>]TechnologyTypeTermSourceREF of string
+        | [<Mandatory>][<Unique>]TechnologyPlatform of string
         
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
+                | StudyIdentifier   _                   -> "Name of the study in which the assay is situated"
+                | AssayIdentifier   _                   -> "Name of the assay of interest"
                 | MeasurementType _                     -> "Measurement type of the assay"
                 | MeasurementTypeTermAccessionNumber _  -> "Measurement type Term Accession Number of the assay"
                 | MeasurementTypeTermSourceREF _        -> "Measurement type Term Source REF of the assay"
@@ -92,28 +167,18 @@ module CLIArguments =
                 | TechnologyTypeTermSourceREF _         -> "Technology Type Term Source REF of the assay"
                 | TechnologyPlatform _                  -> "Technology Platform of the assay"
 
-        //member this.mapAssay(assay:InvestigationFile.Assay) =
-        //    match this with
-        //    | MeasurementType x -> assay.MeasurementType <- x
-        //    | _ -> ()
-
-
     and Assay = 
-        | [<AltCommandLine("-s")>][<InheritAttribute>][<Unique>] StudyIdentifier of string
-        | [<AltCommandLine("-a")>][<InheritAttribute>][<Unique>] AssayIdentifier of string
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Create
-        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<AssayParams>
-        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<AssayParams>
-        | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<AssayParams>
-        | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<TargetStudy>
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Remove
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Edit 
+        | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<AssayBasic>
+        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<AssayFull>
+        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<AssayFull>
+        | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<AssayFull>
+        | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<AssayMove>
+        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<AssayBasic>
+        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<AssayBasic>
 
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | StudyIdentifier   _ -> "Name of the study in which the assay is situated"
-                | AssayIdentifier   _ -> "Name of the assay of interest"
                 | Create            _ -> "A new assay file structure of the given name is created"
                 | Register          _ -> "Registers an existing assay to the study"
                 | Update            _ -> "The specified assay gets updated with the given parameters"
@@ -122,13 +187,14 @@ module CLIArguments =
                 | Remove            _ -> "Removes the assay from the arc"
                 | Edit              _ -> "Open an editor window for manipulating the assay parameters"
 
+    
+    /// ------------ TOP LEVEL ------------ ///
 
-
-    and ArcArgs =
+    type Arc =
         | [<AltCommandLine("-p")>][<Unique>] WorkingDir of string
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init
+        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init of ParseResults<ArcParams>
         | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation of ParseResults<Investigation>
-        //| [<CliPrefix(CliPrefix.None)>] AddAssay of ParseResults<AssayParams>
+        | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Study of ParseResults<Study>
         //| [<CliPrefix(CliPrefix.None)>] AddWorkflow of ParseResults<WorkflowArgs>
         | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of ParseResults<Assay>
 
@@ -138,6 +204,6 @@ module CLIArguments =
                 | WorkingDir _ -> "Set the base directory of your ARC"
                 | Init _ -> "Initializes basic folder structure"
                 | Investigation _ -> "Investigation file functions"
-                //| AddAssay _ -> "Adds a new assay to the given study, creates a new study if not existent"
+                | Study         _ -> "Study functions"
                 //| AddWorkflow _ -> "Not yet implemented"
                 | Assay _ ->  "Assay functions"
