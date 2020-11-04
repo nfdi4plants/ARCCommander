@@ -175,6 +175,7 @@ module CLIArguments =
         | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<AssayMove>
         | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<AssayBasic>
         | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<AssayBasic>
+        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] List
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -186,7 +187,7 @@ module CLIArguments =
                 | Move              _ -> "Moves the assay from one study to another"
                 | Remove            _ -> "Removes the assay from the arc"
                 | Edit              _ -> "Open an editor window for manipulating the assay parameters"
-
+                | List              _ -> "Lists all Assays registered in the investigation file"
     
     /// ------------ TOP LEVEL ------------ ///
 
@@ -194,7 +195,7 @@ module CLIArguments =
         | [<AltCommandLine("-p")>][<Unique>] WorkingDir of string
         | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init of ParseResults<ArcParams>
         | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation of ParseResults<Investigation>
-        | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Study of ParseResults<Study>
+        | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study of ParseResults<Study>
         //| [<CliPrefix(CliPrefix.None)>] AddWorkflow of ParseResults<WorkflowArgs>
         | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of ParseResults<Assay>
 

@@ -1,7 +1,9 @@
 ﻿namespace ArcCommander
 
-open ISA.DataModel
+open ISA.DataModel.InvestigationFile
+open ArgumentQuery
 open System
+
 
 module ArcCommander =
     
@@ -30,11 +32,12 @@ module ArcCommander =
             | None ->  
                 failwith "could not find investigation file"
 
-    module Assay = 
+    module Assay =        
         
-        
-        let add workingDir studyIdentifier (assay : InvestigationFile.Assay) =
+        let add workingDir (parameters : Map<string,string>) =
 
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
            
             let name = assay.FileName
 
@@ -51,8 +54,11 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let update workingDir studyIdentifier (assay : InvestigationFile.Assay) =
-            
+        let update workingDir (parameters : Map<string,string>) =
+
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
+
             let investigationFilePath = findInvestigationFile workingDir
             
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
@@ -60,7 +66,10 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let register workingDir studyIdentifier (assay : InvestigationFile.Assay) =
+        let register workingDir (parameters : Map<string,string>) =
+
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
             
             let investigationFilePath = findInvestigationFile workingDir          
 
@@ -69,7 +78,10 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let create workingDir studyIdentifier (assay : InvestigationFile.Assay) =
+        let create workingDir (parameters : Map<string,string>) =
+
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
             
             let name = assay.FileName
             
@@ -79,7 +91,10 @@ module ArcCommander =
             System.IO.File.Create (dir.FullName + "\protocols") |> ignore
             System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
 
-        let remove workingDir studyIdentifier (assay : InvestigationFile.Assay) =
+        let remove workingDir (parameters : Map<string,string>) =
+
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
             
             let name = assay.FileName
             
@@ -92,7 +107,11 @@ module ArcCommander =
             doc.Save()
             doc.Close()
             
-        let move workingDir studyIdentifier targetStudy (assay : InvestigationFile.Assay) =
+        let move workingDir (parameters : Map<string,string>) =
+
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
+            let targetStudy = parameters.["TargetStudyIdentifier"]
 
             let investigationFilePath = findInvestigationFile workingDir
             
@@ -110,14 +129,20 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let edit workingDir editorPath studyIdentifier (assay : InvestigationFile.Assay) =
+        let edit editorPath workingDir (parameters : Map<string,string>) =
+
+            printf "Start assay edit"
+
+            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
             
             let investigationFilePath = findInvestigationFile workingDir
-            
+            printfn "InvestigationFile: %s"  investigationFilePath
+
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
             match ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
             | Some assay ->
-                ArgumentQuery.askForFillout editorPath workingDir assay
+                ArgumentQuery.createItemQuery editorPath workingDir assay
                 |> fun assay -> ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
                 |> ignore
             | None -> 
@@ -126,9 +151,30 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
+        //let list workingDir (parameters : Map<string,string>) =
+
+        //    printf "Start assay list"
+            
+        //    let investigationFilePath = findInvestigationFile workingDir
+        //    printfn "InvestigationFile: %s"  investigationFilePath
+
+        //    let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+
+
+        //    match ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
+        //    | Some assay ->
+        //        ArgumentQuery.createItemQuery editorPath workingDir assay
+        //        |> fun assay -> ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
+        //        |> ignore
+        //    | None -> 
+        //        printfn "Assay %s does not exist" assay.FileName
+        //        ()
+
     module Arc = 
         // Creates Arc specific folder structure 
-        let init workingDir (inv : InvestigationFile.InvestigationItem) =
+        let init workingDir (parameters : Map<string,string>) =
+
+            let investigation = itemOfParameters (InvestigationItem()) parameters
 
             let dir = System.IO.Directory.CreateDirectory workingDir
             dir.CreateSubdirectory "assays"     |> ignore
@@ -137,9 +183,9 @@ module ArcCommander =
             dir.CreateSubdirectory "runs"       |> ignore
             dir.CreateSubdirectory ".arc"       |> ignore
 
-            let investigationFilePath = dir.FullName + "/" + inv.Identifier + ".xlsx"
+            let investigationFilePath = dir.FullName + "/" + investigation.Identifier + ".xlsx"
 
-            inv
+            investigation
             |> ISA_XLSX.IO.ISA_Investigation.createEmpty investigationFilePath 
 
         // Returns true if called anywhere in an arc 
