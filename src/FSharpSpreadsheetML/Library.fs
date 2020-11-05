@@ -114,7 +114,7 @@ module SheetTransformation =
 
         let worksheetPart = WorkbookPart.initWorksheetPart workbookPart
 
-        Worksheet.get worksheetPart
+        Worksheet.getOrInit worksheetPart
         |> Worksheet.addSheetData data
         |> ignore
         

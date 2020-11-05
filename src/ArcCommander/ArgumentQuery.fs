@@ -44,18 +44,21 @@ module ArgumentQuery =
 
 
     let groupArguments (args : 'T list) =
-        let m = 
-            args 
-            |> List.map splitUnion
-            |> Map.ofList
-        FSharpType.GetUnionCases(typeof<'T>)
-        |> Array.map (fun unionCase ->      
-            let v = 
-                match Map.tryFind unionCase.Name m with
-                | Some value -> value
-                | None -> [|box ""|]
-            FSharpValue.MakeUnion (unionCase,v) :?> 'T
-        )
+        if typeof<'T>.Name = "EmptyArgs" then 
+            [||]
+        else
+            let m = 
+                args 
+                |> List.map splitUnion
+                |> Map.ofList
+            FSharpType.GetUnionCases(typeof<'T>)
+            |> Array.map (fun unionCase ->      
+                let v = 
+                    match Map.tryFind unionCase.Name m with
+                    | Some value -> value
+                    | None -> [|box ""|]
+                FSharpValue.MakeUnion (unionCase,v) :?> 'T
+            )
 
 
     let private MD5Hash (input : string) =
@@ -73,6 +76,13 @@ module ArgumentQuery =
             |> Process.Start
         p.WaitForExit()
 
+    let private writeForce (path:string) (text:string) = 
+        System.IO.FileInfo(path).Directory.Create()
+        use w = new System.IO.StreamWriter(path)
+        w.Write(text)
+        w.Flush()
+        w.Close()
+
     let private write (path:string) (text:string) = 
         use w = new System.IO.StreamWriter(path)
         w.Write(text)
@@ -85,8 +95,7 @@ module ArgumentQuery =
     
     let private delete (path:string) = 
         System.IO.File.Delete(path)
- 
-    
+   
     let private serializeUnion (commentF : 'T -> string) (vs:'T []) =
         vs
         |> Array.map (fun v -> 
@@ -96,24 +105,57 @@ module ArgumentQuery =
         )
         |> Array.reduce (fun a b -> a + "\n" + b)
 
-    let private deserializeUnion (s:string) =
+    let private serializeMap (vs:Map<string,string>) =
+        vs
+        |> Seq.map (fun kv -> 
+            sprintf "%s:%s" kv.Key kv.Value
+        )
+        |> Seq.reduce (fun a b -> a + "\n" + b)
+    
+    let private splitAtFirst (c:char) (s:string) =
+        s.Split c
+        |> fun a -> 
+            a.[0].Trim(),
+            if a.Length > 2 then
+                Array.skip 1 a |> Array.reduce (fun a b -> a + ":" + b) |> fun v -> v.Trim()
+            else
+                a.[1]
+
+    let private deserializeMap (s:string) =
         s.Split '\n'
         |> Array.choose (fun x -> 
             if x.StartsWith "#" then
                 None
             else 
-                x.Split ':'
-                |> fun a -> a.[0].Trim(),a.[1].Trim()
+                splitAtFirst ':' x                
                 |> Some
         )
         |> Map.ofArray
 
+    let writeGlobalParams arcPath (parameters : Map<string,string>) = 
+
+        let filePath = sprintf "%s/.arc/globalParams.yml" arcPath 
+        
+        serializeMap parameters
+        |> writeForce filePath
+
+    let tryReadGlobalParams arcPath = 
+        try 
+            let filePath = sprintf "%s/.arc/globalParams.yml" arcPath 
+            read filePath
+            |> deserializeMap
+            |> Some
+        with
+        | err ->
+            printfn "Could not obtain global params: \n %s" err.Message
+            None
+
     let createQuery editorPath arcPath serializeF deserializeF inp =
         let yamlString = serializeF inp
         let hash = MD5Hash yamlString
-        let filePath = sprintf "%s/.arc/%s.txt" arcPath hash
+        let filePath = sprintf "%s/.arc/%s.yml" arcPath hash
     
-        write filePath yamlString
+        writeForce filePath yamlString
         try
         runProcess editorPath filePath
         read filePath
@@ -132,7 +174,7 @@ module ArgumentQuery =
                 v.Usage
 
         parameters
-        |> createQuery editorPath arcPath (serializeUnion commentF) deserializeUnion 
+        |> createQuery editorPath arcPath (serializeUnion commentF) deserializeMap 
 
 
     let createParameterQueryIfNecessary editorPath arcPath (parameters : 'T []) = 

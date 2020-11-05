@@ -72,8 +72,8 @@ module CLIArguments =
         
         | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<InvestigationParams>
         | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<InvestigationParams>
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Remove
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Edit
+        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<EmptyArgs>
+        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<EmptyArgs>
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -115,6 +115,7 @@ module CLIArguments =
         | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<StudyFull>
         | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<StudyBasic>
         | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<StudyBasic>
+        | [<CliPrefix(CliPrefix.None)>] List of ParseResults<EmptyArgs>
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -123,9 +124,9 @@ module CLIArguments =
                 | Register  _ -> "Create a new Study"
                 | Remove    _ -> "Removes the Study from the arc"
                 | Edit      _ -> "Open an editor window to directly edit the isa Study file"
+                | List      _ -> "Lists all studies in the investigation file"
 
     /// ------------ ASSAY ARGUMENTS ------------ ///
-
 
     type AssayBasic =
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
@@ -152,13 +153,13 @@ module CLIArguments =
     and AssayFull =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
         | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
-        | [<Mandatory>][<Unique>]MeasurementType of string
-        | [<Mandatory>][<Unique>]MeasurementTypeTermAccessionNumber of string
-        | [<Mandatory>][<Unique>]MeasurementTypeTermSourceREF of string
-        | [<Mandatory>][<Unique>]TechnologyType of string
-        | [<Mandatory>][<Unique>]TechnologyTypeTermAccessionNumber of string
-        | [<Mandatory>][<Unique>]TechnologyTypeTermSourceREF of string
-        | [<Mandatory>][<Unique>]TechnologyPlatform of string
+        | [<Unique>]MeasurementType of string
+        | [<Unique>]MeasurementTypeTermAccessionNumber of string
+        | [<Unique>]MeasurementTypeTermSourceREF of string
+        | [<Unique>]TechnologyType of string
+        | [<Unique>]TechnologyTypeTermAccessionNumber of string
+        | [<Unique>]TechnologyTypeTermSourceREF of string
+        | [<Unique>]TechnologyPlatform of string
         
         interface IArgParserTemplate with
             member this.Usage =
@@ -199,6 +200,7 @@ module CLIArguments =
 
     type Arc =
         | [<AltCommandLine("-p")>][<Unique>] WorkingDir of string
+        | [<Unique>] Silent
         | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init of ParseResults<ArcParams>
         | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation of ParseResults<Investigation>
         | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study of ParseResults<Study>
@@ -209,6 +211,7 @@ module CLIArguments =
             member this.Usage =
                 match this with
                 | WorkingDir _ -> "Set the base directory of your ARC"
+                | Silent   _ -> "Prevents the tool from printing additional information"
                 | Init _ -> "Initializes basic folder structure"
                 | Investigation _ -> "Investigation file functions"
                 | Study         _ -> "Study functions"

@@ -19,9 +19,7 @@ module IO =
     let findInvestigationFile (dir) =
         System.IO.DirectoryInfo(dir).GetFiles()
         |> Seq.tryFind (fun fi -> 
-            fi.Name.StartsWith "i_"
-            &&
-            fi.Name.EndsWith ".xlsx"
+            fi.Name = "isa_investigation.xlsx"
         )
         |> fun p -> 
             match p with
@@ -34,90 +32,141 @@ module IO =
 
 module ArcCommander =
     
+    module Investigation =
 
+        let init (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            let workDir = globalParams.["WorkingDir"]
+            let investigation = itemOfParameters (InvestigationItem()) parameters
+
+            let investigationFilePath = workDir + "/" + "isa_investigation.xlsx"
+                   
+            investigation
+            |> ISA_XLSX.IO.ISA_Investigation.createEmpty investigationFilePath 
+
+    module Study =
+
+        let register  (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            let study = itemOfParameters (StudyItem()) parameters
+
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]          
+            
+            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+            if ISA_XLSX.IO.ISA_Investigation.studyExists study.Identifier doc then
+                printfn "Study %s already exists" study.Identifier
+            else 
+                ISA_XLSX.IO.ISA_Investigation.addStudy study doc |> ignore
+            doc.Save()
+            doc.Close()
+
+        let list (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            printfn "Start study list"
+            
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
+            printfn "InvestigationFile: %s"  investigationFilePath
+
+            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+
+            let studies = ISA_XLSX.IO.ISA_Investigation.getStudies doc
+            
+            if Seq.isEmpty studies then 
+                printfn "The Investigation contains no studies"
+            else 
+                studies
+                |> Seq.iter (fun s ->
+                
+                    printfn "Study: %s" s.Identifier
+                )
 
     module Assay =        
         
-        let add workingDir (parameters : Map<string,string>) =
+        let add (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
            
             let name = assay.FileName
 
-            let dir = System.IO.Directory.CreateDirectory (workingDir + @"\assays\" + name)
+            let dir = System.IO.Directory.CreateDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
 
             System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
             System.IO.File.Create (dir.FullName + "\protocols") |> ignore
             System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
 
-            let investigationFilePath = IO.findInvestigationFile workingDir
-            
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+            
+            if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
+                ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
             ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
+
             doc.Save()
             doc.Close()
 
-        let update workingDir (parameters : Map<string,string>) =
+        let update (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
 
-            let investigationFilePath = IO.findInvestigationFile workingDir
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
             
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
             ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
             doc.Save()
             doc.Close()
 
-        let register workingDir (parameters : Map<string,string>) =
+        let register (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             
-            let investigationFilePath = IO.findInvestigationFile workingDir          
-
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]          
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+
+            if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
+                ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
             ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
+
             doc.Save()
             doc.Close()
 
-        let create workingDir (parameters : Map<string,string>) =
+        let create (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
-            let studyIdentifier = parameters.["StudyIdentifier"]
             
             let name = assay.FileName
             
-            let dir = System.IO.Directory.CreateDirectory (workingDir + @"\assays\" + name)
+            let dir = System.IO.Directory.CreateDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
 
             System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
             System.IO.File.Create (dir.FullName + "\protocols") |> ignore
             System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
 
-        let remove workingDir (parameters : Map<string,string>) =
+        let remove (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             
             let name = assay.FileName
             
-            IO.purgeAndDeleteDirectory (workingDir + @"\assays\" + name)
+            IO.purgeAndDeleteDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
 
-            let investigationFilePath = IO.findInvestigationFile workingDir
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
             
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
             ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
             doc.Save()
             doc.Close()
             
-        let move workingDir (parameters : Map<string,string>) =
+        let move (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             let targetStudy = parameters.["TargetStudyIdentifier"]
 
-            let investigationFilePath = IO.findInvestigationFile workingDir
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
             
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
             match ISA_XLSX.IO.ISA_Investigation.studyExists targetStudy doc, ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
@@ -133,20 +182,19 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let edit editorPath workingDir (parameters : Map<string,string>) =
+        let edit (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             printf "Start assay edit"
 
             let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             
-            let investigationFilePath = IO.findInvestigationFile workingDir
-            printfn "InvestigationFile: %s"  investigationFilePath
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
 
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
             match ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
             | Some assay ->
-                ArgumentQuery.createItemQuery editorPath workingDir assay
+                ArgumentQuery.createItemQuery globalParams.["EditorPath"] globalParams.["WorkingDir"] assay
                 |> fun assay -> ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
                 |> ignore
             | None -> 
@@ -155,12 +203,11 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let list workingDir (parameters : Map<string,string>) =
+        let list (globalParams:Map<string,string>) _ =
 
             printfn "Start assay list"
             
-            let investigationFilePath = IO.findInvestigationFile workingDir
-            printfn "InvestigationFile: %s"  investigationFilePath
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
 
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
 
@@ -175,22 +222,22 @@ module ArcCommander =
 
 
     module Arc = 
+
         // Creates Arc specific folder structure 
-        let init workingDir (parameters : Map<string,string>) =
+        let init (globalParams: Map<string,string>) (parameters : Map<string,string>) =
 
-            let investigation = itemOfParameters (InvestigationItem()) parameters
+            let workDir = globalParams.["WorkingDir"]
+            printfn "init arc in %s" workDir
+            
 
-            let dir = System.IO.Directory.CreateDirectory workingDir
+            let dir = System.IO.Directory.CreateDirectory workDir
             dir.CreateSubdirectory "assays"     |> ignore
             dir.CreateSubdirectory "codecaps"   |> ignore
             dir.CreateSubdirectory "externals"  |> ignore
             dir.CreateSubdirectory "runs"       |> ignore
             dir.CreateSubdirectory ".arc"       |> ignore
 
-            let investigationFilePath = dir.FullName + "/" + investigation.Identifier + ".xlsx"
-
-            investigation
-            |> ISA_XLSX.IO.ISA_Investigation.createEmpty investigationFilePath 
+            ArgumentQuery.writeGlobalParams dir.FullName parameters            
 
         // Returns true if called anywhere in an arc 
         let isArc () =
