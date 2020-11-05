@@ -28,6 +28,12 @@ module CLIArguments =
 //        | Description x -> study.Description <- x
 
 
+    type EmptyArgs =
+        | [<Hidden;NoCommandLine>] NoArgs
+    
+        interface IArgParserTemplate with
+            member __.Usage = ""
+
     /// ------------ Arc Arguments ------------ ///
 
     type ArcParams = 
@@ -175,7 +181,7 @@ module CLIArguments =
         | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<AssayMove>
         | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<AssayBasic>
         | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<AssayBasic>
-        | [<CliPrefix(CliPrefix.None)>][<SubCommand>] List
+        | [<CliPrefix(CliPrefix.None)>] List of ParseResults<EmptyArgs>
 
         interface IArgParserTemplate with
             member this.Usage =

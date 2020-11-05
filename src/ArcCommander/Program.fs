@@ -50,6 +50,7 @@ let handleAssay silent workingDir assay =
     | Assay.Move r      -> processCommand silent workingDir ArcCommander.Assay.move r
     | Assay.Remove r    -> processCommand silent workingDir ArcCommander.Assay.remove r
     | Assay.Edit r      -> processCommand silent workingDir (ArcCommander.Assay.edit "notepad") r
+    | Assay.List r      -> processCommand silent workingDir ArcCommander.Assay.list r 
 
 let handleCommand silent workingDir command =
     match command with
