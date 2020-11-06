@@ -12,7 +12,7 @@ open System
 open System.Reflection
 open FSharp.Reflection
 
-open ArgumentQuery
+open ParameterProcessing
 
 let processCommand (globalParams:Map<string,string>) commandF (r : ParseResults<'T>) =
     printfn "\nstart process with the global parameters: \n" 
@@ -20,7 +20,7 @@ let processCommand (globalParams:Map<string,string>) commandF (r : ParseResults<
 
     let parameterGroup =
         let g = groupArguments (r.GetAllResults())
-        createParameterQueryIfNecessary globalParams.["EditorPath"] globalParams.["WorkingDir"] g  
+        Prompt.createParameterQueryIfNecessary globalParams.["EditorPath"] globalParams.["WorkingDir"] g  
     printfn "\nand the parameters: \n" 
     parameterGroup|> Map.iter (printfn "\t%s:%s")
 
@@ -80,7 +80,7 @@ let main argv =
         let silent = results.Contains(Silent) |> string
 
         let globalParams = 
-            match tryReadGlobalParams workingDir with
+            match Prompt.tryReadGlobalParams workingDir with
             | Some gp -> gp
             | None -> ["EditorPath","notepad"] |> Map.ofList
             |> Map.add "WorkingDir" workingDir
