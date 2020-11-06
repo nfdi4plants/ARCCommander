@@ -38,6 +38,12 @@ module Option =
         Option.map f v
         |> (=) (Some true)
 
+    /// If the option contains value, gets it, else returns the given default value
+    let getWithDefault (d:'T) (v : 'T Option) : 'T =
+        match v with
+        | Some x -> x
+        | None -> d
+
 /// KeyValuePair helper functions
 module KeyValuePair =
 
@@ -152,6 +158,33 @@ module ISA_Investigation_Helpers  =
         )
         |> Option.map Row.getIndex
 
+    /// Returns the indices of each row whose rowkey matches the given key
+    let getIndicesOfKey workbookPart (key:string) sheet = 
+        sheet
+        |> SheetData.getRows
+        |> Seq.choose (fun r ->
+            if tryParseKey workbookPart r |> Option.equals ((=) key) then
+                Some (Row.getIndex r)
+            else
+                None
+        )
+
+    /// Returns the indices of each row between the given rowkey boundaries, whose rowkey matches the given key
+    let getIndicesOfKeysBetween startI endI workbookPart (key:string) sheet = 
+        sheet
+        |> SheetData.getRows
+        |> Seq.filter (fun r ->
+            r
+            |> Row.getIndex 
+            |> fun i -> i >= startI && i <= endI
+        )
+        |> Seq.choose (fun r ->
+            if tryParseKey workbookPart r |> Option.equals ((=) key) then
+                Some (Row.getIndex r)
+            else
+                None
+        )
+
     /// Returns true, if a row with the given key exists
     let keyExists workbookPart key sheet = 
         tryFindIndexOfKey workbookPart key sheet 
@@ -180,7 +213,7 @@ module ISA_Investigation_Helpers  =
         let tryGetKeyValueAt workbookPart rowIndex sheet: KeyValuePair<string,string> Option = 
             SheetData.tryGetRowAt rowIndex sheet
             |> Option.pipe (tryParseKeyValue workbookPart)
-        
+
         /// If a row with the given key exists between the given rowkey boundaries, returns its rowkey
         let findIndexOfKeyValue workbookPart (kv:KeyValuePair<string,string>) sheet = 
             sheet
@@ -341,7 +374,7 @@ module ISA_Investigation  =
     /// Creates an empty ivestigation file at the given path
     let createEmpty path (investigation : InvestigationItem) = 
 
-        let doc = SheetTransformation.createEmptySSTSpreadsheet "i_investigation" path
+        let doc = SheetTransformation.createEmptySSTSpreadsheet "isa_investigation" path
         try 
             let workbookPart = doc |> Spreadsheet.getWorkbookPart
             let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
@@ -439,6 +472,18 @@ module ISA_Investigation  =
             else 
                 seq s |> Seq.head |> Some
     
+    /// If the item exists in the studyscope, returns its column
+    let private itemCountInScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet : uint =
+        let keys = item |> getKeyValues |> Array.map (fun (k,v) -> prefix + " " + item.KeyPrefix + " " + k)
+        
+        keys
+        |> Array.choose (fun k -> 
+            tryFindIndexOfKeyBetween scope.From scope.To workbookPart k sheet
+            |> Option.map (fun i -> SheetData.getRowAt i sheet |> Row.getSpan |> Row.Spans.rightBoundary)
+        )
+        |> Array.max
+        |> fun rightBoundary -> rightBoundary - 1u
+
     /// Removes a section descirbed by the given scope, if it is empty
     let removeScopeIfEmpty workbookPart (scope:Scope) sheet =
         let rowWithValueExists = 
@@ -636,6 +681,77 @@ module ISA_Investigation  =
         | err -> 
             printfn "Could not add %s to study %s: %s" item.KeyPrefix study err.Message
             None
+
+    /// If the sty exists, returns its values
+    let tryGetStudy (study:string) (spreadSheet:SpreadsheetDocument) = 
+        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        try
+            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+
+            let studyScope = tryGetStudyScope workbookPart study sheet
+
+            let item = StudyItem()
+
+            studyScope
+            |> Option.map (fun scope ->
+                [scope.From .. scope.To]
+                |> List.iter (fun i ->
+                    match SingleTrait.tryGetKeyValueAt workbookPart i sheet with
+                    | Some kv when kv.Key.Contains("Study") ->
+                        setKeyValue (KeyValuePair(kv.Key.Replace("Study" + " ",""),kv.Value)) item
+                        |> ignore
+                    | _ -> 
+                        ()
+                )
+                item
+            )
+            
+        with 
+        | err -> 
+            printfn "Error: Could not obtain study %s: %s" study err.Message
+            None
+
+    /// Finds all studies in the spreadsheet and returns their values
+    let getStudies (spreadSheet:SpreadsheetDocument) = 
+        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        try
+            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            ISA_Investigation_Helpers.getIndicesOfKey workbookPart "Study Identifier" sheet
+            |> Seq.choose (fun i -> 
+                ISA_Investigation_Helpers.SingleTrait.tryGetKeyValueAt workbookPart i sheet
+                |> Option.pipe (fun kv -> tryGetStudy kv.Value spreadSheet)
+            )
+        with 
+        | err -> 
+            printfn "Error: Could not obtain study identifiers: %s" err.Message
+            Seq.empty
+
+
+    let getItemsInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
+        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        try
+            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+
+            let studyScope = tryGetStudyScope workbookPart study sheet
+
+            let itemScope = 
+                studyScope
+                |> Option.pipe (fun studyScope -> tryGetItemScope workbookPart studyScope item sheet) 
+            
+            itemScope
+            |> Option.map (fun scope ->
+                let itemCount = (itemCountInScope workbookPart "Study" scope item sheet)
+                Seq.init (int itemCount) (fun i -> 
+                    getItemValuesFromStudy workbookPart scope (uint i + 2u) item sheet
+                )
+            
+            )
+            |> Option.getWithDefault (Seq.empty)
+
+        with 
+        | err -> 
+            printfn "Error: Could not obtain items in study: %s" err.Message
+            Seq.empty
 
 module ISA_Assay  = 
 

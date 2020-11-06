@@ -7,8 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CLIArguments.fs" />
-    <Compile Include="ArgumentQuery.fs" />
-    <Compile Include="ArgumentParsing.fs" />
+    <Compile Include="ParameterProcessing.fs" />
     <Compile Include="ArcCommander.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

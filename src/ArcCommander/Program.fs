@@ -1,74 +1,96 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿module ArcCommander.Program
+
+// Learn more about F# at http://fsharp.org
 open ArcCommander
-open System
 open Argu 
 
 open CLIArguments
-open ArgumentMatching
+//open ArgumentMatching
 open Assay
 
+open System
+open System.Reflection
+open FSharp.Reflection
+
+open ParameterProcessing
+
+let processCommand (globalParams:Map<string,string>) commandF (r : ParseResults<'T>) =
+    printfn "\nstart process with the global parameters: \n" 
+    globalParams |> Map.iter (printfn "\t%s:%s")
+
+    let parameterGroup =
+        let g = groupArguments (r.GetAllResults())
+        Prompt.createParameterQueryIfNecessary globalParams.["EditorPath"] globalParams.["WorkingDir"] g  
+    printfn "\nand the parameters: \n" 
+    parameterGroup|> Map.iter (printfn "\t%s:%s")
+
+    try commandF globalParams parameterGroup
+    finally
+        printfn "done processing command"
+ 
+
+let handleInvestigation globalParams investigation =
+    match investigation with
+    | Investigation.Init r      -> processCommand globalParams Investigation.init r
+    | Investigation.Update r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
+    | Investigation.Edit r      -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
+    | Investigation.Remove r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
+
+
+let handleStudy globalParams study =
+    match study with
+    | Study.Update r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
+    | Study.Register r  -> processCommand globalParams Study.register r
+    | Study.Edit r      -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
+    | Study.Remove r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
+    | Study.List r      -> processCommand globalParams Study.list r
+
+
+let handleAssay globalParams assay =
+    match assay with
+    | Assay.Add r       -> processCommand globalParams Assay.add r
+    | Assay.Create r    -> processCommand globalParams Assay.create r
+    | Assay.Register r  -> processCommand globalParams Assay.register r
+    | Assay.Update r    -> processCommand globalParams Assay.update r
+    | Assay.Move r      -> processCommand globalParams Assay.move r
+    | Assay.Remove r    -> processCommand globalParams Assay.remove r
+    | Assay.Edit r      -> processCommand globalParams Assay.edit r
+    | Assay.List r      -> processCommand globalParams Assay.list r 
+
+let handleCommand globalParams command =
+    match command with
+    | Investigation subCommand  -> handleInvestigation globalParams (subCommand.GetSubCommand())
+    | Study subCommand          -> handleStudy globalParams (subCommand.GetSubCommand())
+    | Assay subCommand          -> handleAssay globalParams (subCommand.GetSubCommand())
+    
+    | Init r                    -> processCommand globalParams Arc.init r
+    | WorkingDir _ | Silent     -> ()
 
 [<EntryPoint>]
 let main argv =
     try
-        let parser = ArgumentParser.Create<ArcArgs>(programName = "ArcCommander.exe")
+        let parser = ArgumentParser.Create<Arc>(programName = "arc")
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
-
-        let editorPath = "notepad"
 
         let workingDir = 
             match results.TryGetResult(WorkingDir) with
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
+
+        let silent = results.Contains(Silent) |> string
+
+        let globalParams = 
+            match Prompt.tryReadGlobalParams workingDir with
+            | Some gp -> gp
+            | None -> ["EditorPath","notepad"] |> Map.ofList
+            |> Map.add "WorkingDir" workingDir
+            |> Map.add "Silent" silent
+
         printfn "WorkDir: %s" workingDir
-        ()
 
-        match results with
-        | AssayNoSubCommand -> ()
-        | Assay (fields,subCommand) ->            
-            match subCommand with
-            | Add fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.add workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
-            | Register fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.register workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
-            | Update fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.update workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
-            | Create fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.create workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
-            | Remove fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.remove workingDir a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
-            | Edit fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.edit workingDir editorPath a.StudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
-            | Move fields a -> 
-                let assayParams = a |> ArgumentQuery.askForFilloutIfNeeded editorPath workingDir 
-                ArcCommander.Assay.move workingDir a.StudyIdentifier a.TargetStudyIdentifier (assayParams |> ArgumentQuery.Assay.toISAAssay)
-                ()
+        handleCommand globalParams (results.GetSubCommand())
 
-            | _ -> ()
-        | _ -> ()
-
+        1
     with e ->
         printfn "%s" e.Message
-    0
-    //let path = 
-    //match argv    |> List.ofArray with
-    //| InitARC :: args ->
-    //    let parser = ArgumentParser.Create<ArcArgs>
-    //    let results = parser.Parse args
-        
-    //| AddAssay :: args -> 
-    //    let parser = ArgumentParser.Create<AssayArgs>
-    //    let results = parser.Parse args
-    
+        0

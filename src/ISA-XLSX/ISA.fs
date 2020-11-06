@@ -32,8 +32,6 @@ module DataModel =
                 member this.Header = "ONTOLOGY SOURCE REFERENCE"
                 member this.KeyPrefix = "Term Source"
 
-
-
         type Publication (?pubMedID,?doi,?authorList,?title,?status,?statusTermAccessionNumber,?statusTermSourceREF) =
             [<Label("PubMed ID")>]
             member val PubMedID = defaultArg pubMedID "" with get,set
@@ -52,8 +50,6 @@ module DataModel =
             interface ISAItem with
                 member this.Header = "PUBLICATIONS"
                 member this.KeyPrefix = "Publication"
-
-
 
         type Person (?lastName,?firstName,?midInitials,?email,?phone,?fax,?address,?affiliation,?roles,?rolesTermAccessionNumber,?rolesTermSourceREF) =
             [<Label("Last Name")>][<IsIdentifier>]
@@ -211,12 +207,12 @@ module DataModel =
             | (:? 'a) as customAttribute -> Some(unbox<'a> customAttribute)
             | _ -> None
 
-        let internal getKeyValues (item:'T) =
+        let getKeyValues (item:'T) =
             let schemaType = typeof<'T>
             schemaType.GetProperties()
             |> Array.choose ( fun memb -> 
                 match tryGetCustomAttribute<LabelAttribute> true memb with 
-                | Some x -> Some (x.Label,memb.GetValue(item))
+                | Some x -> Some (x.Label,memb.GetValue(item) |> string)
                 | None   -> None
                 )
 
@@ -229,7 +225,7 @@ module DataModel =
                 | _   -> None
                 )
 
-        let internal setKeyValue (kv:KeyValuePair<string,string>) (item:'T) =
+        let setKeyValue (kv:KeyValuePair<string,string>) (item:'T) =
             let schemaType = typeof<'T>
             schemaType.GetProperties()
             |> Array.iter ( fun memb -> 
