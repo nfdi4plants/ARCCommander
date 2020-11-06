@@ -51,6 +51,14 @@ module CLIArguments =
 
 
     /// ------------ Investigation Arguments ------------ ///
+    type InvestigationId = 
+        | [<Mandatory>][<Unique>] Identifier of string
+     
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | Identifier _->    "Identifier of the investigation"
+
 
     type InvestigationParams = 
         | [<Mandatory>][<Unique>] Identifier of string
@@ -62,13 +70,13 @@ module CLIArguments =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | Identifier _->    "Identifier of the investigation, will be used as the file name of the investigation file"
+                | Identifier _->    "Identifier of the investigation"
                 | Title _->         "Title of the investigation"
                 | Description _->   "Description of the investigation"
                 | SubmissionDate _->   "Submission Date of the investigation"
                 | PublicReleaseDate _->   "Public Release Date of the investigation"
     
-    and Investigation = 
+    type Investigation = 
         
         | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<InvestigationParams>
         | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<InvestigationParams>
@@ -85,7 +93,7 @@ module CLIArguments =
 
     /// ------------ STUDY ARGUMENTS ------------ ///
 
-    type StudyFull =
+    type StudyParams =
         | [<Mandatory>][<Unique>] Identifier of string
         | [<Unique>] Title of string
         | [<Unique>] Description of string
@@ -95,13 +103,13 @@ module CLIArguments =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | Identifier _->    "Identifier of the study, will be used as the file name of the study file"
+                | Identifier _->    "Identifier of the study"
                 | Title _->         "Title of the study"
                 | Description _->   "Description of the study"
                 | SubmissionDate _->   "Submission Date of the study"
                 | PublicReleaseDate _->   "Public Release Date of the study"
 
-    and StudyBasic =
+    type StudyId =
         | [<Mandatory>][<Unique>] Identifier of string
 
         interface IArgParserTemplate with
@@ -109,12 +117,12 @@ module CLIArguments =
                 match this with
                 | Identifier _->    "Identifier of the study, will be used as the file name of the study file"
 
-    and Study =
+    type Study =
 
-        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<StudyFull>
-        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<StudyFull>
-        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<StudyBasic>
-        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<StudyBasic>
+        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<StudyParams>
+        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<StudyParams>
+        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<StudyId>
+        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<StudyId>
         | [<CliPrefix(CliPrefix.None)>] List of ParseResults<EmptyArgs>
 
         interface IArgParserTemplate with
@@ -128,7 +136,7 @@ module CLIArguments =
 
     /// ------------ ASSAY ARGUMENTS ------------ ///
 
-    type AssayBasic =
+    type AssayId =
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
         | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
 
@@ -138,7 +146,7 @@ module CLIArguments =
                 | StudyIdentifier   _ -> "Name of the study in which the assay is situated"
                 | AssayIdentifier   _ -> "Name of the assay of interest"
 
-    and AssayMove =
+    type AssayMoveArguments =
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
         | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
         | [<Mandatory>][<AltCommandLine("-t")>][<Unique>] TargetStudyIdentifier of string
@@ -150,7 +158,7 @@ module CLIArguments =
                 | AssayIdentifier   _ -> "Name of the assay of interest"
                 | TargetStudyIdentifier _-> "Target study"
 
-    and AssayFull =  
+    type AssayParams =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
         | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
         | [<Unique>]MeasurementType of string
@@ -174,14 +182,14 @@ module CLIArguments =
                 | TechnologyTypeTermSourceREF _         -> "Technology Type Term Source REF of the assay"
                 | TechnologyPlatform _                  -> "Technology Platform of the assay"
 
-    and Assay = 
-        | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<AssayBasic>
-        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<AssayFull>
-        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<AssayFull>
-        | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<AssayFull>
-        | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<AssayMove>
-        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<AssayBasic>
-        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<AssayBasic>
+    type Assay = 
+        | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<AssayId>
+        | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<AssayParams>
+        | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<AssayParams>
+        | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<AssayParams>
+        | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<AssayMoveArguments>
+        | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<AssayId>
+        | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<AssayId>
         | [<CliPrefix(CliPrefix.None)>] List of ParseResults<EmptyArgs>
 
         interface IArgParserTemplate with
