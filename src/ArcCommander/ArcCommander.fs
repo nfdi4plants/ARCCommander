@@ -1,7 +1,7 @@
 ﻿namespace ArcCommander
 
 open ISA.DataModel.InvestigationFile
-open ArgumentQuery
+open ParameterProcessing
 open System
 
 
@@ -37,7 +37,7 @@ module ArcCommander =
         let init (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let workDir = globalParams.["WorkingDir"]
-            let investigation = itemOfParameters (InvestigationItem()) parameters
+            let investigation = isaItemOfParameters (InvestigationItem()) parameters
 
             let investigationFilePath = workDir + "/" + "isa_investigation.xlsx"
                    
@@ -48,7 +48,7 @@ module ArcCommander =
 
         let register  (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let study = itemOfParameters (StudyItem()) parameters
+            let study = isaItemOfParameters (StudyItem()) parameters
 
             let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]          
             
@@ -84,7 +84,7 @@ module ArcCommander =
         
         let add (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
            
             let name = assay.FileName
@@ -107,7 +107,7 @@ module ArcCommander =
 
         let update (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
 
             let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
@@ -119,7 +119,7 @@ module ArcCommander =
 
         let register (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             
             let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]          
@@ -134,7 +134,7 @@ module ArcCommander =
 
         let create (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             
             let name = assay.FileName
             
@@ -146,7 +146,7 @@ module ArcCommander =
 
         let remove (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             
             let name = assay.FileName
@@ -162,7 +162,7 @@ module ArcCommander =
             
         let move (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             let targetStudy = parameters.["TargetStudyIdentifier"]
 
@@ -186,7 +186,7 @@ module ArcCommander =
 
             printf "Start assay edit"
 
-            let assay = itemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
             
             let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
@@ -194,7 +194,7 @@ module ArcCommander =
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
             match ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
             | Some assay ->
-                ArgumentQuery.createItemQuery globalParams.["EditorPath"] globalParams.["WorkingDir"] assay
+                Prompt.createItemQuery globalParams.["EditorPath"] globalParams.["WorkingDir"] assay
                 |> fun assay -> ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
                 |> ignore
             | None -> 
@@ -237,7 +237,7 @@ module ArcCommander =
             dir.CreateSubdirectory "runs"       |> ignore
             dir.CreateSubdirectory ".arc"       |> ignore
 
-            ArgumentQuery.writeGlobalParams dir.FullName parameters            
+            Prompt.writeGlobalParams dir.FullName parameters            
 
         // Returns true if called anywhere in an arc 
         let isArc () =
