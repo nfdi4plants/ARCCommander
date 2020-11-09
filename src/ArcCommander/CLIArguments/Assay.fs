@@ -2,20 +2,23 @@
 open Argu 
 open ISA
 
-type AssayId =
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
+type AssayCreateArgs =
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier:string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of assay_identifier:string
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | StudyIdentifier   _ -> "Name of the study in which the assay is situated"
-            | AssayIdentifier   _ -> "Name of the assay of interest"
+            | StudyIdentifier   _ -> "identifier of the study in which the assay is registered"
+            | AssayIdentifier   _ -> "identifier of the assay of interest"
+
+type AssayEditArgs = AssayCreateArgs
+type AssayRemoveArgs = AssayCreateArgs
 
 type AssayMoveArguments =
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
-    | [<Mandatory>][<AltCommandLine("-t")>][<Unique>] TargetStudyIdentifier of string
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier:string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of assay_identifier:string
+    | [<Mandatory>][<AltCommandLine("-t")>][<Unique>] TargetStudyIdentifier of target_study_identifier:string
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -24,16 +27,16 @@ type AssayMoveArguments =
             | AssayIdentifier   _ -> "Name of the assay of interest"
             | TargetStudyIdentifier _-> "Target study"
 
-type AssayParams =  
+type AssayUpdateArgs =  
     | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
     | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
-    | [<Unique>]MeasurementType of string
-    | [<Unique>]MeasurementTypeTermAccessionNumber of string
-    | [<Unique>]MeasurementTypeTermSourceREF of string
-    | [<Unique>]TechnologyType of string
-    | [<Unique>]TechnologyTypeTermAccessionNumber of string
-    | [<Unique>]TechnologyTypeTermSourceREF of string
-    | [<Unique>]TechnologyPlatform of string
+    | [<Unique>] MeasurementType of measurement_type:string
+    | [<Unique>] MeasurementTypeTermAccessionNumber of measurement_type_accession:string
+    | [<Unique>] MeasurementTypeTermSourceREF of measurement_type_term_source:string
+    | [<Unique>] TechnologyType of technology_type:string
+    | [<Unique>] TechnologyTypeTermAccessionNumber of technology_type_accession:string
+    | [<Unique>] TechnologyTypeTermSourceREF of technology_type_term_source:string
+    | [<Unique>] TechnologyPlatform of technology_platform:string
     
     interface IArgParserTemplate with
         member this.Usage =
@@ -48,26 +51,29 @@ type AssayParams =
             | TechnologyTypeTermSourceREF _         -> "Technology Type Term Source REF of the assay"
             | TechnologyPlatform _                  -> "Technology Platform of the assay"
 
+type AssayRegisterArgs = AssayUpdateArgs
+type AssayAddArgs = AssayUpdateArgs
+
 type Assay = 
-    | [<CliPrefix(CliPrefix.None)>] Create of ParseResults<AssayId>
-    | [<CliPrefix(CliPrefix.None)>] Register of ParseResults<AssayParams>
-    | [<CliPrefix(CliPrefix.None)>] Update of ParseResults<AssayParams>
-    | [<CliPrefix(CliPrefix.None)>] Add of ParseResults<AssayParams>
-    | [<CliPrefix(CliPrefix.None)>] Move of ParseResults<AssayMoveArguments>
-    | [<CliPrefix(CliPrefix.None)>] Remove of ParseResults<AssayId>
-    | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<AssayId>
+    | [<CliPrefix(CliPrefix.None)>] Create   of create_args:  ParseResults<AssayCreateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Update   of update_args:  ParseResults<AssayUpdateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Edit     of edit_args:    ParseResults<AssayEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Register of register_args:ParseResults<AssayRegisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Add      of add_args:     ParseResults<AssayAddArgs>
+    | [<CliPrefix(CliPrefix.None)>] Move     of move_args:    ParseResults<AssayMoveArguments>
+    | [<CliPrefix(CliPrefix.None)>] Remove   of remove_args:  ParseResults<AssayRemoveArgs>
     | [<CliPrefix(CliPrefix.None)>] List
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Create            _ -> "A new assay file structure of the given name is created"
-            | Register          _ -> "Registers an existing assay to the study"
-            | Update            _ -> "The specified assay gets updated with the given parameters"
-            | Add               _ -> "A new assay file structure of the given name is created and the registered to the study"
-            | Move              _ -> "Moves the assay from one study to another"
-            | Remove            _ -> "Removes the assay from the arc"
-            | Edit              _ -> "Open an editor window for manipulating the assay parameters"
-            | List              _ -> "Lists all Assays registered in the investigation file"
+            | Create            _ -> "Create a new assay with the given parameters"
+            | Update            _ -> "Update an assaywith the given parameters"
+            | Edit              _ -> "Open an editor window to directly edit an assay"
+            | Register          _ -> "Register an existing assay in the given study"
+            | Add               _ -> "Create a new assay and register it to the given study"
+            | Move              _ -> "Move an assay from one study to another"
+            | Remove            _ -> "Remove an assay from the arc"
+            | List              _ -> "List all assays registered in the investigation file"
 
 

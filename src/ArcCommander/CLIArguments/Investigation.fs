@@ -4,25 +4,25 @@ open Argu
 open ISA
 
 type InvestigationCreateArgs = 
-    | [<Mandatory>][<Unique>] Identifier of string
-    | [<Unique>] Title of string
-    | [<Unique>] Description of string
-    | [<Unique>] SubmissionDate of string
-    | [<Unique>] PublicReleaseDate of string
+    | [<Mandatory>][<Unique>] Identifier of investigation_identifier:string
+    | [<Unique>] Title of title:string
+    | [<Unique>] Description of description:string
+    | [<Unique>] SubmissionDate of submission_date:string
+    | [<Unique>] PublicReleaseDate of public_release_date:string
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Identifier _->    "Identifier of the investigation"
-            | Title _->         "Title of the investigation"
-            | Description _->   "Description of the investigation"
-            | SubmissionDate _->   "Submission Date of the investigation"
-            | PublicReleaseDate _->   "Public Release Date of the investigation"
+            | Identifier        _-> "Identifier of the investigation"
+            | Title             _-> "Title of the investigation"
+            | Description       _-> "Description of the investigation"
+            | SubmissionDate    _-> "Submission Date of the investigation"
+            | PublicReleaseDate _-> "Public Release Date of the investigation"
 
 type InvestigationUpdateArgs = InvestigationCreateArgs
 
 type InvestigationRemoveArgs =
-    | [<Mandatory>][<Unique>] Identifier of string
+    | [<Mandatory>][<Unique>] Identifier of investigation_identifier:string
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -33,15 +33,15 @@ type InvestigationEditArgs = InvestigationRemoveArgs
 
 type Investigation = 
     
-    | [<CliPrefix(CliPrefix.None)>] Create of investigation_init_args: ParseResults<InvestigationCreateArgs>
-    | [<CliPrefix(CliPrefix.None)>] Update of investigation_update_args: ParseResults<InvestigationUpdateArgs>
-    | [<CliPrefix(CliPrefix.None)>] Remove of investigation_remove_args: ParseResults<InvestigationRemoveArgs>
-    | [<CliPrefix(CliPrefix.None)>] Edit of investigation_edit_args: ParseResults<InvestigationEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Create of init_args: ParseResults<InvestigationCreateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Update of update_args: ParseResults<InvestigationUpdateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Edit of edit_args: ParseResults<InvestigationEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Remove of remove_args: ParseResults<InvestigationRemoveArgs>
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Update            _ -> "The investigation gets updated with the given parameters"
-            | Create            _ -> "Create a new investigation file with the given parameters"
-            | Remove            _ -> "Removes the investigation from the arc"
-            | Edit              _ -> "Open an editor window to directly edit the isa investigation file"
+            | Create            _ -> "Create a new investigation with the given parameters"
+            | Update            _ -> "Update an investigation with the given parameters"
+            | Edit              _ -> "Open an editor window to directly edit an investigation"
+            | Remove            _ -> "Remove an investigation from the arc"

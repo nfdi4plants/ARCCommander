@@ -44,8 +44,16 @@ module ArcCommander =
             investigation
             |> ISA_XLSX.IO.ISA_Investigation.createEmpty investigationFilePath 
 
+        let update (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+        let edit (globalParams:Map<string,string>) (parameters : Map<string,string>)    = raise (NotImplementedException())
+        let remove (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+
     module Study =
 
+        let create (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+        let update (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+        let edit (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+        
         let register  (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let study = isaItemOfParameters (StudyItem()) parameters
@@ -59,7 +67,10 @@ module ArcCommander =
                 ISA_XLSX.IO.ISA_Investigation.addStudy study doc |> ignore
             doc.Save()
             doc.Close()
-
+        
+        let add (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+        let remove (globalParams:Map<string,string>) (parameters : Map<string,string>)  = raise (NotImplementedException())
+       
         let list (globalParams:Map<string,string>) =
 
             printfn "Start study list"
@@ -81,56 +92,6 @@ module ArcCommander =
                 )
 
     module Assay =        
-        
-        let add (globalParams:Map<string,string>) (parameters : Map<string,string>) =
-
-            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
-            let studyIdentifier = parameters.["StudyIdentifier"]
-           
-            let name = assay.FileName
-
-            let dir = System.IO.Directory.CreateDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
-
-            System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
-            System.IO.File.Create (dir.FullName + "\protocols") |> ignore
-            System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
-
-            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
-            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-            
-            if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
-                ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
-            ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
-
-            doc.Save()
-            doc.Close()
-
-        let update (globalParams:Map<string,string>) (parameters : Map<string,string>) =
-
-            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
-            let studyIdentifier = parameters.["StudyIdentifier"]
-
-            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
-            
-            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-            ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
-            doc.Save()
-            doc.Close()
-
-        let register (globalParams:Map<string,string>) (parameters : Map<string,string>) =
-
-            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
-            let studyIdentifier = parameters.["StudyIdentifier"]
-            
-            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]          
-            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-
-            if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
-                ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
-            ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
-
-            doc.Save()
-            doc.Close()
 
         let create (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
@@ -144,41 +105,15 @@ module ArcCommander =
             System.IO.File.Create (dir.FullName + "\protocols") |> ignore
             System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
 
-        let remove (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+        let update (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
             let studyIdentifier = parameters.["StudyIdentifier"]
-            
-            let name = assay.FileName
-            
-            IO.purgeAndDeleteDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
 
             let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
             
             let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-            ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
-            doc.Save()
-            doc.Close()
-            
-        let move (globalParams:Map<string,string>) (parameters : Map<string,string>) =
-
-            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
-            let studyIdentifier = parameters.["StudyIdentifier"]
-            let targetStudy = parameters.["TargetStudyIdentifier"]
-
-            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
-            
-            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-            match ISA_XLSX.IO.ISA_Investigation.studyExists targetStudy doc, ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
-            | (true, Some assay) ->
-                ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
-                ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay targetStudy doc
-                ()
-            | false, _ -> 
-                printfn "Target Study does not exist"
-                ()
-            | _ -> 
-                ()
+            ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
             doc.Save()
             doc.Close()
 
@@ -202,6 +137,83 @@ module ArcCommander =
                 ()
             doc.Save()
             doc.Close()
+        
+        let register (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
+            
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]          
+            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+
+            if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
+                ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
+            ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
+
+            doc.Save()
+            doc.Close()
+        
+        let add (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
+           
+            let name = assay.FileName
+
+            let dir = System.IO.Directory.CreateDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
+
+            System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
+            System.IO.File.Create (dir.FullName + "\protocols") |> ignore
+            System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
+
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
+            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+            
+            if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
+                ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
+            ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
+
+            doc.Save()
+            doc.Close()
+        
+        let remove (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
+            
+            let name = assay.FileName
+            
+            IO.purgeAndDeleteDirectory (globalParams.["WorkingDir"] + @"\assays\" + name)
+
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
+            
+            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+            ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
+            doc.Save()
+            doc.Close()
+        
+        let move (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+
+            let assay = isaItemOfParameters (Assay(fileName = parameters.["AssayIdentifier"])) parameters
+            let studyIdentifier = parameters.["StudyIdentifier"]
+            let targetStudy = parameters.["TargetStudyIdentifier"]
+
+            let investigationFilePath = IO.findInvestigationFile globalParams.["WorkingDir"]
+            
+            let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+            match ISA_XLSX.IO.ISA_Investigation.studyExists targetStudy doc, ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
+            | (true, Some assay) ->
+                ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
+                ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay targetStudy doc
+                ()
+            | false, _ -> 
+                printfn "Target Study does not exist"
+                ()
+            | _ -> 
+                ()
+            doc.Save()
+            doc.Close()
+
 
         let list (globalParams:Map<string,string>) =
 

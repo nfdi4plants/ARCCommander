@@ -21,11 +21,11 @@ type ArcInitArgs =
 type Arc =
     | [<AltCommandLine("-p")>][<Unique>] WorkingDir of working_directory: string
     | [<Unique>] Silent
-    | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init of arc_init_args:ParseResults<ArcInitArgs>
-    | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation of ParseResults<Investigation>
-    | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study of ParseResults<Study>
+    | [<CliPrefix(CliPrefix.None)>][<SubCommand>] Init of init_args:ParseResults<ArcInitArgs>
+    | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation of verb_and_args:ParseResults<Investigation>
+    | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study of verb_and_args:ParseResults<Study>
     //| [<CliPrefix(CliPrefix.None)>] AddWorkflow of ParseResults<WorkflowArgs>
-    | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of ParseResults<Assay>
+    | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of verb_and_args:ParseResults<Assay>
 
     interface IArgParserTemplate with
         member this.Usage =
