@@ -34,7 +34,7 @@ module ArcCommander =
     
     module Investigation =
 
-        let init (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+        let create (globalParams:Map<string,string>) (parameters : Map<string,string>) =
 
             let workDir = globalParams.["WorkingDir"]
             let investigation = isaItemOfParameters (InvestigationItem()) parameters
@@ -60,7 +60,7 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let list (globalParams:Map<string,string>) (parameters : Map<string,string>) =
+        let list (globalParams:Map<string,string>) =
 
             printfn "Start study list"
             
@@ -203,7 +203,7 @@ module ArcCommander =
             doc.Save()
             doc.Close()
 
-        let list (globalParams:Map<string,string>) _ =
+        let list (globalParams:Map<string,string>) =
 
             printfn "Start assay list"
             

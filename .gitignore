@@ -187,3 +187,5 @@ output/
 codeCov.xml
 coverage.xml
 /temp
+/src/FSharpSpreadsheetML/Playground
+/tests/cliTests

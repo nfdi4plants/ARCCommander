@@ -4,7 +4,7 @@
 open ArcCommander
 open Argu 
 
-open CLIArguments
+open ArcCommander.CLIArguments
 //open ArgumentMatching
 open Assay
 
@@ -13,6 +13,7 @@ open System.Reflection
 open FSharp.Reflection
 
 open ParameterProcessing
+
 
 let processCommand (globalParams:Map<string,string>) commandF (r : ParseResults<'T>) =
     printfn "\nstart process with the global parameters: \n" 
@@ -27,11 +28,17 @@ let processCommand (globalParams:Map<string,string>) commandF (r : ParseResults<
     try commandF globalParams parameterGroup
     finally
         printfn "done processing command"
- 
+
+let processCommandWithoutArgs (globalParams:Map<string,string>) commandF =
+    printfn "\nstart process with the global parameters: \n" 
+    globalParams |> Map.iter (printfn "\t%s:%s")
+    try commandF globalParams
+    finally
+        printfn "done processing command"
 
 let handleInvestigation globalParams investigation =
     match investigation with
-    | Investigation.Init r      -> processCommand globalParams Investigation.init r
+    | Investigation.Create r    -> processCommand globalParams Investigation.create r
     | Investigation.Update r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
     | Investigation.Edit r      -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
     | Investigation.Remove r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
@@ -43,7 +50,7 @@ let handleStudy globalParams study =
     | Study.Register r  -> processCommand globalParams Study.register r
     | Study.Edit r      -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
     | Study.Remove r    -> processCommand globalParams (fun _ _ -> printfn "not yet implemented") r
-    | Study.List r      -> processCommand globalParams Study.list r
+    | Study.List        -> processCommandWithoutArgs globalParams Study.list
 
 
 let handleAssay globalParams assay =
@@ -55,7 +62,7 @@ let handleAssay globalParams assay =
     | Assay.Move r      -> processCommand globalParams Assay.move r
     | Assay.Remove r    -> processCommand globalParams Assay.remove r
     | Assay.Edit r      -> processCommand globalParams Assay.edit r
-    | Assay.List r      -> processCommand globalParams Assay.list r 
+    | Assay.List        -> processCommandWithoutArgs globalParams Assay.list 
 
 let handleCommand globalParams command =
     match command with
