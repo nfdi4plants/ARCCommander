@@ -6,7 +6,10 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CLIArguments.fs" />
+    <Compile Include="CLIArguments\Assay.fs" />
+    <Compile Include="CLIArguments\Study.fs" />
+    <Compile Include="CLIArguments\Investigation.fs" />
+    <Compile Include="CLIArguments\Arc.fs" />
     <Compile Include="ParameterProcessing.fs" />
     <Compile Include="ArcCommander.fs" />
     <Compile Include="Program.fs" />
