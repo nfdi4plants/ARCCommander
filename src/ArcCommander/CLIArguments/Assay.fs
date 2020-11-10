@@ -62,7 +62,7 @@ type Assay =
     | [<CliPrefix(CliPrefix.None)>] Add      of add_args:     ParseResults<AssayAddArgs>
     | [<CliPrefix(CliPrefix.None)>] Move     of move_args:    ParseResults<AssayMoveArguments>
     | [<CliPrefix(CliPrefix.None)>] Remove   of remove_args:  ParseResults<AssayRemoveArgs>
-    | [<CliPrefix(CliPrefix.None)>] List
+    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
         member this.Usage =

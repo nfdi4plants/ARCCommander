@@ -41,7 +41,7 @@ type Study =
     | [<CliPrefix(CliPrefix.None)>] Register of register_args:ParseResults<StudyRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Add of add_args:ParseResults<StudyAddArgs>
     | [<CliPrefix(CliPrefix.None)>] Remove of remove_args:ParseResults<StudyRemoveArgs>
-    | [<CliPrefix(CliPrefix.None)>] List 
+    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List 
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -52,4 +52,4 @@ type Study =
             | Register  _ -> "Register an existing study in the given investigation"
             | Add       _ -> "Create a new study and add it to the given investigation"
             | Remove    _ -> "Remove a study from the arc"
-            | List      _ -> "List all studies registered ion the given investigation"
+            | List      _ -> "List all studies registered in the given investigation"
