@@ -15,17 +15,17 @@ open FSharp.Reflection
 open ParameterProcessing
 
 
-let processCommand (globalParams:Map<string,string>) commandF (r : ParseResults<'T>) =
+let processCommand (globalArgs:Map<string,string>) commandF (r : ParseResults<'T>) =
     printfn "\nstart process with the global parameters: \n" 
-    globalParams |> Map.iter (printfn "\t%s:%s")
+    globalArgs |> Map.iter (printfn "\t%s:%s")
 
     let parameterGroup =
         let g = groupArguments (r.GetAllResults())
-        Prompt.createParameterQueryIfNecessary globalParams.["EditorPath"] globalParams.["WorkingDir"] g  
+        Prompt.createParameterQueryIfNecessary globalArgs.["EditorPath"] globalArgs.["WorkingDir"] g  
     printfn "\nand the parameters: \n" 
     parameterGroup|> Map.iter (printfn "\t%s:%s")
 
-    try commandF globalParams parameterGroup
+    try commandF globalArgs parameterGroup
     finally
         printfn "done processing command"
 
@@ -36,40 +36,40 @@ let processCommandWithoutArgs (globalParams:Map<string,string>) commandF =
     finally
         printfn "done processing command"
 
-let handleInvestigation globalParams investigation =
-    match investigation with
-    | Investigation.Create r    -> processCommand globalParams Investigation.create r
-    | Investigation.Update r    -> processCommand globalParams Investigation.update r
-    | Investigation.Edit r      -> processCommand globalParams Investigation.edit r
-    | Investigation.Remove r    -> processCommand globalParams Investigation.remove r
+let handleInvestigationSubCommands globalArgs investigationVerb =
+    match investigationVerb with
+    | Investigation.Create r    -> processCommand globalArgs Investigation.create r
+    | Investigation.Update r    -> processCommand globalArgs Investigation.update r
+    | Investigation.Edit r      -> processCommand globalArgs Investigation.edit r
+    | Investigation.Delete r    -> processCommand globalArgs Investigation.delete r
 
-let handleStudy globalParams study =
-    match study with
-    | Study.Create r    -> processCommand globalParams Study.create r
-    | Study.Update r    -> processCommand globalParams Study.update r
-    | Study.Edit r      -> processCommand globalParams Study.edit r
-    | Study.Register r  -> processCommand globalParams Study.register r
-    | Study.Add r       -> processCommand globalParams Study.add r
-    | Study.Remove r    -> processCommand globalParams Study.remove r
-    | Study.List        -> processCommandWithoutArgs globalParams Study.list
+let handleStudySubCommands globalArgs studyVerb =
+    match studyVerb with
+    | Study.Init r      -> processCommand globalArgs Study.init r
+    | Study.Update r    -> processCommand globalArgs Study.update r
+    | Study.Edit r      -> processCommand globalArgs Study.edit r
+    | Study.Register r  -> processCommand globalArgs Study.register r
+    | Study.Add r       -> processCommand globalArgs Study.add r
+    | Study.Remove r    -> processCommand globalArgs Study.remove r
+    | Study.List        -> processCommandWithoutArgs globalArgs Study.list
 
-let handleAssay globalParams assay =
-    match assay with
-    | Assay.Create r    -> processCommand globalParams Assay.create r
-    | Assay.Update r    -> processCommand globalParams Assay.update r
-    | Assay.Edit r      -> processCommand globalParams Assay.edit r
-    | Assay.Register r  -> processCommand globalParams Assay.register r
-    | Assay.Add r       -> processCommand globalParams Assay.add r
-    | Assay.Remove r    -> processCommand globalParams Assay.remove r
-    | Assay.Move r      -> processCommand globalParams Assay.move r
-    | Assay.List        -> processCommandWithoutArgs globalParams Assay.list 
+let handleAssaySubCommands globalArgs assayVerb =
+    match assayVerb with
+    | Assay.Init r      -> processCommand globalArgs Assay.init r
+    | Assay.Update r    -> processCommand globalArgs Assay.update r
+    | Assay.Edit r      -> processCommand globalArgs Assay.edit r
+    | Assay.Register r  -> processCommand globalArgs Assay.register r
+    | Assay.Add r       -> processCommand globalArgs Assay.add r
+    | Assay.Remove r    -> processCommand globalArgs Assay.remove r
+    | Assay.Move r      -> processCommand globalArgs Assay.move r
+    | Assay.List        -> processCommandWithoutArgs globalArgs Assay.list 
 
-let handleCommand globalParams command =
+let handleCommand globalArgs command =
     match command with
-    | Investigation subCommand  -> handleInvestigation globalParams (subCommand.GetSubCommand())
-    | Study subCommand          -> handleStudy globalParams (subCommand.GetSubCommand())
-    | Assay subCommand          -> handleAssay globalParams (subCommand.GetSubCommand())
-    | Init r                    -> processCommand globalParams Arc.init r
+    | Investigation subCommand  -> handleInvestigationSubCommands globalArgs (subCommand.GetSubCommand())
+    | Study subCommand          -> handleStudySubCommands globalArgs (subCommand.GetSubCommand())
+    | Assay subCommand          -> handleAssaySubCommands globalArgs (subCommand.GetSubCommand())
+    | Init r                    -> processCommand globalArgs Arc.init r
     | WorkingDir _ | Silent     -> ()
 
 [<EntryPoint>]
