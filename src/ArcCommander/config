@@ -1,0 +1,25 @@
+[general]
+editor=notepad
+
+[isamodel]
+investigationfilename=isa.investigation.xlsx
+studiesfilename=isa.studies.xlsx
+# assay location=folder.assay.rootfolder
+assayfilename=assay.isa.xlsx
+
+[assay]
+rootfolder=/assays 
+# rootfolder.<assayIdentifier>.folder
+folders=/dataset;/protocol
+files=/readme.md
+
+[workflows]
+rootfolder=workflows
+dockerfile=Dockerfile
+
+[externals]
+rootfolder=externals
+externalsfile=isa.tab
+
+[runs]
+rootfolder=runs
