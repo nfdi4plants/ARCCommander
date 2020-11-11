@@ -6,6 +6,7 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Configuration.fs" />
     <Compile Include="IO.fs" />
     <Compile Include="ArgumentProcessing.fs" />
     <None Include="CLIArguments\README.md" />

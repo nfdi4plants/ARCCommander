@@ -6,8 +6,9 @@ framework: netstandard2.0, netcoreapp3.1
 nuget FSharp.Core 4.7.2
 nuget DocumentFormat.OpenXml
 
+nuget ini-parser-netstandard
+
 nuget Argu      
 nuget Expecto
 nuget Expecto.BenchmarkDotNet
 nuget Expecto.FsCheck
-nuget YamlDotNet
