@@ -11,14 +11,14 @@ In the case of modelling object subcommand verbs, model types like this:
 
 ```F#
 type <object>Command =
-| <verb1> of <verb1>_args:<object><verb1>Args
-| <verb2> of <verb2>_args:<object><verb2>Args
+| <verb1> of <verb1>_args: ParseResults<<object><verb1>Args>
+| <verb2> of <verb2>_args: ParseResults<<object><verb2>Args>
 ```
 
 example: 
 ```F#
 type AssayCommand = 
-    | [<CliPrefix(CliPrefix.None)>] Init     of init_args:  ParseResults<AssayInitArgs>
+    | [<CliPrefix(CliPrefix.None)>] Init of init_args:  ParseResults<AssayInitArgs>
 ```
 
 In the case of adding an object subcommand to the top level type `ArcCommand`:
