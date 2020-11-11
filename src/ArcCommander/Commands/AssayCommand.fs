@@ -6,7 +6,7 @@ open ArcCommander.CLIArguments
 /// Assay object subcommand verbs
 type AssayCommand = 
 
-    | [<CliPrefix(CliPrefix.None)>] Init     of create_args:  ParseResults<AssayInitArgs>
+    | [<CliPrefix(CliPrefix.None)>] Init     of init_args:  ParseResults<AssayInitArgs>
     | [<CliPrefix(CliPrefix.None)>] Update   of update_args:  ParseResults<AssayUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit     of edit_args:    ParseResults<AssayEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register of register_args:ParseResults<AssayRegisterArgs>

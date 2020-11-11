@@ -5,10 +5,10 @@ open ArcCommander.CLIArguments
 
 type InvestigationCommand = 
     
-    | [<CliPrefix(CliPrefix.None)>] Create of init_args: ParseResults<InvestigationCreateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Create of create_args: ParseResults<InvestigationCreateArgs>
     | [<CliPrefix(CliPrefix.None)>] Update of update_args: ParseResults<InvestigationUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit of edit_args: ParseResults<InvestigationEditArgs>
-    | [<CliPrefix(CliPrefix.None)>] Delete of remove_args: ParseResults<InvestigationDeleteArgs>
+    | [<CliPrefix(CliPrefix.None)>] Delete of delete_args: ParseResults<InvestigationDeleteArgs>
     
     interface IArgParserTemplate with
         member this.Usage =

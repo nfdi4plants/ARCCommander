@@ -6,7 +6,7 @@ open ArcCommander.CLIArguments
 /// Study object subcommand verbs
 type StudyCommand =
 
-    | [<CliPrefix(CliPrefix.None)>] Init     of create_args:ParseResults<StudyInitArgs>
+    | [<CliPrefix(CliPrefix.None)>] Init     of init_args:ParseResults<StudyInitArgs>
     | [<CliPrefix(CliPrefix.None)>] Update   of update_args:ParseResults<StudyUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit     of edit_args:ParseResults<StudyEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register of register_args:ParseResults<StudyRegisterArgs>

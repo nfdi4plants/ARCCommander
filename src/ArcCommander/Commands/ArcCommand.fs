@@ -3,7 +3,7 @@
 open Argu 
 open ArcCommander.CLIArguments
 
-type Arc =
+type ArcCommand =
 
     | [<AltCommandLine("-p")>][<Unique>] WorkingDir of working_directory: string
     | [<Unique>] Silent
