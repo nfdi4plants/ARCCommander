@@ -73,7 +73,7 @@ let handleCommand globalArgs command =
 [<EntryPoint>]
 let main argv =
     try
-        let parser = ArgumentParser.Create<Arc>(programName = "arc")
+        let parser = ArgumentParser.Create<ArcCommand>(programName = "arc")
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
 
         let workingDir = 
