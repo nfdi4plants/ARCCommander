@@ -6,12 +6,20 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CLIArguments\Assay.fs" />
-    <Compile Include="CLIArguments\Study.fs" />
-    <Compile Include="CLIArguments\Investigation.fs" />
-    <Compile Include="CLIArguments\Arc.fs" />
-    <Compile Include="ParameterProcessing.fs" />
-    <Compile Include="ArcCommander.fs" />
+    <Compile Include="IO.fs" />
+    <Compile Include="ArgumentProcessing.fs" />
+    <Compile Include="CLIArguments\AssayArgs.fs" />
+    <Compile Include="CLIArguments\StudyArgs.fs" />
+    <Compile Include="CLIArguments\InvestigationArgs.fs" />
+    <Compile Include="CLIArguments\ArcArgs.fs" />
+    <Compile Include="Commands\AssayCommand.fs" />
+    <Compile Include="Commands\StudyCommand.fs" />
+    <Compile Include="Commands\InvestigationCommand.fs" />
+    <Compile Include="Commands\ArcCommand.fs" />
+    <Compile Include="APIs\AssayAPI.fs" />
+    <Compile Include="APIs\StudyAPI.fs" />
+    <Compile Include="APIs\InvestigationAPI.fs" />
+    <Compile Include="APIs\ArcAPI.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -12,7 +12,7 @@ open ISA.DataModel
 open Argu
 open Argu.ArguAttributes
 
-module ParameterProcessing = 
+module ArgumentProcessing = 
 
     /// For a given discriminated union value, returns the field name and the value
     let private splitUnion (x:'a) = 

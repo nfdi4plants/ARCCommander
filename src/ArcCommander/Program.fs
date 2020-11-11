@@ -1,19 +1,17 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
-open ArcCommander
 open Argu 
 
+open ArcCommander
+open ArcCommander.ArgumentProcessing
 open ArcCommander.CLIArguments
-//open ArgumentMatching
-open Assay
+open ArcCommander.Commands
+open ArcCommander.APIs
 
 open System
 open System.Reflection
 open FSharp.Reflection
-
-open ParameterProcessing
-
 
 let processCommand (globalArgs:Map<string,string>) commandF (r : ParseResults<'T>) =
     printfn "\nstart process with the global parameters: \n" 
@@ -38,38 +36,38 @@ let processCommandWithoutArgs (globalParams:Map<string,string>) commandF =
 
 let handleInvestigationSubCommands globalArgs investigationVerb =
     match investigationVerb with
-    | Investigation.Create r    -> processCommand globalArgs Investigation.create r
-    | Investigation.Update r    -> processCommand globalArgs Investigation.update r
-    | Investigation.Edit r      -> processCommand globalArgs Investigation.edit r
-    | Investigation.Delete r    -> processCommand globalArgs Investigation.delete r
+    | InvestigationCommand.Create r    -> processCommand globalArgs InvestigationAPI.create r
+    | InvestigationCommand.Update r    -> processCommand globalArgs InvestigationAPI.update r
+    | InvestigationCommand.Edit r      -> processCommand globalArgs InvestigationAPI.edit r
+    | InvestigationCommand.Delete r    -> processCommand globalArgs InvestigationAPI.delete r
 
 let handleStudySubCommands globalArgs studyVerb =
     match studyVerb with
-    | Study.Init r      -> processCommand globalArgs Study.init r
-    | Study.Update r    -> processCommand globalArgs Study.update r
-    | Study.Edit r      -> processCommand globalArgs Study.edit r
-    | Study.Register r  -> processCommand globalArgs Study.register r
-    | Study.Add r       -> processCommand globalArgs Study.add r
-    | Study.Remove r    -> processCommand globalArgs Study.remove r
-    | Study.List        -> processCommandWithoutArgs globalArgs Study.list
+    | StudyCommand.Init r      -> processCommand globalArgs StudyAPI.init r
+    | StudyCommand.Update r    -> processCommand globalArgs StudyAPI.update r
+    | StudyCommand.Edit r      -> processCommand globalArgs StudyAPI.edit r
+    | StudyCommand.Register r  -> processCommand globalArgs StudyAPI.register r
+    | StudyCommand.Add r       -> processCommand globalArgs StudyAPI.add r
+    | StudyCommand.Remove r    -> processCommand globalArgs StudyAPI.remove r
+    | StudyCommand.List        -> processCommandWithoutArgs globalArgs StudyAPI.list
 
 let handleAssaySubCommands globalArgs assayVerb =
     match assayVerb with
-    | Assay.Init r      -> processCommand globalArgs Assay.init r
-    | Assay.Update r    -> processCommand globalArgs Assay.update r
-    | Assay.Edit r      -> processCommand globalArgs Assay.edit r
-    | Assay.Register r  -> processCommand globalArgs Assay.register r
-    | Assay.Add r       -> processCommand globalArgs Assay.add r
-    | Assay.Remove r    -> processCommand globalArgs Assay.remove r
-    | Assay.Move r      -> processCommand globalArgs Assay.move r
-    | Assay.List        -> processCommandWithoutArgs globalArgs Assay.list 
+    | AssayCommand.Init r      -> processCommand globalArgs AssayAPI.init r
+    | AssayCommand.Update r    -> processCommand globalArgs AssayAPI.update r
+    | AssayCommand.Edit r      -> processCommand globalArgs AssayAPI.edit r
+    | AssayCommand.Register r  -> processCommand globalArgs AssayAPI.register r
+    | AssayCommand.Add r       -> processCommand globalArgs AssayAPI.add r
+    | AssayCommand.Remove r    -> processCommand globalArgs AssayAPI.remove r
+    | AssayCommand.Move r      -> processCommand globalArgs AssayAPI.move r
+    | AssayCommand.List        -> processCommandWithoutArgs globalArgs AssayAPI.list 
 
 let handleCommand globalArgs command =
     match command with
     | Investigation subCommand  -> handleInvestigationSubCommands globalArgs (subCommand.GetSubCommand())
     | Study subCommand          -> handleStudySubCommands globalArgs (subCommand.GetSubCommand())
     | Assay subCommand          -> handleAssaySubCommands globalArgs (subCommand.GetSubCommand())
-    | Init r                    -> processCommand globalArgs Arc.init r
+    | Init r                    -> processCommand globalArgs ArcAPI.init r
     | WorkingDir _ | Silent     -> ()
 
 [<EntryPoint>]
