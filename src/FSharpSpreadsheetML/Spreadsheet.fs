@@ -9,10 +9,6 @@ open DocumentFormat.OpenXml.Spreadsheet
 /// Functions for working the spreadsheet document
 module Spreadsheet = 
 
-//----------------------------------------------------------------------------------------------------------------------
-//                                      Output: SpreadsheetDocument(s)                                                  
-//----------------------------------------------------------------------------------------------------------------------
-
     /// Opens the spreadsheet located at the given path
     let fromFile (path:string) isEditable = SpreadsheetDocument.Open(path,isEditable)
 
@@ -38,6 +34,20 @@ module Spreadsheet =
         spreadsheet.SaveAs(path) :?> SpreadsheetDocument
         |> close
         spreadsheet
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                      Output: SpreadsheetDocument(s)                                                  
+//----------------------------------------------------------------------------------------------------------------------
+
+    let createEmptySSTSpreadsheet sheetName (path:string) = 
+        let doc = createSpreadsheet path
+        let workbookPart = initWorkbookPart doc
+
+        let sharedStringTablePart = WorkbookPart.getOrInitSharedStringTablePart workbookPart
+        SharedStringTable.init sharedStringTablePart |> ignore
+
+        WorkbookPart.addSheet sheetName (SheetData.empty) workbookPart |> ignore
+        doc
 
 //----------------------------------------------------------------------------------------------------------------------
 //                                          Output: Workbook(s)                                                         
