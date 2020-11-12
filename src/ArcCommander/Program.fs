@@ -62,11 +62,18 @@ let handleAssaySubCommands globalArgs assayVerb =
     | AssayCommand.Move r      -> processCommand globalArgs AssayAPI.move r
     | AssayCommand.List        -> processCommandWithoutArgs globalArgs AssayAPI.list 
 
+let handleConfigurationSubCommands globalArgs configurationVerb =
+    match configurationVerb with
+    | ConfigurationCommand.Edit     -> processCommandWithoutArgs globalArgs ConfigurationAPI.edit
+    | ConfigurationCommand.List     -> processCommandWithoutArgs globalArgs ConfigurationAPI.list
+
+
 let handleCommand globalArgs command =
     match command with
     | Investigation subCommand  -> handleInvestigationSubCommands globalArgs (subCommand.GetSubCommand())
     | Study subCommand          -> handleStudySubCommands globalArgs (subCommand.GetSubCommand())
     | Assay subCommand          -> handleAssaySubCommands globalArgs (subCommand.GetSubCommand())
+    | Configuration subcommand  -> handleConfigurationSubCommands globalArgs (subcommand.GetSubCommand())
     | Init r                    -> processCommand globalArgs ArcAPI.init r
     | WorkingDir _ | Silent     -> ()
 
@@ -89,8 +96,13 @@ let main argv =
             | None -> ["EditorPath","notepad"] |> Map.ofList
             |> Map.add "WorkingDir" workingDir
             |> Map.add "Silent" silent
+            
+        //Testing the configuration reading (Delete when configuration functionality is setup)
+        //printfn "load config:"    
+        //Configuration.loadConfiguration workingDir
+        //|> Configuration.flatten
+        //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
-        printfn "WorkDir: %s" workingDir
 
         handleCommand globalParams (results.GetSubCommand())
 

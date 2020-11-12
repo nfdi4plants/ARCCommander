@@ -12,6 +12,7 @@ type ArcCommand =
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study of verb_and_args:ParseResults<StudyCommand>
     //| [<CliPrefix(CliPrefix.None)>] AddWorkflow of ParseResults<WorkflowArgs>
     | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of verb_and_args:ParseResults<AssayCommand>
+    | [<CliPrefix(CliPrefix.None)>] Configuration of verb_and_args:ParseResults<ConfigurationCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -23,3 +24,4 @@ type ArcCommand =
             | Study         _ -> "Study functions"
             //| AddWorkflow _ -> "Not yet implemented"
             | Assay _ ->  "Assay functions"
+            | Configuration _ -> "Configuration editing"
