@@ -86,7 +86,7 @@ module Scope =
     /// Finds the scope of the section in which the row at rowIndex i is located
     let tryFindScopeAt workbookPart i sheet =
 
-        let maxIndex = sheet |> SheetTransformation.maxRowIndex
+        let maxIndex = SheetData.getMaxRowIndex sheet
 
         /// Find header above the row of interest
         let rec tryUpwards i = 
@@ -374,7 +374,7 @@ module ISA_Investigation  =
     /// Creates an empty ivestigation file at the given path
     let createEmpty path (investigation : InvestigationItem) = 
 
-        let doc = SheetTransformation.createEmptySSTSpreadsheet "isa_investigation" path
+        let doc = Spreadsheet.createEmptySSTSpreadsheet "isa_investigation" path
         try 
             let workbookPart = doc |> Spreadsheet.getWorkbookPart
             let sheet = WorkbookPart.getfirstSheet workbookPart

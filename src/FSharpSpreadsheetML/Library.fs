@@ -7,108 +7,8 @@ open DocumentFormat.OpenXml.Spreadsheet
 open Cell
 
 
-module internal H = let notImplemented() = failwith "function not yet implemented"
-open H
-
-
 /// Value based manipulation of sheets. Functions in this module automatically make the necessary adjustments  needed to change the excel sheet the way the function states.
 module SheetTransformation =
-       
-    ///If the row with index rowIndex exists in the sheet, moves it downwards by amount. Negative amounts will move the row upwards
-    let moveRowVertical (amount:int) rowIndex (sheet:SheetData) = 
-        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
-        | Some row -> 
-            Row.setIndex (Row.getIndex row |> int64 |> (+) (int64 amount) |> uint32) row
-            |> Row.toSeq
-            |> Seq.iter (fun cell -> 
-                Cell.setReference (Cell.getReference cell |> CellReference.moveVertical amount) cell
-                |> ignore            
-            )
-            sheet
-        | None -> 
-            printfn "Warning: Row with index %i does not exist" rowIndex
-            sheet
-
-    /// Matches the rowSpans to the cellreferences inside the row
-    let updateRowSpans (row:Row) : Row=
-        let columnIndices =
-            Row.toSeq row
-            |> Seq.map (Cell.getReference >> CellReference.toIndices >> fst)
-        Row.setSpan (Row.Spans.fromBoundaries (Seq.min columnIndices) (Seq.max columnIndices)) row
-
-    ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
-    ///
-    /// If there already was a cell at the new postion, moves that one too. Repeats until a value is moved into a position previously unoccupied.
-    let rec shoveValuesInRowToRight columnIndex (row:Row) : Row=
-        let spans = Row.getSpan row
-        match Row.tryGetCellAt columnIndex row with
-        | Some cell ->
-            shoveValuesInRowToRight (columnIndex+1u) row |> ignore
-            let newReference = (Cell.getReference cell |> CellReference.moveHorizontal 1)            
-            Cell.setReference newReference cell |> ignore
-            if Row.Spans.referenceExceedsSpansToRight newReference spans then
-                Row.extendSpanRight 1u row
-            else row
-        | None -> row
-
-    /// Moves all cells starting with from the given columnindex in the row to the right
-    let moveValuesInRowToRight columnIndex (row:Row) : Row=
-        row
-        |> Row.mapCells (fun c -> 
-            let cellCol,cellRow = Cell.getReference c |> CellReference.toIndices
-            if cellCol >= columnIndex then
-                Cell.setReference (CellReference.ofIndices (cellCol+1u) cellRow) c
-            else c
-        )
-        |> Row.extendSpanRight 1u
-       
-
-    ///If a row with the given rowIndex exists in the sheet, moves it one position downwards. 
-    ///
-    /// If there already was a row at the new postion, moves that one too. Repeats until a row is moved into a position previously unoccupied.
-    let rec shoveRowsDownward rowIndex (sheet) =
-        if SheetData.containsRowAt rowIndex sheet then             
-            shoveRowsDownward (rowIndex+1u) sheet
-            |> moveRowVertical 1 rowIndex
-        else
-            sheet
-
-    ///If a row with the given rowIndex exists in the sheet, moves all values inside it to the right by the specified amount. Negative amounts will move the values to the left.
-    let moveRowHorizontal amount rowIndex (sheet:SheetData) = 
-        match sheet |> SheetData.tryGetRowAt (rowIndex |> uint32) with
-        | Some row -> 
-            Row.setIndex (Row.getIndex row |> (+) (uint32 amount)) row
-            |> Row.toSeq
-            |> Seq.iter (fun cell -> 
-                Cell.setReference (Cell.getReference cell |> CellReference.moveVertical amount) cell
-                |> ignore            
-            )
-            sheet
-        | None -> 
-            printfn "Warning: Row with index %i does not exist" rowIndex
-            sheet  
-
-    /// Returns the index of the last row in the sheet
-    let maxRowIndex (sheet) =
-        SheetData.getRows sheet
-        |> fun s -> 
-            if Seq.isEmpty s then 
-                0u
-            else 
-                s
-                |> Seq.map (Row.getIndex)
-                |> Seq.max
-
-  
-    let createEmptySSTSpreadsheet sheetName (path:string) = 
-        let doc = Spreadsheet.createSpreadsheet path
-        let workbookPart = Spreadsheet.initWorkbookPart doc
-
-        let sharedStringTablePart = WorkbookPart.getOrInitSharedStringTablePart workbookPart
-        SharedStringTable.init sharedStringTablePart |> ignore
-
-        WorkbookPart.addSheet sheetName (SheetData.empty) workbookPart |> ignore
-        doc
 
     /// Sheet manipulation using a shared string table
     module SSTSheets =
@@ -136,7 +36,7 @@ module SheetTransformation =
                 |> WorkbookPart.getSharedStringTablePart 
                 |> SharedStringTable.get
             row
-            |> Row.toSeq
+            |> Row.toCellSeq
             |> Seq.map (getValueSST sst)
         
         /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
@@ -146,7 +46,7 @@ module SheetTransformation =
                 |> WorkbookPart.getSharedStringTablePart 
                 |> SharedStringTable.get
             row
-            |> Row.toSeq
+            |> Row.toCellSeq
             |> Seq.map (fun c -> c |> Cell.getReference |> CellReference.toIndices |> fst, getValueSST sst c)
         
         /// Gets the string value of the cell at the given 1 based column and row index using a shared string table
@@ -167,7 +67,7 @@ module SheetTransformation =
                 |> SharedStringTable.get
             sheet
             |> SheetData.getRowAt rowIndex
-            |> Row.toSeq
+            |> Row.toCellSeq
             |> Seq.map (getValueSST sst)
 
         /// Gets the string value of the cell at the given 1 based column and row index using a shared string table, if it exists, else returns None
@@ -179,7 +79,7 @@ module SheetTransformation =
             sheet
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
-                Row.toSeq
+                Row.toCellSeq
                 >> Seq.map (getValueSST sst)
             )
 
@@ -192,7 +92,7 @@ module SheetTransformation =
             sheet
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
-                Row.toSeq
+                Row.toCellSeq
                 >> Seq.map (fun c -> Cell.getReference c |> CellReference.toIndices |> fst,getValueSST sst c)
             )
 
@@ -232,7 +132,8 @@ module SheetTransformation =
             let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
             match refRow with
             | Some ref -> 
-                shoveRowsDownward rowIndex sheet
+                sheet
+                |> SheetData.moveRowBlockDownward rowIndex
                 |> SheetData.insertBefore newRow ref
             | None ->
                 SheetData.appendRow newRow sheet
@@ -249,7 +150,8 @@ module SheetTransformation =
 
             match refCell with
             | Some ref -> 
-                moveValuesInRowToRight index row
+                row
+                |> Row.moveValuesToRight index 1u
                 |> Row.insertCellBefore cell ref
             | None ->
                 let spans = Row.getSpan row
@@ -260,10 +162,7 @@ module SheetTransformation =
 
         /// Append the values as a row to the end of the sheet using a shared string table
         let appendRowSST workbookPart (vals: 'T seq) (sheet:SheetData) =
-            let i = 
-                sheet
-                |> maxRowIndex
-                |> (+) 1u
+            let i = (SheetData.getMaxRowIndex sheet) + 1u
             insertRowWithHorizontalOffsetSSTAt workbookPart 0 vals i sheet
 
         /// Append the value as a cell to the end of the row using a shared string table
@@ -294,7 +193,7 @@ module SheetTransformation =
 
         /// Removes row
         let removeRowAt workbookPart rowIndex (sheet:SheetData) =
-            H.notImplemented()
+            raise (System.NotImplementedException())
 
     /// Sheet manipulation without using a shared string table (directly writing the string into the worksheet file)
     module DirectSheets = 
@@ -310,7 +209,7 @@ module SheetTransformation =
         let getRowValuesAt rowIndex (sheet:SheetData) =
             sheet
             |> SheetData.getRowAt rowIndex
-            |> Row.toSeq
+            |> Row.toCellSeq
             |> Seq.map (Cell.getValue >> CellValue.getValue)
 
         /// Gets the string value of the cell at the given 1 based column and row index, if it exists, else returns None
@@ -318,7 +217,7 @@ module SheetTransformation =
             sheet 
             |> SheetData.tryGetRowAt rowIndex
             |> Option.map (
-                Row.toSeq
+                Row.toCellSeq
                 >> Seq.map (Cell.getValue >> CellValue.getValue)
             )
      
@@ -338,10 +237,10 @@ module SheetTransformation =
             let refRow = SheetData.tryGetRowAfter (uint rowIndex) sheet
             match refRow with
             | Some ref -> 
-                shoveRowsDownward rowIndex sheet
+                sheet
+                |> SheetData.moveRowBlockDownward rowIndex 
                 |> SheetData.insertBefore newRow ref
             | None ->
-
                 SheetData.appendRow newRow sheet
 
         /// Add a value as a cell to the row at the given columnindex.
@@ -354,7 +253,8 @@ module SheetTransformation =
 
             match refCell with
             | Some ref -> 
-                moveValuesInRowToRight index row
+                row
+                |> Row.moveValuesToRight index 1u 
                 |> Row.insertCellBefore cell ref
             | None ->
                 let spans = Row.getSpan row
@@ -431,10 +331,7 @@ module SheetTransformation =
 
         /// Append the values as a row to the end of the sheet
         let appendRow (vals: 'T seq) (sheet:SheetData) =
-            let i = 
-                sheet
-                |> maxRowIndex
-                |> (+) 1u
+            let i = (SheetData.getMaxRowIndex sheet) + 1u
             insertRowAt vals i sheet
   
         /// Removes the value from the sheet
@@ -446,7 +343,7 @@ module SheetTransformation =
             if Row.isEmpty row then
                 SheetData.removeRowAt rowIndex sheet
             else
-                updateRowSpans row |> ignore
+                Row.updateRowSpan row |> ignore
                 sheet
 
         /// Removes the value from the sheet
@@ -460,7 +357,7 @@ module SheetTransformation =
                 if Row.isEmpty row then
                     SheetData.removeRowAt rowIndex sheet                   
                 else
-                    updateRowSpans row |> ignore
+                    Row.updateRowSpan row |> ignore
                     sheet
             )
 
@@ -472,5 +369,5 @@ module SheetTransformation =
             |> SheetData.getRows
             |> Seq.filter (Row.getIndex >> (<) rowIndex)
             |> Seq.fold (fun sheetData row -> 
-                moveRowVertical -1 (Row.getIndex row) sheetData           
+                SheetData.moveRowVertical -1 (Row.getIndex row) sheetData           
             ) sheet
