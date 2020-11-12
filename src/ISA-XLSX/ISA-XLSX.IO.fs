@@ -377,7 +377,7 @@ module ISA_Investigation  =
         let doc = SheetTransformation.createEmptySSTSpreadsheet "isa_investigation" path
         try 
             let workbookPart = doc |> Spreadsheet.getWorkbookPart
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
         
             SheetIO.appendRow ["INVESTIGATION"] sheet |> ignore
             getKeyValues investigation
@@ -401,7 +401,7 @@ module ISA_Investigation  =
     let studyExists studyIdentifier (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
         let workbookPart = doc |> Spreadsheet.getWorkbookPart
-        let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+        let sheet = WorkbookPart.getfirstSheet workbookPart
 
         let kv = KeyValuePair("Study Identifier",studyIdentifier)
 
@@ -413,7 +413,7 @@ module ISA_Investigation  =
     let addStudy (study:StudyItem) (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
         let workbookPart = doc |> Spreadsheet.getWorkbookPart
-        let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+        let sheet = WorkbookPart.getfirstSheet workbookPart
     
         SheetIO.appendRow ["STUDY"] sheet |> ignore
         
@@ -567,7 +567,7 @@ module ISA_Investigation  =
     let tryRemoveItemFromStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
                        
@@ -603,7 +603,7 @@ module ISA_Investigation  =
     let tryAddItemToStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
                    
@@ -631,7 +631,7 @@ module ISA_Investigation  =
     let tryUpdateItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
            
@@ -661,7 +661,7 @@ module ISA_Investigation  =
     let tryGetItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
            
@@ -686,7 +686,7 @@ module ISA_Investigation  =
     let tryGetStudy (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
 
@@ -715,7 +715,7 @@ module ISA_Investigation  =
     let getStudies (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
             ISA_Investigation_Helpers.getIndicesOfKey workbookPart "Study Identifier" sheet
             |> Seq.choose (fun i -> 
                 ISA_Investigation_Helpers.SingleTrait.tryGetKeyValueAt workbookPart i sheet
@@ -730,7 +730,7 @@ module ISA_Investigation  =
     let getItemsInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = SheetTransformation.firstSheetOfWorkbookPart workbookPart
+            let sheet = WorkbookPart.getfirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
 
