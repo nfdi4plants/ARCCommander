@@ -249,6 +249,29 @@ module Row =
         |> toCellSeq
         |> Seq.map (Cell.getValueWithSST sharedStringTable)
 
+    
+    /// Add a value as a cell to the row at the given columnindex.
+    ///
+    /// If a cell exists at the given columnindex, shoves it to the right
+    let insertValue index (value:'T) (row:Row) = 
+
+        let refCell = row |> tryGetCellAfter index 
+        let cell = Cell.createGeneric index (getIndex row) value
+
+        match refCell with
+        | Some ref -> 
+            row
+            |> moveValuesToRight index 1u 
+            |> insertCellBefore cell ref
+        | None ->
+            let spans = getSpan row
+            let spanExceedance = index - (spans |> Spans.rightBoundary)
+                           
+            row
+            |> extendSpanRight spanExceedance
+            |> appendCell cell
+
+
     /// Add a value as a cell to the row at the given columnindex using a shared string table
     ///
     /// If a cell exists at the given columnindex, shoves it to the right
@@ -270,6 +293,18 @@ module Row =
             |> extendSpanRight spanExceedance
             |> appendCell cell
 
+    
+    /// Add a value as a cell to the end of the row.
+    let appendValue (value:'T) (row:Row) = 
+        let colIndex = 
+            row
+            |> getSpan
+            |> Spans.rightBoundary
+        let cell = Cell.createGeneric (colIndex + 1u) (row |> getIndex) value
+        row
+        |> appendCell cell
+        |> extendSpanRight 1u 
+
     /// Append the value as a cell to the end of the row using a shared string table
     let appendValueWithSST (sharedStringTable:SharedStringTable) (value:'T) (row:Row) = 
 
@@ -281,4 +316,26 @@ module Row =
         row
         |> appendCell cell
         |> extendSpanRight 1u 
+    
+    /// Add a value as a cell to the row at the given columnindex.
+    ///
+    /// If a cell exists at the given columnindex, Overwrites it
+    let setValue index (value:'T) (row:Row) = 
+
+        let refCell = row |> tryGetCellAfter index 
+        let cell = Cell.createGeneric index (getIndex row) value
+
+        match refCell with
+        | Some ref when Cell.getReference ref = Cell.getReference cell ->
+            ref  |> Cell.setType (Cell.getType cell)  |> ignore
+            ref |> Cell.setValue ((Cell.getValue cell).Clone() :?> CellValue) |> ignore
+            row 
+        | Some ref -> 
+            row |> insertCellBefore cell ref
+        | None ->
+            let spans = getSpan row
+            let spanExceedance = index - (spans |> Spans.rightBoundary)
+            row
+            |> extendSpanRight spanExceedance
+            |> appendCell cell
 

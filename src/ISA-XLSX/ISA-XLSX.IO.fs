@@ -23,8 +23,6 @@ type Scope =
         To: uint32
     }
 
-module SheetIO = SheetTransformation.DirectSheets
-
 /// Option helper functions
 module Option = 
 
@@ -386,11 +384,11 @@ module ISA_Investigation  =
             let workbookPart = doc |> Spreadsheet.getWorkbookPart
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
         
-            SheetIO.appendRow ["INVESTIGATION"] sheet |> ignore
+            sheet |> SheetData.appendRowValues ["INVESTIGATION"] |> ignore
             getKeyValues investigation
             |> Array.map (fun (k,v) -> 
                 let vs = [(investigation :> ISAItem).KeyPrefix + " " + k; string v]
-                SheetIO.appendRow vs sheet
+                sheet |> SheetData.appendRowValues vs
             )
             |> ignore
             doc
@@ -422,12 +420,12 @@ module ISA_Investigation  =
         let workbookPart = doc |> Spreadsheet.getWorkbookPart
         let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
     
-        SheetIO.appendRow ["STUDY"] sheet |> ignore
+        sheet |> SheetData.appendRowValues ["STUDY"] |> ignore
         
         getKeyValues study
         |> Array.map (fun (k,v) -> 
             let vs = [(study :> ISAItem).KeyPrefix + " " + k; string v]
-            SheetIO.appendRow vs sheet
+            sheet |> SheetData.appendRowValues vs
         )
         |> ignore
 
@@ -452,7 +450,7 @@ module ISA_Investigation  =
             | Some itemIndex ->
                 Scope.tryFindScopeAt workbookPart itemIndex sheet
             | None -> 
-                SheetIO.insertRowAt [itemHeader] (studyScope.To + 1u) sheet |> ignore
+                SheetData.insertRowValuesAt [itemHeader] (studyScope.To + 1u) sheet |> ignore
                 Scope.create itemHeader 2 (studyScope.To + 1u) (studyScope.To + 1u)
                 |> Some
                 //printfn "item does not exist in the study %s" study
@@ -504,7 +502,7 @@ module ISA_Investigation  =
         else
             [scope.From .. scope.To]
             |> List.rev
-            |> List.fold (fun s i -> SheetTransformation.DirectSheets.removeRowAt i s) sheet
+            |> List.fold (fun s i -> SheetData.removeRowAt i s) sheet
             
     /// Replaces the values of the item at the scope with the given values
     let private updateItemValuesInStudy workbookPart scope columnIndex (item:#ISAItem) sheet = 
@@ -517,7 +515,7 @@ module ISA_Investigation  =
         let itemCount = 
             [scope.From .. scope.To]
             |> Seq.map (fun i -> 
-                SheetTransformation.DirectSheets.getRowValuesAt i sheet |> Seq.length 
+                SheetData.getRowValuesAt i sheet |> Seq.length 
             )            
             |> Seq.max 
 
@@ -525,7 +523,7 @@ module ISA_Investigation  =
         |> Array.fold (fun scope (key,value) -> 
             match tryFindIndexOfKeyBetween scope.From scope.To workbookPart key sheet with
             | Some i ->
-                SheetIO.setValue columnIndex i value  sheet |> ignore
+                SheetData.setValueAt i columnIndex value  sheet |> ignore
                 scope
             | None -> 
                 let rowValues = 
@@ -533,7 +531,7 @@ module ISA_Investigation  =
                         if i = 0 then key 
                         elif i = ((int columnIndex) - 1) then value 
                         else "")
-                SheetIO.insertRowAt rowValues (scope.To + 1u) sheet |> ignore
+                SheetData.insertRowValuesAt rowValues (scope.To + 1u) sheet |> ignore
                 Scope.extendScope scope
         ) scope
         |> ignore
@@ -549,10 +547,10 @@ module ISA_Investigation  =
             match tryFindIndexOfKeyBetween scope.From scope.To workbookPart key sheet with
             | Some i ->
                 //TODO/TO-DO: does the item only shove the other items to the right? If so another function should be used
-                SheetIO.insertValue 2u i value  sheet |> ignore
+                SheetData.insertValueAt i 2u value  sheet |> ignore
                 scope
             | None -> 
-                SheetIO.insertRowAt [key;value] (scope.To + 1u) sheet |> ignore
+                SheetData.insertRowValuesAt [key;value] (scope.To + 1u) sheet |> ignore
                 Scope.extendScope scope
         ) scope
         |> ignore
@@ -590,7 +588,10 @@ module ISA_Investigation  =
                 |> Option.map (fun colI ->
                     [itemScope.From .. itemScope.To]
                     |> List.rev
-                    |> List.iter (fun rowI -> SheetTransformation.DirectSheets.tryRemoveValueAt colI rowI sheet |> ignore)                  
+                    |> List.iter (fun rowI -> 
+                        sheet
+                        |> SheetData.tryRemoveValueAt colI rowI
+                        |> ignore)                  
                     sheet
                     |> removeScopeIfEmpty workbookPart itemScope
                 )
