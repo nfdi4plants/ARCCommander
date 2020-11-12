@@ -86,11 +86,12 @@ module Scope =
     /// Finds the scope of the section in which the row at rowIndex i is located
     let tryFindScopeAt workbookPart i sheet =
 
+        let sst = workbookPart |> WorkbookPart.getSharedStringTable
         let maxIndex = SheetData.getMaxRowIndex sheet
 
         /// Find header above the row of interest
         let rec tryUpwards i = 
-            let r = SheetTransformation.SSTSheets.tryGetRowValuesSSTAt workbookPart i sheet
+            let r = SheetData.tryGetRowValuesWithSSTAt sst i sheet
             match r |> Option.map (Seq.head >> trySplitTitle) with
             | Some (Some (v,l)) -> Some (i,v,l)
             | _ when i = 0u -> None
@@ -98,7 +99,7 @@ module Scope =
 
         /// Find the end of the section with hierarchical level i
         let rec downWards level lastIndex i = 
-            let r = SheetTransformation.SSTSheets.tryGetRowValuesSSTAt workbookPart i sheet
+            let r = sheet |> SheetData.tryGetRowValuesWithSSTAt sst i
             match r |> Option.map (Seq.head >> trySplitTitle) with
             | Some (Some (v,l)) when l <= level -> lastIndex
             | _ when i > maxIndex -> lastIndex
@@ -119,7 +120,9 @@ module ISA_Investigation_Helpers  =
     
     /// If existing, returns the key of the row
     let tryParseKey workbookPart row =
-        SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart row       
+        let sst = workbookPart |> WorkbookPart.getSharedStringTable
+        row
+        |> Row.getIndexedValuesWithSST sst
         |> Seq.tryFind (fst >> (=) 1u)
         |> Option.map snd
 
@@ -197,7 +200,9 @@ module ISA_Investigation_Helpers  =
         
         /// If the row contains a key and a value, returns them
         let tryParseKeyValue workbookPart row =
-            SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart row       
+            let sst = workbookPart |> WorkbookPart.getSharedStringTable
+            row
+            |> Row.getIndexedValuesWithSST sst
             |> fun s -> 
                 match Seq.tryFind (fst >> (=) 1u) s, Seq.tryFind (fst >> (=) 2u) s with
                 | Some (_,k), Some (_,v) -> KeyValuePair(k,v) |> Some
@@ -261,7 +266,9 @@ module ISA_Investigation_Helpers  =
          
         /// If the row contains a key and at least one value, returns them
         let tryParseKeyValues workbookPart row =
-            SheetTransformation.SSTSheets.getIndexedValuesOfRowSST workbookPart row       
+            let sst = workbookPart |> WorkbookPart.getSharedStringTable
+            row
+            |> Row.getIndexedValuesWithSST sst
             |> fun s -> 
                 match Seq.tryFind (fst >> (=) 1u) s with
                 | Some (_,k) -> 
@@ -374,10 +381,10 @@ module ISA_Investigation  =
     /// Creates an empty ivestigation file at the given path
     let createEmpty path (investigation : InvestigationItem) = 
 
-        let doc = Spreadsheet.createEmptySSTSpreadsheet "isa_investigation" path
+        let doc = Spreadsheet.initWithSST "isa_investigation" path
         try 
             let workbookPart = doc |> Spreadsheet.getWorkbookPart
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
         
             SheetIO.appendRow ["INVESTIGATION"] sheet |> ignore
             getKeyValues investigation
@@ -401,7 +408,7 @@ module ISA_Investigation  =
     let studyExists studyIdentifier (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
         let workbookPart = doc |> Spreadsheet.getWorkbookPart
-        let sheet = WorkbookPart.getfirstSheet workbookPart
+        let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
         let kv = KeyValuePair("Study Identifier",studyIdentifier)
 
@@ -413,7 +420,7 @@ module ISA_Investigation  =
     let addStudy (study:StudyItem) (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
         let workbookPart = doc |> Spreadsheet.getWorkbookPart
-        let sheet = WorkbookPart.getfirstSheet workbookPart
+        let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
     
         SheetIO.appendRow ["STUDY"] sheet |> ignore
         
@@ -486,11 +493,11 @@ module ISA_Investigation  =
 
     /// Removes a section descirbed by the given scope, if it is empty
     let removeScopeIfEmpty workbookPart (scope:Scope) sheet =
+        let sst = workbookPart |> WorkbookPart.getSharedStringTable
         let rowWithValueExists = 
             [scope.From .. scope.To]
             |> List.exists (fun i -> 
-                SheetTransformation.SSTSheets.getRowValuesSSTAt workbookPart i sheet |> Seq.length 
-                |> (<) 1
+                Seq.length(SheetData.getRowValuesWithSSTAt sst i sheet) < 1
             )
         if rowWithValueExists then
             sheet
@@ -566,8 +573,9 @@ module ISA_Investigation  =
     /// If the item exists in the study, removes it from the investigation file
     let tryRemoveItemFromStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let sst = workbookPart |> WorkbookPart.getSharedStringTable
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
                        
@@ -603,7 +611,7 @@ module ISA_Investigation  =
     let tryAddItemToStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
                    
@@ -631,7 +639,7 @@ module ISA_Investigation  =
     let tryUpdateItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
            
@@ -661,7 +669,7 @@ module ISA_Investigation  =
     let tryGetItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
            
@@ -686,7 +694,7 @@ module ISA_Investigation  =
     let tryGetStudy (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
 
@@ -715,7 +723,7 @@ module ISA_Investigation  =
     let getStudies (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
             ISA_Investigation_Helpers.getIndicesOfKey workbookPart "Study Identifier" sheet
             |> Seq.choose (fun i -> 
                 ISA_Investigation_Helpers.SingleTrait.tryGetKeyValueAt workbookPart i sheet
@@ -730,7 +738,7 @@ module ISA_Investigation  =
     let getItemsInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try
-            let sheet = WorkbookPart.getfirstSheet workbookPart
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
             let studyScope = tryGetStudyScope workbookPart study sheet
 

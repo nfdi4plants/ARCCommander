@@ -18,9 +18,14 @@ module SheetData =
         sheetData.AppendChild row |> ignore
         sheetData
 
+    //----------------------------------------------------------------------------------------------------------------------
+    //                                              Row(s)                                                                  
+    //----------------------------------------------------------------------------------------------------------------------
+
     /// Returns a sequence of row contained in the sheetdata
     let getRows (sheetData:SheetData) = 
         sheetData.Descendants<Row>()
+        |> Seq.cast<Row>
 
     /// Returns the number of rows contained in the sheetdata
     let countRows (sheetData:SheetData) = 
@@ -104,3 +109,102 @@ module SheetData =
                 s
                 |> Seq.map (Row.getIndex)
                 |> Seq.max
+
+    /// Gets the string value of the cell at the given 1 based column and row index using a shared string table, if it exists, else returns None
+    let tryGetRowValuesWithSSTAt (sharedStringTable:SharedStringTable) rowIndex (sheet:SheetData) =
+        sheet
+        |> tryGetRowAt rowIndex
+        |> Option.map (
+            Row.toCellSeq
+            >> Seq.map (Cell.getValueWithSST sharedStringTable)
+        )
+
+    /// Gets the string values of the row at the given 1 based rowindex using a shared string table
+    let getRowValuesWithSSTAt (sharedStringTable:SharedStringTable) rowIndex (sheet:SheetData) =
+        sheet
+        |> getRowAt rowIndex
+        |> Row.toCellSeq
+        |> Seq.map (Cell.getValueWithSST sharedStringTable)
+
+    /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table, if it exists, else returns none
+    let tryGetIndexedRowValuesWithSSTAt (sharedStringTable:SharedStringTable) rowIndex (sheet:SheetData) =
+        sheet
+        |> tryGetRowAt rowIndex
+        |> Option.map (
+            Row.toCellSeq
+            >> Seq.map (fun cell -> 
+                cell
+                |> Cell.getReference  
+                |> CellReference.toIndices 
+                |> fst,
+
+                cell |> Cell.getValueWithSST sharedStringTable)
+        )
+
+    /// Adds values as a row to the sheet at the given rowindex with the given horizontal offset using a shared string table.
+    ///
+    /// If a row exists at the given rowindex, shoves it downwards
+    let insertRowValuesWithHorizontalOffsetWithSSTAt (sharedStringTable:SharedStringTable) (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
+    
+        let uiO = uint32 offset
+        let spans = Row.Spans.fromBoundaries (uiO + 1u) ((Seq.length vals |> uint32) + uiO )
+        let newRow = 
+            vals
+            |> Seq.mapi (fun i value -> 
+                value
+                |> Cell.createWithSST sharedStringTable ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex
+                |> fun r -> r.CloneNode(true) :?> Cell
+            )
+            |> Row.create (uint32 rowIndex) spans
+            |> fun r -> r.CloneNode(true) :?> Row
+        let refRow = tryGetRowAfter (uint rowIndex) sheet
+        match refRow with
+        | Some ref -> 
+            sheet
+            |> moveRowBlockDownward rowIndex
+            |> insertBefore newRow ref
+        | None ->
+            appendRow newRow sheet
+  
+    /// Adds values as a row to the sheet at the given rowindex using a shared string table.
+    ///
+    /// If a row exists at the given rowindex, shoves it downwards
+    let insertRowValuesWithSSTAt (sharedStringTable:SharedStringTable) (vals: 'T seq) rowIndex (sheet:SheetData) =
+        insertRowValuesWithHorizontalOffsetWithSSTAt sharedStringTable 0 vals rowIndex sheet
+
+    /// Append the values as a row to the end of the sheet using a shared string table
+    let appendRowSST workbookPart (vals: 'T seq) (sheet:SheetData) =
+        let i = (getMaxRowIndex sheet) + 1u
+        insertRowValuesWithHorizontalOffsetWithSSTAt workbookPart 0 vals i sheet
+
+//----------------------------------------------------------------------------------------------------------------------
+//                                              Cell(s)                                                                 
+//----------------------------------------------------------------------------------------------------------------------
+
+    let getCellAt (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) = 
+        sheetData
+        |> getRowAt rowIndex 
+        |> Row.getCellAt columnIndex
+
+    let getCellValueAt (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) = 
+        sheetData 
+        |> getCellAt rowIndex columnIndex
+        |> Cell.getValue
+
+    /// Gets the string value of the cell at the given 1 based column and row index using a shared string table
+    let getCellValueWithSSTAt (sharedStringTable:SharedStringTable) (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) =
+           sheetData
+           |> getCellAt rowIndex columnIndex
+           |> Cell.getValueWithSST sharedStringTable
+
+    /// Add a value at the given row and columnindex to sheet using a shared string table.
+    ///
+    /// If a cell exists in the given postion, shoves it to the right
+    let insertValueWithSST (sharedStringTable:SharedStringTable) columnIndex rowIndex (value:'T) (sheet:SheetData) =
+        match tryGetRowAt rowIndex sheet with
+        | Some row -> 
+            row 
+            |> Row.insertValueWithSSTAt sharedStringTable columnIndex value 
+            |> ignore
+            sheet
+        | None -> insertRowValuesWithHorizontalOffsetWithSSTAt sharedStringTable (columnIndex - 1u |> int) [value] rowIndex sheet

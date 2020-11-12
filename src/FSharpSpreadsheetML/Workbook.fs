@@ -85,17 +85,20 @@ module WorkbookPart =
         else 
             initSharedStringTablePart workbookPart
             |> getSharedStringTablePart
-
+    
+    let getSharedStringTable (workbookPart:WorkbookPart) =
+        workbookPart 
+        |> getSharedStringTablePart 
+        |> SharedStringTable.get
 
     /// Returns the data of the first sheet of the given workbookpart
-    let getfirstSheet (workbookPart:WorkbookPart) = 
+    let getDataOfFirstSheet (workbookPart:WorkbookPart) = 
         workbookPart
         |> getWorkSheetParts
         |> Seq.head
         |> Worksheet.get
         |> Worksheet.getSheetData
 
-    
     /// Either appends a new sheet with the given sheet data to the excel document, or, if the sheet already exists, updates it with the given sheet data
     let addSheet (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
 

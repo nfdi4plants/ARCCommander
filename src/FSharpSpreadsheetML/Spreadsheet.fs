@@ -12,8 +12,8 @@ module Spreadsheet =
     /// Opens the spreadsheet located at the given path
     let fromFile (path:string) isEditable = SpreadsheetDocument.Open(path,isEditable)
 
-    /// Creates a new spreadsheet at the given path
-    let createSpreadsheet (path:string) = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
+    /// Initializes a new empty spreadsheet at the given path
+    let init (path:string) = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook)
 
     // Gets the workbookpart of the spreadsheet
     let getWorkbookPart (spreadsheet:SpreadsheetDocument) = spreadsheet.WorkbookPart
@@ -39,8 +39,9 @@ module Spreadsheet =
 //                                      Output: SpreadsheetDocument(s)                                                  
 //----------------------------------------------------------------------------------------------------------------------
 
-    let createEmptySSTSpreadsheet sheetName (path:string) = 
-        let doc = createSpreadsheet path
+    /// Initializes a new empty spreadsheet at the given path
+    let initWithSST sheetName (path:string) = 
+        let doc = init path
         let workbookPart = initWorkbookPart doc
 
         let sharedStringTablePart = WorkbookPart.getOrInitSharedStringTablePart workbookPart
