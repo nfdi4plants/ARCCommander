@@ -11,14 +11,11 @@ module Configuration =
 
     /// Splits the name of form "section.key" into section and key
     let splitName (name:string) = 
-        if name = "" then
-            failwith "name cannot be an empty string"
-        elif name.Contains '.' |> not then
-            failwith "name must be of form \"section.key\""
-        else
-            let a = name.Split '.'
-            if a.Length <> 2 then failwith "name must be of form \"section.key\""
-            else a.[0],a.[1] 
+        let m = System.Text.RegularExpressions.Regex.Match(name,@"(?<!\.\w*)(?<section>\w+)\.(?<key>\w+)(?!\w*\.)")
+        if m.Success then
+            m.Groups.[1].Value,m.Groups.[2].Value
+        else 
+            failwithf "name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name
 
     let splitValues (value:string) =
         value.Split(';')
@@ -31,7 +28,7 @@ module Configuration =
     let getLocalConfigPath workDir =
         Path.Combine(workDir,".arc/config")
 
-    let private defaultParserConfiguration =
+    let defaultParserConfiguration =
         let c = Configuration.IniParserConfiguration()
         c.CommentString <- "#"
         c.CaseInsensitive <- false
@@ -48,11 +45,11 @@ module Configuration =
         parser.WriteFile(path,configuration)
     
     /// If a section with the given name exists in the configuration, returns its keyValue pairs c
-    let private tryGetSection sectionName (configuration:IniData) =
+    let tryGetSection sectionName (configuration:IniData) =
         try configuration.Item sectionName |> Some with | _ -> None
 
     /// If the given key exists in the section (keyData) return its value
-    let private tryGetValue key (keydData:KeyDataCollection) =
+    let tryGetValue key (keydData:KeyDataCollection) =
         try keydData.Item key |> Some with | _ -> None
 
     /// Any given key can be placed once per section
@@ -69,7 +66,7 @@ module Configuration =
     /// Returns the value assigned to a specific name (section+key)
     ///
     /// The name is given as string in form "section.key"
-    let tryGetValueOfName (name:string) (configuration:IniData) =
+    let tryGetValueByName (name:string) (configuration:IniData) =
         try
             let section,key =  splitName name 
             tryGetSection section configuration
@@ -128,7 +125,7 @@ module Configuration =
         )
 
     /// Gets the current configuration
-    let loadConfiguration workdir =
+    let loadArcConfiguration workdir =
         let globalConfigPath = getGlobalConfigPath ()
         let localConfigPath = getLocalConfigPath workdir
         if System.IO.File.Exists localConfigPath then
@@ -137,22 +134,22 @@ module Configuration =
             (globalConfigPath |> fromFile)
 
     /// Functions for retrieving general settings from the configuration
-    module General =
+    module GeneralConfiguration =
 
         /// Returns the path to the text editor used for querying user input
         let getEditor configuration =           
-            tryGetValueOfName "general.editor" configuration
+            tryGetValueByName "general.editor" configuration
 
     /// Functions for retrieving Assay related information from the configuration
-    module Assay =
+    module AssayConfiguration =
 
         let tryGetAssayFileName configuration =
-            tryGetValueOfName "isamodel.assayfilename" configuration
+            tryGetValueByName "isamodel.assayfilename" configuration
 
         /// Returns the full path of the assay file
-        let tryGetAssayISAFilePath workingDir assayIdentifier configuration =
+        let tryGetAssayFilePath workingDir assayIdentifier configuration =
             let assayFileName = tryGetAssayFileName configuration
-            let rootFolder = tryGetValueOfName "assay.rootfolder" configuration
+            let rootFolder = tryGetValueByName "assay.rootfolder" configuration
             match assayFileName,rootFolder with
             | Some f, Some r -> 
                 Path.Combine([|workingDir;r;assayIdentifier;f|])
@@ -161,9 +158,9 @@ module Configuration =
 
 
         /// Returns the full path of the files associated with the assay
-        let getAssayFilePaths workingDir assayIdentifier configuration =
-            let fileNames = tryGetValueOfName "assay.files" configuration
-            let rootFolder = tryGetValueOfName "assay.rootfolder" configuration
+        let getFilePaths workingDir assayIdentifier configuration =
+            let fileNames = tryGetValueByName "assay.files" configuration
+            let rootFolder = tryGetValueByName "assay.rootfolder" configuration
             match fileNames,rootFolder with
             | Some vs, Some r -> 
                 vs
@@ -174,9 +171,9 @@ module Configuration =
             | _ -> [||]
 
         /// Returns the full path of the folders associated with the assay
-        let getAssayFolderPaths workingDir assayIdentifier configuration =
-            let folderNames = tryGetValueOfName "assay.folders" configuration
-            let rootFolder = tryGetValueOfName "assay.rootfolder" configuration
+        let getFolderPaths workingDir assayIdentifier configuration =
+            let folderNames = tryGetValueByName "assay.folders" configuration
+            let rootFolder = tryGetValueByName "assay.rootfolder" configuration
             match folderNames,rootFolder with
             | Some vs, Some r -> 
                 vs
@@ -187,10 +184,10 @@ module Configuration =
             | _ -> Seq.empty
 
     /// Functions for retrieving investigation related information from the configuration
-    module Investigation =
+    module InvestigationConfiguration =
 
         let tryGetInvestigationFileName configuration =
-            tryGetValueOfName "isamodel.investigationfilename" configuration
+            tryGetValueByName "isamodel.investigationfilename" configuration
 
         /// Returns the full path of the investigation file
         let tryGetInvestigationFilePath workingDir configuration =
@@ -200,7 +197,7 @@ module Configuration =
                 |> Some
             | _ -> None
 
-    module Arc =
+    module ArcConfiguration =
         
         /// Returns the full paths of the rootfolders
         let tryGetRootFolderPaths workingDir configuration =
