@@ -1,30 +1,23 @@
 ﻿namespace ArcCommander.APIs
 
 open System
+open System.IO
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-
+open ArcConfiguration
 open ISA.DataModel.InvestigationFile
 
 
 /// ArcCommander API functions that get executed by top level subcommand verbs
 module ArcAPI = 
 
+    // TODO TO-DO TO DO: make use of args
     /// Initializes the arc specific folder structure
-    let init (globalArgs: Map<string,string>) (cliArgs : Map<string,string>) =
+    let init (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
-        let workDir = globalArgs.["WorkingDir"]
-        printfn "init arc in %s" workDir
-         
-        let dir = System.IO.Directory.CreateDirectory workDir
-        dir.CreateSubdirectory "assays"     |> ignore
-        dir.CreateSubdirectory "codecaps"   |> ignore
-        dir.CreateSubdirectory "externals"  |> ignore
-        dir.CreateSubdirectory "runs"       |> ignore
-        dir.CreateSubdirectory ".arc"       |> ignore
-
-        Prompt.writeGlobalParams dir.FullName cliArgs            
+        getRootFolderPaths arcConfiguration
+        |> Array.iter (Directory.CreateDirectory >> ignore)
 
     /// Returns true if called anywhere in an arc 
-    let isArc (globalArgs: Map<string,string>) (cliArgs : Map<string,string>) = raise (NotImplementedException())
+    let isArc (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) = raise (NotImplementedException())

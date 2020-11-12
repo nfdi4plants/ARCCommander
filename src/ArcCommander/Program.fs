@@ -8,73 +8,76 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.Commands
 open ArcCommander.APIs
-
+open ArcConfiguration
 open System
 open System.Reflection
 open FSharp.Reflection
 
-let processCommand (globalArgs:Map<string,string>) commandF (r : ParseResults<'T>) =
-    printfn "\nstart process with the global parameters: \n" 
-    globalArgs |> Map.iter (printfn "\t%s:%s")
+let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
+    //printfn "\nstart process with the global parameters: \n" 
+    //arcConfiguration |> Map.iter (printfn "\t%s:%s")
+
+    let editor = GeneralConfiguration.getEditor arcConfiguration
+    let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
     let parameterGroup =
         let g = groupArguments (r.GetAllResults())
-        Prompt.createParameterQueryIfNecessary globalArgs.["EditorPath"] globalArgs.["WorkingDir"] g  
+        Prompt.createParameterQueryIfNecessary editor workDir g  
     printfn "\nand the parameters: \n" 
     parameterGroup|> Map.iter (printfn "\t%s:%s")
 
-    try commandF globalArgs parameterGroup
+    try commandF arcConfiguration parameterGroup
     finally
         printfn "done processing command"
 
-let processCommandWithoutArgs (globalParams:Map<string,string>) commandF =
+let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
     printfn "\nstart process with the global parameters: \n" 
-    globalParams |> Map.iter (printfn "\t%s:%s")
-    try commandF globalParams
+    //globalParams |> Map.iter (printfn "\t%s:%s")
+    try commandF arcConfiguration
     finally
         printfn "done processing command"
 
-let handleInvestigationSubCommands globalArgs investigationVerb =
+let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with
-    | InvestigationCommand.Create r    -> processCommand globalArgs InvestigationAPI.create r
-    | InvestigationCommand.Update r    -> processCommand globalArgs InvestigationAPI.update r
-    | InvestigationCommand.Edit r      -> processCommand globalArgs InvestigationAPI.edit r
-    | InvestigationCommand.Delete r    -> processCommand globalArgs InvestigationAPI.delete r
+    | InvestigationCommand.Create r    -> processCommand arcConfiguration InvestigationAPI.create r
+    | InvestigationCommand.Update r    -> processCommand arcConfiguration InvestigationAPI.update r
+    | InvestigationCommand.Edit r      -> processCommand arcConfiguration InvestigationAPI.edit r
+    | InvestigationCommand.Delete r    -> processCommand arcConfiguration InvestigationAPI.delete r
 
-let handleStudySubCommands globalArgs studyVerb =
+let handleStudySubCommands arcConfiguration studyVerb =
     match studyVerb with
-    | StudyCommand.Init r      -> processCommand globalArgs StudyAPI.init r
-    | StudyCommand.Update r    -> processCommand globalArgs StudyAPI.update r
-    | StudyCommand.Edit r      -> processCommand globalArgs StudyAPI.edit r
-    | StudyCommand.Register r  -> processCommand globalArgs StudyAPI.register r
-    | StudyCommand.Add r       -> processCommand globalArgs StudyAPI.add r
-    | StudyCommand.Remove r    -> processCommand globalArgs StudyAPI.remove r
-    | StudyCommand.List        -> processCommandWithoutArgs globalArgs StudyAPI.list
+    | StudyCommand.Init r      -> processCommand arcConfiguration StudyAPI.init r
+    | StudyCommand.Update r    -> processCommand arcConfiguration StudyAPI.update r
+    | StudyCommand.Edit r      -> processCommand arcConfiguration StudyAPI.edit r
+    | StudyCommand.Register r  -> processCommand arcConfiguration StudyAPI.register r
+    | StudyCommand.Add r       -> processCommand arcConfiguration StudyAPI.add r
+    | StudyCommand.Remove r    -> processCommand arcConfiguration StudyAPI.remove r
+    | StudyCommand.List        -> processCommandWithoutArgs arcConfiguration StudyAPI.list
 
-let handleAssaySubCommands globalArgs assayVerb =
+let handleAssaySubCommands arcConfiguration assayVerb =
     match assayVerb with
-    | AssayCommand.Init r      -> processCommand globalArgs AssayAPI.init r
-    | AssayCommand.Update r    -> processCommand globalArgs AssayAPI.update r
-    | AssayCommand.Edit r      -> processCommand globalArgs AssayAPI.edit r
-    | AssayCommand.Register r  -> processCommand globalArgs AssayAPI.register r
-    | AssayCommand.Add r       -> processCommand globalArgs AssayAPI.add r
-    | AssayCommand.Remove r    -> processCommand globalArgs AssayAPI.remove r
-    | AssayCommand.Move r      -> processCommand globalArgs AssayAPI.move r
-    | AssayCommand.List        -> processCommandWithoutArgs globalArgs AssayAPI.list 
+    | AssayCommand.Init r      -> processCommand arcConfiguration AssayAPI.init r
+    | AssayCommand.Update r    -> processCommand arcConfiguration AssayAPI.update r
+    | AssayCommand.Edit r      -> processCommand arcConfiguration AssayAPI.edit r
+    | AssayCommand.Register r  -> processCommand arcConfiguration AssayAPI.register r
+    | AssayCommand.Add r       -> processCommand arcConfiguration AssayAPI.add r
+    | AssayCommand.Remove r    -> processCommand arcConfiguration AssayAPI.remove r
+    | AssayCommand.Move r      -> processCommand arcConfiguration AssayAPI.move r
+    | AssayCommand.List        -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
 
-let handleConfigurationSubCommands globalArgs configurationVerb =
+let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
-    | ConfigurationCommand.Edit     -> processCommandWithoutArgs globalArgs ConfigurationAPI.edit
-    | ConfigurationCommand.List     -> processCommandWithoutArgs globalArgs ConfigurationAPI.list
+    | ConfigurationCommand.Edit     -> processCommandWithoutArgs arcConfiguration ConfigurationAPI.edit
+    | ConfigurationCommand.List     -> processCommandWithoutArgs arcConfiguration ConfigurationAPI.list
 
 
-let handleCommand globalArgs command =
+let handleCommand arcConfiguration command =
     match command with
-    | Investigation subCommand  -> handleInvestigationSubCommands globalArgs (subCommand.GetSubCommand())
-    | Study subCommand          -> handleStudySubCommands globalArgs (subCommand.GetSubCommand())
-    | Assay subCommand          -> handleAssaySubCommands globalArgs (subCommand.GetSubCommand())
-    | Configuration subcommand  -> handleConfigurationSubCommands globalArgs (subcommand.GetSubCommand())
-    | Init r                    -> processCommand globalArgs ArcAPI.init r
+    | Investigation subCommand  -> handleInvestigationSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | Study subCommand          -> handleStudySubCommands arcConfiguration (subCommand.GetSubCommand())
+    | Assay subCommand          -> handleAssaySubCommands arcConfiguration (subCommand.GetSubCommand())
+    | Configuration subcommand  -> handleConfigurationSubCommands arcConfiguration (subcommand.GetSubCommand())
+    | Init r                    -> processCommand arcConfiguration ArcAPI.init r
     | WorkingDir _ | Silent     -> ()
 
 [<EntryPoint>]
@@ -90,12 +93,13 @@ let main argv =
 
         let silent = results.Contains(Silent) |> string
 
-        let globalParams = 
-            match Prompt.tryReadGlobalParams workingDir with
-            | Some gp -> gp
-            | None -> ["EditorPath","notepad"] |> Map.ofList
-            |> Map.add "WorkingDir" workingDir
-            |> Map.add "Silent" silent
+        let arcConfiguration = 
+            [
+                "general.workdir",workingDir
+                "general.silent",silent
+            ]
+            |> Configuration.fromNameValuePairs
+            |> ArcConfiguration.loadArcConfiguration
             
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"    
@@ -104,7 +108,7 @@ let main argv =
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
 
-        handleCommand globalParams (results.GetSubCommand())
+        handleCommand arcConfiguration (results.GetSubCommand())
 
         1
     with e ->

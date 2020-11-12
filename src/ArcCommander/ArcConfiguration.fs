@@ -26,6 +26,16 @@ module ArcConfiguration =
             Run         = run                     
         }
 
+    //TO:DO, rename and possibly move
+    let getDefaultConfig() =
+        let editor = "notepad"////GET DEFAULT EDITOR for linux
+        [
+        "general.editor", editor
+        "general.silence", "false"            
+        ]
+        |> fromNameValuePairs
+
+
     let getArcConfigurationSection section configuration =
         match tryGetSection section configuration with
         | Some kvs -> 
@@ -35,8 +45,12 @@ module ArcConfiguration =
         | None -> Map.empty
 
     /// Gets the current configuration
-    let loadArcConfiguration workdir =
-        let config = loadMergedConfiguration workdir
+    let loadArcConfiguration argumentConfig =
+        let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
+        let config = 
+            getDefaultConfig()
+            |> merge (loadMergedConfiguration workdir)
+            |> merge argumentConfig
         createArcConfiguration
             (getArcConfigurationSection "general" config)
             (getArcConfigurationSection "isamodel" config)
@@ -45,10 +59,20 @@ module ArcConfiguration =
             (getArcConfigurationSection "external" config)
             (getArcConfigurationSection "run" config)
 
+    // TODO TO-DO TO DO: open all record fields using reflection
     /// Returns the full paths of the rootfolders
-    let tryGetRootFolderPaths workingDir configuration =
-        getAllValuesOfKey "rootfolder" configuration
-        |> Seq.map (fun f -> Path.Combine(workingDir,f))
+    let getRootFolderPaths (configuration:ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        [|
+            configuration.General.TryFind "rootfolder"
+            configuration.Assay.TryFind "rootfolder"
+            configuration.External.TryFind "rootfolder"
+            configuration.IsaModel.TryFind "rootfolder"
+            configuration.Run.TryFind "rootfolder"
+            configuration.Workflow.TryFind "rootfolder"
+        |]
+        |> Array.choose (id)
+        |> Array.map (fun f -> Path.Combine(workDir,f))
 
 open ArcConfiguration
 
@@ -56,35 +80,49 @@ open ArcConfiguration
 module GeneralConfiguration =
 
     /// Returns the path to the text editor used for querying user input
-    let tryGetEditor configuration =           
+    let tryGetEditor configuration = 
         Map.tryFind "editor" configuration.General
 
+     /// Returns the path to the text editor used for querying user input
+    let getEditor configuration = 
+        Map.find "editor" configuration.General
+
+    /// Returns the path to the arc
+    let tryGetWorkDirectory configuration = 
+        Map.tryFind "workdir" configuration.General
+
+    /// Returns the path to the arc
+    let getWorkDirectory configuration = 
+        Map.find "workdir" configuration.General
 
 module IsaModelConfiguration =
 
     /// Returns the full path of the assay file
-    let tryGetAssayFilePath workingDir assayIdentifier (configuration:ArcConfiguration) =
+    let tryGetAssayFilePath assayIdentifier (configuration:ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
         let assayFileName = Map.tryFind "assayfilename" configuration.IsaModel
         let rootFolder = Map.tryFind "rootfolder" configuration.Assay
         match assayFileName,rootFolder with
         | Some f, Some r -> 
-            Path.Combine([|workingDir;r;assayIdentifier;f|])
+            Path.Combine([|workDir;r;assayIdentifier;f|])
             |> Some
         | _ -> None
 
     /// Returns the full path of the investigation file
-    let tryGetStudiesFilePath workingDir (configuration:ArcConfiguration) =
+    let tryGetStudiesFilePath (configuration:ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
         match Map.tryFind "studiesfilename" configuration.IsaModel with
         | Some i -> 
-            Path.Combine(workingDir,i)
+            Path.Combine(workDir,i)
             |> Some
         | _ -> None
 
     /// Returns the full path of the investigation file
-    let tryGetInvestigationFilePath workingDir (configuration:ArcConfiguration) =
+    let tryGetInvestigationFilePath (configuration:ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
         match Map.tryFind "investigationfilename" configuration.IsaModel with
         | Some i -> 
-            Path.Combine(workingDir,i)
+            Path.Combine(workDir,i)
             |> Some
         | _ -> None
 
@@ -93,7 +131,8 @@ module IsaModelConfiguration =
 module AssayConfiguration =
 
     /// Returns the full path of the files associated with the assay
-    let getFilePaths workingDir assayIdentifier configuration =
+    let getFilePaths assayIdentifier configuration =
+        let workDir = Map.find "workdir" configuration.General
         let fileNames = Map.tryFind "files" configuration.Assay
         let rootFolder = Map.tryFind "rootfolder" configuration.Assay
         match fileNames,rootFolder with
@@ -101,19 +140,20 @@ module AssayConfiguration =
             vs
             |> splitValues
             |> Array.map (fun v ->
-                Path.Combine([|workingDir;r;assayIdentifier;v|])
+                Path.Combine([|workDir;r;assayIdentifier;v|])
             )                
         | _ -> [||]
 
     /// Returns the full path of the folders associated with the assay
-    let getFolderPaths workingDir assayIdentifier configuration =
+    let getFolderPaths assayIdentifier configuration =
+        let workDir = Map.find "workdir" configuration.General
         let folderNames = Map.tryFind "folders" configuration.Assay
         let rootFolder = Map.tryFind "rootfolder" configuration.Assay
         match folderNames,rootFolder with
         | Some vs, Some r -> 
             vs
             |> splitValues
-            |> Seq.map (fun v ->
-                Path.Combine([|workingDir;r;assayIdentifier;v|])
+            |> Array.map (fun v ->
+                Path.Combine([|workDir;r;assayIdentifier;v|])
             )                
-        | _ -> Seq.empty
+        | _ -> Array.empty

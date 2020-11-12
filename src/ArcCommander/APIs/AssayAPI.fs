@@ -4,6 +4,7 @@ open System
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
+open ArcCommander.ArcConfiguration
 
 open ISA.DataModel.InvestigationFile
 
@@ -11,22 +12,30 @@ open ISA.DataModel.InvestigationFile
 module AssayAPI =        
 
     /// Initializes a new empty assay file and associated folder structure in the arc.
-    let init (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let init (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
         let name = cliArgs.["AssayIdentifier"]
-        let dir = System.IO.Directory.CreateDirectory (globalArgs.["WorkingDir"] + @"\assays\" + name)
 
-        System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
-        System.IO.File.Create (dir.FullName + "\protocols") |> ignore
-        System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
+        IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
+        |> Option.get
+        |> System.IO.File.Create
+        |> ignore
+
+        AssayConfiguration.getFilePaths name arcConfiguration
+        |> Array.iter (System.IO.File.Create >> ignore)
+
+        AssayConfiguration.getFolderPaths name arcConfiguration
+        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
+
+
 
     /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
-    let update (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let update (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
         let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
         let studyIdentifier = cliArgs.["StudyIdentifier"]
 
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
@@ -34,19 +43,21 @@ module AssayAPI =
         doc.Close()
     
     /// Opens an existing assay file in the arc with the text editor set in globalArgs, additionally setting the given assay metadata contained in cliArgs.
-    let edit (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let edit (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
         printf "Start assay edit"
+        let editor = GeneralConfiguration.getEditor arcConfiguration
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
         let studyIdentifier = cliArgs.["StudyIdentifier"]
         
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         match ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
         | Some assay ->
-            Prompt.createItemQuery globalArgs.["EditorPath"] globalArgs.["WorkingDir"] assay
+            Prompt.createItemQuery editor workDir assay
             |> fun assay -> ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
             |> ignore
         | None -> 
@@ -56,12 +67,12 @@ module AssayAPI =
         doc.Close()
     
     /// Registers an existing assay in the arc's investigation file with the given assay metadata contained in cliArgs.
-    let register (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let register (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
         let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
         let studyIdentifier = cliArgs.["StudyIdentifier"]
-        
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]          
+
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
 
         if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
@@ -72,20 +83,26 @@ module AssayAPI =
         doc.Close()
     
     /// Creates a new assay file and associated folder structure in the arc and registers it in the arc's investigation file with the given assay metadata contained in cliArgs.
-    let add (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let add (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
-        let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
+        let name = cliArgs.["AssayIdentifier"]
+
+        let assay = isaItemOfParameters (Assay(fileName = name)) cliArgs
         let studyIdentifier = cliArgs.["StudyIdentifier"]
-       
-        let name = assay.FileName
 
-        let dir = System.IO.Directory.CreateDirectory (globalArgs.["WorkingDir"] + @"\assays\" + name)
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
-        System.IO.File.Create (dir.FullName + "\dataset")   |> ignore
-        System.IO.File.Create (dir.FullName + "\protocols") |> ignore
-        System.IO.File.Create (dir.FullName + "\isa.tab")   |> ignore
+        IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
+        |> Option.get
+        |> System.IO.File.Create
+        |> ignore
 
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]
+        AssayConfiguration.getFilePaths name arcConfiguration
+        |> Array.iter (System.IO.File.Create >> ignore)
+
+        AssayConfiguration.getFolderPaths name arcConfiguration
+        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
+
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         
         if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
@@ -96,16 +113,18 @@ module AssayAPI =
         doc.Close()
     
     /// Removes an assay file from the arc's investigation file assay register
-    let remove (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let remove (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
-        let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
+        let name = cliArgs.["AssayIdentifier"]
+
+        let assay = isaItemOfParameters (Assay(fileName = name)) cliArgs
         let studyIdentifier = cliArgs.["StudyIdentifier"]
-        
-        let name = assay.FileName
-        
-        IO.purgeAndDeleteDirectory (globalArgs.["WorkingDir"] + @"\assays\" + name)
 
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+        
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        System.IO.Directory.Delete (workDir + @"\assays\" + name,true)
+
         
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
@@ -113,13 +132,13 @@ module AssayAPI =
         doc.Close()
     
     /// Moves an assay file from one study group to another (provided by cliArgs)
-    let move (globalArgs:Map<string,string>) (cliArgs : Map<string,string>) =
+    let move (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
         let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
         let studyIdentifier = cliArgs.["StudyIdentifier"]
         let targetStudy = cliArgs.["TargetStudyIdentifier"]
 
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         match ISA_XLSX.IO.ISA_Investigation.studyExists targetStudy doc, ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
@@ -136,11 +155,11 @@ module AssayAPI =
         doc.Close()
 
     /// Lists all assay identifiers registered in this investigation
-    let list (globalArgs:Map<string,string>) =
+    let list (arcConfiguration:ArcConfiguration) =
 
         printfn "Start assay list"
         
-        let investigationFilePath = IO.findInvestigationFile globalArgs.["WorkingDir"]
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
 

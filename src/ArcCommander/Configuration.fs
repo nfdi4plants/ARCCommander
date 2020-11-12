@@ -34,10 +34,22 @@ module Configuration =
         c.CaseInsensitive <- false
         c
 
+    /// Reads the ini config from a string
+    let fromText s =
+        let parser = Parser.IniDataParser(defaultParserConfiguration)
+        parser.Parse(s)
+
     /// Reads the ini config file at the given location
     let fromFile path =
         let parser = Parser.IniDataParser(defaultParserConfiguration) |> FileIniDataParser
         parser.ReadFile path
+
+    /// Reads the ini config from a string
+    let fromNameValuePairs (vs:seq<string*string>) =
+        let parser = Parser.IniDataParser(defaultParserConfiguration)
+        vs
+        |> Seq.fold (fun s (n,v) -> sprintf "%s\n%s,%s" s n v) ""        
+        |> parser.Parse
 
     /// Writes the configuration as an ini file to the given location
     let toFile path configuration =
