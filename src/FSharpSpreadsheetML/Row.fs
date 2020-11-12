@@ -78,7 +78,6 @@ module Row =
             ||
             referenceExceedsSpansToLeft reference spans
 
-
     /// Empty Row
     let empty = Row()
 
@@ -88,6 +87,12 @@ module Row =
     /// Returns true,if the row contains no cells
     let isEmpty (row:Row) = toCellSeq row |> Seq.length |> (=) 0
     
+    let iterCells (f : Cell -> unit) (row:Row) = 
+        row
+        |> toCellSeq
+        |> Seq.iter f 
+        row
+
     let mapCells (f : Cell -> Cell) (row:Row) = 
         row
         |> toCellSeq
@@ -114,7 +119,7 @@ module Row =
     let setIndex (index) (row:Row) =
         row.RowIndex <- UInt32Value.FromUInt32 index
         row
-    
+
     /// Returns true, if the row contains a cell with the given columnIndex
     let containsCellAt (columnIndex) (row:Row) =
         row
@@ -211,7 +216,7 @@ module Row =
     /// Moves all cells starting with from the given columnindex in the row to the right by the given offset.
     let moveValuesToRight columnIndex (offset:uint32) (row:Row) : Row=
         row
-        |> mapCells (fun cell -> 
+        |> iterCells (fun cell -> 
 
             let cellCol,cellRow = 
                 cell
@@ -221,9 +226,59 @@ module Row =
             if cellCol >= columnIndex then
                 cell
                 |> Cell.setReference (CellReference.ofIndices (cellCol+offset) cellRow)
-            else 
-                cell
+                |> ignore
         )
         |> extendSpanRight offset
 
+    /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
+    let getIndexedValuesWithSST (sharedStringTable:SharedStringTable) (row:Row) =
+        row
+        |> toCellSeq
+        |> Seq.map (fun cell -> 
+            cell 
+            |> Cell.getReference 
+            |> CellReference.toIndices 
+            |> fst,
+
+            Cell.getValueWithSST sharedStringTable cell
+        )
+
+    /// Maps the cells of the given row to the value strings using a shared string table
+    let getRowValuesWithSST (sharedStringTable:SharedStringTable) (row:Row)  =
+        row
+        |> toCellSeq
+        |> Seq.map (Cell.getValueWithSST sharedStringTable)
+
+    /// Add a value as a cell to the row at the given columnindex using a shared string table
+    ///
+    /// If a cell exists at the given columnindex, shoves it to the right
+    let insertValueWithSSTAt (sharedStringTable:SharedStringTable) index (value:'T) (row:Row) = 
+
+        let refCell = row |> tryGetCellAfter index 
+        let cell = Cell.createWithSST sharedStringTable index (getIndex row) value
+
+        match refCell with
+        | Some ref -> 
+            row
+            |> moveValuesToRight index 1u
+            |> insertCellBefore cell ref
+        | None ->
+            let spans = getSpan row
+            let spanExceedance = index - (spans |> Spans.rightBoundary)
+                               
+            row
+            |> extendSpanRight spanExceedance
+            |> appendCell cell
+
+    /// Append the value as a cell to the end of the row using a shared string table
+    let appendValueWithSST (sharedStringTable:SharedStringTable) (value:'T) (row:Row) = 
+
+        let colIndex = 
+            row
+            |> getSpan
+            |> Spans.rightBoundary
+        let cell = Cell.createWithSST sharedStringTable (colIndex + 1u) (getIndex row) value
+        row
+        |> appendCell cell
+        |> extendSpanRight 1u 
 
