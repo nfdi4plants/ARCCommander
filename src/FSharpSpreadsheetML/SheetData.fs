@@ -182,6 +182,29 @@ module SheetData =
         | None ->
             appendRow newRow sheet
 
+    
+    /// Adds values as a row to the sheet at the given rowindex with the given horizontal offset.
+    ///
+    /// If a row exists at the given rowindex, shoves it downwards
+    let insertRowWithHorizontalOffsetAt (offset:int) (vals: 'T seq) rowIndex (sheet:SheetData) =
+    
+        let uiO = uint32 offset
+        let spans = Row.Spans.fromBoundaries (uiO + 1u) (Seq.length vals |> uint32 |> (+) uiO )
+        let newRow = 
+            vals
+            |> Seq.mapi (fun i v -> 
+                Cell.createGeneric ((int64 i) + 1L + (int64 offset) |> uint32) rowIndex v
+            )
+            |> Row.create (uint32 rowIndex) spans
+        let refRow = tryGetRowAfter (uint rowIndex) sheet
+        match refRow with
+        | Some ref -> 
+            sheet
+            |> moveRowBlockDownward rowIndex 
+            |> insertBefore newRow ref
+        | None ->
+            appendRow newRow sheet
+
     /// Adds values as a row to the sheet at the given rowindex with the given horizontal offset using a shared string table.
     ///
     /// If a row exists at the given rowindex, shoves it downwards

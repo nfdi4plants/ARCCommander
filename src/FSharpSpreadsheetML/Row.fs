@@ -305,6 +305,18 @@ module Row =
         |> appendCell cell
         |> extendSpanRight 1u 
 
+    
+    /// Add a value as a cell to the end of the row.
+    let appendValue (value:'T) (row:Row) = 
+        let colIndex = 
+            row
+            |> getSpan
+            |> Spans.rightBoundary
+        let cell = Cell.createGeneric (colIndex + 1u) (row |> getIndex) value
+        row
+        |> appendCell cell
+        |> extendSpanRight 1u 
+
     /// Append the value as a cell to the end of the row using a shared string table
     let appendValueWithSST (sharedStringTable:SharedStringTable) (value:'T) (row:Row) = 
 
