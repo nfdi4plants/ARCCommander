@@ -99,37 +99,6 @@ module SheetTransformation =
                 |> Seq.map (Row.getIndex)
                 |> Seq.max
 
-    /// Gets the first sheet in the workbookpart
-    let firstSheetOfWorkbookPart (workbookPart) = 
-        workbookPart
-        |> WorkbookPart.getWorkSheetParts
-        |> Seq.head
-        |> Worksheet.get
-        |> Worksheet.getSheetData
-
-    /// Appends a new sheet to the excel document
-    let addSheetToWorkbookPart (name : string) (data : SheetData) (workbookPart : WorkbookPart) =
-
-        let workbook = Workbook.getOrInit  workbookPart
-
-        let worksheetPart = WorkbookPart.initWorksheetPart workbookPart
-
-        Worksheet.getOrInit worksheetPart
-        |> Worksheet.addSheetData data
-        |> ignore
-        
-        let sheets = Sheet.Sheets.getOrInit workbook
-        let id = WorkbookPart.getWorksheetPartID worksheetPart workbookPart
-        let sheetID = 
-            sheets |> Sheet.Sheets.getSheets |> Seq.map Sheet.getSheetID
-            |> fun s -> 
-                if Seq.length s = 0 then 1u
-                else s |> Seq.max |> (+) 1ul
-        let sheet = Sheet.create id name sheetID
-
-        sheets.AppendChild(sheet) |> ignore
-        workbookPart
-
   
     let createEmptySSTSpreadsheet sheetName (path:string) = 
         let doc = Spreadsheet.createSpreadsheet path
@@ -138,8 +107,7 @@ module SheetTransformation =
         let sharedStringTablePart = WorkbookPart.getOrInitSharedStringTablePart workbookPart
         SharedStringTable.init sharedStringTablePart |> ignore
 
-        let workbook = Workbook.getOrInit workbookPart
-        addSheetToWorkbookPart sheetName (SheetData.empty) workbookPart |> ignore
+        WorkbookPart.addSheet sheetName (SheetData.empty) workbookPart |> ignore
         doc
 
     /// Sheet manipulation using a shared string table

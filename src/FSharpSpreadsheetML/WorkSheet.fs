@@ -53,7 +53,6 @@ module Worksheet =
             |> init
             |> get
 
-
     //let insertCellData (cell:CellData.CellDataValue) (worksheet : Worksheet) =
         
     ///Convenience
