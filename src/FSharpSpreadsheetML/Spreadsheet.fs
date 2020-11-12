@@ -35,10 +35,6 @@ module Spreadsheet =
         |> close
         spreadsheet
 
-//----------------------------------------------------------------------------------------------------------------------
-//                                      Output: SpreadsheetDocument(s)                                                  
-//----------------------------------------------------------------------------------------------------------------------
-
     /// Initializes a new empty spreadsheet at the given path
     let initWithSST sheetName (path:string) = 
         let doc = init path
@@ -50,26 +46,6 @@ module Spreadsheet =
         WorkbookPart.addSheet sheetName (SheetData.empty) workbookPart |> ignore
         doc
 
-//----------------------------------------------------------------------------------------------------------------------
-//                                          Output: Workbook(s)                                                         
-//----------------------------------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------------------------------------
-//                                          Output: WorkSheet(s)                                                        
-//----------------------------------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------------------------------------
-//                                            Output: SheetData                                                         
-//----------------------------------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------------------------------------
-//                                            Output: Sheet(s)                                                          
-//----------------------------------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------------------------------------
-//                                      Output: SharedStringTable(s)                                                    
-//----------------------------------------------------------------------------------------------------------------------
-
     // Get the SharedStringTablePart. If it does not exist, create a new one.
     let getOrInitSharedStringTablePart (spreadsheetDocument:SpreadsheetDocument) =
         let workbookPart = spreadsheetDocument.WorkbookPart    
@@ -77,10 +53,6 @@ module Spreadsheet =
         match sstp |> Seq.tryHead with
         | Some sst -> sst
         | None -> workbookPart.AddNewPart<SharedStringTablePart>()
-
-//----------------------------------------------------------------------------------------------------------------------
-//                                            Output: Row(s)                                                            
-//----------------------------------------------------------------------------------------------------------------------
 
     /// Returns a sequence of rows containing the cells for the given sheetIndex of the given spreadsheetDocument. 
     /// Returns an empty list if the sheet of the given sheetIndex does not exist.
@@ -106,10 +78,6 @@ module Spreadsheet =
             }
         | None -> seq {[]} :?> seq<Row>
 
-//----------------------------------------------------------------------------------------------------------------------
-//                                            Output: Cell(s)                                                           
-//----------------------------------------------------------------------------------------------------------------------
-
     /// Returns a 1D sequence of cells for the given sheetIndex of the given spreadsheetDocument. 
     /// Returns an empty list if the sheet of the given sheetIndex does not exist.
     let getCellsBySheetIndex (sheetIndex:uint) (spreadsheetDocument:SpreadsheetDocument) =
@@ -130,9 +98,33 @@ module Spreadsheet =
             }
         | None -> seq {()}
 
+    //----------------------------------------------------------------------------------------------------------------------
+    //                                      High level functions                                                            
+    //----------------------------------------------------------------------------------------------------------------------
 
+    //Rows
 
+    let mapRowOfSheet (sheetId) (rowId) (rowF: Row -> Row) : SpreadsheetDocument = 
+        //get workbook part
+        //get sheet data by sheetId
+        //get row at rowId
+        //apply rowF to row and update 
+        //return updated doc
+        raise (System.NotImplementedException())
 
+    let mapRowsOfSheet (sheetId) (rowF: Row -> Row) : SpreadsheetDocument = raise (System.NotImplementedException())
+
+    let appendRowValuesToSheet (sheetId) (rowValues: seq<'T>) : SpreadsheetDocument = raise (System.NotImplementedException())
+
+    let insertRowValuesIntoSheetAt (sheetId) (rowId) (rowValues: seq<'T>) : SpreadsheetDocument = raise (System.NotImplementedException())
+
+    let insertValueIntoSheetAt (sheetId) (rowId) (colId) (value: 'T) : SpreadsheetDocument = raise (System.NotImplementedException())
+
+    let setValueInSheetAt (sheetId) (rowId) (colId) (value: 'T) : SpreadsheetDocument = raise (System.NotImplementedException())
+
+    let deleteRowFromSheet (sheetId) (rowId) : SpreadsheetDocument = raise (System.NotImplementedException())
+
+    //...
 
 
 
