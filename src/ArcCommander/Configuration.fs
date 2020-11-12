@@ -52,6 +52,8 @@ module Configuration =
     let tryGetValue key (keydData:KeyDataCollection) =
         try keydData.Item key |> Some with | _ -> None
 
+    
+
     /// Any given key can be placed once per section
     ///
     /// Returns the values assigned to a given key across all sections
@@ -125,81 +127,10 @@ module Configuration =
         )
 
     /// Gets the current configuration
-    let loadArcConfiguration workdir =
+    let loadMergedConfiguration workdir =
         let globalConfigPath = getGlobalConfigPath ()
         let localConfigPath = getLocalConfigPath workdir
         if System.IO.File.Exists localConfigPath then
             merge (localConfigPath |> fromFile) (globalConfigPath |> fromFile)
         else
             (globalConfigPath |> fromFile)
-
-    /// Functions for retrieving general settings from the configuration
-    module GeneralConfiguration =
-
-        /// Returns the path to the text editor used for querying user input
-        let getEditor configuration =           
-            tryGetValueByName "general.editor" configuration
-
-    /// Functions for retrieving Assay related information from the configuration
-    module AssayConfiguration =
-
-        let tryGetAssayFileName configuration =
-            tryGetValueByName "isamodel.assayfilename" configuration
-
-        /// Returns the full path of the assay file
-        let tryGetAssayFilePath workingDir assayIdentifier configuration =
-            let assayFileName = tryGetAssayFileName configuration
-            let rootFolder = tryGetValueByName "assay.rootfolder" configuration
-            match assayFileName,rootFolder with
-            | Some f, Some r -> 
-                Path.Combine([|workingDir;r;assayIdentifier;f|])
-                |> Some
-            | _ -> None
-
-
-        /// Returns the full path of the files associated with the assay
-        let getFilePaths workingDir assayIdentifier configuration =
-            let fileNames = tryGetValueByName "assay.files" configuration
-            let rootFolder = tryGetValueByName "assay.rootfolder" configuration
-            match fileNames,rootFolder with
-            | Some vs, Some r -> 
-                vs
-                |> splitValues
-                |> Array.map (fun v ->
-                    Path.Combine([|workingDir;r;assayIdentifier;v|])
-                )                
-            | _ -> [||]
-
-        /// Returns the full path of the folders associated with the assay
-        let getFolderPaths workingDir assayIdentifier configuration =
-            let folderNames = tryGetValueByName "assay.folders" configuration
-            let rootFolder = tryGetValueByName "assay.rootfolder" configuration
-            match folderNames,rootFolder with
-            | Some vs, Some r -> 
-                vs
-                |> splitValues
-                |> Seq.map (fun v ->
-                    Path.Combine([|workingDir;r;assayIdentifier;v|])
-                )                
-            | _ -> Seq.empty
-
-    /// Functions for retrieving investigation related information from the configuration
-    module InvestigationConfiguration =
-
-        let tryGetInvestigationFileName configuration =
-            tryGetValueByName "isamodel.investigationfilename" configuration
-
-        /// Returns the full path of the investigation file
-        let tryGetInvestigationFilePath workingDir configuration =
-            match tryGetInvestigationFileName configuration with
-            | Some i -> 
-                Path.Combine(workingDir,i)
-                |> Some
-            | _ -> None
-
-    module ArcConfiguration =
-        
-        /// Returns the full paths of the rootfolders
-        let tryGetRootFolderPaths workingDir configuration =
-            getAllValuesOfKey "rootfolder" configuration
-            |> Seq.map (fun f -> Path.Combine(workingDir,f))

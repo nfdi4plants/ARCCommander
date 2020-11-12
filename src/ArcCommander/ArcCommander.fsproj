@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Configuration.fs" />
+    <Compile Include="ArcConfiguration.fs" />
     <None Include="config" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="IO.fs" />
     <Compile Include="ArgumentProcessing.fs" />

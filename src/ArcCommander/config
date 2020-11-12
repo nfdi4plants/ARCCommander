@@ -13,13 +13,13 @@ rootfolder=/assays
 folders=/dataset;/protocol
 files=/readme.md
 
-[workflows]
-rootfolder=workflows
-dockerfile=Dockerfile
+[workflow]
+rootfolder=/workflows
+dockerfile=/Dockerfile
 
-[externals]
-rootfolder=externals
-externalsfile=isa.tab
+[external]
+rootfolder=/externals
+externalsfile=/isa.tab
 
-[runs]
-rootfolder=runs
+[run]
+rootfolder=/runs
