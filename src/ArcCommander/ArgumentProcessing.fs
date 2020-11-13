@@ -155,24 +155,6 @@ module ArgumentProcessing =
             )
             |> Map.ofArray
 
-        let writeGlobalParams arcPath (parameters : Map<string,string>) = 
-
-            let filePath = sprintf "%s/.arc/globalParams.yml" arcPath 
-        
-            serializeMap parameters
-            |> writeForce filePath
-
-        let tryReadGlobalParams arcPath = 
-            try 
-                let filePath = sprintf "%s/.arc/globalParams.yml" arcPath 
-                read filePath
-                |> deserializeMap
-                |> Some
-            with
-            | err ->
-                printfn "Could not obtain global params: \n %s" err.Message
-                None
-
         /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input
         let createQuery editorPath arcPath serializeF deserializeF inp =
             let yamlString = serializeF inp

@@ -6,9 +6,9 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Configuration.fs" />
     <None Include="config" CopyToOutputDirectory="PreserveNewest" />
-    <Compile Include="IO.fs" />
+    <Compile Include="Configuration.fs" />
+    <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
