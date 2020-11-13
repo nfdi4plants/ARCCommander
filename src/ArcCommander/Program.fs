@@ -8,7 +8,6 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.Commands
 open ArcCommander.APIs
-open ArcConfiguration
 open System
 open System.Reflection
 open FSharp.Reflection
@@ -99,7 +98,7 @@ let main argv =
                 "general.silent",silent
             ]
             |> Configuration.fromNameValuePairs
-            |> ArcConfiguration.loadArcConfiguration
+            |> ArcConfiguration.load
             
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"    
