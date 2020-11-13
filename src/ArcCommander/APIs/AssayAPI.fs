@@ -4,7 +4,6 @@ open System
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ArcCommander.ArcConfiguration
 
 open ISA.DataModel.InvestigationFile
 

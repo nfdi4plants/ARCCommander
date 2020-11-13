@@ -3,20 +3,18 @@
 open System.IO
 open Configuration
 
-/// Functionality for providing Configurations to the ArcCommander
-module ArcConfiguration =
 
-    type ArcConfiguration =
-        {
-            General     : Map<string,string>
-            IsaModel    : Map<string,string>
-            Assay       : Map<string,string>
-            Workflow    : Map<string,string>
-            External    : Map<string,string>
-            Run         : Map<string,string>                     
-        }
+type ArcConfiguration =
+    {
+        General     : Map<string,string>
+        IsaModel    : Map<string,string>
+        Assay       : Map<string,string>
+        Workflow    : Map<string,string>
+        External    : Map<string,string>
+        Run         : Map<string,string>                     
+    }
 
-    let createArcConfiguration general isaModel assay workflow external run =
+    static member create general isaModel assay workflow external run =
         {
             General     = general
             IsaModel    = isaModel
@@ -27,7 +25,7 @@ module ArcConfiguration =
         }
 
     //TO:DO, rename and possibly move
-    let getDefaultConfig() =
+    static member getDefault() =
         let editor = "notepad"////GET DEFAULT EDITOR for linux
         [
         "general.editor", editor
@@ -36,8 +34,8 @@ module ArcConfiguration =
         |> fromNameValuePairs
 
 
-    let getArcConfigurationSection section configuration =
-        match tryGetSection section configuration with
+    static member getSection sectionName configuration =
+        match tryGetSection sectionName configuration with
         | Some kvs -> 
             kvs
             |> Seq.map (fun kv -> kv.KeyName,kv.Value)
@@ -45,23 +43,23 @@ module ArcConfiguration =
         | None -> Map.empty
 
     /// Gets the current configuration
-    let loadArcConfiguration argumentConfig =
+    static member load argumentConfig =
         let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
         let config = 
-            getDefaultConfig()
+            ArcConfiguration.getDefault()
             |> merge (loadMergedConfiguration workdir)
             |> merge argumentConfig
-        createArcConfiguration
-            (getArcConfigurationSection "general" config)
-            (getArcConfigurationSection "isamodel" config)
-            (getArcConfigurationSection "assay" config)
-            (getArcConfigurationSection "workflow" config)
-            (getArcConfigurationSection "external" config)
-            (getArcConfigurationSection "run" config)
+        ArcConfiguration.create
+            (ArcConfiguration.getSection "general" config)
+            (ArcConfiguration.getSection "isamodel" config)
+            (ArcConfiguration.getSection "assay" config)
+            (ArcConfiguration.getSection "workflow" config)
+            (ArcConfiguration.getSection "external" config)
+            (ArcConfiguration.getSection "run" config)
 
     // TODO TO-DO TO DO: open all record fields using reflection
     /// Returns the full paths of the rootfolders
-    let getRootFolderPaths (configuration:ArcConfiguration) =
+    static member getRootFolderPaths (configuration:ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         [|
             configuration.General.TryFind "rootfolder"
@@ -73,8 +71,6 @@ module ArcConfiguration =
         |]
         |> Array.choose (id)
         |> Array.map (fun f -> Path.Combine(workDir,f))
-
-open ArcConfiguration
 
 /// Functions for retrieving general settings from the configuration
 module GeneralConfiguration =

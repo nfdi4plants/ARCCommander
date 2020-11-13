@@ -4,7 +4,6 @@ open System
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ArcConfiguration
 open ISA.DataModel.InvestigationFile
 
 /// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs

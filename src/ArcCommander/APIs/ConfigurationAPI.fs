@@ -2,7 +2,7 @@
 
 open System
 
-open ArcCommander.ArcConfiguration
+open ArcCommander
 
 /// ArcCommander Configuration API functions that get executed by the configuration focused subcommand verbs
 module ConfigurationAPI =     

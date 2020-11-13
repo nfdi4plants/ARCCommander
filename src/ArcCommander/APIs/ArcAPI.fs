@@ -5,7 +5,6 @@ open System.IO
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ArcConfiguration
 open ISA.DataModel.InvestigationFile
 
 
@@ -16,7 +15,7 @@ module ArcAPI =
     /// Initializes the arc specific folder structure
     let init (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
 
-        getRootFolderPaths arcConfiguration
+        ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)
 
     /// Returns true if called anywhere in an arc 
