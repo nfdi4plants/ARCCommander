@@ -320,6 +320,7 @@ module Row =
     /// Add a value as a cell to the row at the given columnindex.
     ///
     /// If a cell exists at the given columnindex, Overwrites it
+    // To-Do: Add version using a SharedStringTable
     let setValue index (value:'T) (row:Row) = 
 
         let refCell = row |> tryGetCellAfter index 

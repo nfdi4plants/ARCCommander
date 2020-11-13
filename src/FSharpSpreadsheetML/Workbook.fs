@@ -35,8 +35,6 @@ module Workbook =
     //    let sheets = Sheet.Sheets.getOrInit workbook
     //    Sheet.Sheets.addSheet sheet sheets |> ignore
     //    workbook
-/// Gets the first sheet in the workbookpart
-
 
 module WorkbookPart = 
 
@@ -99,8 +97,9 @@ module WorkbookPart =
         |> Worksheet.get
         |> Worksheet.getSheetData
 
-    /// Either appends a new sheet with the given sheet data to the excel document, or, if the sheet already exists, updates it with the given sheet data
-    let addSheet (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
+    /// Appends a new sheet with the given sheet data to the excel document
+    // to-do: guard if sheet of name already exists
+    let appendSheet (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
 
         let workbook = Workbook.getOrInit  workbookPart
 

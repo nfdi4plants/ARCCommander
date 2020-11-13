@@ -23,9 +23,9 @@ module SheetData =
     //----------------------------------------------------------------------------------------------------------------------
 
     /// Returns a sequence of row contained in the sheetdata
-    let getRows (sheetData:SheetData) = 
+    let getRows (sheetData:SheetData) : seq<Row>= 
         sheetData.Descendants<Row>()
-        |> Seq.cast<Row>
+
 
     /// Returns the number of rows contained in the sheetdata
     let countRows (sheetData:SheetData) = 
@@ -229,6 +229,7 @@ module SheetData =
         insertRowValuesWithHorizontalOffsetWithSSTAt workbookPart 0 vals i sheet
 
     /// Append the value as a cell to the end of the row
+    // To-Do: Add version using a SharedStringTable
     let appendValueToRowAt rowIndex (value:'T) (sheet:SheetData) =
         match tryGetRowAt rowIndex sheet with
         | Some row -> 
@@ -239,6 +240,7 @@ module SheetData =
         | None -> insertRowValuesAt [value] rowIndex sheet    
 
     /// Removes row from sheet and move the following rows up
+    // To-Do: Add version using a SharedStringTable
     let deleteRowAt rowIndex (sheet:SheetData) : SheetData =
         sheet 
         |> removeRowAt rowIndex
@@ -296,6 +298,7 @@ module SheetData =
     /// Add a value at the given row and columnindex to sheet using a shared string table.
     ///
     /// If a cell exists in the given postion, overwrites it
+    // To-Do: Add version using a SharedStringTable
     let setValueAt rowIndex columnIndex (value:'T) (sheet:SheetData) =
         match tryGetRowAt rowIndex sheet with
         | Some row -> 
@@ -306,7 +309,7 @@ module SheetData =
         | None -> insertRowWithHorizontalOffsetAt (columnIndex - 1u |> int) [value] rowIndex sheet
 
     /// Removes the value from the sheet
-    let tryRemoveValueAt columnIndex rowIndex sheet : SheetData Option=
+    let tryRemoveValueAt rowIndex columnIndex sheet : SheetData Option=
         let row = 
             sheet 
             |> getRowAt rowIndex 
