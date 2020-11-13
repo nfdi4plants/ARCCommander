@@ -590,7 +590,7 @@ module ISA_Investigation  =
                     |> List.rev
                     |> List.iter (fun rowI -> 
                         sheet
-                        |> SheetData.tryRemoveValueAt colI rowI
+                        |> SheetData.tryRemoveValueAt rowI colI
                         |> ignore)                  
                     sheet
                     |> removeScopeIfEmpty workbookPart itemScope
