@@ -6,15 +6,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CellReference.fs" />
+    <Compile Include="SharedStringTable.fs" />
     <Compile Include="Cell.fs" />
     <Compile Include="Row.fs" />
-    <Compile Include="SharedStringTable.fs" />
     <Compile Include="Sheet.fs" />
     <Compile Include="SheetData.fs" />
     <Compile Include="WorkSheet.fs" />
     <Compile Include="Workbook.fs" />
     <Compile Include="Spreadsheet.fs" />
-    <Compile Include="Library.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

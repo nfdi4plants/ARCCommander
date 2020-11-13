@@ -36,8 +36,6 @@ module Workbook =
     //    Sheet.Sheets.addSheet sheet sheets |> ignore
     //    workbook
 
-
-
 module WorkbookPart = 
 
     /// Add a worksheetpart to the workbookpart
@@ -67,8 +65,6 @@ module WorkbookPart =
     //    let emptySheet = (addNewWorksheetPart workbookPart)
     //    emptySheet.Worksheet <- worksheet
 
-
-
     /// Gets the sharedstringtablepart
     let getSharedStringTablePart (workbookPart:WorkbookPart) = workbookPart.SharedStringTablePart
     
@@ -87,4 +83,41 @@ module WorkbookPart =
         else 
             initSharedStringTablePart workbookPart
             |> getSharedStringTablePart
+    
+    let getSharedStringTable (workbookPart:WorkbookPart) =
+        workbookPart 
+        |> getSharedStringTablePart 
+        |> SharedStringTable.get
 
+    /// Returns the data of the first sheet of the given workbookpart
+    let getDataOfFirstSheet (workbookPart:WorkbookPart) = 
+        workbookPart
+        |> getWorkSheetParts
+        |> Seq.head
+        |> Worksheet.get
+        |> Worksheet.getSheetData
+
+    /// Appends a new sheet with the given sheet data to the excel document
+    // to-do: guard if sheet of name already exists
+    let appendSheet (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
+
+        let workbook = Workbook.getOrInit  workbookPart
+
+        let worksheetPart = initWorksheetPart workbookPart
+
+        Worksheet.getOrInit worksheetPart
+        |> Worksheet.addSheetData data
+        |> ignore
+        
+        let sheets = Sheet.Sheets.getOrInit workbook
+        let id = getWorksheetPartID worksheetPart workbookPart
+        let sheetID = 
+            sheets |> Sheet.Sheets.getSheets |> Seq.map Sheet.getSheetID
+            |> fun s -> 
+                if Seq.length s = 0 then 1u
+                else s |> Seq.max |> (+) 1ul
+
+        let sheet = Sheet.create id sheetName sheetID
+
+        sheets.AppendChild(sheet) |> ignore
+        workbookPart

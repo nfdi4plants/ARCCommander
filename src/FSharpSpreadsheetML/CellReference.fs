@@ -39,7 +39,7 @@ module CellReference =
         
         if regex.Success then
             regex.Groups
-            |> fun a -> colAdressToIndex a.[1].Value, uint a.[2].Value
+            |> fun a -> colAdressToIndex a.[1].Value, uint32 a.[2].Value
         else 
             failwithf "Reference %s does not match Excel A1-style" reference
 

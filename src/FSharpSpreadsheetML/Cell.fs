@@ -57,6 +57,31 @@ module Cell =
         let valType,value = inferCellValue value
         let reference = CellReference.ofIndices columnIndex (rowIndex)
         create valType reference (CellValue.create value)
+    
+    /// Create a cell using a shared string table, also returns the updated shared string table.
+    let createWithSST (sharedStringTable: SharedStringTable) columnIndex rowIndex (value:'T) = 
+        let value = box value
+        match value with
+        | :? string as s -> 
+            let reference = CellReference.ofIndices columnIndex (rowIndex)
+            match SharedStringTable.tryGetIndexByString s sharedStringTable with
+            | Some i -> 
+                i
+                |> string
+                |> CellValue.create
+                |> create CellValues.SharedString reference
+            | None ->
+                let updatedSharedStringTable = 
+                    sharedStringTable
+                    |> SharedStringTable.SharedStringItem.add (SharedStringTable.SharedStringItem.create s) 
+
+                updatedSharedStringTable
+                |> SharedStringTable.count
+                |> string
+                |> CellValue.create
+                |> create CellValues.SharedString reference 
+        | _  -> 
+           createGeneric columnIndex rowIndex (value.ToString())
 
     /// Gets "A1"-Style cell reference
     let getReference (cell:Cell) = cell.CellReference.Value
@@ -66,21 +91,6 @@ module Cell =
         cell.CellReference <- StringValue.FromString reference
         cell
 
-    /// Gets Some cellValue if cellValue is existent. Else returns None
-    let tryGetValue (cell:Cell) = 
-        if cell.CellValue <> null then
-            Some cell.CellValue
-        else
-            None
-
-    /// Gets cellValue
-    let getValue (cell:Cell) = cell.CellValue
-
-    /// Sets cellValue
-    let setValue (value:CellValue) (cell:Cell) = 
-        cell.CellValue <- value
-        cell
-    
     /// Gets Some type if existent. Else returns None
     let tryGetType (cell:Cell) = 
         if cell.DataType <> null then
@@ -96,7 +106,40 @@ module Cell =
         cell.DataType <- EnumValue(dataType)
         cell
 
-    
+    /// Gets Some cellValue if cellValue is existent. Else returns None
+    let tryGetValue (cell:Cell) = 
+        if cell.CellValue <> null then
+            Some cell.CellValue
+        else
+            None
+
+    /// Gets cellValue
+    let getValue (cell:Cell) = cell.CellValue
+
+    /// Maps a cell to the value string using a shared string table
+    let getValueWithSST (sharedStringTable:SharedStringTable) (cell:Cell) =
+        match cell |> tryGetType with
+        | Some (CellValues.SharedString) ->
+
+            let sharedStringTableIndex = 
+                cell
+                |> getValue
+                |> CellValue.getValue
+                |> int
+
+            sharedStringTable
+            |> SharedStringTable.getText sharedStringTableIndex
+            |> SharedStringTable.SharedStringItem.getText
+        | _ ->
+            cell
+            |> getValue
+            |> CellValue.getValue   
+
+    /// Sets cellValue
+    let setValue (value:CellValue) (cell:Cell) = 
+        cell.CellValue <- value
+        cell
+
     /// Includes value from SharedStringTable in Cell.CellValue.Text
     let includeSharedStringValue (sharedStringTable:SharedStringTable) (cell:Cell) =
         if not (isNull cell.DataType) then  
