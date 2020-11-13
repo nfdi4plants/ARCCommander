@@ -25,7 +25,7 @@ module SheetData =
     /// Returns a sequence of row contained in the sheetdata
     let getRows (sheetData:SheetData) : seq<Row>= 
         sheetData.Descendants<Row>()
-        |> Seq.cast<Row>
+
 
 
     /// Returns the number of rows contained in the sheetdata
