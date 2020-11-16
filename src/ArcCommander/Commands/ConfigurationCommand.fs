@@ -6,8 +6,8 @@ open ArcCommander.CLIArguments
 /// Assay object subcommand verbs
 type ConfigurationCommand = 
 
-    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] Edit
-    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
+    | [<CliPrefix(CliPrefix.None)>] Edit of ParseResults<ConfigurationEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] List of ParseResults<ConfigurationListArgs>
 
     interface IArgParserTemplate with
         member this.Usage =

@@ -10,15 +10,13 @@ open ArcCommander.Commands
 open ArcCommander.APIs
 
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
-    //printfn "\nstart process with the global parameters: \n" 
-    //arcConfiguration |> Map.iter (printfn "\t%s:%s")
 
     let editor = GeneralConfiguration.getEditor arcConfiguration
     let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
     let parameterGroup =
         let g = groupArguments (r.GetAllResults())
-        Prompt.createParameterQueryIfNecessary editor workDir g  
+        Prompt.createArgumentQueryIfNecessary editor workDir g  
 
     printfn "start processing command with the config"
     arcConfiguration 
@@ -26,15 +24,19 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
 
     printfn "\nand the parameters: \n" 
-    parameterGroup|> Map.iter (printfn "\t%s:%s")
+    parameterGroup|> Map.iter (printfn "\t%s:%O")
 
     try commandF arcConfiguration parameterGroup
     finally
         printfn "done processing command"
 
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
-    printfn "\nstart process with the global parameters: \n" 
-    //globalParams |> Map.iter (printfn "\t%s:%s")
+
+    printfn "start processing parameterless command with the config"
+    arcConfiguration 
+    |> ArcConfiguration.flatten
+    |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
+
     try commandF arcConfiguration
     finally
         printfn "done processing command"
@@ -69,8 +71,8 @@ let handleAssaySubCommands arcConfiguration assayVerb =
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
-    | ConfigurationCommand.Edit     -> processCommandWithoutArgs arcConfiguration ConfigurationAPI.edit
-    | ConfigurationCommand.List     -> processCommandWithoutArgs arcConfiguration ConfigurationAPI.list
+    | ConfigurationCommand.Edit r   -> processCommand arcConfiguration ConfigurationAPI.edit r
+    | ConfigurationCommand.List r   -> processCommand arcConfiguration ConfigurationAPI.list r
 
 
 let handleCommand arcConfiguration command =

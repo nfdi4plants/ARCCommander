@@ -13,7 +13,7 @@ module ArcAPI =
 
     // TODO TO-DO TO DO: make use of args
     /// Initializes the arc specific folder structure
-    let init (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    let init (arcConfiguration:ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)

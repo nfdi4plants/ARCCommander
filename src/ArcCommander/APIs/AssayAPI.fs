@@ -11,9 +11,9 @@ open ISA.DataModel.InvestigationFile
 module AssayAPI =        
 
     /// Initializes a new empty assay file and associated folder structure in the arc.
-    let init (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    let init (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let name = cliArgs.["AssayIdentifier"]
+        let name = getFieldValueByName "AssayIdentifier" assayArgs
 
         AssayConfiguration.getFolderPaths name arcConfiguration
         |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
@@ -26,11 +26,11 @@ module AssayAPI =
         AssayConfiguration.getFilePaths name arcConfiguration
         |> Array.iter (System.IO.File.Create >> ignore)
 
-    /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
-    let update (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    /// Updates an existing assay file in the arc with the given assay metadata contained in assayArgs.
+    let update (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
-        let studyIdentifier = cliArgs.["StudyIdentifier"]
+        let assay = isaItemOfArguments (Assay(fileName = getFieldValueByName "AssayIdentifier" assayArgs)) assayArgs
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
@@ -39,15 +39,15 @@ module AssayAPI =
         doc.Save()
         doc.Close()
     
-    /// Opens an existing assay file in the arc with the text editor set in globalArgs, additionally setting the given assay metadata contained in cliArgs.
-    let edit (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    /// Opens an existing assay file in the arc with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
+    let edit (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         printf "Start assay edit"
         let editor = GeneralConfiguration.getEditor arcConfiguration
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
-        let studyIdentifier = cliArgs.["StudyIdentifier"]
+        let assay = isaItemOfArguments (Assay(fileName = getFieldValueByName "AssayIdentifier" assayArgs)) assayArgs
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
@@ -63,11 +63,11 @@ module AssayAPI =
         doc.Save()
         doc.Close()
     
-    /// Registers an existing assay in the arc's investigation file with the given assay metadata contained in cliArgs.
-    let register (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    /// Registers an existing assay in the arc's investigation file with the given assay metadata contained in assayArgs.
+    let register (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
-        let studyIdentifier = cliArgs.["StudyIdentifier"]
+        let assay = isaItemOfArguments (Assay(fileName = getFieldValueByName "AssayIdentifier" assayArgs)) assayArgs
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
@@ -79,13 +79,13 @@ module AssayAPI =
         doc.Save()
         doc.Close()
     
-    /// Creates a new assay file and associated folder structure in the arc and registers it in the arc's investigation file with the given assay metadata contained in cliArgs.
-    let add (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    /// Creates a new assay file and associated folder structure in the arc and registers it in the arc's investigation file with the given assay metadata contained in assayArgs.
+    let add (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
+     
+        let assay = isaItemOfArguments (Assay(fileName = getFieldValueByName "AssayIdentifier" assayArgs)) assayArgs
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
-        let name = cliArgs.["AssayIdentifier"]
-
-        let assay = isaItemOfParameters (Assay(fileName = name)) cliArgs
-        let studyIdentifier = cliArgs.["StudyIdentifier"]
+        let name = assay.FileName
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
@@ -110,12 +110,12 @@ module AssayAPI =
         doc.Close()
     
     /// Removes an assay file from the arc's investigation file assay register
-    let remove (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    let remove (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let name = cliArgs.["AssayIdentifier"]
+        let assay = isaItemOfArguments (Assay(fileName = getFieldValueByName "AssayIdentifier" assayArgs)) assayArgs
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
-        let assay = isaItemOfParameters (Assay(fileName = name)) cliArgs
-        let studyIdentifier = cliArgs.["StudyIdentifier"]
+        let name = assay.FileName
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
@@ -128,12 +128,12 @@ module AssayAPI =
         doc.Save()
         doc.Close()
     
-    /// Moves an assay file from one study group to another (provided by cliArgs)
-    let move (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    /// Moves an assay file from one study group to another (provided by assayArgs)
+    let move (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let assay = isaItemOfParameters (Assay(fileName = cliArgs.["AssayIdentifier"])) cliArgs
-        let studyIdentifier = cliArgs.["StudyIdentifier"]
-        let targetStudy = cliArgs.["TargetStudyIdentifier"]
+        let assay = isaItemOfArguments (Assay(fileName = getFieldValueByName "AssayIdentifier" assayArgs)) assayArgs
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
+        let targetStudy = getFieldValueByName "TargetStudyIdentifier" assayArgs
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
