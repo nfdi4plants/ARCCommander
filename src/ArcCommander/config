@@ -1,4 +1,5 @@
 [general]
+rootfolder=.arc
 editor=notepad
 
 [isamodel]
@@ -8,18 +9,18 @@ studiesfilename=isa.studies.xlsx
 assayfilename=assay.isa.xlsx
 
 [assay]
-rootfolder=/assays 
+rootfolder=assays 
 # rootfolder.<assayIdentifier>.folder
-folders=/dataset;/protocol
-files=/readme.md
+folders=dataset;protocol
+files=readme.md
 
 [workflow]
-rootfolder=/workflows
-dockerfile=/Dockerfile
+rootfolder=workflows
+dockerfile=Dockerfile
 
 [external]
-rootfolder=/externals
-externalsfile=/isa.tab
+rootfolder=externals
+externalsfile=isa.tab
 
 [run]
-rootfolder=/runs
+rootfolder=runs

@@ -8,9 +8,6 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.Commands
 open ArcCommander.APIs
-open System
-open System.Reflection
-open FSharp.Reflection
 
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
     //printfn "\nstart process with the global parameters: \n" 
@@ -22,6 +19,12 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     let parameterGroup =
         let g = groupArguments (r.GetAllResults())
         Prompt.createParameterQueryIfNecessary editor workDir g  
+
+    printfn "start processing command with the config"
+    arcConfiguration 
+    |> ArcConfiguration.flatten
+    |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
+
     printfn "\nand the parameters: \n" 
     parameterGroup|> Map.iter (printfn "\t%s:%s")
 
@@ -97,7 +100,7 @@ let main argv =
                 "general.workdir",workingDir
                 "general.silent",silent
             ]
-            |> Configuration.fromNameValuePairs
+            |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
             
         //Testing the configuration reading (Delete when configuration functionality is setup)

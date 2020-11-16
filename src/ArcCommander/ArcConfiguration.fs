@@ -1,10 +1,11 @@
 ﻿namespace ArcCommander
 
 open System.IO
-open Configuration
+open IniData
 
 
 type ArcConfiguration =
+
     {
         General     : Map<string,string>
         IsaModel    : Map<string,string>
@@ -33,7 +34,6 @@ type ArcConfiguration =
         ]
         |> fromNameValuePairs
 
-
     static member getSection sectionName configuration =
         match tryGetSection sectionName configuration with
         | Some kvs -> 
@@ -47,7 +47,7 @@ type ArcConfiguration =
         let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
         let config = 
             ArcConfiguration.getDefault()
-            |> merge (loadMergedConfiguration workdir)
+            |> merge (loadMergedIniData workdir)
             |> merge argumentConfig
         ArcConfiguration.create
             (ArcConfiguration.getSection "general" config)
@@ -71,6 +71,19 @@ type ArcConfiguration =
         |]
         |> Array.choose (id)
         |> Array.map (fun f -> Path.Combine(workDir,f))
+
+    /// Returns the full paths of the rootfolders
+    static member flatten (configuration:ArcConfiguration) =
+        let keyValueToNameValue s k v = sprintf "%s.%s" s k, v
+        [|
+            configuration.General |> Map.map (keyValueToNameValue "general")
+            configuration.Assay |> Map.map (keyValueToNameValue "assay")
+            configuration.External |> Map.map (keyValueToNameValue "external")
+            configuration.IsaModel |> Map.map (keyValueToNameValue "isamodel")
+            configuration.Run |> Map.map (keyValueToNameValue "run")
+            configuration.Workflow |> Map.map (keyValueToNameValue "workflow")
+        |]
+        |> Seq.collect (Map.toSeq >> Seq.map snd)
 
 /// Functions for retrieving general settings from the configuration
 module GeneralConfiguration =
