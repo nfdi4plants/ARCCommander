@@ -43,45 +43,49 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
 let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with
-    | InvestigationCommand.Create r    -> processCommand arcConfiguration InvestigationAPI.create r
-    | InvestigationCommand.Update r    -> processCommand arcConfiguration InvestigationAPI.update r
-    | InvestigationCommand.Edit r      -> processCommand arcConfiguration InvestigationAPI.edit r
-    | InvestigationCommand.Delete r    -> processCommand arcConfiguration InvestigationAPI.delete r
+    | InvestigationCommand.Create r    -> processCommand arcConfiguration InvestigationAPI.create   r
+    | InvestigationCommand.Update r    -> processCommand arcConfiguration InvestigationAPI.update   r
+    | InvestigationCommand.Edit r      -> processCommand arcConfiguration InvestigationAPI.edit     r
+    | InvestigationCommand.Delete r    -> processCommand arcConfiguration InvestigationAPI.delete   r
 
 let handleStudySubCommands arcConfiguration studyVerb =
     match studyVerb with
-    | StudyCommand.Init r      -> processCommand arcConfiguration StudyAPI.init r
-    | StudyCommand.Update r    -> processCommand arcConfiguration StudyAPI.update r
-    | StudyCommand.Edit r      -> processCommand arcConfiguration StudyAPI.edit r
+    | StudyCommand.Init r      -> processCommand arcConfiguration StudyAPI.init     r
+    | StudyCommand.Update r    -> processCommand arcConfiguration StudyAPI.update   r
+    | StudyCommand.Edit r      -> processCommand arcConfiguration StudyAPI.edit     r
     | StudyCommand.Register r  -> processCommand arcConfiguration StudyAPI.register r
-    | StudyCommand.Add r       -> processCommand arcConfiguration StudyAPI.add r
-    | StudyCommand.Remove r    -> processCommand arcConfiguration StudyAPI.remove r
+    | StudyCommand.Add r       -> processCommand arcConfiguration StudyAPI.add      r
+    | StudyCommand.Remove r    -> processCommand arcConfiguration StudyAPI.remove   r
     | StudyCommand.List        -> processCommandWithoutArgs arcConfiguration StudyAPI.list
 
 let handleAssaySubCommands arcConfiguration assayVerb =
     match assayVerb with
-    | AssayCommand.Init r      -> processCommand arcConfiguration AssayAPI.init r
-    | AssayCommand.Update r    -> processCommand arcConfiguration AssayAPI.update r
-    | AssayCommand.Edit r      -> processCommand arcConfiguration AssayAPI.edit r
-    | AssayCommand.Register r  -> processCommand arcConfiguration AssayAPI.register r
-    | AssayCommand.Add r       -> processCommand arcConfiguration AssayAPI.add r
-    | AssayCommand.Remove r    -> processCommand arcConfiguration AssayAPI.remove r
-    | AssayCommand.Move r      -> processCommand arcConfiguration AssayAPI.move r
-    | AssayCommand.List        -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
+    | AssayCommand.Init     r -> processCommand arcConfiguration AssayAPI.init     r
+    | AssayCommand.Update   r -> processCommand arcConfiguration AssayAPI.update   r
+    | AssayCommand.Edit     r -> processCommand arcConfiguration AssayAPI.edit     r
+    | AssayCommand.Register r -> processCommand arcConfiguration AssayAPI.register r
+    | AssayCommand.Add      r -> processCommand arcConfiguration AssayAPI.add      r
+    | AssayCommand.Remove   r -> processCommand arcConfiguration AssayAPI.remove   r
+    | AssayCommand.Move     r -> processCommand arcConfiguration AssayAPI.move     r
+    | AssayCommand.List       -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
-    | ConfigurationCommand.Edit r   -> processCommand arcConfiguration ConfigurationAPI.edit r
-    | ConfigurationCommand.List r   -> processCommand arcConfiguration ConfigurationAPI.list r
-
+    | ConfigurationCommand.Edit     r -> processCommand arcConfiguration ConfigurationAPI.edit  r
+    | ConfigurationCommand.List     r -> processCommand arcConfiguration ConfigurationAPI.list  r
+    | ConfigurationCommand.Set      r -> processCommand arcConfiguration ConfigurationAPI.set   r
+    | ConfigurationCommand.Unset    r -> processCommand arcConfiguration ConfigurationAPI.unset r
 
 let handleCommand arcConfiguration command =
     match command with
-    | Investigation subCommand  -> handleInvestigationSubCommands arcConfiguration (subCommand.GetSubCommand())
-    | Study subCommand          -> handleStudySubCommands arcConfiguration (subCommand.GetSubCommand())
-    | Assay subCommand          -> handleAssaySubCommands arcConfiguration (subCommand.GetSubCommand())
-    | Configuration subcommand  -> handleConfigurationSubCommands arcConfiguration (subcommand.GetSubCommand())
-    | Init r                    -> processCommand arcConfiguration ArcAPI.init r
+    // Objects
+    | Investigation subCommand  -> handleInvestigationSubCommands   arcConfiguration (subCommand.GetSubCommand())
+    | Study subCommand          -> handleStudySubCommands           arcConfiguration (subCommand.GetSubCommand())
+    | Assay subCommand          -> handleAssaySubCommands           arcConfiguration (subCommand.GetSubCommand())
+    | Configuration subcommand  -> handleConfigurationSubCommands   arcConfiguration (subcommand.GetSubCommand())
+    // Verbs
+    | Init r                    -> processCommand   arcConfiguration ArcAPI.init r
+    // Settings
     | WorkingDir _ | Silent     -> ()
 
 [<EntryPoint>]

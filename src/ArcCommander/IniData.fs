@@ -41,9 +41,12 @@ module IniData =
         parser.Parse(s)
 
     /// Reads the ini config file at the given location
-    let fromFile path =
+    let fromFile path =        
         let parser = Parser.IniDataParser(defaultParserConfiguration) |> FileIniDataParser
-        parser.ReadFile path
+        if File.Exists path then
+            parser.ReadFile path
+        else
+            fromText ""
 
     /// Reads the ini config from a string
     let fromNameValuePairs (vs:seq<string*string>) =
@@ -68,6 +71,15 @@ module IniData =
     /// If a section with the given name exists in the iniData, returns its keyValue pairs c
     let tryGetSection sectionName (iniData:IniData) =
         try iniData.Item sectionName |> Some with | _ -> None
+
+    let getSection sectionName iniData =
+        match tryGetSection sectionName iniData with
+        | Some kvs -> 
+            kvs
+            |> Seq.map (fun kv -> kv.KeyName,kv.Value)
+            |> Map.ofSeq
+        | None -> Map.empty
+
 
     /// If the given key exists in the section (keyData) return its value
     let tryGetValue key (keydData:KeyDataCollection) =
@@ -110,31 +122,67 @@ module IniData =
     /// If the name is already set in the config, assigns a new value to it
     ///
     /// The name is given as string in form "section.key"
-    let setValue (name:string) (value:string) (iniData:IniData) =
+    let trySetValue (name:string) (value:string) (iniData:IniData) =
         if nameExists (name:string) (iniData:IniData) then
             let section,key = splitName name 
             iniData.[section].[key] <- value
-            iniData
+            Some iniData
         else
             printfn "name %s does not exist in the config" name
-            iniData
+            None
+
+    /// If the name is already set in the config, assigns a new value to it
+    ///
+    /// The name is given as string in form "section.key"
+    let setValue (name:string) (value:string) (iniData:IniData) =
+        match trySetValue name value iniData with
+        | Some ini -> ini
+        | None -> iniData
+
+    /// If the name is set in the config, remove it
+    ///
+    /// The name is given as string in form "section.key"
+    let tryRemoveValue (name:string) (iniData:IniData) =
+        if nameExists (name:string) (iniData:IniData) then
+            let section,key = splitName name 
+            iniData.[section].RemoveKey key |> ignore
+            Some iniData
+        else
+            printfn "name %s does not exist in the config" name
+            None
+
+    /// If the name is set in the config, remove it
+    ///
+    /// The name is given as string in form "section.key"
+    let removeValue (name:string) (iniData:IniData) =
+        match tryRemoveValue name iniData with
+        | Some ini -> ini
+        | None -> iniData
+
+    /// If the name is not already set in the config, adds it together with the given value
+    ///
+    /// The name is given as string in form "section.key"
+    let tryAddValue (name:string) (value:string) (iniData:IniData) =
+        if nameExists (name:string) (iniData:IniData) then
+            printfn "name %s already exists in the config" name
+            Some iniData
+        else
+            let section,key = splitName name 
+            iniData.[section].AddKey(key,value) |> ignore
+            None
 
     /// If the name is not already set in the config, adds it together with the given value
     ///
     /// The name is given as string in form "section.key"
     let addValue (name:string) (value:string) (iniData:IniData) =
-        if nameExists (name:string) (iniData:IniData) then
-            printfn "name %s already exists in the config" name
-            iniData
-        else
-            let section,key = splitName name 
-            iniData.[section].AddKey(key,value) |> ignore
-            iniData
+        match tryAddValue name value iniData with
+        | Some ini -> ini
+        | None -> iniData
 
     /// Merges the setting from two iniDatas. If a name is contained in both files, the value bound to this name in the localConfig is used
-    let merge (localConfig:IniData) (globalConfig:IniData) = 
-        globalConfig.Merge localConfig
-        globalConfig
+    let merge (localIni:IniData) (globalIni:IniData) = 
+        globalIni.Merge localIni
+        globalIni
 
     /// Returns a collection of all name value pairs in the config
     ///
@@ -145,6 +193,13 @@ module IniData =
             s.Keys
             |> Seq.map (fun kv -> s.SectionName+"."+kv.KeyName,kv.Value)
         )
+    
+    /// Returns a new iniData with the iniData from the second iniData removed from the first 
+    let difference (iniData1:IniData) (iniData2) =
+        let namesIn2 = flatten iniData2 |> Set.ofSeq
+        flatten iniData1 
+        |> Seq.filter (namesIn2.Contains >> not)
+        |> fromNameValuePairs
 
     /// Gets the current iniData
     let loadMergedIniData workdir =

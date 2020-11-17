@@ -227,7 +227,7 @@ module ArgumentProcessing =
                 |> Array.map (fun (k,v) -> k,v.Arg)
                 |> Map.ofArray
 
-        // opens a textprompt containing the result of the serialized input item. Returns the deserialized user input
+        /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
         let createItemQuery editorPath arcPath (item : #InvestigationFile.ISAItem) = 
             let serializeF inp = 
                 InvestigationFile.getKeyValues inp
@@ -236,8 +236,8 @@ module ArgumentProcessing =
             let deserializeF (s:string) =
                 s.Split '\n'
                 |> Array.iter (fun x ->                 
-                    x.Split ':'
-                    |> fun a -> System.Collections.Generic.KeyValuePair(a.[0],a.[1])
+                    splitAtFirst ':' x
+                    |> System.Collections.Generic.KeyValuePair
                     |> fun kv -> InvestigationFile.setKeyValue kv item
                     |> ignore
                 )
@@ -245,7 +245,18 @@ module ArgumentProcessing =
                 item
             createQuery editorPath arcPath serializeF deserializeF item
 
-
-
+        /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
+        let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =
+            let serializeF inp = 
+                IniData.flatten inp
+                |> Seq.map (fun (n,v) -> n + "=" + v)
+                |> Seq.reduce (fun a b -> a + "\n" + b)
+            let deserializeF (s:string) =
+                s.Split '\n'
+                |> Array.map (fun x ->                 
+                    splitAtFirst '=' x
+                )              
+                |> IniData.fromNameValuePairs
+            createQuery editorPath arcPath serializeF deserializeF iniData
 
         

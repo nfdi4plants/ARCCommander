@@ -3,7 +3,7 @@
 open System.IO
 open IniData
 
-
+/// Contains settings about the arc
 type ArcConfiguration =
 
     {
@@ -15,6 +15,7 @@ type ArcConfiguration =
         Run         : Map<string,string>                     
     }
 
+    /// Creates an arcConfiguration from the section settings
     static member create general isaModel assay workflow external run =
         {
             General     = general
@@ -26,6 +27,7 @@ type ArcConfiguration =
         }
 
     //TO:DO, rename and possibly move
+    /// 
     static member getDefault() =
         let editor = "notepad"////GET DEFAULT EDITOR for linux
         [
@@ -34,28 +36,20 @@ type ArcConfiguration =
         ]
         |> fromNameValuePairs
 
-    static member getSection sectionName configuration =
-        match tryGetSection sectionName configuration with
-        | Some kvs -> 
-            kvs
-            |> Seq.map (fun kv -> kv.KeyName,kv.Value)
-            |> Map.ofSeq
-        | None -> Map.empty
-
-    /// Gets the current configuration
+    /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments
     static member load argumentConfig =
         let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
-        let config = 
+        let mergedIniData = 
             ArcConfiguration.getDefault()
             |> merge (loadMergedIniData workdir)
             |> merge argumentConfig
         ArcConfiguration.create
-            (ArcConfiguration.getSection "general" config)
-            (ArcConfiguration.getSection "isamodel" config)
-            (ArcConfiguration.getSection "assay" config)
-            (ArcConfiguration.getSection "workflow" config)
-            (ArcConfiguration.getSection "external" config)
-            (ArcConfiguration.getSection "run" config)
+            (getSection "general"   mergedIniData)
+            (getSection "isamodel"  mergedIniData)
+            (getSection "assay"     mergedIniData)
+            (getSection "workflow"  mergedIniData)
+            (getSection "external"  mergedIniData)
+            (getSection "run"       mergedIniData)
 
     // TODO TO-DO TO DO: open all record fields using reflection
     /// Returns the full paths of the rootfolders
@@ -72,7 +66,7 @@ type ArcConfiguration =
         |> Array.choose (id)
         |> Array.map (fun f -> Path.Combine(workDir,f))
 
-    /// Returns the full paths of the rootfolders
+    /// Returns all settings as name value pairs
     static member flatten (configuration:ArcConfiguration) =
         let keyValueToNameValue s k v = sprintf "%s.%s" s k, v
         [|
@@ -104,6 +98,7 @@ module GeneralConfiguration =
     let getWorkDirectory configuration = 
         Map.find "workdir" configuration.General
 
+/// Functions for retrieving isa file settings from the configuration
 module IsaModelConfiguration =
 
     /// Returns the full path of the assay file
