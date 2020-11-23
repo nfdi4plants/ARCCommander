@@ -29,30 +29,6 @@ module Worksheet =
       
     //let setSheetData (sheetData:SheetData) (worksheet:Worksheet) = worksheet.sh
 
-
-    // Returns the worksheet associated with the worksheetpart
-    let get (worksheetPart : WorksheetPart) = 
-        worksheetPart.Worksheet
-
-    /// Sets the given worksheet with the worksheetpart
-    let setWorksheet (worksheet : Worksheet) (worksheetPart : WorksheetPart) = 
-        worksheetPart.Worksheet <- worksheet
-        worksheetPart
-
-    /// Associates an empty worksheet with the worksheetpart
-    let init (worksheetPart:WorksheetPart) = 
-        worksheetPart
-        |> setWorksheet empty
-
-    /// Returns the existing or a newly created worksheet associated with the worksheetpart
-    let getOrInit (worksheetPart:WorksheetPart) =
-        if worksheetPart.Worksheet <> null then
-            get worksheetPart
-        else 
-            worksheetPart
-            |> init
-            |> get
-
     //let insertCellData (cell:CellData.CellDataValue) (worksheet : Worksheet) =
         
     ///Convenience

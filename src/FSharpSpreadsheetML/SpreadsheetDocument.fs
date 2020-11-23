@@ -98,6 +98,18 @@ module Spreadsheet =
             }
         | None -> seq {()}
 
+    /// Returns the sheet for which the predicate returns true (Id Name SheetID -> bool)
+    let tryFindSheet (predicate:string -> string -> uint32 -> bool) (spreadsheetDocument:SpreadsheetDocument) =
+        let sheets = spreadsheetDocument.WorkbookPart.Workbook.Sheets
+        Sheets.getSheets sheets
+        |> Seq.tryFind (fun sheet -> predicate sheet.Id.Value sheet.Name.Value sheet.SheetId.Value)
+
+    /// Count the number of sheets
+    let countSheets (spreadsheetDocument:SpreadsheetDocument) =
+        let sheets = spreadsheetDocument.WorkbookPart.Workbook.Sheets
+        Sheets.getSheets sheets |> Seq.length
+
+
     //----------------------------------------------------------------------------------------------------------------------
     //                                      High level functions                                                            
     //----------------------------------------------------------------------------------------------------------------------

@@ -73,7 +73,7 @@ module Cell =
             | None ->
                 let updatedSharedStringTable = 
                     sharedStringTable
-                    |> SharedStringTable.SharedStringItem.add (SharedStringTable.SharedStringItem.create s) 
+                    |> SharedStringTable.addItem (SharedStringItem.create s) 
 
                 updatedSharedStringTable
                 |> SharedStringTable.count
@@ -129,7 +129,7 @@ module Cell =
 
             sharedStringTable
             |> SharedStringTable.getText sharedStringTableIndex
-            |> SharedStringTable.SharedStringItem.getText
+            |> SharedStringItem.getText
         | _ ->
             cell
             |> getValue

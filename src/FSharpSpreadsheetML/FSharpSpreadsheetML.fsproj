@@ -5,15 +5,23 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Remove="NewFolder1\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="playground\test.fsx" />
     <Compile Include="CellReference.fs" />
+    <Compile Include="SharedStringItem.fs" />
     <Compile Include="SharedStringTable.fs" />
-    <Compile Include="Cell.fs" />
-    <Compile Include="Row.fs" />
-    <Compile Include="Sheet.fs" />
-    <Compile Include="SheetData.fs" />
-    <Compile Include="WorkSheet.fs" />
-    <Compile Include="Workbook.fs" />
-    <Compile Include="Spreadsheet.fs" />
+    <Compile Include="WorkSheet\Cell.fs" />
+    <Compile Include="WorkSheet\Row.fs" />
+    <Compile Include="WorkSheet\SheetData.fs" />
+    <Compile Include="WorkSheet\WorkSheet.fs" />
+    <Compile Include="WorkSheet\WorksheetPart.fs" />
+    <Compile Include="Workbook\Sheet.fs" />
+    <Compile Include="Workbook\Sheets.fs" />
+    <Compile Include="Workbook\Workbook.fs" />
+    <Compile Include="WorkbookPart.fs" />
+    <Compile Include="SpreadsheetDocument.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

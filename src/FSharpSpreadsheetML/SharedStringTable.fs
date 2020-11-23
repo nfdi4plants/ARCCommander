@@ -8,26 +8,6 @@ open DocumentFormat.OpenXml
 /// Functions for working with sharedstringtables
 module SharedStringTable = 
 
-    /// Functions for working with sharedstringitems
-    module SharedStringItem = 
-
-        /// Gets the string contained in the sharedstringitem
-        let getText (ssi:SharedStringItem) = ssi.InnerText
-
-        /// Sets the string contained in the sharedstringitem
-        let setText text (ssi:SharedStringItem) = 
-            ssi.Text <- Text(text)
-            ssi
-
-        /// Creates a sharedstringitem containing the given string
-        let create text = 
-            new SharedStringItem(new DocumentFormat.OpenXml.Spreadsheet.Text(text))
-
-        /// Adds the sharedstringitem to the sharedstringtable
-        let add (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = 
-            sst.Append(sharedStringItem.CloneNode(false) :?> SharedStringItem)
-            sst
-
     /// Empty sharedstringtable
     let empty = SharedStringTable() 
 
@@ -44,6 +24,11 @@ module SharedStringTable =
     let set (sst:SharedStringTable) (sstPart:SharedStringTablePart) = 
         sstPart.SharedStringTable <- sst
         sstPart
+
+    /// Adds the sharedstringitem to the sharedstringtable
+    let addItem (sharedStringItem:SharedStringItem) (sst:SharedStringTable) = 
+        sst.Append(sharedStringItem.CloneNode(false) :?> SharedStringItem)
+        sst
 
     /// Returns the sharedstringitems contained in the sharedstringtable
     let toSeq (sst:SharedStringTable) : seq<SharedStringItem> = 

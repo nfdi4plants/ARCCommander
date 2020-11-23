@@ -3,40 +3,28 @@
 open DocumentFormat.OpenXml.Spreadsheet
 open DocumentFormat.OpenXml.Packaging
 
-/// Functions for manipulating the workbook (Unmanaged: changing the sheets does not alter the associated worksheets which store the data)
-module Workbook =
+module WorkbookPart = 
 
-    /// Empty workbook
-    let empty = new Workbook()
-    
     /// Gets the workbook of the workbookpart
-    let get (workbookPart:WorkbookPart) = workbookPart.Workbook 
+    let getWorkbook (workbookPart:WorkbookPart) = workbookPart.Workbook 
 
     /// Sets the workbook of the workbookpart
-    let set (workbook:Workbook) (workbookPart:WorkbookPart) = 
+    let setWorkbook (workbook:Workbook) (workbookPart:WorkbookPart) = 
         workbookPart.Workbook <- workbook
         workbookPart
 
     /// Set an empty workbook
-    let init (workbookPart:WorkbookPart) = 
-        set (Workbook()) workbookPart
+    let initWorkbook (workbookPart:WorkbookPart) = 
+        setWorkbook (Workbook()) workbookPart
 
     /// Returns the existing or a newly created workbook associated with the workbookpart
-    let getOrInit (workbookPart:WorkbookPart) =
+    let getOrInitWorkbook (workbookPart:WorkbookPart) =
         if workbookPart.Workbook <> null then
-            get workbookPart
+            getWorkbook workbookPart
         else 
             workbookPart
-            |> init
-            |> get
-
-    //// Adds sheet to workbook
-    //let addSheet (sheet : Sheet) (workbook:Workbook) =
-    //    let sheets = Sheet.Sheets.getOrInit workbook
-    //    Sheet.Sheets.addSheet sheet sheets |> ignore
-    //    workbook
-
-module WorkbookPart = 
+            |> initWorkbook
+            |> getWorkbook
 
     /// Add a worksheetpart to the workbookpart
     let addWorksheetPart (worksheetPart : WorksheetPart) (workbookPart:WorkbookPart) = 
@@ -52,7 +40,7 @@ module WorkbookPart =
     let containsWorkSheetParts (workbookPart:WorkbookPart) = workbookPart.GetPartsOfType<WorksheetPart>() |> Seq.length |> (<>) 0
 
     /// Gets the worksheetpart of the workbookpart with the given id
-    let getWorksheetPartById (id:string) (workbookPart:WorkbookPart) = workbookPart.GetPartById(id) :?> WorksheetPart 
+    let getWorksheetPartByRelationshipId (id:string) (workbookPart:WorkbookPart) = workbookPart.GetPartById(id) :?> WorksheetPart 
 
     /// If the workbookpart contains the worksheetpart with the given id, returns it. Else returns none
     let tryGetWorksheetPartById (id:string) (workbookPart:WorkbookPart) = 
@@ -94,25 +82,25 @@ module WorkbookPart =
         workbookPart
         |> getWorkSheetParts
         |> Seq.head
-        |> Worksheet.get
+        |> WorksheetPart.getWorksheet
         |> Worksheet.getSheetData
 
     /// Appends a new sheet with the given sheet data to the excel document
     // to-do: guard if sheet of name already exists
     let appendSheet (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
 
-        let workbook = Workbook.getOrInit  workbookPart
+        let workbook = getOrInitWorkbook workbookPart 
 
         let worksheetPart = initWorksheetPart workbookPart
 
-        Worksheet.getOrInit worksheetPart
+        WorksheetPart.getOrInitWorksheet worksheetPart
         |> Worksheet.addSheetData data
         |> ignore
         
-        let sheets = Sheet.Sheets.getOrInit workbook
+        let sheets = Workbook.getOrInitSheets workbook
         let id = getWorksheetPartID worksheetPart workbookPart
         let sheetID = 
-            sheets |> Sheet.Sheets.getSheets |> Seq.map Sheet.getSheetID
+            sheets |> Sheets.getSheets |> Seq.map Sheet.getSheetID
             |> fun s -> 
                 if Seq.length s = 0 then 1u
                 else s |> Seq.max |> (+) 1ul

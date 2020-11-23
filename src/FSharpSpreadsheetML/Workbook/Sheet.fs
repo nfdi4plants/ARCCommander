@@ -7,51 +7,7 @@ open DocumentFormat.OpenXml.Packaging
 
 /// Part of the Workbook, stores name and other additional info of the sheet (Unmanaged: changing a sheet does not alter the associated worksheet which stores the data)
 module Sheet = 
-    
-    /// Functions for working with Sheets (Unmanaged: changing a sheet does not alter the associated worksheet which stores the data)
-    module Sheets = 
 
-        /// Empty sheets
-        let empty = new Sheets()
-
-        /// Returns the first child sheet of the sheets
-        let getFirstSheet (sheets:Sheets) = sheets.GetFirstChild<Sheet>()
-
-        /// Returns the sheets of the sheets
-        let getSheets (sheets:Sheets) = sheets.Elements<Sheet>()
-
-        /// Adds a list of sheets to the sheets
-        let addSheets (newSheets:Sheet seq) (sheets:Sheets) = 
-            newSheets |> Seq.iter (fun sheet -> sheets.Append sheet) 
-            sheets
-
-
-        //let mapSheets f (sheets:Sheets) = getSheets sheets |> Seq.toArray |> Array.map f
-        //let iterSheets f (sheets:Sheets) = getSheets sheets |> Seq.toArray |> Array.iter f
-        //let filterSheets f (sheets:Sheets) = 
-        //    getSheets sheets |> Seq.toArray |> Array.filter (f >> not)
-        //    |> Array.fold (fun st sheet -> removeSheet sheet st) sheets
-
-
-        /// Gets the sheets of the workbook
-        let get (workbook:Workbook) = workbook.Sheets
-
-        /// Add an empty sheets elemtent to the workboot
-        let init (workbook:Workbook) = 
-            workbook.AppendChild<Sheets>(Sheets()) |> ignore
-            workbook        
-
-        /// Returns the existing or a newly created sheets associated with the worksheet
-        let getOrInit (workbook:Workbook) =
-            if  workbook.Sheets <> null then
-                get workbook
-            else 
-                workbook
-                |> init
-                |> get        
-
-
-    
     /// Empty Sheet
     let empty = Sheet()
 
@@ -111,15 +67,5 @@ module Sheet =
         sheets.RemoveChild(sheet) |> ignore
         spreadsheetDocument
 
-    /// Returns the sheet for which the predicate returns true (Id Name SheetID -> bool)
-    let tryFind (predicate:string -> string -> uint32 -> bool) (spreadsheetDocument:SpreadsheetDocument) =
-        let sheets = spreadsheetDocument.WorkbookPart.Workbook.Sheets
-        Sheets.getSheets sheets
-        |> Seq.tryFind (fun sheet -> predicate sheet.Id.Value sheet.Name.Value sheet.SheetId.Value)
-
-    /// Count the number of sheets
-    let count (spreadsheetDocument:SpreadsheetDocument) =
-        let sheets = spreadsheetDocument.WorkbookPart.Workbook.Sheets
-        Sheets.getSheets sheets |> Seq.length
 
 

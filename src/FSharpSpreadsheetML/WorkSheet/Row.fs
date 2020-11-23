@@ -340,3 +340,33 @@ module Row =
             |> extendSpanRight spanExceedance
             |> appendCell cell
 
+    /// Add a value as a cell to the row at the given columnindex using a SharedStringTable.
+    ///
+    /// If a cell exists at the given columnindex, Overwrites it
+    let setValueWithSST (sharedStringTable:SharedStringTable) index (value:'T) (row:Row) = 
+
+        let refCell = row |> tryGetCellAfter index 
+        let cell = Cell.createWithSST sharedStringTable index (getIndex row) value
+
+        match refCell with
+        | Some ref when Cell.getReference ref = Cell.getReference cell ->
+            ref  |> Cell.setType (Cell.getType cell)  |> ignore
+            ref |> Cell.setValue ((Cell.getValue cell).Clone() :?> CellValue) |> ignore
+            row 
+        | Some ref -> 
+            row |> insertCellBefore cell ref
+        | None ->
+            let spans = getSpan row
+            let spanExceedance = index - (spans |> Spans.rightBoundary)
+            row
+            |> extendSpanRight spanExceedance
+            |> appendCell cell
+
+    /// 
+    let mapValuesWithSST (sharedStringTable:SharedStringTable) (mapping: string -> 'T) (row:Row) =
+        let indexedValues = row |> getIndexedValuesWithSST sharedStringTable
+        indexedValues 
+        |> Seq.fold (fun r (index,value) ->
+            r |> setValueWithSST sharedStringTable index (mapping value)
+        ) row
+
