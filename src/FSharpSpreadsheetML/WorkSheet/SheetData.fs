@@ -116,7 +116,7 @@ module SheetData =
         |> tryGetRowAt rowIndex
         |> Option.map (
             Row.toCellSeq
-            >> Seq.map (Cell.getValue >> Cell.CellValue.getValue)
+            >> Seq.map (Cell.getValue)
         )
 
     /// Gets the string value of the cell at the given 1 based column and row index using a shared string table, if it exists, else returns None
@@ -133,7 +133,7 @@ module SheetData =
         sheet
         |> getRowAt rowIndex
         |> Row.toCellSeq
-        |> Seq.map (Cell.getValue >> Cell.CellValue.getValue)
+        |> Seq.map (Cell.getValue)
 
     /// Gets the string values of the row at the given 1 based rowindex using a shared string table
     let getRowValuesWithSSTAt (sharedStringTable:SharedStringTable) rowIndex (sheet:SheetData) =

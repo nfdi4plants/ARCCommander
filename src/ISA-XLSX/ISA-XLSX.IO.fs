@@ -379,9 +379,9 @@ module ISA_Investigation  =
     /// Creates an empty ivestigation file at the given path
     let createEmpty path (investigation : InvestigationItem) = 
 
-        let doc = Spreadsheet.initWithSST "isa_investigation" path
+        let doc = SpreadsheetDocument.initWithSST "isa_investigation" path
         try 
-            let workbookPart = doc |> Spreadsheet.getWorkbookPart
+            let workbookPart = doc |> SpreadsheetDocument.getWorkbookPart
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
         
             sheet |> SheetData.appendRowValues ["INVESTIGATION"] |> ignore
@@ -392,11 +392,11 @@ module ISA_Investigation  =
             )
             |> ignore
             doc
-            |> Spreadsheet.saveChanges
-            |> Spreadsheet.close
+            |> SpreadsheetDocument.saveChanges
+            |> SpreadsheetDocument.close
         with 
         | err -> 
-            doc |> Spreadsheet.close
+            doc |> SpreadsheetDocument.close
             printfn "Could not create investigation file %s: %s" path err.Message
 
     /// Study with only an identifier
@@ -405,7 +405,7 @@ module ISA_Investigation  =
     /// Returns true, if the study exists in the investigation file
     let studyExists studyIdentifier (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
-        let workbookPart = doc |> Spreadsheet.getWorkbookPart
+        let workbookPart = doc |> SpreadsheetDocument.getWorkbookPart
         let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
         let kv = KeyValuePair("Study Identifier",studyIdentifier)
@@ -417,7 +417,7 @@ module ISA_Investigation  =
     /// Add a study to the investigation file
     let addStudy (study:StudyItem) (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
-        let workbookPart = doc |> Spreadsheet.getWorkbookPart
+        let workbookPart = doc |> SpreadsheetDocument.getWorkbookPart
         let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
     
         sheet |> SheetData.appendRowValues ["STUDY"] |> ignore
@@ -430,7 +430,7 @@ module ISA_Investigation  =
         |> ignore
 
         doc
-        |> Spreadsheet.saveChanges
+        |> SpreadsheetDocument.saveChanges
 
     /// If a study with the given identifier exists in the investigation file, returns its scope
     let private tryGetStudyScope workbookPart studyIdentifier sheet =
@@ -570,7 +570,7 @@ module ISA_Investigation  =
 
     /// If the item exists in the study, removes it from the investigation file
     let tryRemoveItemFromStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         let sst = workbookPart |> WorkbookPart.getSharedStringTable
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
@@ -610,7 +610,7 @@ module ISA_Investigation  =
 
     /// If the study exists adds, the item to it
     let tryAddItemToStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
@@ -638,7 +638,7 @@ module ISA_Investigation  =
 
     /// If the item exists in the study, replaces its value with the given ones
     let tryUpdateItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
@@ -668,7 +668,7 @@ module ISA_Investigation  =
 
     /// If the item exists in the study, Returns its values
     let tryGetItemInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
@@ -693,7 +693,7 @@ module ISA_Investigation  =
 
     /// If the sty exists, returns its values
     let tryGetStudy (study:string) (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
@@ -722,7 +722,7 @@ module ISA_Investigation  =
 
     /// Finds all studies in the spreadsheet and returns their values
     let getStudies (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
             ISA_Investigation_Helpers.getIndicesOfKey workbookPart "Study Identifier" sheet
@@ -737,7 +737,7 @@ module ISA_Investigation  =
 
 
     let getItemsInStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
-        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        let workbookPart = spreadSheet |> SpreadsheetDocument.getWorkbookPart
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 

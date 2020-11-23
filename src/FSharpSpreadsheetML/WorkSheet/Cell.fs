@@ -107,14 +107,24 @@ module Cell =
         cell
 
     /// Gets Some cellValue if cellValue is existent. Else returns None
-    let tryGetValue (cell:Cell) = 
+    let tryGetCellValue (cell:Cell) = 
         if cell.CellValue <> null then
             Some cell.CellValue
         else
             None
 
     /// Gets cellValue
-    let getValue (cell:Cell) = cell.CellValue
+    let getCellValue (cell:Cell) = cell.CellValue
+
+    let tryGetValue (cell:Cell) = 
+        cell
+        |> tryGetCellValue
+        |> Option.map CellValue.getValue
+
+    let getValue (cell:Cell) = 
+        cell
+        |> getCellValue
+        |> CellValue.getValue
 
     /// Maps a cell to the value string using a shared string table
     let getValueWithSST (sharedStringTable:SharedStringTable) (cell:Cell) =
@@ -124,16 +134,13 @@ module Cell =
             let sharedStringTableIndex = 
                 cell
                 |> getValue
-                |> CellValue.getValue
                 |> int
 
             sharedStringTable
             |> SharedStringTable.getText sharedStringTableIndex
             |> SharedStringItem.getText
         | _ ->
-            cell
-            |> getValue
-            |> CellValue.getValue   
+            getValue cell
 
     /// Sets cellValue
     let setValue (value:CellValue) (cell:Cell) = 

@@ -43,29 +43,4 @@ module Sheet =
         |> setSheetID sheetID
 
 
-    let tryItem (index:uint) (spreadsheetDocument:SpreadsheetDocument) : option<Sheet> = 
-        let workbookPart = spreadsheetDocument.WorkbookPart    
-        workbookPart.Workbook.Descendants<Sheet>()
-        |> Seq.tryItem (int index) 
-
-
-    let tryItemByName (name:string) (spreadsheetDocument:SpreadsheetDocument) : option<Sheet> = 
-        let workbookPart = spreadsheetDocument.WorkbookPart    
-        workbookPart.Workbook.Descendants<Sheet>()
-        |> Seq.tryFind (fun s -> s.Name.HasValue && s.Name.Value = name)
-
-
-    /// Adds a new sheet to spreadsheet document
-    let add (spreadsheetDocument:SpreadsheetDocument) (sheet:Sheet) = 
-        let sheets = spreadsheetDocument.WorkbookPart.Workbook.Sheets
-        sheets.AppendChild(sheet) |> ignore
-        spreadsheetDocument
-
-    /// Remove the given sheet from the sheets
-    let remove (spreadsheetDocument:SpreadsheetDocument) (sheet:Sheet) =
-        let sheets = spreadsheetDocument.WorkbookPart.Workbook.Sheets
-        sheets.RemoveChild(sheet) |> ignore
-        spreadsheetDocument
-
-
 
