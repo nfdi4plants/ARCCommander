@@ -25,7 +25,7 @@ module StudyAPI =
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get          
         
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
         if ISA_XLSX.IO.ISA_Investigation.studyExists study.Identifier doc then
             printfn "Study %s already exists" study.Identifier
         else 
@@ -47,7 +47,7 @@ module StudyAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
         printfn "InvestigationFile: %s"  investigationFilePath
 
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
 
         let studies = ISA_XLSX.IO.ISA_Investigation.getStudies doc
         

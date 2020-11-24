@@ -36,7 +36,7 @@ module AssayAPI =
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
         ISA_XLSX.IO.ISA_Investigation.tryUpdateItemInStudy assay studyIdentifier doc
         doc.Save()
         doc.Close()
@@ -53,7 +53,7 @@ module AssayAPI =
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
         match ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
         | Some assay ->
             Prompt.createItemQuery editor workDir assay
@@ -72,7 +72,7 @@ module AssayAPI =
         let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
 
         if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
             ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
@@ -101,7 +101,7 @@ module AssayAPI =
         AssayConfiguration.getFolderPaths name arcConfiguration
         |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
 
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
         
         if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
             ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
@@ -123,7 +123,7 @@ module AssayAPI =
         System.IO.Directory.Delete (workDir + @"\assays\" + name,true)
 
         
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
         ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
         doc.Save()
         doc.Close()
@@ -137,7 +137,7 @@ module AssayAPI =
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
         match ISA_XLSX.IO.ISA_Investigation.studyExists targetStudy doc, ISA_XLSX.IO.ISA_Investigation.tryGetItemInStudy assay studyIdentifier doc with
         | (true, Some assay) ->
             ISA_XLSX.IO.ISA_Investigation.tryRemoveItemFromStudy assay studyIdentifier doc
@@ -158,7 +158,7 @@ module AssayAPI =
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
+        let doc = FSharpSpreadsheetML.SpreadsheetDocument.fromFile investigationFilePath true
 
         ISA_XLSX.IO.ISA_Investigation.getStudies doc
         |> Seq.iter (fun s ->
