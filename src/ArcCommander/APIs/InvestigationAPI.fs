@@ -10,9 +10,9 @@ open ISA.DataModel.InvestigationFile
 module InvestigationAPI =
 
     /// Creates an investigation file in the arc from the given investigation metadata contained in cliArgs that contains no studies or assays.
-    let create (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) =
+    let create (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) =
            
-        let investigation = isaItemOfParameters (InvestigationItem()) cliArgs
+        let investigation = isaItemOfArguments (InvestigationItem()) investigationArgs
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
                   
@@ -20,10 +20,10 @@ module InvestigationAPI =
         |> ISA_XLSX.IO.ISA_Investigation.createEmpty investigationFilePath 
 
     /// [Not Implemented] Updates the existing investigation file in the arc with the given investigation metadata contained in cliArgs.
-    let update (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) = raise (NotImplementedException())
+    let update (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = raise (NotImplementedException())
        
     /// [Not Implemented] Opens the existing investigation file in the arc with the text editor set in globalArgs, additionally setting the given investigation metadata contained in cliArgs.
-    let edit (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) = raise (NotImplementedException())
+    let edit (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = raise (NotImplementedException())
        
     /// [Not Implemented] Deletes the existing investigation file in the arc
-    let delete (arcConfiguration:ArcConfiguration) (cliArgs : Map<string,string>) = raise (NotImplementedException())
+    let delete (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = raise (NotImplementedException())

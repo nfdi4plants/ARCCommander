@@ -10,9 +10,36 @@ open System.Diagnostics
 open ISA.DataModel
 
 open Argu
-open Argu.ArguAttributes
 
 module ArgumentProcessing = 
+
+    type Argument =
+        | Field of string
+        | Flag of bool
+
+    type AnnotatedArgument = 
+        {
+            Arg : Argument
+            Tooltip : string
+            IsMandatory : bool
+        }
+
+    let createAnnotatedArgument arg tt mand = 
+        {
+            Arg = arg
+            Tooltip = tt 
+            IsMandatory = mand
+        }
+
+    let containsFlag k (arguments : Map<string,Argument>)=
+        match Map.find k arguments with
+        | Flag b -> b
+        | Field _ -> failwithf "Argument %s is not a flag, but a field" k
+
+    let getFieldValueByName k (arguments : Map<string,Argument>) = 
+        match Map.find k arguments with
+        | Field v -> v
+        | Flag _ -> failwithf "Argument %s is not a flag, but a field" k
 
     /// For a given discriminated union value, returns the field name and the value
     let private splitUnion (x:'a) = 
@@ -33,40 +60,51 @@ module ArgumentProcessing =
         | _ -> true
    
     /// Returns true, if a value in the array contains the Mandatory attribute, but is empty
-    let private missingMandatoryAttribute (parameters : 'T []) =
-        parameters
-
-        |> Seq.exists (fun p ->
-            let unionCaseInfo,s = FSharpValue.GetUnionFields(p,typeof<'T>)
-            containsCustomAttribute<MandatoryAttribute> unionCaseInfo
-            &&
-            s = [|box ""|]
+    let private isMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
+        arguments
+        |> Seq.exists (fun (k,v) ->
+            match v.Arg with
+            | Field s -> s = "" && v.IsMandatory
+            | _ -> false
         )
 
     /// Adds all union cases of 'T which are missing to the list
-    let groupArguments (args : 'T list) =
-        if typeof<'T>.Name = "EmptyArgs" then 
-            [||]
-        else
-            let m = 
-                args 
-                |> List.map splitUnion
-                |> Map.ofList
-            FSharpType.GetUnionCases(typeof<'T>)
-            |> Array.map (fun unionCase ->      
-                let v = 
+    let groupArguments (args : 'T list when 'T :> IArgParserTemplate) =
+        let m = 
+            args 
+            |> List.map splitUnion
+            |> Map.ofList
+        FSharpType.GetUnionCases(typeof<'T>)
+        |> Array.map (fun unionCase ->
+            let isMandatory = containsCustomAttribute<MandatoryAttribute>(unionCase) 
+            let fields = unionCase.GetFields()
+            match fields with 
+            | [||] -> 
+                let toolTip = (FSharpValue.MakeUnion (unionCase,[||]) :?> 'T).Usage
+                let value = Flag (Map.containsKey unionCase.Name m)              
+                unionCase.Name,createAnnotatedArgument value toolTip isMandatory
+            | [|c|] when c.PropertyType.Name = "String" -> 
+                let toolTip = (FSharpValue.MakeUnion (unionCase,[|box ""|]) :?> 'T).Usage
+                let value = 
                     match Map.tryFind unionCase.Name m with
-                    | Some value -> value
-                    | None -> [|box ""|]
-                FSharpValue.MakeUnion (unionCase,v) :?> 'T
-            )
+                    | Some value -> string value.[0]
+                    | None -> ""
+                    |> Field
+                unionCase.Name,createAnnotatedArgument value toolTip isMandatory
+            | _ ->
+                failwithf "Cannot parse argument %s because its parsing rules were not yet implemented" unionCase.Name
+        )
 
     /// Creates an isa item used in the investigation file
-    let isaItemOfParameters (item:#InvestigationFile.ISAItem) (parameters : Map<string,string>) = 
+    let isaItemOfArguments (item:#InvestigationFile.ISAItem) (parameters : Map<string,Argument>) = 
         parameters
-        |> Seq.iter (fun kv -> 
-            InvestigationFile.setKeyValue kv item
-            |> ignore
+        |> Map.iter (fun k v -> 
+            match v with
+            | Field s -> 
+                InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
+                |> ignore
+            | Flag b ->
+                ()
         )
         item
 
@@ -113,25 +151,23 @@ module ArgumentProcessing =
             r.ReadToEnd()
     
 
-        /// Serializes simple disriminated unions in yaml format (key:value)
+        /// Serializes annotated argument in yaml format (key:value)
         ///
         /// For each value, a comment is created and put above the line using the given commentF function
-        let private serializeUnion (commentF : 'T -> string) (vs:'T []) =
-            vs
-            |> Array.map (fun v -> 
-                let comment = commentF v
-                let key,value = unionToString v
+        let private serializeAnnotatedArguments (arguments:(string*AnnotatedArgument) []) =
+            arguments
+            |> Array.map (fun (key,arg) -> 
+                let comment = 
+                    if arg.IsMandatory then
+                        sprintf "Mandatory: %s" arg.Tooltip
+                    else sprintf "%s" arg.Tooltip
+                let value = 
+                    match arg.Arg with
+                    | Flag _ -> "false"
+                    | Field v -> v
                 sprintf "#%s\n%s:%s" comment key value
             )
             |> Array.reduce (fun a b -> a + "\n" + b)
-
-        /// Serializes map in yaml format (key:value)
-        let private serializeMap (vs:Map<string,string>) =
-            vs
-            |> Seq.map (fun kv -> 
-                sprintf "%s:%s" kv.Key kv.Value
-            )
-            |> Seq.reduce (fun a b -> a + "\n" + b)
     
         /// Splits the string at the first occurence of the char 
         let private splitAtFirst (c:char) (s:string) =
@@ -143,17 +179,16 @@ module ArgumentProcessing =
                 else
                     a.[1]
 
-        /// Deserializes yaml format (key:value) to map
-        let private deserializeMap (s:string) =
+        /// Deserializes yaml format (key:value) arguments
+        let private deserializeArguments (s:string) =
             s.Split '\n'
             |> Array.choose (fun x -> 
                 if x.StartsWith "#" then
                     None
                 else 
                     splitAtFirst ':' x                
-                    |> Some
+                    |> fun (k,v) -> Some (k, Field v)
             )
-            |> Map.ofArray
 
         /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input
         let createQuery editorPath arcPath serializeF deserializeF inp =
@@ -174,27 +209,25 @@ module ArgumentProcessing =
                 failwithf "could not parse query: %s" err.Message
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
-        let createParameterQuery editorPath arcPath (parameters : 'T []) = 
-         
-            let commentF (v : 'T when 'T :> IArgParserTemplate) =
-                if FSharpValue.GetUnionFields(v,typeof<'T>) |> fst |> containsCustomAttribute<MandatoryAttribute> then
-                    sprintf "Mandatory: %s" v.Usage
-                else
-                    v.Usage
-
-            parameters
-            |> createQuery editorPath arcPath (serializeUnion commentF) deserializeMap 
+        let createArgumentQuery editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
+            let flags = arguments |> Array.choose (fun (k,v) -> match v.Arg with | Flag b -> Some (k,Flag b) | _ -> None) 
+            let fields = 
+                arguments 
+                |> Array.choose (fun (k,v) -> match v.Arg with | Field b -> Some (k,v) | _ -> None) 
+                |> createQuery editorPath arcPath serializeAnnotatedArguments deserializeArguments 
+            Array.append flags fields
+            |> Map.ofArray
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
-        let createParameterQueryIfNecessary editorPath arcPath (parameters : 'T []) = 
-            if missingMandatoryAttribute parameters then
-                createParameterQuery editorPath arcPath parameters
+        let createArgumentQueryIfNecessary editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
+            if isMissingMandatoryAttribute arguments then
+                createArgumentQuery editorPath arcPath arguments
             else 
-                parameters
-                |> Array.map unionToString
+                arguments
+                |> Array.map (fun (k,v) -> k,v.Arg)
                 |> Map.ofArray
 
-        // opens a textprompt containing the result of the serialized input item. Returns the deserialized user input
+        /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
         let createItemQuery editorPath arcPath (item : #InvestigationFile.ISAItem) = 
             let serializeF inp = 
                 InvestigationFile.getKeyValues inp
@@ -203,16 +236,11 @@ module ArgumentProcessing =
             let deserializeF (s:string) =
                 s.Split '\n'
                 |> Array.iter (fun x ->                 
-                    x.Split ':'
-                    |> fun a -> System.Collections.Generic.KeyValuePair(a.[0],a.[1])
+                    splitAtFirst ':' x
+                    |> System.Collections.Generic.KeyValuePair
                     |> fun kv -> InvestigationFile.setKeyValue kv item
                     |> ignore
                 )
 
                 item
             createQuery editorPath arcPath serializeF deserializeF item
-
-
-
-
-        
