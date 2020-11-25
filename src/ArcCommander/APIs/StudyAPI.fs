@@ -29,7 +29,7 @@ module StudyAPI =
         if ISA_XLSX.IO.ISA_Investigation.studyExists study.Identifier doc then
             printfn "Study %s already exists" study.Identifier
         else 
-            ISA_XLSX.IO.ISA_Investigation.addStudy study doc |> ignore
+            ISA_XLSX.IO.ISA_Investigation.tryAddStudy study doc |> ignore
         doc.Save()
         doc.Close()
 

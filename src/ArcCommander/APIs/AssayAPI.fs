@@ -74,7 +74,7 @@ module AssayAPI =
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
 
         if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
-            ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
+            ISA_XLSX.IO.ISA_Investigation.tryAddStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
         ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
 
         doc.Save()
@@ -103,7 +103,7 @@ module AssayAPI =
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         
         if ISA_XLSX.IO.ISA_Investigation.studyExists studyIdentifier doc |> not then
-            ISA_XLSX.IO.ISA_Investigation.addStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
+            ISA_XLSX.IO.ISA_Investigation.tryAddStudy (StudyItem(identifier = studyIdentifier)) doc |> ignore
         ISA_XLSX.IO.ISA_Investigation.tryAddItemToStudy assay studyIdentifier doc
 
         doc.Save()
