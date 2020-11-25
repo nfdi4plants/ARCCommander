@@ -8,6 +8,7 @@
     <EmbeddedResource Remove="NewFolder1\**" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="playground\test.fsx" />
     <Compile Include="CellReference.fs" />
     <Compile Include="SharedStringItem.fs" />

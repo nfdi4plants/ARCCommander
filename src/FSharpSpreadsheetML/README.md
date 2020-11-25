@@ -61,4 +61,23 @@ Therefore, it is necessary to drop some expressiveness in favor of conciseness.
 However, a function with the name `A.getE` with the signature B -> C -> D -> **A** -> E with adequate parameter names might seem logical for people with insights about the underlying XML structure, but may hide too much complexity to be accessible for others. 
 This is  the favoured approach for now, as the most 'user facing' API is the `SpreadsheetDocument` API, with little need to dig deeper when correctly implemented.
 
+It seems to make sense to cut the propagation of APIs at a certain point. 
+
+For example, the typical contents of a SpreadsheetDocument are :
+
+                        Spreadsheet
+                              |         
+                         WorkbookPart    
+                   /         |             \
+           Workbook WorkbookStylesPart WorksheetPart
+                 |          |               |
+            Sheets     StyleSheet        Worksheet
+                |                        /        \       
+          (refers to               SheetData        Columns  
+           Worksheetparts)            |   
+                                     Rows 
+_[source](https://dotscrapbook.wordpress.com/2012/03/23/openxml-spreadsheets-with-multiple-worksheets-using-net-sdk/)_
+
+So a good point to stop the API propagation may be the `Workbook` `WorkbookStylesPart` `WorksheetPart` separation layer.
+
 There is no clear answer here, and input is encouraged on that front.
