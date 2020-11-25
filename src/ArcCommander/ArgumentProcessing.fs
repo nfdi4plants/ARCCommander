@@ -11,12 +11,15 @@ open ISA.DataModel
 
 open Argu
 
+
 module ArgumentProcessing = 
 
+    /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValuByName' to access the value
     type Argument =
         | Field of string
         | Flag of bool
 
+    /// Argument with additional information
     type AnnotatedArgument = 
         {
             Arg : Argument
@@ -24,6 +27,7 @@ module ArgumentProcessing =
             IsMandatory : bool
         }
 
+    
     let createAnnotatedArgument arg tt mand = 
         {
             Arg = arg
@@ -31,15 +35,17 @@ module ArgumentProcessing =
             IsMandatory = mand
         }
 
+    /// Returns true, if the argument flag of name k was given by the user
     let containsFlag k (arguments : Map<string,Argument>)=
         match Map.find k arguments with
-        | Flag b -> b
         | Field _ -> failwithf "Argument %s is not a flag, but a field" k
+        | Flag b -> b
 
+    /// Returns the value given by the user for name k
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.find k arguments with
         | Field v -> v
-        | Flag _ -> failwithf "Argument %s is not a flag, but a field" k
+        | Flag _ -> failwithf "Argument %s is not a field, but a flag" k
 
     /// For a given discriminated union value, returns the field name and the value
     let private splitUnion (x:'a) = 
@@ -60,7 +66,7 @@ module ArgumentProcessing =
         | _ -> true
    
     /// Returns true, if a value in the array contains the Mandatory attribute, but is empty
-    let private isMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
+    let private containsMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
         arguments
         |> Seq.exists (fun (k,v) ->
             match v.Arg with
@@ -220,7 +226,7 @@ module ArgumentProcessing =
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
         let createArgumentQueryIfNecessary editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
-            if isMissingMandatoryAttribute arguments then
+            if containsMissingMandatoryAttribute arguments then
                 createArgumentQuery editorPath arcPath arguments
             else 
                 arguments
