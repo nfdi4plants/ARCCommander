@@ -17,35 +17,38 @@ module ArgumentProcessing =
     /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValuByName' to access the value
     type Argument =
         | Field of string
-        | Flag of bool
+        | Flag
 
     /// Argument with additional information
     type AnnotatedArgument = 
         {
-            Arg : Argument
-            Tooltip : string
+            Arg         : Argument Option
+            Tooltip     : string
             IsMandatory : bool
+            IsFlag      : bool
         }
 
     
-    let createAnnotatedArgument arg tt mand = 
+    let createAnnotatedArgument arg tt mand isFlag = 
         {
             Arg = arg
             Tooltip = tt 
             IsMandatory = mand
+            IsFlag = isFlag
         }
 
     /// Returns true, if the argument flag of name k was given by the user
     let containsFlag k (arguments : Map<string,Argument>)=
-        match Map.find k arguments with
-        | Field _ -> failwithf "Argument %s is not a flag, but a field" k
-        | Flag b -> b
+        match Map.tryFind k arguments with
+        | Some (Field _ )   -> failwithf "Argument %s is not a flag, but a field" k
+        | Some (Flag)       -> true
+        | None              -> false
 
     /// Returns the value given by the user for name k
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.find k arguments with
         | Field v -> v
-        | Flag _ -> failwithf "Argument %s is not a field, but a flag" k
+        | Flag -> failwithf "Argument %s is not a field, but a flag" k
 
     /// For a given discriminated union value, returns the field name and the value
     let private splitUnion (x:'a) = 
@@ -69,9 +72,7 @@ module ArgumentProcessing =
     let private containsMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
         arguments
         |> Seq.exists (fun (k,v) ->
-            match v.Arg with
-            | Field s -> s = "" && v.IsMandatory
-            | _ -> false
+            v.Arg.IsNone && v.IsMandatory
         )
 
     /// Adds all union cases of 'T which are missing to the list
@@ -87,16 +88,18 @@ module ArgumentProcessing =
             match fields with 
             | [||] -> 
                 let toolTip = (FSharpValue.MakeUnion (unionCase,[||]) :?> 'T).Usage
-                let value = Flag (Map.containsKey unionCase.Name m)              
-                unionCase.Name,createAnnotatedArgument value toolTip isMandatory
+                let value,isFlag = if Map.containsKey unionCase.Name m then Some Flag,true else None,true             
+                unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
             | [|c|] when c.PropertyType.Name = "String" -> 
                 let toolTip = (FSharpValue.MakeUnion (unionCase,[|box ""|]) :?> 'T).Usage
-                let value = 
+                let value,isFlag = 
                     match Map.tryFind unionCase.Name m with
-                    | Some value -> string value.[0]
-                    | None -> ""
-                    |> Field
-                unionCase.Name,createAnnotatedArgument value toolTip isMandatory
+                    | Some value -> 
+                        Field (string value.[0])
+                        |> Some,
+                        false
+                    | None -> None,false                   
+                unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
             | _ ->
                 failwithf "Cannot parse argument %s because its parsing rules were not yet implemented" unionCase.Name
         )
@@ -109,7 +112,7 @@ module ArgumentProcessing =
             | Field s -> 
                 InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
                 |> ignore
-            | Flag b ->
+            | Flag ->
                 ()
         )
         item
@@ -166,24 +169,26 @@ module ArgumentProcessing =
                 let comment = 
                     if arg.IsMandatory then
                         sprintf "Mandatory: %s" arg.Tooltip
+                    elif arg.IsFlag then
+                        sprintf "Remove # below to set flag: %s" arg.Tooltip
                     else sprintf "%s" arg.Tooltip
                 let value = 
                     match arg.Arg with
-                    | Flag _ -> "false"
-                    | Field v -> v
-                sprintf "#%s\n%s:%s" comment key value
+                    | Some (Flag)           -> sprintf "%s" key
+                    | Some (Field v)        -> sprintf "%s:%s" key v
+                    | None when arg.IsFlag  -> sprintf "#%s" key
+                    | None                  -> sprintf "%s:" key
+                sprintf "#%s\n%s" comment value
             )
             |> Array.reduce (fun a b -> a + "\n" + b)
     
         /// Splits the string at the first occurence of the char 
         let private splitAtFirst (c:char) (s:string) =
-            s.Split c
-            |> fun a -> 
-                a.[0].Trim(),
-                if a.Length > 2 then
-                    Array.skip 1 a |> Array.reduce (fun a b -> a + ":" + b) |> fun v -> v.Trim()
-                else
-                    a.[1]
+            match s.Split c with
+            | [|k|]     -> k.Trim(), Flag 
+            | [|k ; v|] -> k.Trim(), v.Trim() |> Field 
+            | a         -> a.[0].Trim(), Array.skip 1 a |> Array.reduce (fun a b ->sprintf "%s%c%s" a c b) |> fun v -> v.Trim() |> Field
+
 
         /// Deserializes yaml format (key:value) arguments
         let private deserializeArguments (s:string) =
@@ -192,8 +197,7 @@ module ArgumentProcessing =
                 if x.StartsWith "#" then
                     None
                 else 
-                    splitAtFirst ':' x                
-                    |> fun (k,v) -> Some (k, Field v)
+                    splitAtFirst ':' x |> Some
             )
 
         /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input
@@ -216,12 +220,8 @@ module ArgumentProcessing =
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
         let createArgumentQuery editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
-            let flags = arguments |> Array.choose (fun (k,v) -> match v.Arg with | Flag b -> Some (k,Flag b) | _ -> None) 
-            let fields = 
-                arguments 
-                |> Array.choose (fun (k,v) -> match v.Arg with | Field b -> Some (k,v) | _ -> None) 
-                |> createQuery editorPath arcPath serializeAnnotatedArguments deserializeArguments 
-            Array.append flags fields
+            arguments
+            |> createQuery editorPath arcPath serializeAnnotatedArguments deserializeArguments 
             |> Map.ofArray
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
@@ -230,7 +230,7 @@ module ArgumentProcessing =
                 createArgumentQuery editorPath arcPath arguments
             else 
                 arguments
-                |> Array.map (fun (k,v) -> k,v.Arg)
+                |> Array.choose (fun (k,v) -> v.Arg |> Option.map (fun arg -> k,arg))
                 |> Map.ofArray
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
@@ -242,10 +242,12 @@ module ArgumentProcessing =
             let deserializeF (s:string) =
                 s.Split '\n'
                 |> Array.iter (fun x ->                 
-                    splitAtFirst ':' x
-                    |> System.Collections.Generic.KeyValuePair
-                    |> fun kv -> InvestigationFile.setKeyValue kv item
-                    |> ignore
+                    match splitAtFirst ':' x with
+                    | k, Field v ->
+                        System.Collections.Generic.KeyValuePair(k,v)
+                        |> fun kv -> InvestigationFile.setKeyValue kv item
+                        |> ignore
+                    | _ -> failwith "Error: file was corrupted in Edtior"
                 )
 
                 item
