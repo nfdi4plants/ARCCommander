@@ -6,13 +6,13 @@ open ArcCommander.CLIArguments
 /// Assay object subcommand verbs
 type AssayCommand = 
 
-    | [<CliPrefix(CliPrefix.None)>] Init     of init_args:  ParseResults<AssayInitArgs>
-    | [<CliPrefix(CliPrefix.None)>] Update   of update_args:  ParseResults<AssayUpdateArgs>
-    | [<CliPrefix(CliPrefix.None)>] Edit     of edit_args:    ParseResults<AssayEditArgs>
-    | [<CliPrefix(CliPrefix.None)>] Register of register_args:ParseResults<AssayRegisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Add      of add_args:     ParseResults<AssayAddArgs>
-    | [<CliPrefix(CliPrefix.None)>] Remove   of remove_args:  ParseResults<AssayRemoveArgs>
-    | [<CliPrefix(CliPrefix.None)>] Move     of move_args:    ParseResults<AssayMoveArguments>
+    | [<CliPrefix(CliPrefix.None)>] Init     of init_args:      ParseResults<AssayInitArgs>
+    | [<CliPrefix(CliPrefix.None)>] Update   of update_args:    ParseResults<AssayUpdateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Edit     of edit_args:      ParseResults<AssayEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Register of register_args:  ParseResults<AssayRegisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Add      of add_args:       ParseResults<AssayAddArgs>
+    | [<CliPrefix(CliPrefix.None)>] Remove   of remove_args:    ParseResults<AssayRemoveArgs>
+    | [<CliPrefix(CliPrefix.None)>] Move     of move_args:      ParseResults<AssayMoveArguments>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
