@@ -5,34 +5,55 @@ open Argu
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ArcCommander.CLIArguments
 open ArcCommander.Commands
 open ArcCommander.APIs
 open System
-open System.Reflection
-open FSharp.Reflection
 
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
 
     let editor = GeneralConfiguration.getEditor arcConfiguration
     let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+    let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
     let parameterGroup =
         let g = groupArguments (r.GetAllResults())
         Prompt.createArgumentQueryIfNecessary editor workDir g  
-    printfn "\nand the parameters: \n" 
-    parameterGroup|> Map.iter (printfn "\t%s:%O")
+    
+    if verbosity >= 1 then
+
+        printfn "start processing command with the arguments"
+        parameterGroup|> Map.iter (printfn "\t%s:%O")
+
+    if verbosity >= 2 then
+
+        printfn "\nand the config: \n" 
+        arcConfiguration 
+        |> ArcConfiguration.flatten
+        |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
 
     try commandF arcConfiguration parameterGroup
     finally
-        printfn "done processing command"
+        if verbosity >= 1 then printfn "done processing command"
 
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
-    printfn "\nstart process with the global parameters: \n" 
-    //globalParams |> Map.iter (printfn "\t%s:%s")
+    
+    let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+
+    if verbosity >= 1 then
+
+        printf "start processing parameterless command"
+
+    if verbosity >= 2 then
+        printfn "with the config"
+        arcConfiguration 
+        |> ArcConfiguration.flatten
+        |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
+
+    else printfn ""
+
     try commandF arcConfiguration
     finally
-        printfn "done processing command"
+        if verbosity >= 1 then printfn "done processing command"
 
 let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with
@@ -64,8 +85,10 @@ let handleAssaySubCommands arcConfiguration assayVerb =
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
-    | ConfigurationCommand.Edit     -> processCommandWithoutArgs arcConfiguration ConfigurationAPI.edit
-    | ConfigurationCommand.List     -> processCommandWithoutArgs arcConfiguration ConfigurationAPI.list
+    | ConfigurationCommand.Edit     r -> processCommand arcConfiguration ConfigurationAPI.edit  r
+    | ConfigurationCommand.List     r -> processCommand arcConfiguration ConfigurationAPI.list  r
+    | ConfigurationCommand.Set      r -> processCommand arcConfiguration ConfigurationAPI.set   r
+    | ConfigurationCommand.Unset    r -> processCommand arcConfiguration ConfigurationAPI.unset r
 
 
 let handleCommand arcConfiguration command =
@@ -78,7 +101,7 @@ let handleCommand arcConfiguration command =
     // Verbs
     | Init r                    -> processCommand   arcConfiguration ArcAPI.init r
     // Settings
-    | WorkingDir _ | Silent     -> ()
+    | WorkingDir _ | Verbosity _-> ()
 
 [<EntryPoint>]
 let main argv =
@@ -91,14 +114,17 @@ let main argv =
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let silent = results.Contains(Silent) |> string
+        let verbosity = 
+            match results.TryGetResult(Verbosity) with
+            | Some i    -> string i
+            | None      -> "1"
 
         let arcConfiguration = 
             [
                 "general.workdir",workingDir
-                "general.silent",silent
+                "general.verbosity",verbosity
             ]
-            |> Configuration.fromNameValuePairs
+            |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
             
         //Testing the configuration reading (Delete when configuration functionality is setup)
