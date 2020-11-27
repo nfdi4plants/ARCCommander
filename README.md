@@ -25,6 +25,7 @@ where `<object>` is one of the following:
  - `assay` 
  - `study` 
  - `investigation`
+ - `configuration`
 
 and `<subcommand-verb>` models what to do with the object, e.g
 
@@ -47,7 +48,9 @@ while not all object subcommands support all verbs, here is a list of the verbs 
 - arc `<object>` **remove** will remove the `<object>` from the ARC's register.
 - arc `<object>` **move** will move the `<object>` from source to target register.
 - arc `<object>` **list** will print all `<object>s` registered in the ARC.
-- arc `<object>` **Delete** will delete the `<object>`.
+- arc `<object>` **delete** will delete the `<object>`.
+- arc `<object>` **set** will set a single value in the `<object>`.
+- arc `<object>` **unset** will remove a single value from the `<object>`.
 
 ### CLI argument help
 
@@ -56,7 +59,7 @@ Here is the current help dump from the command line tool:
 #### Top level:
 
 ```powershell
-USAGE: arc [--help] [--workingdir <working directory>] [--silent] [<subcommand> [<options>]]
+USAGE: arc [--help] [--workingdir <working directory>] [--verbosity <verbosity>] [<subcommand> [<options>]]
 
 SUBCOMMANDS:
 
@@ -67,6 +70,8 @@ SUBCOMMANDS:
                           Study functions
     assay, a <verb and args>
                           Assay functions
+    configuration, config <verb and args>
+                          Configuration editing
 
     Use 'arc <subcommand> --help' for additional information.
 
@@ -74,7 +79,9 @@ OPTIONS:
 
     --workingdir, -p <working directory>
                           Set the base directory of your ARC
-    --silent              Prevents the tool from printing additional information
+    --verbosity, -v <verbosity>
+                          Sets the amount of additional printed information: 0->No information, 1 (Default) -> Basic
+                          Information, 2 -> Additional information
     --help                display this list of options.
 ```
 
@@ -393,7 +400,7 @@ OPTIONS:
     --help                display this list of options.
 ```
 
-##### register
+##### assay register
 
 ```powershell
 USAGE: arc assay register [--help] --studyidentifier <string> --assayidentifier <string> [--measurementtype <measurement type>] [--measurementtypetermaccessionnumber <measurement type accession>]
@@ -480,5 +487,78 @@ OPTIONS:
                           identifier of the study in which the assay is registered
     --assayidentifier, -a <assay identifier>
                           identifier of the assay of interest
+    --help                display this list of options.
+```
+
+<br>
+
+#### configuration:
+
+```powershell
+USAGE: arc configuration [--help] [<subcommand> [<options>]]
+
+SUBCOMMANDS:
+
+    edit <edit args>      Open and edit an existing assay in the arc with a text editor. Arguments passed for this
+                          command will be pre-set in the editor.
+    list <list args>      List all assays registered in the arc.
+    set <set args>        Assign the given value to the given name.
+    unset <unset args>    Remove the value bound to the given name.
+
+    Use 'arc <subcommand> --help' for additional information.
+
+OPTIONS:
+
+    --help                display this list of options.
+```
+
+##### configuration list
+
+```powershell
+USAGE: arc configuration list [--help] [--local] [--global]
+
+OPTIONS:
+
+    --local, -l           Lists the local settings for this arc
+    --global, -g          Lists the global settings of the arccommander
+    --help                display this list of options.
+```
+
+##### configuration edit
+
+```powershell
+USAGE: arc configuration edit [--help] [--local] [--global]
+
+OPTIONS:
+
+    --local, -l           Edit the local settings for this arc
+    --global, -g          Edit the global settings of the arccommander
+    --help                display this list of options.
+```
+
+##### configuration set
+
+```powershell
+USAGE: arc configuration set [--help] [--local] [--global] --name <string> --value <string>
+
+OPTIONS:
+
+    --local, -l           Set the the value of the name locally for this arc
+    --global, -g          Set the the value of the name globally for the arccommander
+    --name, -n <string>   The name of the setting in 'Section.Key' format
+    --value, -v <string>  The new value of the setting
+    --help                display this list of options. list of options.
+```
+
+##### configuration unset
+
+```powershell
+USAGE: arc configuration unset [--help] [--local] [--global] --name <string>
+
+OPTIONS:
+
+    --local, -l           Unset the the value of the name locally for this arc
+    --global, -g          Unset the the value of the name globally for the arccommander
+    --name, -n <string>   The name of the setting in 'Section.Key' format
     --help                display this list of options.
 ```
