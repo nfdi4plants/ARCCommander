@@ -62,7 +62,7 @@ module Scope =
         }
    
    /// 1. Level terms
-    let private terms = 
+    let terms = 
         [
         "ONTOLOGY SOURCE REFERENCE"
         "INVESTIGATION"
@@ -70,7 +70,7 @@ module Scope =
         ]
 
     /// If the row is a section title, returns header and level
-    let private trySplitTitle (s : string) = 
+    let trySplitTitle (s : string) = 
         if s.ToUpper() = s then
             let vals = s.Split ' ' |> Array.toList
             match vals with
@@ -415,25 +415,41 @@ module ISA_Investigation  =
         res
 
     /// Add a study to the investigation file
-    let addStudy (study:StudyItem) (spreadSheet:SpreadsheetDocument) =
+    let tryAddStudy (study:StudyItem) (spreadSheet:SpreadsheetDocument) =
         let doc = spreadSheet
         let workbookPart = doc |> Spreadsheet.getWorkbookPart
-        let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
-    
-        sheet |> SheetData.appendRowValues ["STUDY"] |> ignore
-        
-        getKeyValues study
-        |> Array.map (fun (k,v) -> 
-            let vs = [(study :> ISAItem).KeyPrefix + " " + k; string v]
-            sheet |> SheetData.appendRowValues vs
-        )
-        |> ignore
 
-        doc
-        |> Spreadsheet.saveChanges
+        if studyExists study.Identifier spreadSheet then
+            None
+        else 
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
+    
+            sheet |> SheetData.appendRowValues ["STUDY"] |> ignore
+        
+            getKeyValues study
+            |> Array.map (fun (k,v) -> 
+                let vs = [(study :> ISAItem).KeyPrefix + " " + k; string v]
+                sheet |> SheetData.appendRowValues vs
+            )
+            |> ignore
+
+            doc
+            |> Spreadsheet.saveChanges
+            |> Some
 
     /// If a study with the given identifier exists in the investigation file, returns its scope
-    let private tryGetStudyScope workbookPart studyIdentifier sheet =
+    let getInvestigationScope workbookPart sheet =
+        match tryFindIndexOfKey workbookPart "Investigation Identifier" sheet with
+        | Some studyIndex ->
+            match Scope.tryFindScopeAt workbookPart studyIndex sheet with
+            | Some scope -> scope
+            | None -> failwith "Corrupt Investigation file: No Identifier"
+        | None -> 
+            failwith "Corrupt Investigation file: No Header could be found"
+
+
+    /// If a study with the given identifier exists in the investigation file, returns its scope
+    let tryGetStudyScope workbookPart studyIdentifier sheet =
         match SingleTrait.tryFindIndexOfKeyValue workbookPart (KeyValuePair("Study Identifier",studyIdentifier)) sheet with
         | Some studyIndex ->
             match Scope.tryFindScopeAt workbookPart studyIndex sheet with
@@ -444,20 +460,30 @@ module ISA_Investigation  =
             None
 
     /// If the section of the itemtype exists in the studyscope, returns its scope
-    let private tryGetItemScope workbookPart studyScope (item:#ISAItem) sheet =
+    let tryGetItemScope workbookPart studyScope (item:#ISAItem) sheet =
             let itemHeader = studyScope.Name + " " + item.Header
             match tryFindIndexOfKeyBetween studyScope.From studyScope.To workbookPart itemHeader sheet with
             | Some itemIndex ->
                 Scope.tryFindScopeAt workbookPart itemIndex sheet
             | None -> 
-                SheetData.insertRowValuesAt [itemHeader] (studyScope.To + 1u) sheet |> ignore
-                Scope.create itemHeader 2 (studyScope.To + 1u) (studyScope.To + 1u)
-                |> Some
+                None
                 //printfn "item does not exist in the study %s" study
                 //None
 
+    /// If the section of the itemtype exists in the studyscope, returns its scope, otherwise creates the new scope
+    let getOrInitItemScope workbookPart studyScope (item:#ISAItem) sheet =
+        let itemHeader = studyScope.Name + " " + item.Header
+        match tryFindIndexOfKeyBetween studyScope.From studyScope.To workbookPart itemHeader sheet with
+        | Some itemIndex ->
+            Scope.tryFindScopeAt workbookPart itemIndex sheet
+            |> Option.get
+        | None -> 
+            SheetData.insertRowValuesAt [itemHeader] (studyScope.To + 1u) sheet |> ignore
+            Scope.create itemHeader 2 (studyScope.To + 1u) (studyScope.To + 1u)
+
+
     /// If the item exists in the studyscope, returns its column
-    let private tryFindColumnInItemScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet =
+    let tryFindColumnInItemScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet =
         let keyValuesOfInterest = 
             getIdentificationKeyValues item
             |> Array.map (fun (key,value) ->
@@ -478,7 +504,7 @@ module ISA_Investigation  =
                 seq s |> Seq.head |> Some
     
     /// If the item exists in the studyscope, returns its column
-    let private itemCountInScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet : uint =
+    let itemCountInScope workbookPart prefix (scope:Scope) (item:#ISAItem) sheet : uint =
         let keys = item |> getKeyValues |> Array.map (fun (k,v) -> prefix + " " + item.KeyPrefix + " " + k)
         
         keys
@@ -495,7 +521,7 @@ module ISA_Investigation  =
         let rowWithValueExists = 
             [scope.From .. scope.To]
             |> List.exists (fun i -> 
-                Seq.length(SheetData.getRowValuesWithSSTAt sst i sheet) < 1
+                Seq.length(SheetData.getRowValuesWithSSTAt sst i sheet) > 1
             )
         if rowWithValueExists then
             sheet
@@ -505,7 +531,7 @@ module ISA_Investigation  =
             |> List.fold (fun s i -> SheetData.removeRowAt i s) sheet
             
     /// Replaces the values of the item at the scope with the given values
-    let private updateItemValuesInStudy workbookPart scope columnIndex (item:#ISAItem) sheet = 
+    let updateItemValuesInStudy workbookPart scope columnIndex (item:#ISAItem) sheet = 
         let keyValues = 
             getKeyValues item
             |> Array.map (fun (key,value) ->
@@ -537,7 +563,7 @@ module ISA_Investigation  =
         |> ignore
 
     /// Adds the given values to the scope
-    let private insertItemValuesIntoStudy workbookPart scope (item:#ISAItem) sheet =         
+    let insertItemValuesIntoStudy workbookPart scope (item:#ISAItem) sheet =         
         //MAP assayItems FIELDS
         getKeyValues item
         |> Array.map (fun (key,value) ->
@@ -555,7 +581,7 @@ module ISA_Investigation  =
         ) scope
         |> ignore
 
-    let private getItemValuesFromStudy workbookPart (scope : Scope) columnIndex (item:#ISAItem) sheet = 
+    let getItemValuesFromStudy workbookPart (scope : Scope) columnIndex (item:#ISAItem) sheet = 
         [scope.From .. scope.To]
         |> List.iter (fun i ->
             match MultiTrait.tryGetKeyValueAtCol workbookPart i columnIndex sheet with
@@ -571,7 +597,7 @@ module ISA_Investigation  =
     /// If the item exists in the study, removes it from the investigation file
     let tryRemoveItemFromStudy (item:#ISAItem) (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
-        let sst = workbookPart |> WorkbookPart.getSharedStringTable
+
         try
             let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
 
@@ -618,7 +644,7 @@ module ISA_Investigation  =
                    
             let itemScope = 
                 studyScope
-                |> Option.pipe (fun studyScope -> tryGetItemScope workbookPart studyScope item sheet) 
+                |> Option.map (fun studyScope -> getOrInitItemScope workbookPart studyScope item sheet) 
             
             itemScope
             |> Option.map (fun itemScope -> 
@@ -691,7 +717,33 @@ module ISA_Investigation  =
             printfn "Could not add %s to study %s: %s" item.KeyPrefix study err.Message
             None
 
-    /// If the sty exists, returns its values
+    /// Returns the investigation values
+    let tryGetInvestigation (spreadSheet:SpreadsheetDocument) = 
+        let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
+        try
+            let sheet = WorkbookPart.getDataOfFirstSheet workbookPart
+            
+            let investigationScope = getInvestigationScope workbookPart sheet
+
+            let item = InvestigationItem()
+
+
+            [investigationScope.From .. investigationScope.To]
+            |> List.iter (fun i ->
+                match SingleTrait.tryGetKeyValueAt workbookPart i sheet with
+                | Some kv when kv.Key.Contains("Investigation") ->
+                    setKeyValue (KeyValuePair(kv.Key.Replace("Investigation" + " ",""),kv.Value)) item
+                    |> ignore
+                | _ -> 
+                    ()
+            )
+            Some item           
+        with 
+        | err -> 
+            printfn "Error: Could not obtain investigation: %s" err.Message
+            None
+
+    /// If the study exists, returns its values
     let tryGetStudy (study:string) (spreadSheet:SpreadsheetDocument) = 
         let workbookPart = spreadSheet |> Spreadsheet.getWorkbookPart
         try

@@ -216,7 +216,7 @@ module DataModel =
                 | None   -> None
                 )
 
-        let internal getIdentificationKeyValues (item:'T) =
+        let getIdentificationKeyValues (item:'T) =
             let schemaType = typeof<'T>
             schemaType.GetProperties()
             |> Array.choose ( fun memb -> 

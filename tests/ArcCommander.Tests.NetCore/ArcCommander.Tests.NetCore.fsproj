@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <Compile Include="Utils.fs" />
-    <Compile Include="ArcCommander\SomeTests.fs" />
+    <Compile Include="ArcCommander\IsaXLSX.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 
@@ -19,5 +19,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
     <ProjectReference Include="..\..\src\ArcCommander\ArcCommander.fsproj" />
     <PackageReference Update="FSharp.Core" Version="4.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="ArcCommander\TestFiles\" />
   </ItemGroup>
 </Project>

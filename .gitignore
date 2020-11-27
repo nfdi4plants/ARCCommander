@@ -170,6 +170,7 @@ $RECYCLE.BIN/
 packages/
 
 # Test results produced by build
+new.isa.investigation.xlsx
 TestResults.xml
 
 # Nuget outputs
