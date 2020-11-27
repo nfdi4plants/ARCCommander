@@ -15,6 +15,9 @@ module AssayAPI =
 
         let name = getFieldValueByName "AssayIdentifier" assayArgs
 
+        AssayConfiguration.getFolderPaths name arcConfiguration
+        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
+
         IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
         |> Option.get
         |> System.IO.File.Create
@@ -22,10 +25,6 @@ module AssayAPI =
 
         AssayConfiguration.getFilePaths name arcConfiguration
         |> Array.iter (System.IO.File.Create >> ignore)
-
-        AssayConfiguration.getFolderPaths name arcConfiguration
-        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
-
 
 
     /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
@@ -90,6 +89,9 @@ module AssayAPI =
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
+        AssayConfiguration.getFolderPaths name arcConfiguration
+        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
+
         IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
         |> Option.get
         |> System.IO.File.Create
@@ -97,9 +99,6 @@ module AssayAPI =
 
         AssayConfiguration.getFilePaths name arcConfiguration
         |> Array.iter (System.IO.File.Create >> ignore)
-
-        AssayConfiguration.getFolderPaths name arcConfiguration
-        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
 
         let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
         

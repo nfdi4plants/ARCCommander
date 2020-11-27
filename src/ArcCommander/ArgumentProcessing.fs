@@ -252,3 +252,19 @@ module ArgumentProcessing =
 
                 item
             createQuery editorPath arcPath serializeF deserializeF item
+
+        /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
+        let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =
+            let serializeF inp = 
+                IniData.flatten inp
+                |> Seq.map (fun (n,v) -> n + "=" + v)
+                |> Seq.reduce (fun a b -> a + "\n" + b)
+            let deserializeF (s:string) =
+                s.Split '\n'
+                |> Array.map (fun x ->      
+                    match splitAtFirst '=' x with
+                    | k, Field v -> k,v
+                    | _ -> failwith "Error: file was corrupted in Edtior"
+                )              
+                |> IniData.fromNameValuePairs
+            createQuery editorPath arcPath serializeF deserializeF iniData 
