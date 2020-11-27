@@ -2,6 +2,42 @@
 
 ArcCommander is a command line tool to create, manage and share your ARCs. 
 
+<!-- TOC -->
+
+- [General cli structure](#general-cli-structure)
+- [Subcommand verbs](#subcommand-verbs)
+- [CLI argument help](#cli-argument-help)
+    - [Top level:](#top-level)
+    - [investigation:](#investigation)
+        - [investigation create](#investigation-create)
+        - [investigation update](#investigation-update)
+        - [investigation edit](#investigation-edit)
+        - [investigation delete](#investigation-delete)
+    - [study:](#study)
+        - [study init](#study-init)
+        - [study update](#study-update)
+        - [study edit](#study-edit)
+        - [study register](#study-register)
+        - [study add](#study-add)
+        - [study remove](#study-remove)
+    - [assay:](#assay)
+        - [assay init](#assay-init)
+        - [assay update](#assay-update)
+        - [assay edit](#assay-edit)
+        - [assay register](#assay-register)
+        - [assay add](#assay-add)
+        - [assay move](#assay-move)
+        - [assay remove](#assay-remove)
+    - [configuration:](#configuration)
+        - [configuration list](#configuration-list)
+        - [configuration edit](#configuration-edit)
+        - [configuration set](#configuration-set)
+        - [configuration unset](#configuration-unset)
+
+<!-- /TOC -->
+
+### General cli structure
+
 The general command line structure is designed as either
 
 ```powershell
