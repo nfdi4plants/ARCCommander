@@ -189,6 +189,12 @@ module Row =
             row.RemoveChild(cell) |> ignore
             row)
 
+    /// If the row contains a value at the given index, return it
+    let tryGetValueAt index (row:Row) =
+        row
+        |> tryGetCellAt index
+        |> Option.map (Cell.getValue >> Cell.CellValue.getValue)
+
     /// Matches the rowSpan to the cell references inside the row
     let updateRowSpan (row:Row) : Row=
         let columnIndices =
