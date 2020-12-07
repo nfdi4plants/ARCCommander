@@ -143,13 +143,18 @@ module Cell =
     /// Includes value from SharedStringTable in Cell.CellValue.Text
     let includeSharedStringValue (sharedStringTable:SharedStringTable) (cell:Cell) =
         if not (isNull cell.DataType) then  
-            let index = int cell.InnerText
-            match sharedStringTable |> Seq.tryItem index with 
-            | Some value -> 
-                cell.CellValue.Text <- value.InnerText
-            | None ->
-                cell.CellValue.Text <- cell.InnerText
-            cell  
+            match cell |> tryGetType with
+            | Some (CellValues.SharedString) ->
+                let index = int cell.InnerText
+                match sharedStringTable |> Seq.tryItem index with 
+                | Some value -> 
+                    cell.DataType <- EnumValue(CellValues.String)
+                    cell.CellValue.Text <- value.InnerText
+                | None ->
+                    cell.CellValue.Text <- cell.InnerText
+                cell  
+
+            | _ -> cell
         else        
             cell.CellValue.Text <- cell.InnerText
             cell

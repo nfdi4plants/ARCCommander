@@ -237,6 +237,20 @@ module Row =
         |> extendSpanRight offset
 
     /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
+    let getIndexedValues (row:Row) =
+        row
+        |> toCellSeq
+        |> Seq.map (fun cell -> 
+            cell 
+            |> Cell.getReference 
+            |> CellReference.toIndices 
+            |> fst,
+
+            Cell.getValue cell
+            |> Cell.CellValue.getValue
+        )
+
+    /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
     let getIndexedValuesWithSST (sharedStringTable:SharedStringTable) (row:Row) =
         row
         |> toCellSeq
