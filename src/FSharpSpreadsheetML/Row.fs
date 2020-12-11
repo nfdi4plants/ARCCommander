@@ -174,6 +174,7 @@ module Row =
         Row(childElements = (cells |> Seq.map (fun x -> x :> OpenXmlElement)))
         |> setIndex index
         |> setSpan spans
+        |> fun r -> r.CloneNode(true) :?> Row
 
     /// Removes the cell at the given columnIndex from the row
     let removeCellAt index (row:Row) =
@@ -203,6 +204,24 @@ module Row =
             |> Seq.map (Cell.getReference >> CellReference.toIndices >> fst)
         row
         |> setSpan (Spans.fromBoundaries (Seq.min columnIndices) (Seq.max columnIndices))
+
+    /// Sets the row index of the row and the row indices of the cells in the row to the given 1 based index
+    let updateRowIndex newIndex (row : Row) : Row =
+        setIndex newIndex row
+        |> mapCells (fun c -> 
+            let (colI,rowI) = Cell.getReference c |> CellReference.toIndices
+            Cell.setReference (CellReference.ofIndices colI newIndex) c
+        )
+
+    /// Creates a new row from the given values
+    let ofValues rowIndex (vals : 'T seq) =
+        let spans = Spans.fromBoundaries 1u (Seq.length vals |> uint)
+        vals
+        |> Seq.mapi (fun i value -> 
+            value
+            |> Cell.createGeneric (i + 1 |> uint) rowIndex
+        )
+        |> create rowIndex spans      
 
     ///If a cell with the given columnIndex exists in the row. Moves it one column to the right. 
     ///
