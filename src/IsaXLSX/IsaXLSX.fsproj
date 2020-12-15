@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="InvestigationFile\DataModel.fs" />
+    <Compile Include="InvestigationFile\API.fs" />
     <Compile Include="InvestigationFile\IO.fs" />
   </ItemGroup>
   <ItemGroup>
