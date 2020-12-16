@@ -1,7 +1,6 @@
 ﻿namespace ArcCommander.CLIArguments
 
 open Argu 
-open ISA
 
 /// CLI arguments for empty study initialization
 type StudyInitArgs =

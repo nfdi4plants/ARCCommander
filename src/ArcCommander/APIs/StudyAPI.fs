@@ -4,7 +4,7 @@ open System
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ISA.DataModel.InvestigationFile
+open IsaXLSX.InvestigationFile
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs
 module StudyAPI =
@@ -21,17 +21,30 @@ module StudyAPI =
     /// Registers an existing study in the arc's investigation file with the given study metadata contained in cliArgs.
     let register (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
-        let study = isaItemOfArguments (StudyItem()) studyArgs
+        let identifier = getFieldValueByName "Identifier" studyArgs
 
-        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get          
+        let studyInfo = 
+            StudyInfo.create
+                (identifier)
+                (getFieldValueByName "Title"                studyArgs)
+                (getFieldValueByName "Description"          studyArgs)
+                (getFieldValueByName "SubmissionDate"       studyArgs)
+                (getFieldValueByName "PublicReleaseDate"    studyArgs)
+                (IsaModelConfiguration.tryGetStudiesFilePath arcConfiguration |> Option.get)
+                []
         
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-        if ISA_XLSX.IO.ISA_Investigation.studyExists study.Identifier doc then
-            printfn "Study %s already exists" study.Identifier
-        else 
-            ISA_XLSX.IO.ISA_Investigation.tryAddStudy study doc |> ignore
-        doc.Save()
-        doc.Close()
+        let study = Study.create studyInfo [] [] [] [] [] []
+
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+        
+        let investigation = IO.fromFile investigationFilePath
+
+        match API.Study.tryGetByIdentifier identifier investigation with
+        | Some study -> 
+            investigation
+        | None -> 
+            API.Study.add study investigation          
+        |> IO.toFile investigationFilePath
 
     /// [Not Implemented] Creates a new study file in the arc and registers it in the arc's investigation file with the given study metadata contained in cliArgs.
     let add (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = raise (NotImplementedException())
@@ -41,21 +54,17 @@ module StudyAPI =
 
     /// Lists all study identifiers registered in this arc's investigation file
     let list (arcConfiguration:ArcConfiguration) =
-
-        printfn "Start study list"
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
         printfn "InvestigationFile: %s"  investigationFilePath
 
-        let doc = FSharpSpreadsheetML.Spreadsheet.fromFile investigationFilePath true
-
-        let studies = ISA_XLSX.IO.ISA_Investigation.getStudies doc
+        let investigation = IO.fromFile investigationFilePath
         
-        if Seq.isEmpty studies then 
+        if List.isEmpty investigation.Studies then 
             printfn "The Investigation contains no studies"
         else 
-            studies
-            |> Seq.iter (fun s ->
+            investigation.Studies
+            |> List.iter (fun s ->
             
-                printfn "Study: %s" s.Identifier
+                printfn "Study: %s" s.StudyInfo.Identifier
             )

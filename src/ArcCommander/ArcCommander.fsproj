@@ -32,7 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharpSpreadsheetML\FSharpSpreadsheetML.fsproj" />
-    <ProjectReference Include="..\ISA-XLSX\ISA-XLSX.fsproj" />
+    <ProjectReference Include="..\IsaXLSX\IsaXLSX.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

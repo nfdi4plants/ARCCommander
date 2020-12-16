@@ -109,13 +109,26 @@ module GeneralConfiguration =
 module IsaModelConfiguration =
 
     /// Returns the full path of the assay file
-    let tryGetAssayFilePath assayIdentifier (configuration:ArcConfiguration) =
+    let tryGetAssayFileName assayIdentifier (configuration:ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         let assayFileName = Map.tryFind "assayfilename" configuration.IsaModel
         let rootFolder = Map.tryFind "rootfolder" configuration.Assay
         match assayFileName,rootFolder with
         | Some f, Some r -> 
             Path.Combine([|workDir;r;assayIdentifier;f|])
+            |> Some
+        | _ -> None
+
+    /// Returns the full path of the assay file
+    let tryGetAssayIdentifierOfFileName (assayFileName : string) =
+        System.IO.Path.GetFileName assayFileName
+
+    /// Returns the full path of the assay file
+    let tryGetAssayFilePath assayIdentifier (configuration:ArcConfiguration) =
+        let assayFileName = Map.tryFind "assayfilename" configuration.IsaModel
+        match assayFileName with
+        | Some f -> 
+            Path.Combine([|assayIdentifier;f|])
             |> Some
         | _ -> None
 

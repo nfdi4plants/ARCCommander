@@ -305,7 +305,7 @@ type StudyInfo =
 
 type Study = 
     {
-    StudyInfo : StudyInfo
+    Info : StudyInfo
     DesignDescriptors : Design list
     Publications : Publication list
     Factors : Factor list
@@ -316,7 +316,7 @@ type Study =
 
     static member create studyInfo designDescriptors publications factors assays protocols contacts =
         {
-        StudyInfo = studyInfo
+        Info = studyInfo
         DesignDescriptors = designDescriptors
         Publications = publications
         Factors = factors
@@ -342,7 +342,7 @@ type Study =
 type Investigation =
     {
     OntologySourceReference : TermSource list
-    InvestigationInfo : InvestigationInfo
+    Info : InvestigationInfo
     Publications : Publication list
     Contacts : Person list
     Studies : Study list
@@ -351,7 +351,7 @@ type Investigation =
 
     static member create ontologySourceReference investigationInfo publications contacts studies remarks =
         {
-        InvestigationInfo = investigationInfo
+        Info = investigationInfo
         OntologySourceReference = ontologySourceReference
         Publications = publications
         Contacts = contacts

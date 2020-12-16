@@ -1,6 +1,5 @@
 ﻿namespace ArcCommander.CLIArguments
 open Argu 
-open ISA
 
 /// CLI arguments for empty assay initialization
 type AssayInitArgs =

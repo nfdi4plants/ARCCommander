@@ -7,7 +7,7 @@ open Microsoft.FSharp.Reflection
 
 open System.Diagnostics
 
-open ISA.DataModel
+open IsaXLSX
 
 open Argu
 
@@ -104,18 +104,18 @@ module ArgumentProcessing =
                 failwithf "Cannot parse argument %s because its parsing rules were not yet implemented" unionCase.Name
         )
 
-    /// Creates an isa item used in the investigation file
-    let isaItemOfArguments (item:#InvestigationFile.ISAItem) (parameters : Map<string,Argument>) = 
-        parameters
-        |> Map.iter (fun k v -> 
-            match v with
-            | Field s -> 
-                InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
-                |> ignore
-            | Flag ->
-                ()
-        )
-        item
+    ///// Creates an isa item used in the investigation file
+    //let isaItemOfArguments (item:#InvestigationFile.ISAItem) (parameters : Map<string,Argument>) = 
+    //    parameters
+    //    |> Map.iter (fun k v -> 
+    //        match v with
+    //        | Field s -> 
+    //            InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
+    //            |> ignore
+    //        | Flag ->
+    //            ()
+    //    )
+    //    item
 
     /// Functions for asking the user to input values via an editor prompt
     module Prompt = 
@@ -234,24 +234,30 @@ module ArgumentProcessing =
                 |> Map.ofArray
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
-        let createItemQuery editorPath arcPath (item : #InvestigationFile.ISAItem) = 
-            let serializeF inp = 
-                InvestigationFile.getKeyValues inp
-                |> Array.map (fun (k,v) -> sprintf "%s:%s" k v)
-                |> Array.reduce (fun a b -> a + "\n" + b)
-            let deserializeF (s:string) =
+        let createIsaItemQuery editorPath arcPath 
+            (writeF : string -> 'A list -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
+            (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> string -> int -> _*_*_*'A list)
+            (isaItem : 'A) = 
+
+            let serializeF (inp : 'A) = 
+                writeF "" [inp]
+                |> Seq.map (fun r -> 
+                    sprintf "%s:%s"
+                        (FSharpSpreadsheetML.Row.tryGetValueAt 1u r |> Option.get)
+                        (FSharpSpreadsheetML.Row.tryGetValueAt 2u r |> Option.get)
+                )
+                |> Seq.reduce (fun a b -> a + "\n" + b)
+            let deserializeF (s:string) : 'A =
                 s.Split '\n'
-                |> Array.iter (fun x ->                 
+                |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
                     | k, Field v ->
-                        System.Collections.Generic.KeyValuePair(k,v)
-                        |> fun kv -> InvestigationFile.setKeyValue kv item
-                        |> ignore
+                        FSharpSpreadsheetML.Row.ofValues 1u [k;v]
                     | _ -> failwith "Error: file was corrupted in Edtior"
                 )
-
-                item
-            createQuery editorPath arcPath serializeF deserializeF item
+                |> fun rs -> readF (rs.GetEnumerator()) "" 1
+                |> fun (_,_,_,item) -> item.Head
+            createQuery editorPath arcPath serializeF deserializeF isaItem
 
         /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
         let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =

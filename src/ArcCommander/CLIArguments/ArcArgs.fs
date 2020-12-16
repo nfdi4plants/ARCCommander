@@ -1,7 +1,6 @@
 ﻿namespace ArcCommander.CLIArguments
 /// ------------ TOP LEVEL ------------ ///
 open Argu 
-open ISA
 
 
 type ArcInitArgs = 

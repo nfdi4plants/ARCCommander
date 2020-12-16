@@ -73,7 +73,7 @@ module API =
 
         /// If an study with the given identfier exists in the investigation, returns it
         let tryGetByIdentifier (identifier : string) (investigation:Investigation) =
-            tryGetBy (fun s -> s.StudyInfo.Identifier = identifier)  investigation
+            tryGetBy (fun s -> s.Info.Identifier = identifier)  investigation
 
         /// Returns true, if a study for which the predicate returns true exists in the investigation
         let exists (predicate : Study -> bool) (investigation:Investigation) =
@@ -86,7 +86,7 @@ module API =
 
         /// If an study with the given identfier exists in the investigation , returns it
         let existsByIdentifier (identifier : string) (investigation:Investigation) =
-            exists (fun s -> s.StudyInfo.Identifier = identifier) investigation
+            exists (fun s -> s.Info.Identifier = identifier) investigation
 
         /// Adds the given study to the investigation  
         let add (study : Study) (investigation:Investigation) =
@@ -101,7 +101,7 @@ module API =
 
         /// If an study with the same identifier as the given study exists in the investigation, updates it with the given study
         let updateByIdentifier (study : Study) (investigation:Investigation) =
-            updateBy (fun s -> s.StudyInfo.Identifier = study.StudyInfo.Identifier) study investigation
+            updateBy (fun s -> s.Info.Identifier = study.Info.Identifier) study investigation
 
         /// If a study for which the predicate returns true exists in the investigation, removes it
         let removeBy (predicate : Study -> bool) (investigation:Investigation) =
@@ -116,7 +116,7 @@ module API =
 
         /// If a study with the given identifier exists in the investigation, removes it
         let removeByIdentifier (identifier : string) (investigation : Investigation) = 
-            removeBy (fun s -> s.StudyInfo.Identifier = identifier)  investigation
+            removeBy (fun s -> s.Info.Identifier = identifier)  investigation
 
     module Assay =  
   

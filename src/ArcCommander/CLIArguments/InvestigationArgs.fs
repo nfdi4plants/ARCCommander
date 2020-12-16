@@ -1,7 +1,6 @@
 ﻿namespace ArcCommander.CLIArguments
 
 open Argu 
-open ISA
 
 /// CLI arguments for creating a new investigation file for the arc
 // in the case of investigations 'empty' does not mean empty file but rather an 
