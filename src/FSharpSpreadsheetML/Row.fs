@@ -189,6 +189,12 @@ module Row =
             row.RemoveChild(cell) |> ignore
             row)
 
+    /// If the row contains a value at the given index, return it
+    let tryGetValueAt index (row:Row) =
+        row
+        |> tryGetCellAt index
+        |> Option.map (Cell.getValue >> Cell.CellValue.getValue)
+
     /// Matches the rowSpan to the cell references inside the row
     let updateRowSpan (row:Row) : Row=
         let columnIndices =
@@ -229,6 +235,20 @@ module Row =
                 |> ignore
         )
         |> extendSpanRight offset
+
+    /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
+    let getIndexedValues (row:Row) =
+        row
+        |> toCellSeq
+        |> Seq.map (fun cell -> 
+            cell 
+            |> Cell.getReference 
+            |> CellReference.toIndices 
+            |> fst,
+
+            Cell.getValue cell
+            |> Cell.CellValue.getValue
+        )
 
     /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
     let getIndexedValuesWithSST (sharedStringTable:SharedStringTable) (row:Row) =

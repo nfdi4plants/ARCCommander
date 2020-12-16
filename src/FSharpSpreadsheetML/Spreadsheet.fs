@@ -76,7 +76,7 @@ module Spreadsheet =
                         )
                     yield row 
             }
-        | None -> seq {[]} :?> seq<Row>
+        | None -> Seq.empty
 
     /// Returns a 1D sequence of cells for the given sheetIndex of the given spreadsheetDocument. 
     /// Returns an empty list if the sheet of the given sheetIndex does not exist.
