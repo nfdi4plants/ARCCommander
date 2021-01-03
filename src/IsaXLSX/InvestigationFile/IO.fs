@@ -41,7 +41,9 @@ module List =
 
 module IO =     
 
-    let commentRegex = Regex(@"(?<=Comment[<\[]).*(?=[>\]])")
+    let commentRegex = Regex(@"(?<=Comment\[<).*(?=>\])")
+
+    let commentRegexNoAngleBrackets = Regex(@"(?<=Comment\[).*(?=\])")
 
     let remarkRegex = Regex(@"(?<=#).*")
 
@@ -50,7 +52,10 @@ module IO =
         |> Option.bind (fun k ->
             let r = commentRegex.Match(k)
             if r.Success then Some r.Value
-            else None
+            else 
+                let r = commentRegexNoAngleBrackets.Match(k)
+                if r.Success then Some r.Value
+                else None
         )
     
     let (|Remark|_|) (key : Option<string>) =
@@ -970,7 +975,7 @@ module IO =
 
     let writeStudy (study : Study) =
         seq {          
-            yield! writeStudyInfo study.StudyInfo
+            yield! writeStudyInfo study.Info
 
             yield Row.ofValues 0u [Study.DesignDescriptorsLabel]
             yield! writeDesigns Study.DesignDescriptorsPrefix study.DesignDescriptors
@@ -995,14 +1000,11 @@ module IO =
         let insertRemarks (remarks:(int*string)list) (rows:seq<Row>) = 
             let rm = Map.ofList remarks
             let rec loop i l nl =
-                printfn "%i" i
                 match Map.tryFind i rm with
                 | Some remark ->
-                    printfn "remark: %s" remark
                     Row.ofValues 1u [wrapRemark remark] :: nl
                     |> loop (i+1) l
                 | None -> 
-                    printfn "no remark: %O" l
                     match l with
                     | [] -> nl
                     | h :: t -> 
@@ -1014,7 +1016,7 @@ module IO =
             yield! writeTermSources investigation.OntologySourceReference
 
             yield Row.ofValues 0u [Investigation.InvestigationLabel]
-            yield! writeInvestigationInfo investigation.InvestigationInfo
+            yield! writeInvestigationInfo investigation.Info
 
             yield Row.ofValues 0u [Investigation.PublicationsLabel]
             yield! writePublications Investigation.PublicationsPrefix investigation.Publications

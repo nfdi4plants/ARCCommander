@@ -206,7 +206,7 @@ module AssayAPI =
         |> Seq.iter (fun study ->
             let assays = study.Assays
             if Seq.isEmpty assays |> not then
-                printfn "Study: %s" study.StudyInfo.Identifier
+                printfn "Study: %s" study.Info.Identifier
                 assays 
                 |> Seq.iter (fun assay -> printfn "--Assay: %s" assay.FileName)
         )

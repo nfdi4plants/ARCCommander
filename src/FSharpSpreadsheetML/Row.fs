@@ -282,6 +282,12 @@ module Row =
             Cell.getValueWithSST sharedStringTable cell
         )
 
+    /// Maps the cells of the given row to the value strings
+    let getRowValues (row:Row)  =
+        row
+        |> toCellSeq
+        |> Seq.map (Cell.getValue >> Cell.CellValue.getValue)
+
     /// Maps the cells of the given row to the value strings using a shared string table
     let getRowValuesWithSST (sharedStringTable:SharedStringTable) (row:Row)  =
         row

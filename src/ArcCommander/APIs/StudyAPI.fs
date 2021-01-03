@@ -66,5 +66,5 @@ module StudyAPI =
             investigation.Studies
             |> List.iter (fun s ->
             
-                printfn "Study: %s" s.StudyInfo.Identifier
+                printfn "Study: %s" s.Info.Identifier
             )
