@@ -213,7 +213,7 @@ module IO =
 
 
 
-    let readPublications (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readPublications (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             pubMedIDs dois authorLists titles statuss statusTermAccessionNumbers statusTermSourceREFs
             comments remarks lineNumber = 
@@ -297,7 +297,7 @@ module IO =
 
 
 
-    let readPersons (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readPersons (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             lastNames firstNames midInitialss emails phones faxs addresss affiliations roless rolesTermAccessionNumbers rolesTermSourceREFs
             comments remarks lineNumber = 
@@ -400,7 +400,7 @@ module IO =
 
 
 
-    let readDesigns (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readDesigns (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             designTypes typeTermAccessionNumbers typeTermSourceREFs
             comments remarks lineNumber = 
@@ -455,7 +455,7 @@ module IO =
 
 
 
-    let readFactors (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readFactors (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             names factorTypes typeTermAccessionNumbers typeTermSourceREFs
             comments remarks lineNumber = 
@@ -516,7 +516,7 @@ module IO =
 
 
 
-    let readAssays (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readAssays (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs technologyTypes technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms fileNames
             comments remarks lineNumber = 
@@ -601,7 +601,7 @@ module IO =
 
 
 
-    let readProtocols (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readProtocols (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             names protocolTypes typeTermAccessionNumbers typeTermSourceREFs descriptions uris versions parametersNames parametersTermAccessionNumbers parametersTermSourceREFs componentsNames componentsTypes componentsTypeTermAccessionNumbers componentsTypeTermSourceREFs
             comments remarks lineNumber = 
@@ -727,27 +727,27 @@ module IO =
             match lastLine with
 
             | Some k when k = Study.DesignDescriptorsLabel -> 
-                let currentLine,lineNumber,newRemarks,designDescriptors = readDesigns en Study.DesignDescriptorsPrefix (lineNumber + 1)         
+                let currentLine,lineNumber,newRemarks,designDescriptors = readDesigns Study.DesignDescriptorsPrefix (lineNumber + 1) en         
                 loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.PublicationsLabel -> 
-                let currentLine,lineNumber,newRemarks,publications = readPublications en Study.PublicationsPrefix (lineNumber + 1)       
+                let currentLine,lineNumber,newRemarks,publications = readPublications Study.PublicationsPrefix (lineNumber + 1) en       
                 loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.FactorsLabel -> 
-                let currentLine,lineNumber,newRemarks,factors = readFactors en Study.FactorsPrefix (lineNumber + 1)       
+                let currentLine,lineNumber,newRemarks,factors = readFactors Study.FactorsPrefix (lineNumber + 1) en       
                 loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.AssaysLabel -> 
-                let currentLine,lineNumber,newRemarks,assays = readAssays en Study.AssaysPrefix (lineNumber + 1)       
+                let currentLine,lineNumber,newRemarks,assays = readAssays Study.AssaysPrefix (lineNumber + 1) en       
                 loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.ProtocolsLabel -> 
-                let currentLine,lineNumber,newRemarks,protocols = readProtocols en Study.ProtocolsPrefix (lineNumber + 1)  
+                let currentLine,lineNumber,newRemarks,protocols = readProtocols Study.ProtocolsPrefix (lineNumber + 1) en  
                 loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.ContactsLabel -> 
-                let currentLine,lineNumber,newRemarks,contacts = readPersons en Study.ContactsPrefix (lineNumber + 1)  
+                let currentLine,lineNumber,newRemarks,contacts = readPersons Study.ContactsPrefix (lineNumber + 1) en  
                 loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | k -> 
@@ -764,7 +764,6 @@ module IO =
         let emptyInvestigationInfo = InvestigationInfo.create "" "" "" "" "" []
 
         let rec loop lastLine ontologySourceReferences investigationInfo publications contacts studies remarks lineNumber =
-            printfn "Start l: %O" lastLine
             match lastLine with
 
             | Some k when k = Investigation.OntologySourceReferenceLabel -> 
@@ -776,11 +775,11 @@ module IO =
                 loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.PublicationsLabel -> 
-                let currentLine,lineNumber,newRemarks,publications = readPublications en Investigation.PublicationsPrefix (lineNumber + 1)       
+                let currentLine,lineNumber,newRemarks,publications = readPublications Investigation.PublicationsPrefix (lineNumber + 1) en       
                 loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.ContactsLabel -> 
-                let currentLine,lineNumber,newRemarks,contacts = readPersons en Investigation.ContactsPrefix (lineNumber + 1)       
+                let currentLine,lineNumber,newRemarks,contacts = readPersons Investigation.ContactsPrefix (lineNumber + 1) en       
                 loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.StudyLabel -> 

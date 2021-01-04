@@ -72,7 +72,7 @@ module AssayAPI =
         let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
         let assayFileName = 
-            IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration
+            IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration
             |> Option.get
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -83,7 +83,7 @@ module AssayAPI =
         | Some study -> 
             match API.Assay.tryGetByFileName assayFileName study with
             | Some assay -> 
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir IO.writeAssays IO.readAssays assay
+                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir (IO.writeAssays "Assay") (IO.readAssays "Assay") assay
                 |> fun a -> API.Assay.updateByFileName a study
                 |> fun s -> API.Study.updateByIdentifier s investigation
             | None ->
@@ -99,7 +99,7 @@ module AssayAPI =
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         
         let assayFileName = 
-            IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration
+            IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration
             |> Option.get
         
         let assay = 
@@ -124,10 +124,14 @@ module AssayAPI =
         | Some study -> 
             API.Assay.add assay study
             |> fun s -> API.Study.updateByIdentifier s investigation
+        | None when studyIdentifier = "" ->
+            let info = StudyInfo.create assayIdentifier "" "" "" "" "" []
+            let study = Study.create info [] [] [] [assay] [] []                 
+            API.Study.add study investigation   
         | None -> 
             let info = StudyInfo.create studyIdentifier "" "" "" "" "" []
             let study = Study.create info [] [] [] [assay] [] []                 
-            API.Study.add study investigation            
+            API.Study.add study investigation   
         |> IO.toFile investigationFilePath
     
     /// Creates a new assay file and associated folder structure in the arc and registers it in the arc's investigation file with the given assay metadata contained in assayArgs.
@@ -143,7 +147,7 @@ module AssayAPI =
         let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
 
         let assayFileName = 
-            IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration
+            IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration
             |> Option.get
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get

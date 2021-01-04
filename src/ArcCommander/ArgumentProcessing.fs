@@ -230,20 +230,24 @@ module ArgumentProcessing =
                 createArgumentQuery editorPath arcPath arguments
             else 
                 arguments
-                |> Array.choose (fun (k,v) -> v.Arg |> Option.map (fun arg -> k,arg))
+                |> Array.choose (fun (k,v) -> 
+                    match v.Arg with 
+                    | Some arg -> Some (k,arg)
+                    | None when v.IsFlag -> None
+                    | None -> Some (k,Field ""))
                 |> Map.ofArray
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
         let createIsaItemQuery editorPath arcPath 
-            (writeF : string -> 'A list -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
-            (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> string -> int -> _*_*_*'A list)
+            (writeF : 'A list -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
+            (readF : int -> System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> _*_*_*'A list)
             (isaItem : 'A) = 
 
             let serializeF (inp : 'A) = 
-                writeF "" [inp]
+                writeF [inp]
                 |> Seq.map (fun r -> 
                     sprintf "%s:%s"
-                        (FSharpSpreadsheetML.Row.tryGetValueAt 1u r |> Option.get)
+                        (FSharpSpreadsheetML.Row.tryGetValueAt 1u r |> Option.get |> fun s -> s.TrimStart())
                         (FSharpSpreadsheetML.Row.tryGetValueAt 2u r |> Option.get)
                 )
                 |> Seq.reduce (fun a b -> a + "\n" + b)
@@ -255,7 +259,7 @@ module ArgumentProcessing =
                         FSharpSpreadsheetML.Row.ofValues 1u [k;v]
                     | _ -> failwith "Error: file was corrupted in Edtior"
                 )
-                |> fun rs -> readF (rs.GetEnumerator()) "" 1
+                |> fun rs -> readF 1 (rs.GetEnumerator()) 
                 |> fun (_,_,_,item) -> item.Head
             createQuery editorPath arcPath serializeF deserializeF isaItem
 
