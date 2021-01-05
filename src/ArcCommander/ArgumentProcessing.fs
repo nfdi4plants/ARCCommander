@@ -239,12 +239,12 @@ module ArgumentProcessing =
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
         let createIsaItemQuery editorPath arcPath 
-            (writeF : 'A list -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
-            (readF : int -> System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> _*_*_*'A list)
+            (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
+            (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> 'A)
             (isaItem : 'A) = 
 
             let serializeF (inp : 'A) = 
-                writeF [inp]
+                writeF inp
                 |> Seq.map (fun r -> 
                     sprintf "%s:%s"
                         (FSharpSpreadsheetML.Row.tryGetValueAt 1u r |> Option.get |> fun s -> s.TrimStart())
@@ -259,9 +259,10 @@ module ArgumentProcessing =
                         FSharpSpreadsheetML.Row.ofValues 1u [k;v]
                     | _ -> failwith "Error: file was corrupted in Edtior"
                 )
-                |> fun rs -> readF 1 (rs.GetEnumerator()) 
-                |> fun (_,_,_,item) -> item.Head
+                |> fun rs -> readF (rs.GetEnumerator()) 
             createQuery editorPath arcPath serializeF deserializeF isaItem
+
+        
 
         /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
         let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =

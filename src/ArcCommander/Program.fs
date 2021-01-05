@@ -55,12 +55,29 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
     finally
         if verbosity >= 1 then printfn "done processing command"
 
+let handleInvestigationContactsSubCommands arcConfiguration contactsVerb =
+    match contactsVerb with
+    | InvestigationPersonCommand.Update r   -> processCommand arcConfiguration InvestigationAPI.Contacts.update r
+    | InvestigationPersonCommand.Edit r     -> processCommand arcConfiguration InvestigationAPI.Contacts.edit r
+    | InvestigationPersonCommand.Register r -> processCommand arcConfiguration InvestigationAPI.Contacts.register r
+    | InvestigationPersonCommand.Remove r   -> processCommand arcConfiguration InvestigationAPI.Contacts.remove r
+    | InvestigationPersonCommand.List       -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Contacts.list
+
+let handleInvestigationPublicationsSubCommands arcConfiguration contactsVerb =
+    match contactsVerb with
+    | InvestigationPublicationCommand.Update r   -> processCommand arcConfiguration InvestigationAPI.Publications.update r
+    | InvestigationPublicationCommand.Edit r     -> processCommand arcConfiguration InvestigationAPI.Publications.edit r
+    | InvestigationPublicationCommand.Register r -> processCommand arcConfiguration InvestigationAPI.Publications.register r
+    | InvestigationPublicationCommand.Remove r   -> processCommand arcConfiguration InvestigationAPI.Publications.remove r
+    | InvestigationPublicationCommand.List       -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Publications.list
+
 let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with
-    | InvestigationCommand.Create r    -> processCommand arcConfiguration InvestigationAPI.create   r
-    | InvestigationCommand.Update r    -> processCommand arcConfiguration InvestigationAPI.update   r
-    | InvestigationCommand.Edit r      -> processCommand arcConfiguration InvestigationAPI.edit     r
-    | InvestigationCommand.Delete r    -> processCommand arcConfiguration InvestigationAPI.delete   r
+    | InvestigationCommand.Create r             -> processCommand arcConfiguration InvestigationAPI.create   r
+    | InvestigationCommand.Update r             -> processCommand arcConfiguration InvestigationAPI.update   r
+    | InvestigationCommand.Edit                 -> processCommandWithoutArgs arcConfiguration InvestigationAPI.edit
+    | InvestigationCommand.Delete r             -> processCommand arcConfiguration InvestigationAPI.delete   r
+    | InvestigationCommand.Contacts subCommand  -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleStudySubCommands arcConfiguration studyVerb =
     match studyVerb with

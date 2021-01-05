@@ -72,7 +72,7 @@ module IO =
     let wrapRemark r = 
         sprintf "#%s" r
 
-    let readInvestigationInfo (en:IEnumerator<Row>) lineNumber =
+    let readInvestigationInfo lineNumber (en:IEnumerator<Row>) =
         let rec loop identifier title description submissionDate publicReleaseDate comments remarks lineNumber = 
 
             if en.MoveNext() then    
@@ -111,7 +111,7 @@ module IO =
                 None,lineNumber, remarks, InvestigationInfo.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
         loop "" "" "" "" "" [] [] lineNumber
 
-    let readStudyInfo (en:IEnumerator<Row>) lineNumber =
+    let readStudyInfo lineNumber (en:IEnumerator<Row>) =
         let rec loop identifier title description submissionDate publicReleaseDate fileName comments remarks lineNumber = 
 
             if en.MoveNext() then        
@@ -151,7 +151,7 @@ module IO =
                 None,lineNumber, remarks, StudyInfo.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
         loop "" "" "" "" "" "" [] [] lineNumber
 
-    let readTermSources (en:IEnumerator<Row>) lineNumber =
+    let readTermSources lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             names files versions descriptions
             comments remarks lineNumber = 
@@ -720,7 +720,7 @@ module IO =
                 None,lineNumber,remarks,create ()
         loop [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [] [] lineNumber
 
-    let readStudy (en:IEnumerator<Row>) lineNumber = 
+    let readStudy lineNumber (en:IEnumerator<Row>) = 
 
         let rec loop lastLine studyInfo designDescriptors publications factors assays protocols contacts remarks lineNumber =
            
@@ -754,7 +754,7 @@ module IO =
                 k,lineNumber,remarks, Study.create studyInfo designDescriptors publications factors assays protocols contacts
 
     
-        let currentLine,lineNumber,remarks,item = readStudyInfo en lineNumber 
+        let currentLine,lineNumber,remarks,item = readStudyInfo lineNumber en  
         loop currentLine item [] [] [] [] [] [] remarks lineNumber
 
 
@@ -767,11 +767,11 @@ module IO =
             match lastLine with
 
             | Some k when k = Investigation.OntologySourceReferenceLabel -> 
-                let currentLine,lineNumber,newRemarks,ontologySourceReferences = readTermSources en (lineNumber + 1)         
+                let currentLine,lineNumber,newRemarks,ontologySourceReferences = readTermSources (lineNumber + 1) en         
                 loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.InvestigationLabel -> 
-                let currentLine,lineNumber,newRemarks,investigationInfo = readInvestigationInfo en (lineNumber + 1)       
+                let currentLine,lineNumber,newRemarks,investigationInfo = readInvestigationInfo (lineNumber + 1) en       
                 loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.PublicationsLabel -> 
@@ -783,7 +783,7 @@ module IO =
                 loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.StudyLabel -> 
-                let currentLine,lineNumber,newRemarks,study = readStudy en (lineNumber + 1)  
+                let currentLine,lineNumber,newRemarks,study = readStudy (lineNumber + 1) en  
                 loop currentLine ontologySourceReferences investigationInfo publications contacts (study::studies) (List.append remarks newRemarks) lineNumber
 
             | k -> 

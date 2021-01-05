@@ -56,7 +56,7 @@ module AssayAPI =
 
         match API.Study.tryGetByIdentifier studyIdentifier investigation with
         | Some study -> 
-            API.Assay.updateByFileName assay study
+            API.Study.Assay.updateByFileName assay study
             |> fun s -> API.Study.updateByIdentifier s investigation
         | None -> investigation
         |> IO.toFile investigationFilePath
@@ -81,10 +81,13 @@ module AssayAPI =
 
         match API.Study.tryGetByIdentifier studyIdentifier investigation with
         | Some study -> 
-            match API.Assay.tryGetByFileName assayFileName study with
+            match API.Study.Assay.tryGetByFileName assayFileName study with
             | Some assay -> 
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir (IO.writeAssays "Assay") (IO.readAssays "Assay") assay
-                |> fun a -> API.Assay.updateByFileName a study
+                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                    (List.singleton >> IO.writeAssays "Assay") 
+                    (IO.readAssays "Assay" 1 >> fun (_,_,_,items) -> items.Head) 
+                    assay
+                |> fun a -> API.Study.Assay.updateBy ((=) assay) a study
                 |> fun s -> API.Study.updateByIdentifier s investigation
             | None ->
                 investigation
@@ -122,7 +125,7 @@ module AssayAPI =
 
         match API.Study.tryGetByIdentifier studyIdentifier investigation with
         | Some study -> 
-            API.Assay.add assay study
+            API.Study.Assay.add assay study
             |> fun s -> API.Study.updateByIdentifier s investigation
         | None when studyIdentifier = "" ->
             let info = StudyInfo.create assayIdentifier "" "" "" "" "" []
@@ -156,7 +159,7 @@ module AssayAPI =
 
         match API.Study.tryGetByIdentifier studyIdentifier investigation with
         | Some study -> 
-            API.Assay.removeByFileName assayFileName study
+            API.Study.Assay.removeByFileName assayFileName study
             |> fun s -> API.Study.updateByIdentifier s investigation
         | None -> 
             investigation
@@ -178,12 +181,12 @@ module AssayAPI =
         
         match API.Study.tryGetByIdentifier studyIdentifier investigation with
         | Some study -> 
-            match API.Assay.tryGetByFileName assayFileName study with
+            match API.Study.Assay.tryGetByFileName assayFileName study with
             | Some assay ->
-                let s = API.Assay.removeByFileName assayFileName study
+                let s = API.Study.Assay.removeByFileName assayFileName study
                 match API.Study.tryGetByIdentifier targetStudyIdentifer investigation with
                 | Some targetStudy ->
-                    API.Assay.add assay targetStudy
+                    API.Study.Assay.add assay targetStudy
                     |> fun ts -> 
                         API.Study.updateByIdentifier s investigation
                         |> API.Study.updateByIdentifier ts
