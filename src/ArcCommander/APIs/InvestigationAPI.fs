@@ -172,6 +172,32 @@ module InvestigationAPI =
             API.Person.removeByFullName personFirstName personMidInitials personLastName investigation
             |> IO.toFile investigationFilePath
 
+        /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
+        let get (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+
+            let personLastName = (getFieldValueByName  "LastName"   personArgs)
+            let personFirstName = (getFieldValueByName  "FirstName"     personArgs)
+            let personMidInitials = (getFieldValueByName  "MidInitials"  personArgs)
+
+            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            
+            let investigation = IO.fromFile investigationFilePath
+            
+            match API.Person.tryGetByFullName personFirstName personMidInitials personLastName investigation with
+            | Some person ->
+                printfn "%s:%s" Person.LastNameLabel person.LastName
+                printfn "%s:%s" Person.FirstNameLabel person.FirstName
+                printfn "%s:%s" Person.MidInitialsLabel person.MidInitials
+                printfn "%s:%s" Person.EmailLabel person.Email
+                printfn "%s:%s" Person.PhoneLabel person.Phone
+                printfn "%s:%s" Person.FaxLabel person.Fax
+                printfn "%s:%s" Person.AddressLabel person.Address
+                printfn "%s:%s" Person.AffiliationLabel person.Affiliation
+                printfn "%s:%s" Person.RolesLabel person.Roles
+                printfn "%s:%s" Person.RolesTermAccessionNumberLabel person.RolesTermAccessionNumber
+                printfn "%s:%s" Person.RolesTermSourceREFLabel person.RolesTermSourceREF
+            | None -> ()
+
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 
 
@@ -258,7 +284,7 @@ module InvestigationAPI =
             |> IO.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let remove (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let unregister (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let doi = getFieldValueByName  "DOI"   publicationArgs
 
@@ -268,6 +294,26 @@ module InvestigationAPI =
             
             API.Publication.removeByDoi doi investigation
             |> IO.toFile investigationFilePath
+
+        /// Gets an existing publication by its doi and prints its metadata
+        let get (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+
+            let doi = getFieldValueByName  "DOI"   publicationArgs
+
+            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            
+            let investigation = IO.fromFile investigationFilePath
+            
+            match API.Publication.tryGetByDOI doi investigation with
+            | Some publication ->
+                printfn "%s:%s" Publication.PubMedIDLabel publication.PubMedID
+                printfn "%s:%s" Publication.DOILabel publication.DOI
+                printfn "%s:%s" Publication.AuthorListLabel publication.AuthorList
+                printfn "%s:%s" Publication.TitleLabel publication.Title
+                printfn "%s:%s" Publication.StatusLabel publication.Status
+                printfn "%s:%s" Publication.StatusTermAccessionNumberLabel publication.StatusTermAccessionNumber
+                printfn "%s:%s" Publication.StatusTermSourceREFLabel publication.StatusTermSourceREF
+            | None -> ()
 
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 

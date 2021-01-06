@@ -64,15 +64,17 @@ let handleInvestigationContactsSubCommands arcConfiguration contactsVerb =
     | InvestigationPersonCommand.Edit r         -> processCommand arcConfiguration InvestigationAPI.Contacts.edit       r
     | InvestigationPersonCommand.Register r     -> processCommand arcConfiguration InvestigationAPI.Contacts.register   r
     | InvestigationPersonCommand.Unregister r   -> processCommand arcConfiguration InvestigationAPI.Contacts.unregister r
+    | InvestigationPersonCommand.Get r          -> processCommand arcConfiguration InvestigationAPI.Contacts.get        r
     | InvestigationPersonCommand.List           -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Contacts.list
 
 let handleInvestigationPublicationsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
-    | InvestigationPublicationCommand.Update r   -> processCommand arcConfiguration InvestigationAPI.Publications.update r
-    | InvestigationPublicationCommand.Edit r     -> processCommand arcConfiguration InvestigationAPI.Publications.edit r
-    | InvestigationPublicationCommand.Register r -> processCommand arcConfiguration InvestigationAPI.Publications.register r
-    | InvestigationPublicationCommand.Remove r   -> processCommand arcConfiguration InvestigationAPI.Publications.remove r
-    | InvestigationPublicationCommand.List       -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Publications.list
+    | InvestigationPublicationCommand.Update r      -> processCommand arcConfiguration InvestigationAPI.Publications.update r
+    | InvestigationPublicationCommand.Edit r        -> processCommand arcConfiguration InvestigationAPI.Publications.edit r
+    | InvestigationPublicationCommand.Register r    -> processCommand arcConfiguration InvestigationAPI.Publications.register r
+    | InvestigationPublicationCommand.Unregister r  -> processCommand arcConfiguration InvestigationAPI.Publications.unregister r
+    | InvestigationPublicationCommand.Get r         -> processCommand arcConfiguration InvestigationAPI.Publications.get r
+    | InvestigationPublicationCommand.List          -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Publications.list
 
 let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with

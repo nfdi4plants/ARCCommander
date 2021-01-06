@@ -112,7 +112,11 @@ module StudyContacts =
 
     /// CLI arguments for person removal
     // Same arguments as `edit` because all metadata fields needed for identifying the person also have to be used when editing
-    type PersonRemoveArgs = PersonEditArgs
+    type PersonUnregisterArgs = PersonEditArgs
+
+    /// CLI arguments for getting person
+    // Same arguments as `edit` because all metadata fields needed for identifying the person also have to be used when editing
+    type PersonGetArgs = PersonEditArgs
 
 /// CLI arguments for study Contacts
 module StudyPublications = 
@@ -157,7 +161,11 @@ module StudyPublications =
 
     /// CLI arguments for publication removal
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type PublicationRemoveArgs = PublicationEditArgs
+    type PublicationUnregisterArgs = PublicationEditArgs
+
+    /// CLI arguments for getting publication
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type PublicationGetArgs = PublicationEditArgs
 
 /// CLI arguments for study Contacts
 module StudyDesignDescriptors = 
@@ -177,21 +185,26 @@ module StudyDesignDescriptors =
                 | TypeTermAccessionNumber   _ -> "The accession number from the Term Source associated with the selected term."
                 | TypeTermSourceREF         _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Study Design Term Source REF has to match one the Term Source Name declared in the Ontology Source Reference section."
 
-    ///// CLI arguments for interactively editing existing publication metadata 
-    //type PublicationEditArgs = 
-    //    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-    //    | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi:string
+    /// CLI arguments for interactively editing existing publication metadata 
+    type DesignEditArgs = 
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type:string
     
-    //    interface IArgParserTemplate with
-    //        member this.Usage =
-    //            match this with
-    //            | StudyIdentifier   _ -> "Identifier of the study the publication is associated with"
-    //            | DOI               _ -> "A Digital Object Identifier (DOI) for that publication (where available)."
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier   _ -> "Identifier of the study the design is associated with"
+                | DesignType        _ -> "A Digital Object Identifier (DOI) for that publication (where available)."
 
-    ///// CLI arguments for registering publication metadata 
-    //// Same arguments as `update` because all metadata fields that can be updated can also be set while registering
-    //type PublicationRegisterArgs = PublicationUpdateArgs
+    /// CLI arguments for registering publication metadata 
+    // Same arguments as `update` because all metadata fields that can be updated can also be set while registering
+    type DesignRegisterArgs = PublicationUpdateArgs
 
-    ///// CLI arguments for publication removal
-    //// Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    //type PublicationRemoveArgs = PublicationEditArgs
+    /// CLI arguments for publication removal
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type DesignUnregisterArgs = PublicationEditArgs
+
+    /// CLI arguments for getting design
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type DesignGetArgs = PublicationEditArgs
+
