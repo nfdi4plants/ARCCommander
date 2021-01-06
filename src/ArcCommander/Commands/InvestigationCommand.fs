@@ -12,8 +12,8 @@ type InvestigationCommand =
     | [<CliPrefix(CliPrefix.None)>] Update of update_args: ParseResults<InvestigationUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] Edit 
     | [<CliPrefix(CliPrefix.None)>] Delete of delete_args: ParseResults<InvestigationDeleteArgs>
-    | [<CliPrefix(CliPrefix.None)>] Contacts of contacts:   ParseResults<InvestigationPersonCommand>
-    | [<CliPrefix(CliPrefix.None)>] Publications of contacts:   ParseResults<InvestigationPublicationCommand>
+    | [<CliPrefix(CliPrefix.None)>] Person of person_verbs:   ParseResults<InvestigationPersonCommand>
+    | [<CliPrefix(CliPrefix.None)>] Publication of publication_verbs:   ParseResults<InvestigationPublicationCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -22,8 +22,8 @@ type InvestigationCommand =
             | Update            _ -> "Update the arc's investigation with the given metdadata"
             | Edit              _ -> "Open an editor window to directly edit the arc's investigation file"
             | Delete            _ -> "Delete the arc's investigation file (danger zone!)"
-            | Contacts          _ -> "Person functions"
-            | Publications      _ -> "Publication functions"
+            | Person            _ -> "Person functions"
+            | Publication       _ -> "Publication functions"
 
 and InvestigationPersonCommand =
 

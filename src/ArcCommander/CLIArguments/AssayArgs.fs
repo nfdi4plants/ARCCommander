@@ -15,7 +15,7 @@ type AssayDeleteArgs = AssayInitArgs
 
 /// CLI arguments for updating existing assay metadata
 type AssayUpdateArgs =  
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+    | [<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
     | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
     | [<Unique>] MeasurementType of measurement_type:string
     | [<Unique>] MeasurementTypeTermAccessionNumber of measurement_type_accession:string
@@ -40,7 +40,7 @@ type AssayUpdateArgs =
 
 /// CLI arguments for interactively editing existing assay metadata 
 type AssayEditArgs = 
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier:string
+    | [<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier:string
     | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of assay_identifier:string
 
     interface IArgParserTemplate with

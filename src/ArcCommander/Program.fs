@@ -58,6 +58,51 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
     finally
         if verbosity >= 1 then printfn "done processing command"
 
+let handleStudyContactsSubCommands arcConfiguration contactsVerb =
+    match contactsVerb with
+    | StudyPersonCommand.Update r       -> processCommand arcConfiguration StudyAPI.Contacts.update     r
+    | StudyPersonCommand.Edit r         -> processCommand arcConfiguration StudyAPI.Contacts.edit       r
+    | StudyPersonCommand.Register r     -> processCommand arcConfiguration StudyAPI.Contacts.register   r
+    | StudyPersonCommand.Unregister r   -> processCommand arcConfiguration StudyAPI.Contacts.unregister r
+    | StudyPersonCommand.Get r          -> processCommand arcConfiguration StudyAPI.Contacts.get        r
+    | StudyPersonCommand.List           -> processCommandWithoutArgs arcConfiguration StudyAPI.Contacts.list
+
+let handleStudyPublicationsSubCommands arcConfiguration contactsVerb =
+    match contactsVerb with
+    | StudyPublicationCommand.Update r      -> processCommand arcConfiguration StudyAPI.Publications.update r
+    | StudyPublicationCommand.Edit r        -> processCommand arcConfiguration StudyAPI.Publications.edit r
+    | StudyPublicationCommand.Register r    -> processCommand arcConfiguration StudyAPI.Publications.register r
+    | StudyPublicationCommand.Unregister r  -> processCommand arcConfiguration StudyAPI.Publications.unregister r
+    | StudyPublicationCommand.Get r         -> processCommand arcConfiguration StudyAPI.Publications.get r
+    | StudyPublicationCommand.List          -> processCommandWithoutArgs arcConfiguration StudyAPI.Publications.list
+
+let handleStudyDesignSubCommands arcConfiguration designVerb =
+    match designVerb with
+    | StudyDesignCommand.Update r       -> processCommand arcConfiguration StudyAPI.Designs.update     r
+    | StudyDesignCommand.Edit r         -> processCommand arcConfiguration StudyAPI.Designs.edit       r
+    | StudyDesignCommand.Register r     -> processCommand arcConfiguration StudyAPI.Designs.register   r
+    | StudyDesignCommand.Unregister r   -> processCommand arcConfiguration StudyAPI.Designs.unregister r
+    | StudyDesignCommand.Get r          -> processCommand arcConfiguration StudyAPI.Designs.get        r
+    | StudyDesignCommand.List           -> processCommandWithoutArgs arcConfiguration StudyAPI.Designs.list
+
+let handleStudyFactorSubCommands arcConfiguration factorVerb =
+    match factorVerb with
+    | StudyFactorCommand.Update r       -> processCommand arcConfiguration StudyAPI.Factors.update     r
+    | StudyFactorCommand.Edit r         -> processCommand arcConfiguration StudyAPI.Factors.edit       r
+    | StudyFactorCommand.Register r     -> processCommand arcConfiguration StudyAPI.Factors.register   r
+    | StudyFactorCommand.Unregister r   -> processCommand arcConfiguration StudyAPI.Factors.unregister r
+    | StudyFactorCommand.Get r          -> processCommand arcConfiguration StudyAPI.Factors.get        r
+    | StudyFactorCommand.List           -> processCommandWithoutArgs arcConfiguration StudyAPI.Factors.list
+
+let handleStudyProtocolSubCommands arcConfiguration protocolVerb =
+    match protocolVerb with
+    | StudyProtocolCommand.Update r       -> processCommand arcConfiguration StudyAPI.Protocols.update     r
+    | StudyProtocolCommand.Edit r         -> processCommand arcConfiguration StudyAPI.Protocols.edit       r
+    | StudyProtocolCommand.Register r     -> processCommand arcConfiguration StudyAPI.Protocols.register   r
+    | StudyProtocolCommand.Unregister r   -> processCommand arcConfiguration StudyAPI.Protocols.unregister r
+    | StudyProtocolCommand.Get r          -> processCommand arcConfiguration StudyAPI.Protocols.get        r
+    | StudyProtocolCommand.List           -> processCommandWithoutArgs arcConfiguration StudyAPI.Protocols.list
+
 let handleInvestigationContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
     | InvestigationPersonCommand.Update r       -> processCommand arcConfiguration InvestigationAPI.Contacts.update     r
@@ -67,8 +112,8 @@ let handleInvestigationContactsSubCommands arcConfiguration contactsVerb =
     | InvestigationPersonCommand.Get r          -> processCommand arcConfiguration InvestigationAPI.Contacts.get        r
     | InvestigationPersonCommand.List           -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Contacts.list
 
-let handleInvestigationPublicationsSubCommands arcConfiguration contactsVerb =
-    match contactsVerb with
+let handleInvestigationPublicationsSubCommands arcConfiguration publicationVerb =
+    match publicationVerb with
     | InvestigationPublicationCommand.Update r      -> processCommand arcConfiguration InvestigationAPI.Publications.update r
     | InvestigationPublicationCommand.Edit r        -> processCommand arcConfiguration InvestigationAPI.Publications.edit r
     | InvestigationPublicationCommand.Register r    -> processCommand arcConfiguration InvestigationAPI.Publications.register r
@@ -82,21 +127,26 @@ let handleInvestigationSubCommands arcConfiguration investigationVerb =
     | InvestigationCommand.Update r                 -> processCommand arcConfiguration InvestigationAPI.update   r
     | InvestigationCommand.Edit                     -> processCommandWithoutArgs arcConfiguration InvestigationAPI.edit
     | InvestigationCommand.Delete r                 -> processCommand arcConfiguration InvestigationAPI.delete   r
-    | InvestigationCommand.Contacts subCommand      -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
-    | InvestigationCommand.Publications subCommand  -> handleInvestigationPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | InvestigationCommand.Person subCommand        -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | InvestigationCommand.Publication subCommand   -> handleInvestigationPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleStudySubCommands arcConfiguration studyVerb =
     match studyVerb with
-    | StudyCommand.Init r       -> processCommand arcConfiguration StudyAPI.init        r
-    | StudyCommand.Register r   -> processCommand arcConfiguration StudyAPI.register    r
-    | StudyCommand.Add r        -> processCommand arcConfiguration StudyAPI.add         r
-    | StudyCommand.Remove r     -> processCommand arcConfiguration StudyAPI.remove      r
-    | StudyCommand.Unregister r -> processCommand arcConfiguration StudyAPI.unregister  r
-    | StudyCommand.Delete r     -> processCommand arcConfiguration StudyAPI.delete      r
-    | StudyCommand.Update r     -> processCommand arcConfiguration StudyAPI.update      r
-    | StudyCommand.Edit r       -> processCommand arcConfiguration StudyAPI.edit        r
-    | StudyCommand.Get r        -> processCommand arcConfiguration StudyAPI.get         r
-    | StudyCommand.List         -> processCommandWithoutArgs arcConfiguration StudyAPI.list
+    | StudyCommand.Init r                   -> processCommand arcConfiguration StudyAPI.init        r
+    | StudyCommand.Register r               -> processCommand arcConfiguration StudyAPI.register    r
+    | StudyCommand.Add r                    -> processCommand arcConfiguration StudyAPI.add         r
+    | StudyCommand.Remove r                 -> processCommand arcConfiguration StudyAPI.remove      r
+    | StudyCommand.Unregister r             -> processCommand arcConfiguration StudyAPI.unregister  r
+    | StudyCommand.Delete r                 -> processCommand arcConfiguration StudyAPI.delete      r
+    | StudyCommand.Update r                 -> processCommand arcConfiguration StudyAPI.update      r
+    | StudyCommand.Edit r                   -> processCommand arcConfiguration StudyAPI.edit        r
+    | StudyCommand.Get r                    -> processCommand arcConfiguration StudyAPI.get         r
+    | StudyCommand.List                     -> processCommandWithoutArgs arcConfiguration StudyAPI.list
+    | StudyCommand.Person subCommand        -> handleStudyContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | StudyCommand.Publication subCommand   -> handleStudyPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | StudyCommand.Design subCommand        -> handleStudyDesignSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | StudyCommand.Factor subCommand        -> handleStudyFactorSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | StudyCommand.Protocol subCommand      -> handleStudyProtocolSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleAssaySubCommands arcConfiguration assayVerb =
     match assayVerb with

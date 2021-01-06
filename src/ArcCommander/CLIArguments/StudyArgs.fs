@@ -167,7 +167,7 @@ module StudyPublications =
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
     type PublicationGetArgs = PublicationEditArgs
 
-/// CLI arguments for study Contacts
+/// CLI arguments for study design descriptors
 module StudyDesignDescriptors = 
 
     /// CLI arguments for updating existing design metadata
@@ -185,7 +185,7 @@ module StudyDesignDescriptors =
                 | TypeTermAccessionNumber   _ -> "The accession number from the Term Source associated with the selected term."
                 | TypeTermSourceREF         _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Study Design Term Source REF has to match one the Term Source Name declared in the Ontology Source Reference section."
 
-    /// CLI arguments for interactively editing existing publication metadata 
+    /// CLI arguments for interactively editing existing design metadata 
     type DesignEditArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
         | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type:string
@@ -194,17 +194,122 @@ module StudyDesignDescriptors =
             member this.Usage =
                 match this with
                 | StudyIdentifier   _ -> "Identifier of the study the design is associated with"
-                | DesignType        _ -> "A Digital Object Identifier (DOI) for that publication (where available)."
+                | DesignType        _ -> "A term allowing the classification of the study based on the overall experimental design, e.g cross-over design or parallel group design. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
 
-    /// CLI arguments for registering publication metadata 
+    /// CLI arguments for registering design metadata 
     // Same arguments as `update` because all metadata fields that can be updated can also be set while registering
-    type DesignRegisterArgs = PublicationUpdateArgs
+    type DesignRegisterArgs = DesignUpdateArgs
 
-    /// CLI arguments for publication removal
+    /// CLI arguments for design removal
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type DesignUnregisterArgs = PublicationEditArgs
+    type DesignUnregisterArgs = DesignEditArgs
 
     /// CLI arguments for getting design
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type DesignGetArgs = PublicationEditArgs
+    type DesignGetArgs = DesignEditArgs
 
+/// CLI arguments for study factors
+module StudyFactors = 
+
+    /// CLI arguments for updating existing design metadata
+    type FactorUpdateArgs =  
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
+        | [<Unique>] FactorType of factor_type:string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier           _ -> "Identifier of the study the design is associated with"
+                | Name                      _ -> "The name of one factor used in the Study and/or Assay files. A factor corresponds to an independent variable manipulated by the experimentalist with the intention to affect biological systems in a way that can be measured by an assay. The value of a factor is given in the Study or Assay file, accordingly. If both Study and Assay have a Factor Value, these must be different."
+                | FactorType                _ -> "A term allowing the classification of this factor into categories. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
+                | TypeTermAccessionNumber   _ -> "The accession number from the Term Source associated with the selected term."
+                | TypeTermSourceREF         _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Name declared in the Ontology Source Reference section."
+
+    /// CLI arguments for interactively editing existing factor metadata 
+    type FactorEditArgs = 
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
+    
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier   _ -> "Identifier of the study the design is associated with"
+                | Name              _ -> "The name of one factor used in the Study and/or Assay files. A factor corresponds to an independent variable manipulated by the experimentalist with the intention to affect biological systems in a way that can be measured by an assay. The value of a factor is given in the Study or Assay file, accordingly. If both Study and Assay have a Factor Value, these must be different."
+
+    /// CLI arguments for registering factor metadata 
+    // Same arguments as `update` because all metadata fields that can be updated can also be set while registering
+    type FactorRegisterArgs = FactorUpdateArgs
+
+    /// CLI arguments for factor removal
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type FactorUnregisterArgs = FactorEditArgs
+
+    /// CLI arguments for getting factor
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type FactorGetArgs = FactorEditArgs
+
+/// CLI arguments for study factors
+module StudyProtocols = 
+
+    /// CLI arguments for updating existing protocol metadata
+    type ProtocolUpdateArgs =  
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
+        | [<Unique>] ProtocolType of protocol_type:string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
+        | [<Unique>] Description of description:string
+        | [<Unique>] URI of uri:string
+        | [<Unique>] Version of version:string
+        | [<Unique>] ParametersName of parameters_name:string
+        | [<Unique>] ParametersTermAccessionNumber of parameters_term_accession_number:string
+        | [<Unique>] ParametersTermSourceREF of parameters_term_source_ref:string
+        | [<Unique>] ComponentsName of compoments_name:string
+        | [<Unique>] ComponentsType of compoments_type:string
+        | [<Unique>] ComponentsTypeTermAccessionNumber of compoments_type_accession_number:string
+        | [<Unique>] ComponentsTypeTermSourceREF of compoments_type_term_source_ref:string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier                   _ -> "Identifier of the study the design is associated with"
+                | Name                              _ -> "The name of the protocols used within the ISA-Tab document. The names are used as identifiers within the ISA-Tab document and will be referenced in the Study and Assay files in the Protocol REF columns. Names can be either local identifiers, unique within the ISA Archive which contains them, or fully qualified external accession numbers."
+                | ProtocolType                      _ -> "Term to classify the protocol. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
+                | TypeTermAccessionNumber           _ -> "The accession number from the Term Source associated with the selected term."
+                | TypeTermSourceREF                 _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Name declared in the Ontology Source Reference section."
+                | Description                       _ -> "A free-text description of the protocol."
+                | URI                               _ -> "Pointer to protocol resources external to the ISA-Tab that can be accessed by their Uniform Resource Identifier (URI)."
+                | Version                           _ -> "An identifier for the version to ensure protocol tracking."
+                | ParametersName                    _ -> "A semicolon-delimited (“;”) list of parameter names, used as an identifier within the ISA-Tab document. These names are used in the Study and Assay files (in the “Parameter Value []” column heading) to list the values used for each protocol parameter. Refer to section Multiple values fields in the Investigation File on how to encode multiple values in one field and match term sources"
+                | ParametersTermAccessionNumber     _ -> "The accession number from the Term Source associated with the selected term."
+                | ParametersTermSourceREF           _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Name declared in the Ontology Source Reference section."
+                | ComponentsName                    _ -> "A semicolon-delimited (“;”) list of a protocol’s components; e.g. instrument names, software names, and reagents names. Refer to section Multiple values fields in the Investigation File on how to encode multiple components in one field and match term sources."
+                | ComponentsType                    _ -> "Term to classify the protocol components listed for example, instrument, software, detector or reagent. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
+                | ComponentsTypeTermAccessionNumber _ -> "The accession number from the Source associated to the selected terms."
+                | ComponentsTypeTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match a Term Source Name previously declared in the ontology section."
+
+    /// CLI arguments for interactively editing existing protocol metadata 
+    type ProtocolEditArgs = 
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
+    
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier   _ -> "Identifier of the study the design is associated with"
+                | Name              _ -> "The name of one factor used in the Study and/or Assay files. A factor corresponds to an independent variable manipulated by the experimentalist with the intention to affect biological systems in a way that can be measured by an assay. The value of a factor is given in the Study or Assay file, accordingly. If both Study and Assay have a Factor Value, these must be different."
+
+    /// CLI arguments for registering protocol metadata 
+    // Same arguments as `update` because all metadata fields that can be updated can also be set while registering
+    type ProtocolRegisterArgs = ProtocolUpdateArgs
+
+    /// CLI arguments for protocol removal
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type ProtocolUnregisterArgs = ProtocolEditArgs
+
+    /// CLI arguments for getting protocol
+    // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
+    type ProtocolGetArgs = ProtocolEditArgs
