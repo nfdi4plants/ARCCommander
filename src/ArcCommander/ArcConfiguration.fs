@@ -119,7 +119,24 @@ module IsaModelConfiguration =
             |> Some
         | _ -> None
 
-    /// Returns the full path of the investigation file
+    /// Returns the full path of the assay file
+    let tryGetAssayIdentifierOfFileName (assayFileName : string) =
+        System.IO.Path.GetFileName assayFileName
+
+    /// Returns the relative path of the assay file
+    let tryGetAssayFileName assayIdentifier (configuration:ArcConfiguration) =
+        let assayFileName = Map.tryFind "assayfilename" configuration.IsaModel
+        match assayFileName with
+        | Some f -> 
+            Path.Combine([|assayIdentifier;f|])
+            |> Some
+        | _ -> None
+
+    /// Returns the name of the studies file
+    let tryGetStudiesFileName (configuration:ArcConfiguration) =
+        Map.tryFind "studiesfilename" configuration.IsaModel
+
+    /// Returns the full path of the studies file
     let tryGetStudiesFilePath (configuration:ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         match Map.tryFind "studiesfilename" configuration.IsaModel with
@@ -155,16 +172,22 @@ module AssayConfiguration =
             )                
         | _ -> [||]
 
-    /// Returns the full path of the folders associated with the assay
-    let getFolderPaths assayIdentifier configuration =
+    /// Returns the full path of the assay folder
+    let tryGetFolderPath assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General
-        let folderNames = Map.tryFind "folders" configuration.Assay
-        let rootFolder = Map.tryFind "rootfolder" configuration.Assay
-        match folderNames,rootFolder with
+        Map.tryFind "rootfolder" configuration.Assay
+        |> Option.map (fun r -> Path.Combine([|workDir;r;assayIdentifier|]))
+
+    /// Returns the full path of the subFolders associated with the assay
+    let getSubFolderPaths assayIdentifier configuration =
+        let subFolderNames = Map.tryFind "folders" configuration.Assay
+        let assayFolder = tryGetFolderPath assayIdentifier configuration
+        match subFolderNames,assayFolder with
         | Some vs, Some r -> 
             vs
             |> splitValues
             |> Array.map (fun v ->
-                Path.Combine([|workDir;r;assayIdentifier;v|])
+                Path.Combine([|r;v|])
             )                
         | _ -> Array.empty
+

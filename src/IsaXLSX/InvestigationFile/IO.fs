@@ -14,10 +14,10 @@ module Array =
             (fun i -> 
                 match Seq.tryFind (fst >> (=) i) s with
                 | Some (i,x) -> x
-                | None -> ""
-                
+                | None -> ""               
             )
 
+    /// If at least i values exist in array a, builds a new array that contains the elements of the given array, exluding the first i elements
     let trySkip i a =
         try
             Array.skip i a
@@ -25,40 +25,60 @@ module Array =
         with
         | _ -> None
 
-    let itemWithDefault i d a = 
+    /// Returns Item of array at index i if existing, else returns default value
+    let tryItemDefault i d a = 
         match Array.tryItem i a with
         | Some v -> v
         | None -> d
 
+module List =
 
-module IO = 
+    let tryPickDefault (chooser : 'T -> 'U Option) (d : 'U) (list : 'T list) =
+        match List.tryPick chooser list with
+        | Some v -> v
+        | None -> d
 
 
-    
+module IO =     
+
+    let commentRegex = Regex(@"(?<=Comment\[<).*(?=>\])")
+
+    let commentRegexNoAngleBrackets = Regex(@"(?<=Comment\[).*(?=\])")
+
+    let remarkRegex = Regex(@"(?<=#).*")
 
     let (|Comment|_|) (key : Option<string>) =
         key
         |> Option.bind (fun k ->
-            let r = Regex.Match(k,@"(?<=Comment[<\[]).*(?=[>\]])")
+            let r = commentRegex.Match(k)
             if r.Success then Some r.Value
-            else None
+            else 
+                let r = commentRegexNoAngleBrackets.Match(k)
+                if r.Success then Some r.Value
+                else None
         )
     
     let (|Remark|_|) (key : Option<string>) =
         key
         |> Option.bind (fun k ->
-            let r = Regex.Match(k,@"(?<=#).*")
+            let r = remarkRegex.Match(k)
             if r.Success then Some r.Value
             else None
         )
 
-    let readInvestigationItem (en:IEnumerator<Row>) lineNumber =
+    let wrapCommentKey k = 
+        sprintf "Comment[<%s>]" k
+
+    let wrapRemark r = 
+        sprintf "#%s" r
+
+    let readInvestigationInfo lineNumber (en:IEnumerator<Row>) =
         let rec loop identifier title description submissionDate publicReleaseDate comments remarks lineNumber = 
 
             if en.MoveNext() then    
 
                 let row = en.Current
-                
+
                 match Row.tryGetValueAt 1u row, Row.tryGetValueAt 2u row with
 
                 | Comment k, Some v -> 
@@ -69,29 +89,29 @@ module IO =
                 | Remark k, _  -> 
                     loop identifier title description submissionDate publicReleaseDate comments ((lineNumber,k) :: remarks) (lineNumber + 1)
 
-                | Some k, Some identifier when k = "Investigation " + InvestigationItem.IdentifierLabel->              
+                | Some k, Some identifier when k = InvestigationInfo.IdentifierLabel->              
                     loop identifier title description submissionDate publicReleaseDate comments remarks (lineNumber + 1)
 
-                | Some k, Some title when k = "Investigation " + InvestigationItem.TitleLabel ->
+                | Some k, Some title when k = InvestigationInfo.TitleLabel ->
                     loop identifier title description submissionDate publicReleaseDate comments remarks (lineNumber + 1)
 
-                |Some k, Some description when k = "Investigation " + InvestigationItem.DescriptionLabel ->
+                |Some k, Some description when k = InvestigationInfo.DescriptionLabel ->
                     loop identifier title description submissionDate publicReleaseDate comments remarks (lineNumber + 1)
 
-                | Some k, Some submissionDate when k = "Investigation " + InvestigationItem.SubmissionDateLabel ->
+                | Some k, Some submissionDate when k = InvestigationInfo.SubmissionDateLabel ->
                     loop identifier title description submissionDate publicReleaseDate comments remarks (lineNumber + 1)
 
-                | Some k, Some publicReleaseDate when k = "Investigation " + InvestigationItem.PublicReleaseDateLabel ->
+                | Some k, Some publicReleaseDate when k = InvestigationInfo.PublicReleaseDateLabel ->
                     loop identifier title description submissionDate publicReleaseDate comments remarks (lineNumber + 1)
 
-                | Some k, _ -> Some k,lineNumber, remarks, InvestigationItem.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
+                | Some k, _ -> Some k,lineNumber, remarks, InvestigationInfo.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
                 | _ -> 
-                    None,lineNumber, remarks, InvestigationItem.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
+                    None,lineNumber, remarks, InvestigationInfo.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
             else
-                None,lineNumber, remarks, InvestigationItem.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
+                None,lineNumber, remarks, InvestigationInfo.create identifier title description submissionDate publicReleaseDate (comments |> List.rev)
         loop "" "" "" "" "" [] [] lineNumber
 
-    let readStudyItem (en:IEnumerator<Row>) lineNumber =
+    let readStudyInfo lineNumber (en:IEnumerator<Row>) =
         let rec loop identifier title description submissionDate publicReleaseDate fileName comments remarks lineNumber = 
 
             if en.MoveNext() then        
@@ -106,139 +126,32 @@ module IO =
                 | Remark k, _  -> 
                     loop identifier title description submissionDate publicReleaseDate fileName comments ((lineNumber,k) :: remarks) (lineNumber + 1)
 
-                | Some k, Some identifier when k = "Study " + StudyItem.IdentifierLabel->              
+                | Some k, Some identifier when k = StudyInfo.IdentifierLabel->              
                     loop identifier  title description submissionDate publicReleaseDate fileName comments remarks (lineNumber + 1)
 
-                | Some k, Some title when k = "Study " + StudyItem.TitleLabel ->
+                | Some k, Some title when k = StudyInfo.TitleLabel ->
                     loop identifier title description submissionDate publicReleaseDate fileName comments remarks (lineNumber + 1)
 
-                |Some k, Some description when k = "Study " + StudyItem.DescriptionLabel ->
+                |Some k, Some description when k = StudyInfo.DescriptionLabel ->
                     loop identifier title description submissionDate publicReleaseDate fileName comments remarks (lineNumber + 1)
 
-                | Some k, Some submissionDate when k = "Study " + StudyItem.SubmissionDateLabel ->
+                | Some k, Some submissionDate when k = StudyInfo.SubmissionDateLabel ->
                     loop identifier title description submissionDate publicReleaseDate fileName comments remarks (lineNumber + 1)
 
-                | Some k, Some publicReleaseDate when k = "Study " + StudyItem.PublicReleaseDateLabel ->
+                | Some k, Some publicReleaseDate when k = StudyInfo.PublicReleaseDateLabel ->
                     loop identifier title description submissionDate publicReleaseDate fileName comments remarks (lineNumber + 1)
 
-                | Some k, Some fileName when k = "Study " + StudyItem.FileNameLabel ->
+                | Some k, Some fileName when k = StudyInfo.FileNameLabel ->
                     loop identifier title description submissionDate publicReleaseDate fileName comments remarks (lineNumber + 1)
 
-                | Some k, _ -> Some k,lineNumber, remarks, StudyItem.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
+                | Some k, _ -> Some k,lineNumber, remarks, StudyInfo.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
                 | _ -> 
-                    None,lineNumber, remarks, StudyItem.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
+                    None,lineNumber, remarks, StudyInfo.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
             else
-                None,lineNumber, remarks, StudyItem.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
+                None,lineNumber, remarks, StudyInfo.create identifier title description submissionDate publicReleaseDate fileName (comments |> List.rev)
         loop "" "" "" "" "" "" [] [] lineNumber
 
-    let writeInvestigationItem (investigationItem : InvestigationItem) =  
-
-        [
-            [InvestigationItem.IdentifierLabel;         investigationItem.Identifier]
-            [InvestigationItem.TitleLabel;              investigationItem.Title]
-            [InvestigationItem.DescriptionLabel;        investigationItem.Description]
-            [InvestigationItem.SubmissionDateLabel;     investigationItem.SubmissionDate]
-            [InvestigationItem.PublicReleaseDateLabel;  investigationItem.PublicReleaseDate]
-            yield! (investigationItem.Comments |> List.map (fun (k,v) -> [k;v]))         
-        ]
-       
-    //let readAssays (en:IEnumerator<Row>) (prefix : string) lineNumber =
-    //    let rec loop (en:IEnumerator<Row>) (prefix : string)
-    //        measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //        technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //        identifiers
-    //        comments remarks lineNumber = 
-        
-    //        let create () = 
-    //            let length =
-    //                [|measurementTypes;measurementTypeTermAccessionNumbers;measurementTypeTermSourceREFs;technologyType;technologyTypeTermAccessionNumbers;technologyTypeTermSourceREFs;technologyPlatforms;identifiers|]
-    //                |> Array.map Array.length
-    //                |> Array.max
-            
-    //            List.init length (fun i ->
-    //                Assay.create 
-    //                    (Array.itemWithDefault i "" measurementTypes)
-    //                    (Array.itemWithDefault i "" measurementTypeTermAccessionNumbers)
-    //                    (Array.itemWithDefault i "" measurementTypeTermSourceREFs)
-    //                    (Array.itemWithDefault i "" technologyType)
-    //                    (Array.itemWithDefault i "" technologyTypeTermAccessionNumbers)
-    //                    (Array.itemWithDefault i "" technologyTypeTermSourceREFs)
-    //                    (Array.itemWithDefault i "" technologyPlatforms)
-    //                    (Array.itemWithDefault i "" identifiers)
-    //                    (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)           
-    //            )
-
-    //        if en.MoveNext() then        
-    //            let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
-    //            match Array.tryItem 0 row , Array.trySkip 1 row with
-
-    //            | Comment k, Some v -> 
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers ((k,v) :: comments) remarks (lineNumber + 1)         
-
-    //            | Remark k, _  -> 
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers comments ((lineNumber,k) :: remarks) (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.MeasurementTypeLabel ->              
-    //                loop 
-    //                    en prefix v measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.MeasurementTypeTermAccessionNumberLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes v measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.MeasurementTypeTermSourceREFLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers v 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.TechnologyTypeLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    v technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.TechnologyTypeTermAccessionNumberLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    technologyType v technologyTypeTermSourceREFs technologyPlatforms
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.TechnologyTypeTermSourceREFLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes technologyTypeTermSourceREFs measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers v technologyPlatforms
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.TechnologyPlatformLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs v
-    //                    identifiers comments remarks (lineNumber + 1)
-
-    //            | Some k, Some v when k = prefix + " " + Assay.FileNameLabel ->              
-    //                loop 
-    //                    en prefix measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs 
-    //                    technologyType technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms
-    //                    v comments remarks (lineNumber + 1)
-
-    //            | Some k, _ -> Some k,lineNumber,remarks,create ()
-    //            | _ -> None, lineNumber,remarks,create ()
-    //        else
-    //            None,lineNumber,remarks,create ()
-    //    loop en prefix [||] [||] [||] [||] [||] [||] [||] [||] [] [] lineNumber
-
-    let readTermSources (en:IEnumerator<Row>) lineNumber =
+    let readTermSources lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             names files versions descriptions
             comments remarks lineNumber = 
@@ -251,16 +164,15 @@ module IO =
 
                 List.init length (fun i ->
                     TermSource.create
-                        (Array.itemWithDefault i "" names)
-                        (Array.itemWithDefault i "" files)
-                        (Array.itemWithDefault i "" versions)
-                        (Array.itemWithDefault i "" descriptions)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" names)
+                        (Array.tryItemDefault i "" files)
+                        (Array.tryItemDefault i "" versions)
+                        (Array.tryItemDefault i "" descriptions)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
 
-                Array.iter (printfn "termRow: %s") row
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
                 | Comment k, Some v -> 
@@ -273,22 +185,22 @@ module IO =
                         names files versions descriptions
                         comments ((lineNumber,k) :: remarks) (lineNumber + 1)
 
-                | Some k, Some names when k = "Term Source " + TermSource.NameLabel -> 
+                | Some k, Some names when k = TermSource.NameLabel -> 
                     loop 
                         names files versions descriptions
                         comments remarks (lineNumber + 1)
 
-                | Some k, Some files when k = "Term Source " + TermSource.FileLabel -> 
+                | Some k, Some files when k = TermSource.FileLabel -> 
                     loop 
                         names files versions descriptions
                         comments remarks (lineNumber + 1)
 
-                | Some k, Some versions when k = "Term Source " + TermSource.VersionLabel -> 
+                | Some k, Some versions when k = TermSource.VersionLabel -> 
                     loop 
                         names files versions descriptions
                         comments remarks (lineNumber + 1)
 
-                | Some k, Some descriptions when k = "Term Source " + TermSource.DescriptionLabel -> 
+                | Some k, Some descriptions when k = TermSource.DescriptionLabel -> 
                     loop 
                         names files versions descriptions
                         comments remarks (lineNumber + 1)
@@ -301,7 +213,7 @@ module IO =
 
 
 
-    let readPublications (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readPublications (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             pubMedIDs dois authorLists titles statuss statusTermAccessionNumbers statusTermSourceREFs
             comments remarks lineNumber = 
@@ -314,14 +226,14 @@ module IO =
 
                 List.init length (fun i ->
                     Publication.create
-                        (Array.itemWithDefault i "" pubMedIDs)
-                        (Array.itemWithDefault i "" dois)
-                        (Array.itemWithDefault i "" authorLists)
-                        (Array.itemWithDefault i "" titles)
-                        (Array.itemWithDefault i "" statuss)
-                        (Array.itemWithDefault i "" statusTermAccessionNumbers)
-                        (Array.itemWithDefault i "" statusTermSourceREFs)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" pubMedIDs)
+                        (Array.tryItemDefault i "" dois)
+                        (Array.tryItemDefault i "" authorLists)
+                        (Array.tryItemDefault i "" titles)
+                        (Array.tryItemDefault i "" statuss)
+                        (Array.tryItemDefault i "" statusTermAccessionNumbers)
+                        (Array.tryItemDefault i "" statusTermSourceREFs)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
@@ -385,7 +297,7 @@ module IO =
 
 
 
-    let readPersons (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readPersons (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             lastNames firstNames midInitialss emails phones faxs addresss affiliations roless rolesTermAccessionNumbers rolesTermSourceREFs
             comments remarks lineNumber = 
@@ -398,18 +310,18 @@ module IO =
 
                 List.init length (fun i ->
                     Person.create
-                        (Array.itemWithDefault i "" lastNames)
-                        (Array.itemWithDefault i "" firstNames)
-                        (Array.itemWithDefault i "" midInitialss)
-                        (Array.itemWithDefault i "" emails)
-                        (Array.itemWithDefault i "" phones)
-                        (Array.itemWithDefault i "" faxs)
-                        (Array.itemWithDefault i "" addresss)
-                        (Array.itemWithDefault i "" affiliations)
-                        (Array.itemWithDefault i "" roless)
-                        (Array.itemWithDefault i "" rolesTermAccessionNumbers)
-                        (Array.itemWithDefault i "" rolesTermSourceREFs)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" lastNames)
+                        (Array.tryItemDefault i "" firstNames)
+                        (Array.tryItemDefault i "" midInitialss)
+                        (Array.tryItemDefault i "" emails)
+                        (Array.tryItemDefault i "" phones)
+                        (Array.tryItemDefault i "" faxs)
+                        (Array.tryItemDefault i "" addresss)
+                        (Array.tryItemDefault i "" affiliations)
+                        (Array.tryItemDefault i "" roless)
+                        (Array.tryItemDefault i "" rolesTermAccessionNumbers)
+                        (Array.tryItemDefault i "" rolesTermSourceREFs)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
@@ -488,7 +400,7 @@ module IO =
 
 
 
-    let readDesigns (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readDesigns (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             designTypes typeTermAccessionNumbers typeTermSourceREFs
             comments remarks lineNumber = 
@@ -501,10 +413,10 @@ module IO =
 
                 List.init length (fun i ->
                     Design.create
-                        (Array.itemWithDefault i "" designTypes)
-                        (Array.itemWithDefault i "" typeTermAccessionNumbers)
-                        (Array.itemWithDefault i "" typeTermSourceREFs)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" designTypes)
+                        (Array.tryItemDefault i "" typeTermAccessionNumbers)
+                        (Array.tryItemDefault i "" typeTermSourceREFs)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
@@ -543,7 +455,7 @@ module IO =
 
 
 
-    let readFactors (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readFactors (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             names factorTypes typeTermAccessionNumbers typeTermSourceREFs
             comments remarks lineNumber = 
@@ -556,11 +468,11 @@ module IO =
 
                 List.init length (fun i ->
                     Factor.create
-                        (Array.itemWithDefault i "" names)
-                        (Array.itemWithDefault i "" factorTypes)
-                        (Array.itemWithDefault i "" typeTermAccessionNumbers)
-                        (Array.itemWithDefault i "" typeTermSourceREFs)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" names)
+                        (Array.tryItemDefault i "" factorTypes)
+                        (Array.tryItemDefault i "" typeTermAccessionNumbers)
+                        (Array.tryItemDefault i "" typeTermSourceREFs)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
@@ -604,7 +516,7 @@ module IO =
 
 
 
-    let readAssays (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readAssays (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             measurementTypes measurementTypeTermAccessionNumbers measurementTypeTermSourceREFs technologyTypes technologyTypeTermAccessionNumbers technologyTypeTermSourceREFs technologyPlatforms fileNames
             comments remarks lineNumber = 
@@ -617,15 +529,15 @@ module IO =
 
                 List.init length (fun i ->
                     Assay.create
-                        (Array.itemWithDefault i "" measurementTypes)
-                        (Array.itemWithDefault i "" measurementTypeTermAccessionNumbers)
-                        (Array.itemWithDefault i "" measurementTypeTermSourceREFs)
-                        (Array.itemWithDefault i "" technologyTypes)
-                        (Array.itemWithDefault i "" technologyTypeTermAccessionNumbers)
-                        (Array.itemWithDefault i "" technologyTypeTermSourceREFs)
-                        (Array.itemWithDefault i "" technologyPlatforms)
-                        (Array.itemWithDefault i "" fileNames)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" measurementTypes)
+                        (Array.tryItemDefault i "" measurementTypeTermAccessionNumbers)
+                        (Array.tryItemDefault i "" measurementTypeTermSourceREFs)
+                        (Array.tryItemDefault i "" technologyTypes)
+                        (Array.tryItemDefault i "" technologyTypeTermAccessionNumbers)
+                        (Array.tryItemDefault i "" technologyTypeTermSourceREFs)
+                        (Array.tryItemDefault i "" technologyPlatforms)
+                        (Array.tryItemDefault i "" fileNames)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
@@ -689,7 +601,7 @@ module IO =
 
 
 
-    let readProtocols (en:IEnumerator<Row>) (prefix : string) lineNumber =
+    let readProtocols (prefix : string) lineNumber (en:IEnumerator<Row>) =
         let rec loop 
             names protocolTypes typeTermAccessionNumbers typeTermSourceREFs descriptions uris versions parametersNames parametersTermAccessionNumbers parametersTermSourceREFs componentsNames componentsTypes componentsTypeTermAccessionNumbers componentsTypeTermSourceREFs
             comments remarks lineNumber = 
@@ -702,21 +614,21 @@ module IO =
 
                 List.init length (fun i ->
                     Protocol.create
-                        (Array.itemWithDefault i "" names)
-                        (Array.itemWithDefault i "" protocolTypes)
-                        (Array.itemWithDefault i "" typeTermAccessionNumbers)
-                        (Array.itemWithDefault i "" typeTermSourceREFs)
-                        (Array.itemWithDefault i "" descriptions)
-                        (Array.itemWithDefault i "" uris)
-                        (Array.itemWithDefault i "" versions)
-                        (Array.itemWithDefault i "" parametersNames)
-                        (Array.itemWithDefault i "" parametersTermAccessionNumbers)
-                        (Array.itemWithDefault i "" parametersTermSourceREFs)
-                        (Array.itemWithDefault i "" componentsNames)
-                        (Array.itemWithDefault i "" componentsTypes)
-                        (Array.itemWithDefault i "" componentsTypeTermAccessionNumbers)
-                        (Array.itemWithDefault i "" componentsTypeTermSourceREFs)
-                        (List.map (fun (key,values) -> key,Array.itemWithDefault i "" values) comments)
+                        (Array.tryItemDefault i "" names)
+                        (Array.tryItemDefault i "" protocolTypes)
+                        (Array.tryItemDefault i "" typeTermAccessionNumbers)
+                        (Array.tryItemDefault i "" typeTermSourceREFs)
+                        (Array.tryItemDefault i "" descriptions)
+                        (Array.tryItemDefault i "" uris)
+                        (Array.tryItemDefault i "" versions)
+                        (Array.tryItemDefault i "" parametersNames)
+                        (Array.tryItemDefault i "" parametersTermAccessionNumbers)
+                        (Array.tryItemDefault i "" parametersTermSourceREFs)
+                        (Array.tryItemDefault i "" componentsNames)
+                        (Array.tryItemDefault i "" componentsTypes)
+                        (Array.tryItemDefault i "" componentsTypeTermAccessionNumbers)
+                        (Array.tryItemDefault i "" componentsTypeTermSourceREFs)
+                        (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
                 let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
@@ -808,88 +720,327 @@ module IO =
                 None,lineNumber,remarks,create ()
         loop [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [||] [] [] lineNumber
 
-    let readStudy (en:IEnumerator<Row>) lineNumber = 
+    let readStudy lineNumber (en:IEnumerator<Row>) = 
 
-        let rec loop lastLine studyItem designDescriptors publications factors assays protocols contacts remarks lineNumber =
+        let rec loop lastLine studyInfo designDescriptors publications factors assays protocols contacts remarks lineNumber =
            
             match lastLine with
 
             | Some k when k = Study.DesignDescriptorsLabel -> 
-                let currentLine,lineNumber,newRemarks,designDescriptors = readDesigns en "Study Design" (lineNumber + 1)         
-                loop currentLine studyItem designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,designDescriptors = readDesigns Study.DesignDescriptorsPrefix (lineNumber + 1) en         
+                loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.PublicationsLabel -> 
-                let currentLine,lineNumber,newRemarks,publications = readPublications en "Study Publication" (lineNumber + 1)       
-                loop currentLine studyItem designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,publications = readPublications Study.PublicationsPrefix (lineNumber + 1) en       
+                loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.FactorsLabel -> 
-                let currentLine,lineNumber,newRemarks,factors = readFactors en "Study Factor" (lineNumber + 1)       
-                loop currentLine studyItem designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,factors = readFactors Study.FactorsPrefix (lineNumber + 1) en       
+                loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.AssaysLabel -> 
-                let currentLine,lineNumber,newRemarks,assays = readAssays en "Study Assay" (lineNumber + 1)       
-                loop currentLine studyItem designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,assays = readAssays Study.AssaysPrefix (lineNumber + 1) en       
+                loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.ProtocolsLabel -> 
-                let currentLine,lineNumber,newRemarks,protocols = readProtocols en "Study Protocol" (lineNumber + 1)  
-                loop currentLine studyItem designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,protocols = readProtocols Study.ProtocolsPrefix (lineNumber + 1) en  
+                loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Study.ContactsLabel -> 
-                let currentLine,lineNumber,newRemarks,contacts = readPersons en "Study Person" (lineNumber + 1)  
-                loop currentLine studyItem designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,contacts = readPersons Study.ContactsPrefix (lineNumber + 1) en  
+                loop currentLine studyInfo designDescriptors publications factors assays protocols contacts (List.append remarks newRemarks) lineNumber
 
             | k -> 
-                k,lineNumber,remarks, Study.create studyItem designDescriptors publications factors assays protocols contacts
+                k,lineNumber,remarks, Study.create studyInfo designDescriptors publications factors assays protocols contacts
 
     
-        let currentLine,lineNumber,remarks,item = readStudyItem en (lineNumber + 1) 
+        let currentLine,lineNumber,remarks,item = readStudyInfo lineNumber en  
         loop currentLine item [] [] [] [] [] [] remarks lineNumber
 
-    let readInvestigation (path:string) =
 
-        let doc = 
-            Spreadsheet.fromFile path false
-        let en =
-            doc
-            |> Spreadsheet.getRowsBySheetIndex 0u
-            |> fun s -> s.GetEnumerator()
-               
+    let fromRows (rows:seq<Row>) =
+        let en = rows.GetEnumerator()              
         
-        let emptyInvestigationItem = InvestigationItem.create "" "" "" "" "" []
+        let emptyInvestigationInfo = InvestigationInfo.create "" "" "" "" "" []
 
-        let rec loop lastLine ontologySourceReferences investigationItem publications contacts studies remarks lineNumber =
-            printfn "Start l: %O" lastLine
+        let rec loop lastLine ontologySourceReferences investigationInfo publications contacts studies remarks lineNumber =
             match lastLine with
 
             | Some k when k = Investigation.OntologySourceReferenceLabel -> 
-                let currentLine,lineNumber,newRemarks,ontologySourceReferences = readTermSources en (lineNumber + 1)         
-                loop currentLine ontologySourceReferences investigationItem publications contacts studies (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,ontologySourceReferences = readTermSources (lineNumber + 1) en         
+                loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.InvestigationLabel -> 
-                let currentLine,lineNumber,newRemarks,investigationItem = readInvestigationItem en (lineNumber + 1)       
-                loop currentLine ontologySourceReferences investigationItem publications contacts studies (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,investigationInfo = readInvestigationInfo (lineNumber + 1) en       
+                loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.PublicationsLabel -> 
-                let currentLine,lineNumber,newRemarks,publications = readPublications en "Investigation Publication" (lineNumber + 1)       
-                loop currentLine ontologySourceReferences investigationItem publications contacts studies (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,publications = readPublications Investigation.PublicationsPrefix (lineNumber + 1) en       
+                loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.ContactsLabel -> 
-                let currentLine,lineNumber,newRemarks,contacts = readPersons en "Investigation Person" (lineNumber + 1)       
-                loop currentLine ontologySourceReferences investigationItem publications contacts studies (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,contacts = readPersons Investigation.ContactsPrefix (lineNumber + 1) en       
+                loop currentLine ontologySourceReferences investigationInfo publications contacts studies (List.append remarks newRemarks) lineNumber
 
             | Some k when k = Investigation.StudyLabel -> 
-                let currentLine,lineNumber,newRemarks,study = readStudy en (lineNumber + 1)  
-                loop currentLine ontologySourceReferences investigationItem publications contacts (study::studies) (List.append remarks newRemarks) lineNumber
+                let currentLine,lineNumber,newRemarks,study = readStudy (lineNumber + 1) en  
+                loop currentLine ontologySourceReferences investigationInfo publications contacts (study::studies) (List.append remarks newRemarks) lineNumber
 
             | k -> 
-                Investigation.create ontologySourceReferences investigationItem publications contacts (List.rev studies) remarks
+                Investigation.create ontologySourceReferences investigationInfo publications contacts (List.rev studies) remarks
     
         if en.MoveNext () then
             let currentLine = en.Current |> Row.tryGetValueAt 1u
-            let i = loop currentLine [] emptyInvestigationItem [] [] [] [] 1
-            Spreadsheet.close doc
-            i
+            loop currentLine [] emptyInvestigationInfo [] [] [] [] 1
+            
         else
-            Spreadsheet.close doc
             failwith "emptyInvestigationFile"
+   
+    let fromFile (path : string) =
         
+        let doc = 
+            Spreadsheet.fromFile path false
+
+        try 
+            doc
+            |> Spreadsheet.getRowsBySheetIndex 0u
+            |> fromRows 
+        finally
+        doc.Close()
+    
+    let writeTermSources (termSources : TermSource list) =
+        let commentKeys = termSources |> List.collect (fun termSource -> termSource.Comments |> List.map fst)
+
+        seq {
+            yield   (Row.ofValues 0u (TermSource.NameLabel                      :: (termSources |> List.map (fun termSource -> termSource.Name))))
+            yield   (Row.ofValues 0u (TermSource.FileLabel                      :: (termSources |> List.map (fun termSource -> termSource.File))))
+            yield   (Row.ofValues 0u (TermSource.VersionLabel                      :: (termSources |> List.map (fun termSource -> termSource.Version))))
+            yield   (Row.ofValues 0u (TermSource.DescriptionLabel                      :: (termSources |> List.map (fun termSource -> termSource.Description))))
+
+            for key in commentKeys do
+                let values = 
+                    termSources |> List.map (fun termSource -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" termSource.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writeInvestigationInfo (investigationInfo : InvestigationInfo) =  
+        seq {       
+            yield   (Row.ofValues 0u [InvestigationInfo.IdentifierLabel;         investigationInfo.Identifier])
+            yield   (Row.ofValues 0u [InvestigationInfo.TitleLabel;              investigationInfo.Title])
+            yield   (Row.ofValues 0u [InvestigationInfo.DescriptionLabel;        investigationInfo.Description])
+            yield   (Row.ofValues 0u [InvestigationInfo.SubmissionDateLabel;     investigationInfo.SubmissionDate])
+            yield   (Row.ofValues 0u [InvestigationInfo.PublicReleaseDateLabel;  investigationInfo.PublicReleaseDate])
+            yield!  (investigationInfo.Comments |> List.map (fun (k,v) -> Row.ofValues 0u [wrapCommentKey k;v]))         
+        }
+
+    let writeStudyInfo (studyInfo : StudyInfo) =  
+
+        seq {   
+            yield   (Row.ofValues 0u [StudyInfo.IdentifierLabel;         studyInfo.Identifier]          )
+            yield   (Row.ofValues 0u [StudyInfo.TitleLabel;              studyInfo.Title]               )
+            yield   (Row.ofValues 0u [StudyInfo.DescriptionLabel;        studyInfo.Description]         )
+            yield   (Row.ofValues 0u [StudyInfo.SubmissionDateLabel;     studyInfo.SubmissionDate]      )
+            yield   (Row.ofValues 0u [StudyInfo.PublicReleaseDateLabel;  studyInfo.PublicReleaseDate]   )
+            yield   (Row.ofValues 0u [StudyInfo.FileNameLabel;           studyInfo.FileName]            )
+            yield!  (studyInfo.Comments |> List.map (fun (k,v) -> Row.ofValues 0u [wrapCommentKey k;v]))         
+        }
+
+    let writeDesigns prefix (designs : Design list) =
+        let commentKeys = designs |> List.collect (fun design -> design.Comments |> List.map fst) |> List.distinct
+
+        seq {
+            yield   (Row.ofValues 0u (prefix + " " + Design.DesignTypeLabel                      :: (designs |> List.map (fun design -> design.DesignType))))
+            yield   (Row.ofValues 0u (prefix + " " + Design.TypeTermAccessionNumberLabel                      :: (designs |> List.map (fun design -> design.TypeTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Design.TypeTermSourceREFLabel                      :: (designs |> List.map (fun design -> design.TypeTermSourceREF))))
+
+            for key in commentKeys do
+                let values = 
+                    designs |> List.map (fun design -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" design.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writePublications prefix (publications : Publication list) =
+        let commentKeys = publications |> List.collect (fun publication -> publication.Comments |> List.map fst) |> List.distinct
+
+        seq {
+            yield   (Row.ofValues 0u (prefix + " " + Publication.PubMedIDLabel                      :: (publications |> List.map (fun publication -> publication.PubMedID))))
+            yield   (Row.ofValues 0u (prefix + " " + Publication.DOILabel                      :: (publications |> List.map (fun publication -> publication.DOI))))
+            yield   (Row.ofValues 0u (prefix + " " + Publication.AuthorListLabel                      :: (publications |> List.map (fun publication -> publication.AuthorList))))
+            yield   (Row.ofValues 0u (prefix + " " + Publication.TitleLabel                      :: (publications |> List.map (fun publication -> publication.Title))))
+            yield   (Row.ofValues 0u (prefix + " " + Publication.StatusLabel                      :: (publications |> List.map (fun publication -> publication.Status))))
+            yield   (Row.ofValues 0u (prefix + " " + Publication.StatusTermAccessionNumberLabel                      :: (publications |> List.map (fun publication -> publication.StatusTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Publication.StatusTermSourceREFLabel                      :: (publications |> List.map (fun publication -> publication.StatusTermSourceREF))))
+
+            for key in commentKeys do
+                let values = 
+                    publications |> List.map (fun publication -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" publication.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writeFactors prefix (factors : Factor list) =
+        let commentKeys = factors |> List.collect (fun factor -> factor.Comments |> List.map fst) |> List.distinct
+
+        seq {
+            yield   (Row.ofValues 0u (prefix + " " + Factor.NameLabel                      :: (factors |> List.map (fun factor -> factor.Name))))
+            yield   (Row.ofValues 0u (prefix + " " + Factor.FactorTypeLabel                      :: (factors |> List.map (fun factor -> factor.FactorType))))
+            yield   (Row.ofValues 0u (prefix + " " + Factor.TypeTermAccessionNumberLabel                      :: (factors |> List.map (fun factor -> factor.TypeTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Factor.TypeTermSourceREFLabel                      :: (factors |> List.map (fun factor -> factor.TypeTermSourceREF))))
+
+            for key in commentKeys do
+                let values = 
+                    factors |> List.map (fun factor -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" factor.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writeAssays prefix (assays : Assay list) =
+        let commentKeys = assays |> List.collect (fun assay -> assay.Comments |> List.map fst) |> List.distinct
+
+        seq { 
+            yield   (Row.ofValues 0u (prefix + " " + Assay.MeasurementTypeLabel                      :: (assays |> List.map (fun assay -> assay.MeasurementType))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.MeasurementTypeTermAccessionNumberLabel   :: (assays |> List.map (fun assay -> assay.MeasurementTypeTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.MeasurementTypeTermSourceREFLabel         :: (assays |> List.map (fun assay -> assay.MeasurementTypeTermSourceREF))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyTypeLabel                       :: (assays |> List.map (fun assay -> assay.TechnologyType))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyTypeTermAccessionNumberLabel    :: (assays |> List.map (fun assay -> assay.TechnologyTypeTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyTypeTermSourceREFLabel          :: (assays |> List.map (fun assay -> assay.TechnologyTypeTermSourceREF))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyPlatformLabel                   :: (assays |> List.map (fun assay -> assay.TechnologyPlatform))))
+            yield   (Row.ofValues 0u (prefix + " " + Assay.FileNameLabel                             :: (assays |> List.map (fun assay -> assay.FileName))))               
+            
+            for key in commentKeys do
+                let values = 
+                    assays |> List.map (fun assay -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" assay.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writeProtocols prefix (protocols : Protocol list) =
+        let commentKeys = protocols |> List.collect (fun protocol -> protocol.Comments |> List.map fst) |> List.distinct
+
+        seq {
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.NameLabel                      :: (protocols |> List.map (fun protocol -> protocol.Name))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ProtocolTypeLabel                      :: (protocols |> List.map (fun protocol -> protocol.ProtocolType))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.TypeTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.TypeTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.TypeTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.TypeTermSourceREF))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.DescriptionLabel                      :: (protocols |> List.map (fun protocol -> protocol.Description))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.URILabel                      :: (protocols |> List.map (fun protocol -> protocol.URI))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.VersionLabel                      :: (protocols |> List.map (fun protocol -> protocol.Version))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ParametersNameLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersName))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ParametersTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ParametersTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersTermSourceREF))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsNameLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsName))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsTypeLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsType))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsTypeTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsTypeTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsTypeTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsTypeTermSourceREF))))
+
+            for key in commentKeys do
+                let values = 
+                    protocols |> List.map (fun protocol -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" protocol.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writePersons prefix (persons : Person list) =
+        let commentKeys = persons |> List.collect (fun person -> person.Comments |> List.map fst) |> List.distinct
+
+        seq {
+            yield   (Row.ofValues 0u (prefix + " " + Person.LastNameLabel                      :: (persons |> List.map (fun person -> person.LastName))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.FirstNameLabel                      :: (persons |> List.map (fun person -> person.FirstName))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.MidInitialsLabel                      :: (persons |> List.map (fun person -> person.MidInitials))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.EmailLabel                      :: (persons |> List.map (fun person -> person.Email))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.PhoneLabel                      :: (persons |> List.map (fun person -> person.Phone))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.FaxLabel                      :: (persons |> List.map (fun person -> person.Fax))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.AddressLabel                      :: (persons |> List.map (fun person -> person.Address))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.AffiliationLabel                      :: (persons |> List.map (fun person -> person.Affiliation))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.RolesLabel                      :: (persons |> List.map (fun person -> person.Roles))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.RolesTermAccessionNumberLabel                      :: (persons |> List.map (fun person -> person.RolesTermAccessionNumber))))
+            yield   (Row.ofValues 0u (prefix + " " + Person.RolesTermSourceREFLabel                      :: (persons |> List.map (fun person -> person.RolesTermSourceREF))))
+
+            for key in commentKeys do
+                let values = 
+                    persons |> List.map (fun person -> 
+                        List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" person.Comments
+                    )
+                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+        }
+
+    let writeStudy (study : Study) =
+        seq {          
+            yield! writeStudyInfo study.Info
+
+            yield Row.ofValues 0u [Study.DesignDescriptorsLabel]
+            yield! writeDesigns Study.DesignDescriptorsPrefix study.DesignDescriptors
+
+            yield Row.ofValues 0u [Study.PublicationsLabel]
+            yield! writePublications Study.PublicationsPrefix study.Publications
+
+            yield Row.ofValues 0u [Study.FactorsLabel]
+            yield! writeFactors Study.FactorsPrefix study.Factors
+
+            yield Row.ofValues 0u [Study.AssaysLabel]
+            yield! writeAssays Study.AssaysPrefix study.Assays
+
+            yield Row.ofValues 0u [Study.ProtocolsLabel]
+            yield! writeProtocols Study.ProtocolsPrefix study.Protocols
+
+            yield Row.ofValues 0u [Study.ContactsLabel]
+            yield! writePersons Study.ContactsPrefix study.Contacts
+        }
+
+    let toRows (investigation:Investigation) : seq<Row> =
+        let insertRemarks (remarks:(int*string)list) (rows:seq<Row>) = 
+            let rm = Map.ofList remarks
+            let rec loop i l nl =
+                match Map.tryFind i rm with
+                | Some remark ->
+                    Row.ofValues 1u [wrapRemark remark] :: nl
+                    |> loop (i+1) l
+                | None -> 
+                    match l with
+                    | [] -> nl
+                    | h :: t -> 
+                        loop (i+1) t (h::nl)
+            loop 1 (rows |> List.ofSeq) []
+            |> List.rev
+        seq {
+            yield Row.ofValues 0u [Investigation.OntologySourceReferenceLabel]
+            yield! writeTermSources investigation.OntologySourceReference
+
+            yield Row.ofValues 0u [Investigation.InvestigationLabel]
+            yield! writeInvestigationInfo investigation.Info
+
+            yield Row.ofValues 0u [Investigation.PublicationsLabel]
+            yield! writePublications Investigation.PublicationsPrefix investigation.Publications
+
+            yield Row.ofValues 0u [Investigation.ContactsLabel]
+            yield! writePersons Investigation.ContactsPrefix investigation.Contacts
+
+            for study in investigation.Studies do
+                yield Row.ofValues 0u [Investigation.StudyLabel]
+                yield! writeStudy study
+        }
+        |> insertRemarks investigation.Remarks
+        |> Seq.mapi (fun i row -> Row.updateRowIndex (i+1 |> uint) row)
+
+
+    let toFile (path:string) (investigation:Investigation) =
+
+        let doc = Spreadsheet.initWithSST "isa_investigation" path
+        let sheet = Spreadsheet.tryGetSheetBySheetIndex 0u doc |> Option.get
+
+        investigation
+        |> toRows
+        |> Seq.fold (fun s r -> 
+            SheetData.appendRow r s
+        ) sheet
+        |> ignore
+
+        doc.Close()

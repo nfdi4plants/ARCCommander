@@ -21,5 +21,5 @@ type ArcCommand =
             | Init          _   -> "Initializes basic folder structure"
             | Investigation _   -> "Investigation file functions"
             | Study         _   -> "Study functions"
-            | Assay         _   ->  "Assay functions"
+            | Assay         _   -> "Assay functions"
             | Configuration _   -> "Configuration editing"

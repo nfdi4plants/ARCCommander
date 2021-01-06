@@ -1,6 +1,5 @@
 ﻿namespace ArcCommander.CLIArguments
 open Argu 
-open ISA
 
 /// CLI arguments for listing configuration settings
 type ConfigurationListArgs =

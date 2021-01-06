@@ -5,7 +5,6 @@ open System.IO
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ISA.DataModel.InvestigationFile
 
 
 /// ArcCommander API functions that get executed by top level subcommand verbs

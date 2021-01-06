@@ -17,11 +17,14 @@
     <PackageReference Include="Expecto" Version="9.*" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
-    <ProjectReference Include="..\..\src\ArcCommander\ArcCommander.fsproj" />
     <PackageReference Update="FSharp.Core" Version="4.*" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\IsaXLSX\IsaXLSX.fsproj" />
   </ItemGroup>
 </Project>

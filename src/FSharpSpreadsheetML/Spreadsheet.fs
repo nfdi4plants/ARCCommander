@@ -54,7 +54,18 @@ module Spreadsheet =
         | Some sst -> sst
         | None -> workbookPart.AddNewPart<SharedStringTablePart>()
 
-    /// Returns a sequence of rows containing the cells for the given sheetIndex of the given spreadsheetDocument. 
+    /// Returns the sheetData for the given 0 based sheetIndex of the given spreadsheetDocument. 
+    /// Returns an empty list if the sheet of the given sheetIndex does not exist.
+    let tryGetSheetBySheetIndex (sheetIndex:uint) (spreadsheetDocument:SpreadsheetDocument) =
+        Sheet.tryItem sheetIndex spreadsheetDocument
+        |> Option.map (fun sheet -> 
+            let workbookPart = spreadsheetDocument.WorkbookPart
+            let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
+            Worksheet.get worksheetPart
+            |> Worksheet.getSheetData
+        )        
+
+    /// Returns a sequence of rows containing the cells for the given 0 based sheetIndex of the given spreadsheetDocument. 
     /// Returns an empty list if the sheet of the given sheetIndex does not exist.
     let getRowsBySheetIndex (sheetIndex:uint) (spreadsheetDocument:SpreadsheetDocument) =
 

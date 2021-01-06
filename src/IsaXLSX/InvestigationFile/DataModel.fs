@@ -20,10 +20,10 @@ type TermSource =
         Comments = comments
         }
 
-    static member NameLabel = "Name"
-    static member FileLabel = "File"
-    static member VersionLabel = "Version"
-    static member DescriptionLabel = "Description"
+    static member NameLabel = "Term Source Name"
+    static member FileLabel = "Term Source File"
+    static member VersionLabel = "Term Source Version"
+    static member DescriptionLabel = "Term Source Description"
 
 
 type Publication =
@@ -245,7 +245,7 @@ type Protocol =
     static member ComponentsTypeTermSourceREFLabel = "Components Type Term Source REF"
 
 
-type InvestigationItem =
+type InvestigationInfo =
     {
     Identifier : string
     Title : string
@@ -266,14 +266,14 @@ type InvestigationItem =
         Comments = comments
         }
 
-    static member IdentifierLabel = "Identifier"
-    static member TitleLabel = "Title"
-    static member DescriptionLabel = "Description"
-    static member SubmissionDateLabel = "Submission Date"
-    static member PublicReleaseDateLabel = "Public Release Date"
+    static member IdentifierLabel = "Investigation Identifier"
+    static member TitleLabel = "Investigation Title"
+    static member DescriptionLabel = "Investigation Description"
+    static member SubmissionDateLabel = "Investigation Submission Date"
+    static member PublicReleaseDateLabel = "Investigation Public Release Date"
 
 
-type StudyItem =
+type StudyInfo =
     {
     Identifier : string
     Title : string
@@ -296,16 +296,16 @@ type StudyItem =
         Comments = comments
         }
 
-    static member IdentifierLabel = "Identifier"
-    static member TitleLabel = "Title"
-    static member DescriptionLabel = "Description"
-    static member SubmissionDateLabel = "Submission Date"
-    static member PublicReleaseDateLabel = "Public Release Date"
-    static member FileNameLabel = "File Name"
+    static member IdentifierLabel = "Study Identifier"
+    static member TitleLabel = "Study Title"
+    static member DescriptionLabel = "Study Description"
+    static member SubmissionDateLabel = "Study Submission Date"
+    static member PublicReleaseDateLabel = "Study Public Release Date"
+    static member FileNameLabel = "Study File Name"
 
 type Study = 
     {
-    StudyItem : StudyItem
+    Info : StudyInfo
     DesignDescriptors : Design list
     Publications : Publication list
     Factors : Factor list
@@ -314,9 +314,9 @@ type Study =
     Contacts : Person list
     }
 
-    static member create studyItem designDescriptors publications factors assays protocols contacts =
+    static member create studyInfo designDescriptors publications factors assays protocols contacts =
         {
-        StudyItem = studyItem
+        Info = studyInfo
         DesignDescriptors = designDescriptors
         Publications = publications
         Factors = factors
@@ -332,19 +332,26 @@ type Study =
     static member ProtocolsLabel = "STUDY PROTOCOLS"
     static member ContactsLabel = "STUDY CONTACTS"
 
+    static member DesignDescriptorsPrefix = "Study Design"
+    static member PublicationsPrefix = "Study Publication"
+    static member FactorsPrefix = "Study Factor"
+    static member AssaysPrefix = "Study Assay"
+    static member ProtocolsPrefix = "Study Protocol"
+    static member ContactsPrefix = "Study Person"
+
 type Investigation =
     {
     OntologySourceReference : TermSource list
-    InvestigationItem : InvestigationItem
+    Info : InvestigationInfo
     Publications : Publication list
     Contacts : Person list
     Studies : Study list
     Remarks : (int*string) list
     }
 
-    static member create ontologySourceReference investigationItem publications contacts studies remarks =
+    static member create ontologySourceReference investigationInfo publications contacts studies remarks =
         {
-        InvestigationItem = investigationItem
+        Info = investigationInfo
         OntologySourceReference = ontologySourceReference
         Publications = publications
         Contacts = contacts
@@ -357,3 +364,6 @@ type Investigation =
         static member PublicationsLabel = "INVESTIGATION PUBLICATIONS"
         static member ContactsLabel = "INVESTIGATION CONTACTS"
         static member StudyLabel = "STUDY"
+
+        static member PublicationsPrefix = "Investigation Publication"
+        static member ContactsPrefix = "Investigation Person"

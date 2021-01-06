@@ -7,7 +7,7 @@ open Microsoft.FSharp.Reflection
 
 open System.Diagnostics
 
-open ISA.DataModel
+open IsaXLSX
 
 open Argu
 
@@ -43,6 +43,13 @@ module ArgumentProcessing =
         | Some (Field _ )   -> failwithf "Argument %s is not a flag, but a field" k
         | Some (Flag)       -> true
         | None              -> false
+
+    /// Returns the value given by the user for name k
+    let tryGetFieldValueByName k (arguments : Map<string,Argument>) = 
+        match Map.tryFind k arguments with
+        | Some (Field v) -> Some v
+        | Some Flag -> None
+        | None -> None
 
     /// Returns the value given by the user for name k
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
@@ -104,18 +111,18 @@ module ArgumentProcessing =
                 failwithf "Cannot parse argument %s because its parsing rules were not yet implemented" unionCase.Name
         )
 
-    /// Creates an isa item used in the investigation file
-    let isaItemOfArguments (item:#InvestigationFile.ISAItem) (parameters : Map<string,Argument>) = 
-        parameters
-        |> Map.iter (fun k v -> 
-            match v with
-            | Field s -> 
-                InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
-                |> ignore
-            | Flag ->
-                ()
-        )
-        item
+    ///// Creates an isa item used in the investigation file
+    //let isaItemOfArguments (item:#InvestigationFile.ISAItem) (parameters : Map<string,Argument>) = 
+    //    parameters
+    //    |> Map.iter (fun k v -> 
+    //        match v with
+    //        | Field s -> 
+    //            InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
+    //            |> ignore
+    //        | Flag ->
+    //            ()
+    //    )
+    //    item
 
     /// Functions for asking the user to input values via an editor prompt
     module Prompt = 
@@ -164,6 +171,10 @@ module ArgumentProcessing =
         ///
         /// For each value, a comment is created and put above the line using the given commentF function
         let private serializeAnnotatedArguments (arguments:(string*AnnotatedArgument) []) =
+            let header = 
+                """# Not all mandatory input arguments were given
+# Please fill out at least all mandatory fields, commented out flags (arguments with no value) can be set by removing the # in front of them
+# When finished save and close the editor"""
             arguments
             |> Array.map (fun (key,arg) -> 
                 let comment = 
@@ -226,32 +237,53 @@ module ArgumentProcessing =
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
         let createArgumentQueryIfNecessary editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
-            if containsMissingMandatoryAttribute arguments then
-                createArgumentQuery editorPath arcPath arguments
+            if containsMissingMandatoryAttribute arguments then             
+                let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
+                let queryResults = createArgumentQuery editorPath arcPath arguments
+                let stillMissingMandatoryArgs =  
+                    mandatoryArgs
+                    |> Array.map (fun k -> 
+                        let field = tryGetFieldValueByName k queryResults
+                        field = None || field = Some ""                    
+                    )
+                    |> Array.reduce ((||))
+                stillMissingMandatoryArgs,queryResults
             else 
+                false,
                 arguments
-                |> Array.choose (fun (k,v) -> v.Arg |> Option.map (fun arg -> k,arg))
+                |> Array.choose (fun (k,v) -> 
+                    match v.Arg with 
+                    | Some arg -> Some (k,arg)
+                    | None when v.IsFlag -> None
+                    | None -> Some (k,Field ""))
                 |> Map.ofArray
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
-        let createItemQuery editorPath arcPath (item : #InvestigationFile.ISAItem) = 
-            let serializeF inp = 
-                InvestigationFile.getKeyValues inp
-                |> Array.map (fun (k,v) -> sprintf "%s:%s" k v)
-                |> Array.reduce (fun a b -> a + "\n" + b)
-            let deserializeF (s:string) =
+        let createIsaItemQuery editorPath arcPath 
+            (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
+            (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> 'A)
+            (isaItem : 'A) = 
+
+            let serializeF (inp : 'A) = 
+                writeF inp
+                |> Seq.map (fun r -> 
+                    sprintf "%s:%s"
+                        (FSharpSpreadsheetML.Row.tryGetValueAt 1u r |> Option.get |> fun s -> s.TrimStart())
+                        (FSharpSpreadsheetML.Row.tryGetValueAt 2u r |> Option.get)
+                )
+                |> Seq.reduce (fun a b -> a + "\n" + b)
+            let deserializeF (s:string) : 'A =
                 s.Split '\n'
-                |> Array.iter (fun x ->                 
+                |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
                     | k, Field v ->
-                        System.Collections.Generic.KeyValuePair(k,v)
-                        |> fun kv -> InvestigationFile.setKeyValue kv item
-                        |> ignore
+                        FSharpSpreadsheetML.Row.ofValues 1u [k;v]
                     | _ -> failwith "Error: file was corrupted in Edtior"
                 )
+                |> fun rs -> readF (rs.GetEnumerator()) 
+            createQuery editorPath arcPath serializeF deserializeF isaItem
 
-                item
-            createQuery editorPath arcPath serializeF deserializeF item
+        
 
         /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
         let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =
