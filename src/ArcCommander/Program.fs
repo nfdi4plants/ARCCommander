@@ -185,7 +185,7 @@ let handleCommand arcConfiguration command =
 [<EntryPoint>]
 let main argv =
     try
-        let parser = ArgumentParser.Create<ArcCommand>(programName = "arc")
+        let parser = ArgumentParser.Create<ArcCommand>()
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
 
         let workingDir = 
