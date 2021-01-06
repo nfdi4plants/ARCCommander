@@ -45,6 +45,13 @@ module ArgumentProcessing =
         | None              -> false
 
     /// Returns the value given by the user for name k
+    let tryGetFieldValueByName k (arguments : Map<string,Argument>) = 
+        match Map.tryFind k arguments with
+        | Some (Field v) -> Some v
+        | Some Flag -> None
+        | None -> None
+
+    /// Returns the value given by the user for name k
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.find k arguments with
         | Field v -> v
@@ -164,6 +171,10 @@ module ArgumentProcessing =
         ///
         /// For each value, a comment is created and put above the line using the given commentF function
         let private serializeAnnotatedArguments (arguments:(string*AnnotatedArgument) []) =
+            let header = 
+                """# Not all mandatory input arguments were given
+# Please fill out at least all mandatory fields, commented out flags (arguments with no value) can be set by removing the # in front of them
+# When finished save and close the editor"""
             arguments
             |> Array.map (fun (key,arg) -> 
                 let comment = 
@@ -226,9 +237,19 @@ module ArgumentProcessing =
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
         let createArgumentQueryIfNecessary editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
-            if containsMissingMandatoryAttribute arguments then
-                createArgumentQuery editorPath arcPath arguments
+            if containsMissingMandatoryAttribute arguments then             
+                let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
+                let queryResults = createArgumentQuery editorPath arcPath arguments
+                let stillMissingMandatoryArgs =  
+                    mandatoryArgs
+                    |> Array.map (fun k -> 
+                        let field = tryGetFieldValueByName k queryResults
+                        field = None || field = Some ""                    
+                    )
+                    |> Array.reduce ((||))
+                stillMissingMandatoryArgs,queryResults
             else 
+                false,
                 arguments
                 |> Array.choose (fun (k,v) -> 
                     match v.Arg with 

@@ -15,13 +15,16 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
-    let parameterGroup =
+    let stillMissingMandatoryArgs,parameterGroup =
         let g = groupArguments (r.GetAllResults())
         Prompt.createArgumentQueryIfNecessary editor workDir g  
     
+    if stillMissingMandatoryArgs then
+        failwith "Mandatory arguments were not given either via cli or editor prompt."
+
     if verbosity >= 1 then
 
-        printfn "start processing command with the arguments"
+        printfn "Start processing command with the arguments"
         parameterGroup|> Map.iter (printfn "\t%s:%O")
 
     if verbosity >= 2 then
@@ -33,7 +36,7 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
 
     try commandF arcConfiguration parameterGroup
     finally
-        if verbosity >= 1 then printfn "done processing command"
+        if verbosity >= 1 then printfn "Done processing command"
 
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
     
@@ -57,11 +60,11 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
 let handleInvestigationContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
-    | InvestigationPersonCommand.Update r   -> processCommand arcConfiguration InvestigationAPI.Contacts.update r
-    | InvestigationPersonCommand.Edit r     -> processCommand arcConfiguration InvestigationAPI.Contacts.edit r
-    | InvestigationPersonCommand.Register r -> processCommand arcConfiguration InvestigationAPI.Contacts.register r
-    | InvestigationPersonCommand.Remove r   -> processCommand arcConfiguration InvestigationAPI.Contacts.remove r
-    | InvestigationPersonCommand.List       -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Contacts.list
+    | InvestigationPersonCommand.Update r       -> processCommand arcConfiguration InvestigationAPI.Contacts.update     r
+    | InvestigationPersonCommand.Edit r         -> processCommand arcConfiguration InvestigationAPI.Contacts.edit       r
+    | InvestigationPersonCommand.Register r     -> processCommand arcConfiguration InvestigationAPI.Contacts.register   r
+    | InvestigationPersonCommand.Unregister r   -> processCommand arcConfiguration InvestigationAPI.Contacts.unregister r
+    | InvestigationPersonCommand.List           -> processCommandWithoutArgs arcConfiguration InvestigationAPI.Contacts.list
 
 let handleInvestigationPublicationsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
@@ -73,32 +76,39 @@ let handleInvestigationPublicationsSubCommands arcConfiguration contactsVerb =
 
 let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with
-    | InvestigationCommand.Create r             -> processCommand arcConfiguration InvestigationAPI.create   r
-    | InvestigationCommand.Update r             -> processCommand arcConfiguration InvestigationAPI.update   r
-    | InvestigationCommand.Edit                 -> processCommandWithoutArgs arcConfiguration InvestigationAPI.edit
-    | InvestigationCommand.Delete r             -> processCommand arcConfiguration InvestigationAPI.delete   r
-    | InvestigationCommand.Contacts subCommand  -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | InvestigationCommand.Create r                 -> processCommand arcConfiguration InvestigationAPI.create   r
+    | InvestigationCommand.Update r                 -> processCommand arcConfiguration InvestigationAPI.update   r
+    | InvestigationCommand.Edit                     -> processCommandWithoutArgs arcConfiguration InvestigationAPI.edit
+    | InvestigationCommand.Delete r                 -> processCommand arcConfiguration InvestigationAPI.delete   r
+    | InvestigationCommand.Contacts subCommand      -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | InvestigationCommand.Publications subCommand  -> handleInvestigationPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleStudySubCommands arcConfiguration studyVerb =
     match studyVerb with
-    | StudyCommand.Init r      -> processCommand arcConfiguration StudyAPI.init     r
-    | StudyCommand.Update r    -> processCommand arcConfiguration StudyAPI.update   r
-    | StudyCommand.Edit r      -> processCommand arcConfiguration StudyAPI.edit     r
-    | StudyCommand.Register r  -> processCommand arcConfiguration StudyAPI.register r
-    | StudyCommand.Add r       -> processCommand arcConfiguration StudyAPI.add      r
-    | StudyCommand.Remove r    -> processCommand arcConfiguration StudyAPI.remove   r
-    | StudyCommand.List        -> processCommandWithoutArgs arcConfiguration StudyAPI.list
+    | StudyCommand.Init r       -> processCommand arcConfiguration StudyAPI.init        r
+    | StudyCommand.Register r   -> processCommand arcConfiguration StudyAPI.register    r
+    | StudyCommand.Add r        -> processCommand arcConfiguration StudyAPI.add         r
+    | StudyCommand.Remove r     -> processCommand arcConfiguration StudyAPI.remove      r
+    | StudyCommand.Unregister r -> processCommand arcConfiguration StudyAPI.unregister  r
+    | StudyCommand.Delete r     -> processCommand arcConfiguration StudyAPI.delete      r
+    | StudyCommand.Update r     -> processCommand arcConfiguration StudyAPI.update      r
+    | StudyCommand.Edit r       -> processCommand arcConfiguration StudyAPI.edit        r
+    | StudyCommand.Get r        -> processCommand arcConfiguration StudyAPI.get         r
+    | StudyCommand.List         -> processCommandWithoutArgs arcConfiguration StudyAPI.list
 
 let handleAssaySubCommands arcConfiguration assayVerb =
     match assayVerb with
-    | AssayCommand.Init     r -> processCommand arcConfiguration AssayAPI.init     r
-    | AssayCommand.Update   r -> processCommand arcConfiguration AssayAPI.update   r
-    | AssayCommand.Edit     r -> processCommand arcConfiguration AssayAPI.edit     r
-    | AssayCommand.Register r -> processCommand arcConfiguration AssayAPI.register r
-    | AssayCommand.Add      r -> processCommand arcConfiguration AssayAPI.add      r
-    | AssayCommand.Remove   r -> processCommand arcConfiguration AssayAPI.remove   r
-    | AssayCommand.Move     r -> processCommand arcConfiguration AssayAPI.move     r
-    | AssayCommand.List       -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
+    | AssayCommand.Init         r -> processCommand arcConfiguration AssayAPI.init          r
+    | AssayCommand.Register     r -> processCommand arcConfiguration AssayAPI.register      r
+    | AssayCommand.Add          r -> processCommand arcConfiguration AssayAPI.add           r
+    | AssayCommand.Delete       r -> processCommand arcConfiguration AssayAPI.delete        r
+    | AssayCommand.Unregister   r -> processCommand arcConfiguration AssayAPI.unregister    r
+    | AssayCommand.Remove       r -> processCommand arcConfiguration AssayAPI.remove        r
+    | AssayCommand.Update       r -> processCommand arcConfiguration AssayAPI.update        r
+    | AssayCommand.Edit         r -> processCommand arcConfiguration AssayAPI.edit          r
+    | AssayCommand.Move         r -> processCommand arcConfiguration AssayAPI.move          r
+    | AssayCommand.Get          r -> processCommand arcConfiguration AssayAPI.get           r
+    | AssayCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with

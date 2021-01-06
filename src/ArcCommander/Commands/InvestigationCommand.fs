@@ -13,6 +13,7 @@ type InvestigationCommand =
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] Edit 
     | [<CliPrefix(CliPrefix.None)>] Delete of delete_args: ParseResults<InvestigationDeleteArgs>
     | [<CliPrefix(CliPrefix.None)>] Contacts of contacts:   ParseResults<InvestigationPersonCommand>
+    | [<CliPrefix(CliPrefix.None)>] Publications of contacts:   ParseResults<InvestigationPublicationCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -22,13 +23,14 @@ type InvestigationCommand =
             | Edit              _ -> "Open an editor window to directly edit the arc's investigation file"
             | Delete            _ -> "Delete the arc's investigation file (danger zone!)"
             | Contacts          _ -> "Person functions"
+            | Publications      _ -> "Publication functions"
 
 and InvestigationPersonCommand =
 
-    | [<CliPrefix(CliPrefix.None)>] Update   of update_args:    ParseResults<PersonUpdateArgs>
-    | [<CliPrefix(CliPrefix.None)>] Edit     of edit_args:      ParseResults<PersonEditArgs>
-    | [<CliPrefix(CliPrefix.None)>] Register of register_args:  ParseResults<PersonRegisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Remove   of remove_args:    ParseResults<PersonRemoveArgs>
+    | [<CliPrefix(CliPrefix.None)>] Update      of update_args:    ParseResults<PersonUpdateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:      ParseResults<PersonEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Register    of register_args:  ParseResults<PersonRegisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Unregister  of remove_args:    ParseResults<PersonUnregisterArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -37,7 +39,7 @@ and InvestigationPersonCommand =
             | Update            _ -> "Update an existing person in the arc investigation with the given person metadata. The person is identified by the full name (first name, last name, mid initials)"
             | Edit              _ -> "Open and edit an existing person in the arc investigation with a text editor. The person is identified by the full name (first name, last name, mid initials)"
             | Register          _ -> "Register a person in the arc investigation with the given assay metadata."
-            | Remove            _ -> "Remove a person from the given investigation. The person is identified by the full name (first name, last name, mid initials)."
+            | Unregister        _ -> "Remove a person from the given investigation. The person is identified by the full name (first name, last name, mid initials)."
             | List              _ -> "List all person registered in the arc investigation"
 
 and InvestigationPublicationCommand =

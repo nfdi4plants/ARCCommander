@@ -46,7 +46,7 @@ module InvestigationAPI =
         {investigation with Info = investigationInfo}
         |> IO.toFile investigationFilePath
 
-    /// Opens the existing investigation file in the arc with the text editor set in globalArgs, additionally setting the given investigation metadata contained in cliArgs.
+    /// Opens the existing investigation info in the arc with the text editor set in globalArgs.
     let edit (arcConfiguration:ArcConfiguration) =
        
         printfn "Start investigation edit"
@@ -159,7 +159,7 @@ module InvestigationAPI =
             |> IO.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let remove (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let unregister (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let personLastName = (getFieldValueByName  "LastName"   personArgs)
             let personFirstName = (getFieldValueByName  "FirstName"     personArgs)

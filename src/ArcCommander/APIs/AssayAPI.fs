@@ -15,7 +15,7 @@ module AssayAPI =
 
         let name = getFieldValueByName "AssayIdentifier" assayArgs
 
-        AssayConfiguration.getFolderPaths name arcConfiguration
+        AssayConfiguration.getSubFolderPaths name arcConfiguration
         |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
 
         IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
@@ -143,8 +143,8 @@ module AssayAPI =
         init arcConfiguration assayArgs
         register arcConfiguration assayArgs
 
-    /// Removes an assay file from the arc's investigation file assay register
-    let remove (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
+    /// Unregisters an assay file from the arc's investigation file assay register
+    let unregister (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
@@ -165,6 +165,23 @@ module AssayAPI =
             investigation
         |> IO.toFile investigationFilePath
     
+    /// Deletes assay folder and underlying file structure of given assay
+    let delete (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
+
+        let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+
+        let assayFolder = 
+            AssayConfiguration.tryGetFolderPath assayIdentifier arcConfiguration
+            |> Option.get
+
+        if System.IO.Directory.Exists(assayFolder) then
+            System.IO.Directory.Delete(assayFolder,true)
+
+    /// Remove an assay from the arc by both unregistering it from the investigation file and removing its folder with the underlying file structure
+    let remove (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
+        unregister arcConfiguration assayArgs
+        delete arcConfiguration assayArgs
+
     /// Moves an assay file from one study group to another (provided by assayArgs)
     let move (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
@@ -199,6 +216,38 @@ module AssayAPI =
         | None -> 
             investigation
         |> IO.toFile investigationFilePath
+
+    /// Moves an assay file from one study group to another (provided by assayArgs)
+    let get (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
+
+        let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+
+        let assayFileName = IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration |> Option.get
+
+        let studyIdentifier = getFieldValueByName "StudyIdentifier" assayArgs
+
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+        
+        let investigation = IO.fromFile investigationFilePath
+        
+        match API.Study.tryGetByIdentifier studyIdentifier investigation with
+        | Some study -> 
+            match API.Study.Assay.tryGetByFileName assayFileName study with
+            | Some assay ->
+                printfn "%s:%s" Assay.FileNameLabel assay.FileName
+                printfn "%s:%s" Assay.MeasurementTypeLabel assay.MeasurementType
+                printfn "%s:%s" Assay.MeasurementTypeTermAccessionNumberLabel assay.MeasurementTypeTermAccessionNumber
+                printfn "%s:%s" Assay.MeasurementTypeTermSourceREFLabel assay.MeasurementTypeTermSourceREF
+                printfn "%s:%s" Assay.TechnologyTypeLabel assay.TechnologyType
+                printfn "%s:%s" Assay.TechnologyTypeTermAccessionNumberLabel assay.TechnologyTypeTermAccessionNumber
+                printfn "%s:%s" Assay.TechnologyTypeTermSourceREFLabel assay.TechnologyTypeTermSourceREF
+                printfn "%s:%s" Assay.TechnologyPlatformLabel assay.TechnologyPlatform
+                
+            | None -> printfn "assay %s not found" assayIdentifier
+        | None -> 
+            printfn "study %s not found" studyIdentifier 
+
+
 
     /// Lists all assay identifiers registered in this investigation
     let list (arcConfiguration:ArcConfiguration) =
