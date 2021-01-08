@@ -54,25 +54,31 @@ module Spreadsheet =
         | Some sst -> sst
         | None -> workbookPart.AddNewPart<SharedStringTablePart>()
 
+    /// Returns the worksheetPart associated to the sheet with the given name
+    let tryGetWorksheetPartBySheetName (name:string) (spreadsheetDocument:SpreadsheetDocument) =
+        Sheet.tryItemByName name spreadsheetDocument
+        |> Option.map (fun sheet -> 
+            spreadsheetDocument.WorkbookPart
+            |> Worksheet.WorksheetPart.getByID sheet.Id.Value 
+        )      
+
     /// Returns the sheetData for the given 0 based sheetIndex of the given spreadsheetDocument. 
-    /// Returns an empty list if the sheet of the given sheetIndex does not exist.
     let tryGetSheetBySheetIndex (sheetIndex:uint) (spreadsheetDocument:SpreadsheetDocument) =
         Sheet.tryItem sheetIndex spreadsheetDocument
         |> Option.map (fun sheet -> 
-            let workbookPart = spreadsheetDocument.WorkbookPart
-            let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
-            Worksheet.get worksheetPart
+            spreadsheetDocument.WorkbookPart
+            |> Worksheet.WorksheetPart.getByID sheet.Id.Value 
+            |> Worksheet.get
             |> Worksheet.getSheetData
         )        
 
     /// Returns a sequence of rows containing the cells for the given 0 based sheetIndex of the given spreadsheetDocument. 
-    /// Returns an empty list if the sheet of the given sheetIndex does not exist.
     let getRowsBySheetIndex (sheetIndex:uint) (spreadsheetDocument:SpreadsheetDocument) =
 
         match (Sheet.tryItem sheetIndex spreadsheetDocument) with
         | Some (sheet) ->
             let workbookPart = spreadsheetDocument.WorkbookPart
-            let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
+            let worksheetPart = Worksheet.WorksheetPart.getByID sheet.Id.Value workbookPart     
             let stringTablePart = getOrInitSharedStringTablePart spreadsheetDocument
             seq {
             use reader = OpenXmlReader.Create(worksheetPart)
@@ -90,13 +96,12 @@ module Spreadsheet =
         | None -> Seq.empty
 
     /// Returns a 1D sequence of cells for the given sheetIndex of the given spreadsheetDocument. 
-    /// Returns an empty list if the sheet of the given sheetIndex does not exist.
     let getCellsBySheetIndex (sheetIndex:uint) (spreadsheetDocument:SpreadsheetDocument) =
 
         match (Sheet.tryItem sheetIndex spreadsheetDocument) with
         | Some (sheet) ->
             let workbookPart = spreadsheetDocument.WorkbookPart
-            let worksheetPart = workbookPart.GetPartById(sheet.Id.Value) :?> WorksheetPart      
+            let worksheetPart = Worksheet.WorksheetPart.getByID sheet.Id.Value workbookPart
             let stringTablePart = getOrInitSharedStringTablePart spreadsheetDocument
             seq {
             use reader = OpenXmlReader.Create(worksheetPart)

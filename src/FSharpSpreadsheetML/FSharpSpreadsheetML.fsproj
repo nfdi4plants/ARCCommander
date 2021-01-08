@@ -11,6 +11,7 @@
     <Compile Include="Row.fs" />
     <Compile Include="Sheet.fs" />
     <Compile Include="SheetData.fs" />
+    <Compile Include="Table.fs" />
     <Compile Include="WorkSheet.fs" />
     <Compile Include="Workbook.fs" />
     <Compile Include="Spreadsheet.fs" />

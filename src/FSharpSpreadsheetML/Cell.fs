@@ -115,6 +115,31 @@ module Cell =
 
     /// Gets cellValue
     let getValue (cell:Cell) = cell.CellValue
+    
+    /// Maps a cell to the value string using a shared string table
+    let tryGetValueWithSST (sharedStringTable:SharedStringTable) (cell:Cell) =
+        try 
+            match cell |> tryGetType with
+            | Some (CellValues.SharedString) ->
+    
+                let sharedStringTableIndex = 
+                    cell
+                    |> getValue
+                    |> CellValue.getValue
+                    |> int
+    
+                sharedStringTable
+                |> SharedStringTable.getText sharedStringTableIndex
+                |> SharedStringTable.SharedStringItem.getText
+            | _ ->
+                cell
+                |> getValue
+                |> CellValue.getValue   
+            |> Some
+        with
+        | _ -> None
+
+
 
     /// Maps a cell to the value string using a shared string table
     let getValueWithSST (sharedStringTable:SharedStringTable) (cell:Cell) =

@@ -53,6 +53,17 @@ module Worksheet =
             |> init
             |> get
 
+    module WorksheetPart = 
+
+        /// Returns the worksheetpart matching the given id
+        let getByID sheetID (workbookPart : WorkbookPart) = 
+            workbookPart.GetPartById(sheetID) :?> WorksheetPart  
+            
+        /// Returns the sheetData associated witht the worksheetpart
+        let getSheetData (worksheetPart : WorksheetPart) =
+            get worksheetPart |> getSheetData
+
+
     //let insertCellData (cell:CellData.CellDataValue) (worksheet : Worksheet) =
         
     ///Convenience

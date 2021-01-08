@@ -255,6 +255,11 @@ module SheetData =
 //                                              Cell(s)                                                                 
 //----------------------------------------------------------------------------------------------------------------------
 
+    let tryGetCellAt (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) =         
+        sheetData
+        |> tryGetRowAt rowIndex 
+        |> Option.bind (Row.tryGetCellAt columnIndex)
+
     let getCellAt (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) = 
         sheetData
         |> getRowAt rowIndex 
@@ -264,6 +269,12 @@ module SheetData =
         sheetData 
         |> getCellAt rowIndex columnIndex
         |> Cell.getValue
+
+    /// Gets the string value of the cell at the given 1 based column and row index using a shared string table
+    let tryGetCellValueWithSSTAt (sharedStringTable:SharedStringTable) (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) =
+           sheetData
+           |> tryGetCellAt rowIndex columnIndex
+           |> Option.bind (Cell.tryGetValueWithSST sharedStringTable)
 
     /// Gets the string value of the cell at the given 1 based column and row index using a shared string table
     let getCellValueWithSSTAt (sharedStringTable:SharedStringTable) (rowIndex: uint32) (columnIndex : uint32) (sheetData:SheetData) =
