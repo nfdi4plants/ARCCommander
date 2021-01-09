@@ -268,8 +268,8 @@ module ArgumentProcessing =
                 writeF inp
                 |> Seq.map (fun r -> 
                     sprintf "%s:%s"
-                        (FSharpSpreadsheetML.Row.tryGetValueAt 1u r |> Option.get |> fun s -> s.TrimStart())
-                        (FSharpSpreadsheetML.Row.tryGetValueAt 2u r |> Option.get)
+                        (FSharpSpreadsheetML.Row.tryGetValueAt None 1u r |> Option.get |> fun s -> s.TrimStart())
+                        (FSharpSpreadsheetML.Row.tryGetValueAt None 2u r |> Option.get)
                 )
                 |> Seq.reduce (fun a b -> a + "\n" + b)
             let deserializeF (s:string) : 'A =
@@ -277,7 +277,7 @@ module ArgumentProcessing =
                 |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
                     | k, Field v ->
-                        FSharpSpreadsheetML.Row.ofValues 1u [k;v]
+                        FSharpSpreadsheetML.Row.ofValues None 1u [k;v]
                     | _ -> failwith "Error: file was corrupted in Edtior"
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 

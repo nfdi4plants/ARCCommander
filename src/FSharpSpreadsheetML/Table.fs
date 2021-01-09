@@ -175,7 +175,7 @@ module Table =
         |> Seq.tryFind (TableColumn.getName >> (=) name)
 
     /// If a column with the given header exists in the table, returns its values
-    let tryGetColumnValuesByColumnHeaderWithSST sst sheetData columnHeader (table:Table) =
+    let tryGetColumnValuesByColumnHeader (sst:SharedStringTable Option) sheetData columnHeader (table:Table) =
         let area = getArea table
         table.TableColumns
         |> TableColumns.getTableColumns
@@ -183,21 +183,21 @@ module Table =
         |> Option.map (fun i ->
             let columnIndex =  (Area.leftBoundary area) + (uint i)
             [Area.upperBoundary area .. Area.lowerBoundary area]
-            |> List.choose (fun r -> SheetData.tryGetCellValueWithSSTAt sst r columnIndex sheetData)           
+            |> List.choose (fun r -> SheetData.tryGetCellValueAt sst r columnIndex sheetData)           
         )
         
     /// Reads a complete table. Values are stored sparsely in a dictionary, with the key being a column header and row index tuple
-    let toSparseValueMatrixWithSST sst sheetData (table:Table) =
+    let toSparseValueMatrix (sst:SharedStringTable Option) sheetData (table:Table) =
         let area = getArea table
         let dictionary = System.Collections.Generic.Dictionary<string*int,string>()
         [Area.leftBoundary area .. Area.rightBoundary area]
         |> List.iter (fun c ->
             let upperBoundary = Area.upperBoundary area
             let lowerBoundary = Area.lowerBoundary area
-            let header = SheetData.tryGetCellValueWithSSTAt sst upperBoundary c sheetData |> Option.get
+            let header = SheetData.tryGetCellValueAt sst upperBoundary c sheetData |> Option.get
             List.init (lowerBoundary - upperBoundary |> int |> (+) -1) (fun i ->
                 let r = uint i + upperBoundary + 1u
-                match SheetData.tryGetCellValueWithSSTAt sst r c sheetData with
+                match SheetData.tryGetCellValueAt sst r c sheetData with
                 | Some v -> dictionary.Add((header,i),v)
                 | None -> ()                              
             )

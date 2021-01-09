@@ -191,10 +191,10 @@ module Row =
             row)
 
     /// If the row contains a value at the given index, return it
-    let tryGetValueAt index (row:Row) =
+    let tryGetValueAt (sst:SharedStringTable Option) index (row:Row) =
         row
         |> tryGetCellAt index
-        |> Option.map (Cell.getValue >> Cell.CellValue.getValue)
+        |> Option.bind (Cell.tryGetValue sst)
 
     /// Matches the rowSpan to the cell references inside the row
     let updateRowSpan (row:Row) : Row=
@@ -214,12 +214,12 @@ module Row =
         )
 
     /// Creates a new row from the given values
-    let ofValues rowIndex (vals : 'T seq) =
+    let ofValues (sst:SharedStringTable Option) rowIndex (vals : 'T seq) =
         let spans = Spans.fromBoundaries 1u (Seq.length vals |> uint)
         vals
         |> Seq.mapi (fun i value -> 
             value
-            |> Cell.createGeneric (i + 1 |> uint) rowIndex
+            |> Cell.fromValue sst (i + 1 |> uint) rowIndex
         )
         |> create rowIndex spans      
 
@@ -256,7 +256,7 @@ module Row =
         |> extendSpanRight offset
 
     /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
-    let getIndexedValues (row:Row) =
+    let getIndexedValues (sst:SharedStringTable Option) (row:Row) =
         row
         |> toCellSeq
         |> Seq.map (fun cell -> 
@@ -265,43 +265,24 @@ module Row =
             |> CellReference.toIndices 
             |> fst,
 
-            Cell.getValue cell
-            |> Cell.CellValue.getValue
+            Cell.getValue sst cell
         )
 
-    /// Maps the cells of the given row to tuples of 1 based column indices and the value strings using a shared string table
-    let getIndexedValuesWithSST (sharedStringTable:SharedStringTable) (row:Row) =
-        row
-        |> toCellSeq
-        |> Seq.map (fun cell -> 
-            cell 
-            |> Cell.getReference 
-            |> CellReference.toIndices 
-            |> fst,
-
-            Cell.getValueWithSST sharedStringTable cell
-        )
 
     /// Maps the cells of the given row to the value strings
-    let getRowValues (row:Row)  =
+    let getRowValues (sst:SharedStringTable Option) (row:Row)  =
         row
         |> toCellSeq
-        |> Seq.map (Cell.getValue >> Cell.CellValue.getValue)
-
-    /// Maps the cells of the given row to the value strings using a shared string table
-    let getRowValuesWithSST (sharedStringTable:SharedStringTable) (row:Row)  =
-        row
-        |> toCellSeq
-        |> Seq.map (Cell.getValueWithSST sharedStringTable)
+        |> Seq.map (Cell.getValue sst)
 
     
     /// Add a value as a cell to the row at the given columnindex.
     ///
     /// If a cell exists at the given columnindex, shoves it to the right
-    let insertValue index (value:'T) (row:Row) = 
+    let insertValue (sst:SharedStringTable Option) index (value:'T) (row:Row) = 
 
         let refCell = row |> tryGetCellAfter index 
-        let cell = Cell.createGeneric index (getIndex row) value
+        let cell = Cell.fromValue sst index (getIndex row) value
 
         match refCell with
         | Some ref -> 
@@ -320,10 +301,10 @@ module Row =
     /// Add a value as a cell to the row at the given columnindex using a shared string table
     ///
     /// If a cell exists at the given columnindex, shoves it to the right
-    let insertValueWithSSTAt (sharedStringTable:SharedStringTable) index (value:'T) (row:Row) = 
+    let insertValueAt (sst:SharedStringTable Option) index (value:'T) (row:Row) = 
 
         let refCell = row |> tryGetCellAfter index 
-        let cell = Cell.createWithSST sharedStringTable index (getIndex row) value
+        let cell = Cell.fromValue sst index (getIndex row) value
 
         match refCell with
         | Some ref -> 
@@ -340,41 +321,30 @@ module Row =
 
     
     /// Add a value as a cell to the end of the row.
-    let appendValue (value:'T) (row:Row) = 
+    let appendValue (sst:SharedStringTable Option) (value:'T) (row:Row) = 
         let colIndex = 
             row
             |> getSpan
             |> Spans.rightBoundary
-        let cell = Cell.createGeneric (colIndex + 1u) (row |> getIndex) value
+        let cell = Cell.fromValue sst (colIndex + 1u) (row |> getIndex) value
         row
         |> appendCell cell
         |> extendSpanRight 1u 
 
-    /// Append the value as a cell to the end of the row using a shared string table
-    let appendValueWithSST (sharedStringTable:SharedStringTable) (value:'T) (row:Row) = 
-
-        let colIndex = 
-            row
-            |> getSpan
-            |> Spans.rightBoundary
-        let cell = Cell.createWithSST sharedStringTable (colIndex + 1u) (getIndex row) value
-        row
-        |> appendCell cell
-        |> extendSpanRight 1u 
     
     /// Add a value as a cell to the row at the given columnindex.
     ///
     /// If a cell exists at the given columnindex, Overwrites it
     // To-Do: Add version using a SharedStringTable
-    let setValue index (value:'T) (row:Row) = 
+    let setValue (sst:SharedStringTable Option) index (value:'T) (row:Row) = 
 
         let refCell = row |> tryGetCellAfter index 
-        let cell = Cell.createGeneric index (getIndex row) value
+        let cell = Cell.fromValue sst index (getIndex row) value
 
         match refCell with
         | Some ref when Cell.getReference ref = Cell.getReference cell ->
             ref  |> Cell.setType (Cell.getType cell)  |> ignore
-            ref |> Cell.setValue ((Cell.getValue cell).Clone() :?> CellValue) |> ignore
+            ref |> Cell.setValue ((Cell.getValue sst cell).Clone() :?> CellValue) |> ignore
             row 
         | Some ref -> 
             row |> insertCellBefore cell ref

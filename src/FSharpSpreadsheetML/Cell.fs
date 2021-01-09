@@ -52,17 +52,13 @@ module Cell =
     let create (dataType : CellValues) (reference:string) (value:CellValue) = 
         Cell(CellReference = StringValue.FromString reference, DataType = EnumValue(dataType), CellValue = value)
 
-    /// Creates a cell from the 1 based column and row indices and a value
-    let createGeneric columnIndex rowIndex (value:'T) =
-        let valType,value = inferCellValue value
-        let reference = CellReference.ofIndices columnIndex (rowIndex)
-        create valType reference (CellValue.create value)
-    
+
     /// Create a cell using a shared string table, also returns the updated shared string table.
-    let createWithSST (sharedStringTable: SharedStringTable) columnIndex rowIndex (value:'T) = 
+    let fromValue (sharedStringTable: SharedStringTable Option) columnIndex rowIndex (value:'T) = 
         let value = box value
         match value with
-        | :? string as s -> 
+        | :? string as s when sharedStringTable.IsSome-> 
+            let sharedStringTable = sharedStringTable.Value
             let reference = CellReference.ofIndices columnIndex (rowIndex)
             match SharedStringTable.tryGetIndexByString s sharedStringTable with
             | Some i -> 
@@ -81,7 +77,9 @@ module Cell =
                 |> CellValue.create
                 |> create CellValues.SharedString reference 
         | _  -> 
-           createGeneric columnIndex rowIndex (value.ToString())
+           let valType,value = inferCellValue value
+           let reference = CellReference.ofIndices columnIndex (rowIndex)
+           create valType reference (CellValue.create value)
 
     /// Gets "A1"-Style cell reference
     let getReference (cell:Cell) = cell.CellReference.Value
@@ -107,48 +105,45 @@ module Cell =
         cell
 
     /// Gets Some cellValue if cellValue is existent. Else returns None
-    let tryGetValue (cell:Cell) = 
+    let tryGetCellValue (cell:Cell) = 
         if cell.CellValue <> null then
             Some cell.CellValue
         else
             None
 
     /// Gets cellValue
-    let getValue (cell:Cell) = cell.CellValue
+    let getCellValue (cell:Cell) = cell.CellValue
     
     /// Maps a cell to the value string using a shared string table
-    let tryGetValueWithSST (sharedStringTable:SharedStringTable) (cell:Cell) =
-        try 
-            match cell |> tryGetType with
-            | Some (CellValues.SharedString) ->
-    
-                let sharedStringTableIndex = 
-                    cell
-                    |> getValue
-                    |> CellValue.getValue
-                    |> int
-    
-                sharedStringTable
-                |> SharedStringTable.getText sharedStringTableIndex
-                |> SharedStringTable.SharedStringItem.getText
-            | _ ->
-                cell
-                |> getValue
-                |> CellValue.getValue   
-            |> Some
-        with
-        | _ -> None
-
-
-
-    /// Maps a cell to the value string using a shared string table
-    let getValueWithSST (sharedStringTable:SharedStringTable) (cell:Cell) =
+    let tryGetValue (sharedStringTable:SharedStringTable Option) (cell:Cell) =
         match cell |> tryGetType with
-        | Some (CellValues.SharedString) ->
+        | Some (CellValues.SharedString) when sharedStringTable.IsSome->
+            let sharedStringTable = sharedStringTable.Value
+            cell
+            |> tryGetCellValue
+            |> Option.map (
+                CellValue.getValue 
+                >> int
+                >> fun i -> SharedStringTable.getText i sharedStringTable
+                >> SharedStringTable.SharedStringItem.getText                   
+            )
+    
+        | _ ->
+            cell
+            |> tryGetCellValue
+            |> Option. map CellValue.getValue   
+
+
+
+    /// Maps a cell to the value string using a shared string table
+    let getValue (sharedStringTable:SharedStringTable Option) (cell:Cell) =
+        match cell |> tryGetType with
+        | Some (CellValues.SharedString) when sharedStringTable.IsSome->
+            let sharedStringTable = sharedStringTable.Value
 
             let sharedStringTableIndex = 
                 cell
-                |> getValue
+                |> getCellValue
                 |> CellValue.getValue
                 |> int
 
@@ -157,7 +152,7 @@ module Cell =
             |> SharedStringTable.SharedStringItem.getText
         | _ ->
             cell
-            |> getValue
+            |> getCellValue
             |> CellValue.getValue   
 
     /// Sets cellValue
