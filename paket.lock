@@ -39,6 +39,9 @@ NUGET
     FSharp.Core (4.7.2)
     FSharp.Data (3.3.3)
       FSharp.Core (>= 4.3.4)
+    FSharpSpreadsheetML (0.0.1)
+      DocumentFormat.OpenXml
+      FSharp.Core (4.7.2)
     Iced (1.10)
     ini-parser-netstandard (2.5.2)
     Microsoft.Bcl.AsyncInterfaces (5.0)

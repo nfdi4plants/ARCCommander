@@ -15,8 +15,5 @@
     <Compile Include="AssayFile\API.fs" />
     <Compile Include="AssayFile\IO.fs" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FSharpSpreadsheetML\FSharpSpreadsheetML.fsproj" />
-  </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
