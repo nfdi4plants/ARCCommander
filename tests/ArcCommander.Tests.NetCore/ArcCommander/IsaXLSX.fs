@@ -47,11 +47,11 @@ let testIsaXLSXIO =
             let i =                
                 Spreadsheet.fromFile referenceInvestigationFilePath false
                 |> Spreadsheet.getRowsBySheetIndex 0u 
-                |> Seq.map (Row.getRowValues >> Seq.reduce (fun a b -> a + b))
+                |> Seq.map (Row.getRowValues None >> Seq.reduce (fun a b -> a + b))
             let o = 
                 Spreadsheet.fromFile outputInvestigationFilePath false
                 |> Spreadsheet.getRowsBySheetIndex 0u 
-                |> Seq.map (Row.getRowValues >> Seq.reduce (fun a b -> a + b))
+                |> Seq.map (Row.getRowValues None >> Seq.reduce (fun a b -> a + b))
 
             Expect.sequenceEqual o i "Written investigation file does not match read investigation file"
         )

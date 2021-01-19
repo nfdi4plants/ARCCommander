@@ -3,15 +3,17 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>ISA_XSLX</RootNamespace>
-	 <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DataModel.fs" />
+    <Compile Include="IO.fs" />
     <Compile Include="InvestigationFile\DataModel.fs" />
     <Compile Include="InvestigationFile\API.fs" />
     <Compile Include="InvestigationFile\IO.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FSharpSpreadsheetML\FSharpSpreadsheetML.fsproj" />
+    <Compile Include="AssayFile\DataModel.fs" />
+    <Compile Include="AssayFile\API.fs" />
+    <Compile Include="AssayFile\IO.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

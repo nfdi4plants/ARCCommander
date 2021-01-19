@@ -79,7 +79,7 @@ module IO =
 
                 let row = en.Current
 
-                match Row.tryGetValueAt 1u row, Row.tryGetValueAt 2u row with
+                match Row.tryGetValueAt None 1u row, Row.tryGetValueAt None 2u row with
 
                 | Comment k, Some v -> 
                     loop identifier title description submissionDate publicReleaseDate ((k,v) :: comments) remarks (lineNumber + 1)         
@@ -116,7 +116,7 @@ module IO =
 
             if en.MoveNext() then        
                 let row = en.Current
-                match Row.tryGetValueAt 1u row, Row.tryGetValueAt 2u row with
+                match Row.tryGetValueAt None 1u row, Row.tryGetValueAt None 2u row with
 
                 | Comment k, Some v -> 
                     loop identifier title description submissionDate publicReleaseDate fileName ((k,v) :: comments) remarks (lineNumber + 1)         
@@ -171,7 +171,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
 
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
@@ -236,7 +236,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
 
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
@@ -324,7 +324,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
                 | Comment k, Some v -> 
@@ -419,7 +419,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
                 | Comment k, Some v -> 
@@ -475,7 +475,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
                 | Comment k, Some v -> 
@@ -540,7 +540,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
                 | Comment k, Some v -> 
@@ -631,7 +631,7 @@ module IO =
                         (List.map (fun (key,values) -> key,Array.tryItemDefault i "" values) comments)
                 )
             if en.MoveNext() then  
-                let row = en.Current |> Row.getIndexedValues |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
+                let row = en.Current |> Row.getIndexedValues None |> Seq.map (fun (i,v) -> int i - 1,v) |> Array.ofIndexedSeq
                 match Array.tryItem 0 row , Array.trySkip 1 row with
 
                 | Comment k, Some v -> 
@@ -790,7 +790,7 @@ module IO =
                 Investigation.create ontologySourceReferences investigationInfo publications contacts (List.rev studies) remarks
     
         if en.MoveNext () then
-            let currentLine = en.Current |> Row.tryGetValueAt 1u
+            let currentLine = en.Current |> Row.tryGetValueAt None 1u
             loop currentLine [] emptyInvestigationInfo [] [] [] [] 1
             
         else
@@ -812,186 +812,186 @@ module IO =
         let commentKeys = termSources |> List.collect (fun termSource -> termSource.Comments |> List.map fst)
 
         seq {
-            yield   (Row.ofValues 0u (TermSource.NameLabel                      :: (termSources |> List.map (fun termSource -> termSource.Name))))
-            yield   (Row.ofValues 0u (TermSource.FileLabel                      :: (termSources |> List.map (fun termSource -> termSource.File))))
-            yield   (Row.ofValues 0u (TermSource.VersionLabel                      :: (termSources |> List.map (fun termSource -> termSource.Version))))
-            yield   (Row.ofValues 0u (TermSource.DescriptionLabel                      :: (termSources |> List.map (fun termSource -> termSource.Description))))
+            yield   (Row.ofValues None 0u (TermSource.NameLabel                      :: (termSources |> List.map (fun termSource -> termSource.Name))))
+            yield   (Row.ofValues None 0u (TermSource.FileLabel                      :: (termSources |> List.map (fun termSource -> termSource.File))))
+            yield   (Row.ofValues None 0u (TermSource.VersionLabel                      :: (termSources |> List.map (fun termSource -> termSource.Version))))
+            yield   (Row.ofValues None 0u (TermSource.DescriptionLabel                      :: (termSources |> List.map (fun termSource -> termSource.Description))))
 
             for key in commentKeys do
                 let values = 
                     termSources |> List.map (fun termSource -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" termSource.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writeInvestigationInfo (investigationInfo : InvestigationInfo) =  
         seq {       
-            yield   (Row.ofValues 0u [InvestigationInfo.IdentifierLabel;         investigationInfo.Identifier])
-            yield   (Row.ofValues 0u [InvestigationInfo.TitleLabel;              investigationInfo.Title])
-            yield   (Row.ofValues 0u [InvestigationInfo.DescriptionLabel;        investigationInfo.Description])
-            yield   (Row.ofValues 0u [InvestigationInfo.SubmissionDateLabel;     investigationInfo.SubmissionDate])
-            yield   (Row.ofValues 0u [InvestigationInfo.PublicReleaseDateLabel;  investigationInfo.PublicReleaseDate])
-            yield!  (investigationInfo.Comments |> List.map (fun (k,v) -> Row.ofValues 0u [wrapCommentKey k;v]))         
+            yield   ( Row.ofValues None 0u [InvestigationInfo.IdentifierLabel;         investigationInfo.Identifier])
+            yield   ( Row.ofValues None 0u [InvestigationInfo.TitleLabel;              investigationInfo.Title])
+            yield   ( Row.ofValues None 0u [InvestigationInfo.DescriptionLabel;        investigationInfo.Description])
+            yield   ( Row.ofValues None 0u [InvestigationInfo.SubmissionDateLabel;     investigationInfo.SubmissionDate])
+            yield   ( Row.ofValues None 0u [InvestigationInfo.PublicReleaseDateLabel;  investigationInfo.PublicReleaseDate])
+            yield!  (investigationInfo.Comments |> List.map (fun (k,v) ->  Row.ofValues None 0u [wrapCommentKey k;v]))         
         }
 
     let writeStudyInfo (studyInfo : StudyInfo) =  
 
         seq {   
-            yield   (Row.ofValues 0u [StudyInfo.IdentifierLabel;         studyInfo.Identifier]          )
-            yield   (Row.ofValues 0u [StudyInfo.TitleLabel;              studyInfo.Title]               )
-            yield   (Row.ofValues 0u [StudyInfo.DescriptionLabel;        studyInfo.Description]         )
-            yield   (Row.ofValues 0u [StudyInfo.SubmissionDateLabel;     studyInfo.SubmissionDate]      )
-            yield   (Row.ofValues 0u [StudyInfo.PublicReleaseDateLabel;  studyInfo.PublicReleaseDate]   )
-            yield   (Row.ofValues 0u [StudyInfo.FileNameLabel;           studyInfo.FileName]            )
-            yield!  (studyInfo.Comments |> List.map (fun (k,v) -> Row.ofValues 0u [wrapCommentKey k;v]))         
+            yield   ( Row.ofValues None 0u [StudyInfo.IdentifierLabel;         studyInfo.Identifier]          )
+            yield   ( Row.ofValues None 0u [StudyInfo.TitleLabel;              studyInfo.Title]               )
+            yield   ( Row.ofValues None 0u [StudyInfo.DescriptionLabel;        studyInfo.Description]         )
+            yield   ( Row.ofValues None 0u [StudyInfo.SubmissionDateLabel;     studyInfo.SubmissionDate]      )
+            yield   ( Row.ofValues None 0u [StudyInfo.PublicReleaseDateLabel;  studyInfo.PublicReleaseDate]   )
+            yield   ( Row.ofValues None 0u [StudyInfo.FileNameLabel;           studyInfo.FileName]            )
+            yield!  (studyInfo.Comments |> List.map (fun (k,v) ->  Row.ofValues None 0u [wrapCommentKey k;v]))         
         }
 
     let writeDesigns prefix (designs : Design list) =
         let commentKeys = designs |> List.collect (fun design -> design.Comments |> List.map fst) |> List.distinct
 
         seq {
-            yield   (Row.ofValues 0u (prefix + " " + Design.DesignTypeLabel                      :: (designs |> List.map (fun design -> design.DesignType))))
-            yield   (Row.ofValues 0u (prefix + " " + Design.TypeTermAccessionNumberLabel                      :: (designs |> List.map (fun design -> design.TypeTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Design.TypeTermSourceREFLabel                      :: (designs |> List.map (fun design -> design.TypeTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Design.DesignTypeLabel                      :: (designs |> List.map (fun design -> design.DesignType))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Design.TypeTermAccessionNumberLabel                      :: (designs |> List.map (fun design -> design.TypeTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Design.TypeTermSourceREFLabel                      :: (designs |> List.map (fun design -> design.TypeTermSourceREF))))
 
             for key in commentKeys do
                 let values = 
                     designs |> List.map (fun design -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" design.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writePublications prefix (publications : Publication list) =
         let commentKeys = publications |> List.collect (fun publication -> publication.Comments |> List.map fst) |> List.distinct
 
         seq {
-            yield   (Row.ofValues 0u (prefix + " " + Publication.PubMedIDLabel                      :: (publications |> List.map (fun publication -> publication.PubMedID))))
-            yield   (Row.ofValues 0u (prefix + " " + Publication.DOILabel                      :: (publications |> List.map (fun publication -> publication.DOI))))
-            yield   (Row.ofValues 0u (prefix + " " + Publication.AuthorListLabel                      :: (publications |> List.map (fun publication -> publication.AuthorList))))
-            yield   (Row.ofValues 0u (prefix + " " + Publication.TitleLabel                      :: (publications |> List.map (fun publication -> publication.Title))))
-            yield   (Row.ofValues 0u (prefix + " " + Publication.StatusLabel                      :: (publications |> List.map (fun publication -> publication.Status))))
-            yield   (Row.ofValues 0u (prefix + " " + Publication.StatusTermAccessionNumberLabel                      :: (publications |> List.map (fun publication -> publication.StatusTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Publication.StatusTermSourceREFLabel                      :: (publications |> List.map (fun publication -> publication.StatusTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.PubMedIDLabel                      :: (publications |> List.map (fun publication -> publication.PubMedID))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.DOILabel                      :: (publications |> List.map (fun publication -> publication.DOI))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.AuthorListLabel                      :: (publications |> List.map (fun publication -> publication.AuthorList))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.TitleLabel                      :: (publications |> List.map (fun publication -> publication.Title))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.StatusLabel                      :: (publications |> List.map (fun publication -> publication.Status))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.StatusTermAccessionNumberLabel                      :: (publications |> List.map (fun publication -> publication.StatusTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Publication.StatusTermSourceREFLabel                      :: (publications |> List.map (fun publication -> publication.StatusTermSourceREF))))
 
             for key in commentKeys do
                 let values = 
                     publications |> List.map (fun publication -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" publication.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writeFactors prefix (factors : Factor list) =
         let commentKeys = factors |> List.collect (fun factor -> factor.Comments |> List.map fst) |> List.distinct
 
         seq {
-            yield   (Row.ofValues 0u (prefix + " " + Factor.NameLabel                      :: (factors |> List.map (fun factor -> factor.Name))))
-            yield   (Row.ofValues 0u (prefix + " " + Factor.FactorTypeLabel                      :: (factors |> List.map (fun factor -> factor.FactorType))))
-            yield   (Row.ofValues 0u (prefix + " " + Factor.TypeTermAccessionNumberLabel                      :: (factors |> List.map (fun factor -> factor.TypeTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Factor.TypeTermSourceREFLabel                      :: (factors |> List.map (fun factor -> factor.TypeTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Factor.NameLabel                      :: (factors |> List.map (fun factor -> factor.Name))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Factor.FactorTypeLabel                      :: (factors |> List.map (fun factor -> factor.FactorType))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Factor.TypeTermAccessionNumberLabel                      :: (factors |> List.map (fun factor -> factor.TypeTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Factor.TypeTermSourceREFLabel                      :: (factors |> List.map (fun factor -> factor.TypeTermSourceREF))))
 
             for key in commentKeys do
                 let values = 
                     factors |> List.map (fun factor -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" factor.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writeAssays prefix (assays : Assay list) =
         let commentKeys = assays |> List.collect (fun assay -> assay.Comments |> List.map fst) |> List.distinct
 
         seq { 
-            yield   (Row.ofValues 0u (prefix + " " + Assay.MeasurementTypeLabel                      :: (assays |> List.map (fun assay -> assay.MeasurementType))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.MeasurementTypeTermAccessionNumberLabel   :: (assays |> List.map (fun assay -> assay.MeasurementTypeTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.MeasurementTypeTermSourceREFLabel         :: (assays |> List.map (fun assay -> assay.MeasurementTypeTermSourceREF))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyTypeLabel                       :: (assays |> List.map (fun assay -> assay.TechnologyType))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyTypeTermAccessionNumberLabel    :: (assays |> List.map (fun assay -> assay.TechnologyTypeTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyTypeTermSourceREFLabel          :: (assays |> List.map (fun assay -> assay.TechnologyTypeTermSourceREF))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.TechnologyPlatformLabel                   :: (assays |> List.map (fun assay -> assay.TechnologyPlatform))))
-            yield   (Row.ofValues 0u (prefix + " " + Assay.FileNameLabel                             :: (assays |> List.map (fun assay -> assay.FileName))))               
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.MeasurementTypeLabel                      :: (assays |> List.map (fun assay -> assay.MeasurementType))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.MeasurementTypeTermAccessionNumberLabel   :: (assays |> List.map (fun assay -> assay.MeasurementTypeTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.MeasurementTypeTermSourceREFLabel         :: (assays |> List.map (fun assay -> assay.MeasurementTypeTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.TechnologyTypeLabel                       :: (assays |> List.map (fun assay -> assay.TechnologyType))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.TechnologyTypeTermAccessionNumberLabel    :: (assays |> List.map (fun assay -> assay.TechnologyTypeTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.TechnologyTypeTermSourceREFLabel          :: (assays |> List.map (fun assay -> assay.TechnologyTypeTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.TechnologyPlatformLabel                   :: (assays |> List.map (fun assay -> assay.TechnologyPlatform))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Assay.FileNameLabel                             :: (assays |> List.map (fun assay -> assay.FileName))))               
             
             for key in commentKeys do
                 let values = 
                     assays |> List.map (fun assay -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" assay.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writeProtocols prefix (protocols : Protocol list) =
         let commentKeys = protocols |> List.collect (fun protocol -> protocol.Comments |> List.map fst) |> List.distinct
 
         seq {
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.NameLabel                      :: (protocols |> List.map (fun protocol -> protocol.Name))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ProtocolTypeLabel                      :: (protocols |> List.map (fun protocol -> protocol.ProtocolType))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.TypeTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.TypeTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.TypeTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.TypeTermSourceREF))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.DescriptionLabel                      :: (protocols |> List.map (fun protocol -> protocol.Description))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.URILabel                      :: (protocols |> List.map (fun protocol -> protocol.URI))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.VersionLabel                      :: (protocols |> List.map (fun protocol -> protocol.Version))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ParametersNameLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersName))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ParametersTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ParametersTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersTermSourceREF))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsNameLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsName))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsTypeLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsType))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsTypeTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsTypeTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Protocol.ComponentsTypeTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsTypeTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.NameLabel                      :: (protocols |> List.map (fun protocol -> protocol.Name))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ProtocolTypeLabel                      :: (protocols |> List.map (fun protocol -> protocol.ProtocolType))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.TypeTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.TypeTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.TypeTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.TypeTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.DescriptionLabel                      :: (protocols |> List.map (fun protocol -> protocol.Description))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.URILabel                      :: (protocols |> List.map (fun protocol -> protocol.URI))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.VersionLabel                      :: (protocols |> List.map (fun protocol -> protocol.Version))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ParametersNameLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersName))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ParametersTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ParametersTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.ParametersTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ComponentsNameLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsName))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ComponentsTypeLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsType))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ComponentsTypeTermAccessionNumberLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsTypeTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Protocol.ComponentsTypeTermSourceREFLabel                      :: (protocols |> List.map (fun protocol -> protocol.ComponentsTypeTermSourceREF))))
 
             for key in commentKeys do
                 let values = 
                     protocols |> List.map (fun protocol -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" protocol.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writePersons prefix (persons : Person list) =
         let commentKeys = persons |> List.collect (fun person -> person.Comments |> List.map fst) |> List.distinct
 
         seq {
-            yield   (Row.ofValues 0u (prefix + " " + Person.LastNameLabel                      :: (persons |> List.map (fun person -> person.LastName))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.FirstNameLabel                      :: (persons |> List.map (fun person -> person.FirstName))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.MidInitialsLabel                      :: (persons |> List.map (fun person -> person.MidInitials))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.EmailLabel                      :: (persons |> List.map (fun person -> person.Email))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.PhoneLabel                      :: (persons |> List.map (fun person -> person.Phone))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.FaxLabel                      :: (persons |> List.map (fun person -> person.Fax))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.AddressLabel                      :: (persons |> List.map (fun person -> person.Address))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.AffiliationLabel                      :: (persons |> List.map (fun person -> person.Affiliation))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.RolesLabel                      :: (persons |> List.map (fun person -> person.Roles))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.RolesTermAccessionNumberLabel                      :: (persons |> List.map (fun person -> person.RolesTermAccessionNumber))))
-            yield   (Row.ofValues 0u (prefix + " " + Person.RolesTermSourceREFLabel                      :: (persons |> List.map (fun person -> person.RolesTermSourceREF))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.LastNameLabel                      :: (persons |> List.map (fun person -> person.LastName))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.FirstNameLabel                      :: (persons |> List.map (fun person -> person.FirstName))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.MidInitialsLabel                      :: (persons |> List.map (fun person -> person.MidInitials))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.EmailLabel                      :: (persons |> List.map (fun person -> person.Email))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.PhoneLabel                      :: (persons |> List.map (fun person -> person.Phone))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.FaxLabel                      :: (persons |> List.map (fun person -> person.Fax))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.AddressLabel                      :: (persons |> List.map (fun person -> person.Address))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.AffiliationLabel                      :: (persons |> List.map (fun person -> person.Affiliation))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.RolesLabel                      :: (persons |> List.map (fun person -> person.Roles))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.RolesTermAccessionNumberLabel                      :: (persons |> List.map (fun person -> person.RolesTermAccessionNumber))))
+            yield   ( Row.ofValues None 0u (prefix + " " + Person.RolesTermSourceREFLabel                      :: (persons |> List.map (fun person -> person.RolesTermSourceREF))))
 
             for key in commentKeys do
                 let values = 
                     persons |> List.map (fun person -> 
                         List.tryPickDefault (fun (k,v) -> if k = key then Some v else None) "" person.Comments
                     )
-                yield (Row.ofValues 0u (wrapCommentKey key :: values))
+                yield ( Row.ofValues None 0u (wrapCommentKey key :: values))
         }
 
     let writeStudy (study : Study) =
         seq {          
             yield! writeStudyInfo study.Info
 
-            yield Row.ofValues 0u [Study.DesignDescriptorsLabel]
+            yield  Row.ofValues None 0u [Study.DesignDescriptorsLabel]
             yield! writeDesigns Study.DesignDescriptorsPrefix study.DesignDescriptors
 
-            yield Row.ofValues 0u [Study.PublicationsLabel]
+            yield  Row.ofValues None 0u [Study.PublicationsLabel]
             yield! writePublications Study.PublicationsPrefix study.Publications
 
-            yield Row.ofValues 0u [Study.FactorsLabel]
+            yield  Row.ofValues None 0u [Study.FactorsLabel]
             yield! writeFactors Study.FactorsPrefix study.Factors
 
-            yield Row.ofValues 0u [Study.AssaysLabel]
+            yield  Row.ofValues None 0u [Study.AssaysLabel]
             yield! writeAssays Study.AssaysPrefix study.Assays
 
-            yield Row.ofValues 0u [Study.ProtocolsLabel]
+            yield  Row.ofValues None 0u [Study.ProtocolsLabel]
             yield! writeProtocols Study.ProtocolsPrefix study.Protocols
 
-            yield Row.ofValues 0u [Study.ContactsLabel]
+            yield  Row.ofValues None 0u [Study.ContactsLabel]
             yield! writePersons Study.ContactsPrefix study.Contacts
         }
 
@@ -1001,7 +1001,7 @@ module IO =
             let rec loop i l nl =
                 match Map.tryFind i rm with
                 | Some remark ->
-                    Row.ofValues 1u [wrapRemark remark] :: nl
+                     Row.ofValues None 1u [wrapRemark remark] :: nl
                     |> loop (i+1) l
                 | None -> 
                     match l with
@@ -1011,20 +1011,20 @@ module IO =
             loop 1 (rows |> List.ofSeq) []
             |> List.rev
         seq {
-            yield Row.ofValues 0u [Investigation.OntologySourceReferenceLabel]
+            yield  Row.ofValues None 0u [Investigation.OntologySourceReferenceLabel]
             yield! writeTermSources investigation.OntologySourceReference
 
-            yield Row.ofValues 0u [Investigation.InvestigationLabel]
+            yield  Row.ofValues None 0u [Investigation.InvestigationLabel]
             yield! writeInvestigationInfo investigation.Info
 
-            yield Row.ofValues 0u [Investigation.PublicationsLabel]
+            yield  Row.ofValues None 0u [Investigation.PublicationsLabel]
             yield! writePublications Investigation.PublicationsPrefix investigation.Publications
 
-            yield Row.ofValues 0u [Investigation.ContactsLabel]
+            yield  Row.ofValues None 0u [Investigation.ContactsLabel]
             yield! writePersons Investigation.ContactsPrefix investigation.Contacts
 
             for study in investigation.Studies do
-                yield Row.ofValues 0u [Investigation.StudyLabel]
+                yield  Row.ofValues None 0u [Investigation.StudyLabel]
                 yield! writeStudy study
         }
         |> insertRemarks investigation.Remarks
