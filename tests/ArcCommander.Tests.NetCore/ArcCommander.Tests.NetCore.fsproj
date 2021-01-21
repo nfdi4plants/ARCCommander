@@ -23,8 +23,4 @@
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\IsaXLSX\IsaXLSX.fsproj" />
-  </ItemGroup>
 </Project>

@@ -6,9 +6,11 @@ framework: netstandard2.0, netcoreapp3.1
 nuget FSharp.Core 4.7.2
 nuget FSharpSpreadsheetML
 
-
 nuget ini-parser-netstandard
 nuget FSharp.Data
+
+nuget ISADotNet
+nuget ISADotNet.XLSX
 
 nuget Argu      
 nuget Expecto
