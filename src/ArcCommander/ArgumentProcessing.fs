@@ -256,20 +256,23 @@ module ArgumentProcessing =
                     | None -> Some (k,Field ""))
                 |> Map.ofArray
 
+        let serializeXSLXWriterOutput (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>) (inp : 'A) = 
+            writeF inp
+            |> Seq.map (fun r -> 
+                sprintf "%s:%s"
+                    (FSharpSpreadsheetML.Row.tryGetValueAt None 1u r |> Option.get |> fun s -> s.TrimStart())
+                    (FSharpSpreadsheetML.Row.tryGetValueAt None 2u r |> Option.get)
+            )
+            |> Seq.reduce (fun a b -> a + "\n" + b)
+
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
         let createIsaItemQuery editorPath arcPath 
             (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
             (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> 'A)
             (isaItem : 'A) = 
 
-            let serializeF (inp : 'A) = 
-                writeF inp
-                |> Seq.map (fun r -> 
-                    sprintf "%s:%s"
-                        (FSharpSpreadsheetML.Row.tryGetValueAt None 1u r |> Option.get |> fun s -> s.TrimStart())
-                        (FSharpSpreadsheetML.Row.tryGetValueAt None 2u r |> Option.get)
-                )
-                |> Seq.reduce (fun a b -> a + "\n" + b)
+            let serializeF = serializeXSLXWriterOutput writeF
+
             let deserializeF (s:string) : 'A =
                 s.Split '\n'
                 |> Seq.map (fun x ->                 
