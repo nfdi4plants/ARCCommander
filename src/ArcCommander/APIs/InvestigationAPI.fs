@@ -4,7 +4,10 @@ open System
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open IsaXLSX.InvestigationFile
+
+open ISADotNet
+open ISADotNet.XLSX
+
 
 /// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs
 module InvestigationAPI =
@@ -220,14 +223,14 @@ module InvestigationAPI =
         let update (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let publication = 
-                Publication.create
-                    (getFieldValueByName  "PubMedID"                             publicationArgs)
-                    (getFieldValueByName  "DOI"                                  publicationArgs)
-                    (getFieldValueByName  "AuthorList"                           publicationArgs)
-                    (getFieldValueByName  "PublicationTitle"                     publicationArgs)
-                    (getFieldValueByName  "PublicationStatus"                    publicationArgs)
-                    (getFieldValueByName  "PublicationStatusTermAccessionNumber" publicationArgs)
-                    (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
+                Publications.fr
+                    (getFieldValueByName  "PubMedID"                    publicationArgs)
+                    (getFieldValueByName  "DOI"                         publicationArgs)
+                    (getFieldValueByName  "AuthorList"                  publicationArgs)
+                    (getFieldValueByName  "PublicationTitle"            publicationArgs)
+                    (getFieldValueByName  "PublicationStatus"           publicationArgs)
+                    (getFieldValueByName  "StatusTermAccessionNumber"   publicationArgs)
+                    (getFieldValueByName  "StatusTermSourceREF"         publicationArgs)
                     []
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -272,7 +275,7 @@ module InvestigationAPI =
                     (getFieldValueByName  "AuthorList"                           publicationArgs)
                     (getFieldValueByName  "PublicationTitle"                     publicationArgs)
                     (getFieldValueByName  "PublicationStatus"                    publicationArgs)
-                    (getFieldValueByName  "PublicationStatusTermAccessionNumber" publicationArgs)
+                    (getFieldValueByName  "StatusTermAccessionNumber" publicationArgs)
                     (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
                     []
             

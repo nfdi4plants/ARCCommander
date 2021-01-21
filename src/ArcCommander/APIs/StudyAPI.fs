@@ -138,12 +138,12 @@ module StudyAPI =
         
         match API.Study.tryGetByIdentifier identifier investigation with
         | Some study ->
-            printf "%s:%s" StudyInfo.IdentifierLabel study.Info.Identifier
-            printf "%s:%s" StudyInfo.TitleLabel study.Info.Title
-            printf "%s:%s" StudyInfo.DescriptionLabel study.Info.Description
-            printf "%s:%s" StudyInfo.PublicReleaseDateLabel study.Info.PublicReleaseDate
-            printf "%s:%s" StudyInfo.SubmissionDateLabel study.Info.SubmissionDate
-            printf "%s:%s" StudyInfo.FileNameLabel study.Info.FileName
+            printfn "%s:%s" StudyInfo.IdentifierLabel study.Info.Identifier
+            printfn "%s:%s" StudyInfo.TitleLabel study.Info.Title
+            printfn "%s:%s" StudyInfo.DescriptionLabel study.Info.Description
+            printfn "%s:%s" StudyInfo.PublicReleaseDateLabel study.Info.PublicReleaseDate
+            printfn "%s:%s" StudyInfo.SubmissionDateLabel study.Info.SubmissionDate
+            printfn "%s:%s" StudyInfo.FileNameLabel study.Info.FileName
         | None -> ()
 
     /// Lists all study identifiers registered in this arc's investigation file
