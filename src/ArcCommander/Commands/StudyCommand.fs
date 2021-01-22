@@ -133,6 +133,7 @@ and StudyProtocolCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<ProtocolEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<ProtocolRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<ProtocolUnregisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Load        of load_args:       ParseResults<ProtocolLoadArgs>
     | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<ProtocolGetArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
@@ -143,5 +144,6 @@ and StudyProtocolCommand =
             | Edit              _ -> "Open and edit an existing protocol in the arc investigation study with a text editor. The protocol is identified by name"
             | Register          _ -> "Register a protocol in the arc investigation study with the given assay metadata."
             | Unregister        _ -> "Unregister a protocol from the given investigation study. The protocol is identified by name"
+            | Load              _ -> "Load a protocol from an ISA json file and add it to the study"
             | Get               _ -> "Get the metadata of a protocol registered in the arc investigation study"
             | List              _ -> "List all protocol registered in the arc investigation study"

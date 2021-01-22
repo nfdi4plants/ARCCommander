@@ -80,7 +80,7 @@ module InvestigationAPI =
                 (Investigation.InvestigationInfo.ReadInvestigationInfo 1 >> fun (_,_,_,item) -> Investigation.fromParts item [] [] [] [] []) 
                 investigation
                
-        Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
+        API.Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
         |> Investigation.toFile investigationFilePath
 
     /// Deletes the existing investigation file in the arc if the given identifier matches the identifier set in the investigation file

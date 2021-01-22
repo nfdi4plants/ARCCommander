@@ -6,6 +6,7 @@
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="paket.references" />
     <None Include="config" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />

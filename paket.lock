@@ -130,7 +130,7 @@ NUGET
     System.Text.Encoding.CodePages (5.0)
       Microsoft.NETCore.Platforms (>= 5.0) - restriction: || (== netcoreapp3.1) (&& (== netstandard2.0) (>= netcoreapp2.0))
       System.Runtime.CompilerServices.Unsafe (>= 5.0)
-    System.Text.Encodings.Web (5.0) - restriction: || (&& (== netcoreapp3.1) (>= monoandroid)) (&& (== netcoreapp3.1) (>= monotouch)) (&& (== netcoreapp3.1) (>= net461)) (&& (== netcoreapp3.1) (< netcoreapp2.0)) (&& (== netcoreapp3.1) (< netcoreapp2.1)) (&& (== netcoreapp3.1) (< netcoreapp3.0)) (&& (== netcoreapp3.1) (>= uap10.1)) (&& (== netcoreapp3.1) (>= xamarinios)) (&& (== netcoreapp3.1) (>= xamarinmac)) (&& (== netcoreapp3.1) (>= xamarintvos)) (&& (== netcoreapp3.1) (>= xamarinwatchos)) (== netstandard2.0)
+    System.Text.Encodings.Web (5.0)
       System.Memory (>= 4.5.4) - restriction: || (&& (== netcoreapp3.1) (>= net461)) (&& (== netcoreapp3.1) (< netcoreapp2.1) (< netstandard2.1)) (&& (== netcoreapp3.1) (>= uap10.1)) (== netstandard2.0)
     System.Text.Json (5.0.1)
       Microsoft.Bcl.AsyncInterfaces (>= 5.0) - restriction: || (&& (== netcoreapp3.1) (>= monoandroid)) (&& (== netcoreapp3.1) (>= monotouch)) (&& (== netcoreapp3.1) (>= net461)) (&& (== netcoreapp3.1) (< netcoreapp2.0)) (&& (== netcoreapp3.1) (< netcoreapp2.1)) (&& (== netcoreapp3.1) (< netcoreapp3.0)) (&& (== netcoreapp3.1) (>= uap10.1)) (&& (== netcoreapp3.1) (>= xamarinios)) (&& (== netcoreapp3.1) (>= xamarinmac)) (&& (== netcoreapp3.1) (>= xamarintvos)) (&& (== netcoreapp3.1) (>= xamarinwatchos)) (== netstandard2.0)

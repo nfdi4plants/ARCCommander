@@ -100,6 +100,7 @@ let handleStudyProtocolSubCommands arcConfiguration protocolVerb =
     | StudyProtocolCommand.Edit r         -> processCommand arcConfiguration StudyAPI.Protocols.edit       r
     | StudyProtocolCommand.Register r     -> processCommand arcConfiguration StudyAPI.Protocols.register   r
     | StudyProtocolCommand.Unregister r   -> processCommand arcConfiguration StudyAPI.Protocols.unregister r
+    | StudyProtocolCommand.Load r         -> processCommand arcConfiguration StudyAPI.Protocols.load       r
     | StudyProtocolCommand.Get r          -> processCommand arcConfiguration StudyAPI.Protocols.get        r
     | StudyProtocolCommand.List           -> processCommandWithoutArgs arcConfiguration StudyAPI.Protocols.list
 

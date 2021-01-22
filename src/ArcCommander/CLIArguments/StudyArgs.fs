@@ -441,6 +441,21 @@ module StudyProtocols =
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
     type ProtocolUnregisterArgs = ProtocolEditArgs
 
+    /// CLI arguments for loading a protocol from a file
+    type ProtocolLoadArgs =
+        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] InputPath of string
+        | [<Unique>] IsProcessFile
+        | [<Unique>] UpdateExisting        
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier   _ -> "The identifier of the study the protocol should be added to"
+                | InputPath         _ -> "The Path of the ISA json file which should loaded"
+                | IsProcessFile     _ -> "If this flag is set, the reader will assume the input file is a process file, from which the protocol will be extracted"
+                | UpdateExisting    _ -> "If set, if a protocol with the same name as the one given in the file already exists in the investigation. Its values will get overwritten by the ones in the file"
+
     /// CLI arguments for getting protocol
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
     type ProtocolGetArgs = ProtocolEditArgs

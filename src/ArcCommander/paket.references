@@ -2,5 +2,6 @@ Argu
 ini-parser-netstandard
 FSharpSpreadsheetML
 
+System.Text.Encodings.Web
 ISADotNet
 ISADotNet.XLSX

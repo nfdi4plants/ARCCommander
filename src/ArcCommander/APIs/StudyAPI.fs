@@ -8,6 +8,16 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 
+// TO DO: Delete this when the appropriate function gets 
+module API =
+    module Publication =
+        let tryGetByDoi doi (publications:Publication list) =
+            publications
+            |> List.tryFind (fun publication -> publication.DOI = doi)
+
+    module Investigation = 
+        let update (updateOption:API.Update.UpdateOptions) (investigation : Investigation) newInvestigation =
+            updateOption.updateRecordType investigation newInvestigation
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs
 module StudyAPI =
@@ -529,7 +539,7 @@ module StudyAPI =
             match API.Study.tryGetByIdentifier studyIdentifier studies with
             | Some study -> 
                 let publications = study.Publications
-                match API.Publication.tryGetByDoi assayFileName assays with
+                match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->                    
                     ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
                         (List.singleton >> Publications.writePublications "Publication") 
@@ -1275,6 +1285,56 @@ module StudyAPI =
                 else
                     if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
                     investigation                   
+            | None ->
+                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                investigation
+            |> Investigation.toFile investigationFilePath
+
+        let load (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Protocol Load"
+
+            let path = getFieldValueByName "InputPath" protocolArgs
+            
+
+            let protocol =
+                if containsFlag "IsProcessFile" protocolArgs then
+                    let isaProcess = Json.Process.fromFile path
+                    isaProcess.ExecutesProtocol
+                else
+                    Json.Protocol.fromFile path
+
+            let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
+
+            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            
+            let investigation = Investigation.fromFile investigationFilePath
+           
+            let studies = investigation.Studies
+
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                let name = protocol.Name
+                let protocols = study.Protocols
+                if API.Protocol.existsByName name protocols then  
+                    if verbosity >= 1 then 
+                        printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                    if containsFlag "UpdateExisting" protocolArgs then
+                        if verbosity >= 1 then printfn "Updating protocol as \"UpdateExisting\" flag was given" 
+                        API.Protocol.updateByName API.Update.UpdateAll protocol protocols
+                    else
+                        if verbosity >= 1 then printfn "Not updating protocol as \"UpdateExisting\" flag was not given" 
+                        protocols
+                else
+                    
+                    if verbosity >= 2 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                    API.Protocol.add protocols protocol
+                    
+                |> API.Study.setProtocols study
+                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                |> API.Investigation.setStudies investigation
             | None ->
                 printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                 investigation
