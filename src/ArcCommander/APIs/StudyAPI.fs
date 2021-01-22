@@ -85,11 +85,11 @@ module StudyAPI =
 
         match API.Study.tryGetByIdentifier identifier studies with
         | Some study -> 
-            let editedStudyInfo =
+            let editedStudy =
                 ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.WriteStudyInfo 
                     (Study.StudyInfo.ReadStudyInfo 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
                     study                   
-            API.Study.updateByIdentifier API.Update.UpdateAllAppendLists study studies
+            API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
             |> API.Investigation.setStudies investigation
         | None -> 
             if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
@@ -268,7 +268,7 @@ module StudyAPI =
                 if API.Person.existsByFullName lastName midInitials firstName persons then
                     API.Person.updateByFullName updateOption person persons
                     |> API.Study.setContacts study
-                    |> fun s -> API.Study.updateByIdentifier updateOption s studies
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 else
                     if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
@@ -496,7 +496,7 @@ module StudyAPI =
                 if API.Publication.existsByDoi doi publications then
                     API.Publication.updateByDOI updateOption publication publications
                     |> API.Study.setPublications study
-                    |> fun s -> API.Study.updateByIdentifier updateOption s studies
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
                     |> API.Investigation.setStudies investigation
                 else
                     if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
@@ -711,7 +711,7 @@ module StudyAPI =
                 if API.OntologyAnnotation.existsByName design.Name designs then
                     API.OntologyAnnotation.updateByName updateOption design designs
                     |> API.Study.setDescriptors study
-                    |> fun s -> API.Study.updateByIdentifier updateOption s studies
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
                     |> API.Investigation.setStudies investigation
                 else
                     if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
@@ -921,7 +921,7 @@ module StudyAPI =
                 if API.Factor.existsByName name factors then
                     API.Factor.updateByName updateOption factor factors
                     |> API.Study.setFactors study
-                    |> fun s -> API.Study.updateByIdentifier updateOption s studies
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
                     |> API.Investigation.setStudies investigation
                 else
                     if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
@@ -1143,7 +1143,7 @@ module StudyAPI =
                 if API.Protocol.existsByName name protocols then
                     API.Protocol.updateByName updateOption protocol protocols
                     |> API.Study.setProtocols study
-                    |> fun s -> API.Study.updateByIdentifier updateOption s studies
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
                     |> API.Investigation.setStudies investigation
                 else
                     if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier

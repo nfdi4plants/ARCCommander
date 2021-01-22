@@ -15,70 +15,88 @@ module InvestigationAPI =
     /// Creates an investigation file in the arc from the given investigation metadata contained in cliArgs that contains no studies or assays.
     let create (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) =
            
-        let investigationInfo = 
-            InvestigationInfo.create
-                (getFieldValueByName "Identifier" investigationArgs)
-                (getFieldValueByName "Title" investigationArgs)
-                (getFieldValueByName "Description" investigationArgs)
-                (getFieldValueByName "SubmissionDate" investigationArgs)
-                (getFieldValueByName "PublicReleaseDate" investigationArgs)
-                []
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Investigation Create"
 
-        let investigation = Investigation.create [] investigationInfo [] [] [] []
+        let investigation = 
+            let info =
+                Investigation.InvestigationInfo.create
+                    (getFieldValueByName "Identifier" investigationArgs)
+                    (getFieldValueByName "Title" investigationArgs)
+                    (getFieldValueByName "Description" investigationArgs)
+                    (getFieldValueByName "SubmissionDate" investigationArgs)
+                    (getFieldValueByName "PublicReleaseDate" investigationArgs)
+                    []
+            Investigation.fromParts info [] [] [] [] [] 
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
                           
-        IO.toFile investigationFilePath investigation
+        Investigation.toFile investigationFilePath investigation
 
     /// Updates the existing investigation file in the arc with the given investigation metadata contained in cliArgs.
     let update (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
 
-        let investigationInfo = 
-            InvestigationInfo.create
-                (getFieldValueByName "Identifier" investigationArgs)
-                (getFieldValueByName "Title" investigationArgs)
-                (getFieldValueByName "Description" investigationArgs)
-                (getFieldValueByName "SubmissionDate" investigationArgs)
-                (getFieldValueByName "PublicReleaseDate" investigationArgs)
-                []
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Investigation Update"
+
+        let updateOption = if containsFlag "ReplaceWithEmptyValues" investigationArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting            
+
+        let investigation = 
+            let info =
+                Investigation.InvestigationInfo.create
+                    (getFieldValueByName "Identifier" investigationArgs)
+                    (getFieldValueByName "Title" investigationArgs)
+                    (getFieldValueByName "Description" investigationArgs)
+                    (getFieldValueByName "SubmissionDate" investigationArgs)
+                    (getFieldValueByName "PublicReleaseDate" investigationArgs)
+                    []
+            Investigation.fromParts info [] [] [] [] [] 
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
-        let investigation = IO.fromFile investigationFilePath
+        let originalInvestigation = Investigation.fromFile investigationFilePath
 
-        {investigation with Info = investigationInfo}
-        |> IO.toFile investigationFilePath
+        API.Investigation.update updateOption originalInvestigation investigation
+        |> Investigation.toFile investigationFilePath
 
     /// Opens the existing investigation info in the arc with the text editor set in globalArgs.
     let edit (arcConfiguration:ArcConfiguration) =
        
-        printfn "Start investigation edit"
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Investigation Edit"
+
         let editor = GeneralConfiguration.getEditor arcConfiguration
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
-        let investigation = IO.fromFile investigationFilePath
-
-        let editedInvestigationInfo =
-            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir IO.writeInvestigationInfo 
-                (IO.readInvestigationInfo 1 >> fun (_,_,_,item) -> item) 
-                investigation.Info
+        let investigation = Investigation.fromFile investigationFilePath
                
-        {investigation with Info = editedInvestigationInfo}
-        |> IO.toFile investigationFilePath
+        let editedInvestigation =
+            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Investigation.InvestigationInfo.WriteInvestigationInfo 
+                (Investigation.InvestigationInfo.ReadInvestigationInfo 1 >> fun (_,_,_,item) -> Investigation.fromParts item [] [] [] [] []) 
+                investigation
+               
+        Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
+        |> Investigation.toFile investigationFilePath
 
     /// Deletes the existing investigation file in the arc if the given identifier matches the identifier set in the investigation file
     let delete (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
-        printfn "Start investigation edit"       
+
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Investigation Delete"      
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
-        let investigation = IO.fromFile investigationFilePath
+        let investigation = Investigation.fromFile investigationFilePath
 
         let identifier = getFieldValueByName "Identifier" investigationArgs
         
-        if identifier = investigation.Info.Identifier then
+        if identifier = investigation.Identifier then
             System.IO.File.Delete investigationFilePath
 
     /// Functions for altering investigation contacts
@@ -87,11 +105,21 @@ module InvestigationAPI =
         /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+
+            if verbosity >= 1 then printfn "Start Person Update"
+
+            let updateOption = if containsFlag "ReplaceWithEmptyValues" personArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
+
+            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let firstName   = getFieldValueByName "FirstName"   personArgs
+            let midInitials = getFieldValueByName "MidInitials" personArgs
+
             let person = 
-                Person.create
-                    (getFieldValueByName  "LastName"                    personArgs)
-                    (getFieldValueByName  "FirstName"                   personArgs)
-                    (getFieldValueByName  "MidInitials"                 personArgs)
+                Contacts.fromString
+                    lastName
+                    firstName
+                    midInitials
                     (getFieldValueByName  "Email"                       personArgs)
                     (getFieldValueByName  "Phone"                       personArgs)
                     (getFieldValueByName  "Fax"                         personArgs)
@@ -104,46 +132,67 @@ module InvestigationAPI =
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
 
-            API.Person.updateByFullName person investigation
-            |> IO.toFile investigationFilePath
-        
+            let persons = investigation.Contacts
+
+            if API.Person.existsByFullName lastName midInitials firstName persons then
+                API.Person.updateByFullName updateOption person persons
+                |> API.Investigation.setContacts investigation
+            else
+                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+                investigation
+            |> Investigation.toFile investigationFilePath
+
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            printf "Start assay edit"
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+
+            if verbosity >= 1 then printfn "Start Person Edit"
+
             let editor = GeneralConfiguration.getEditor arcConfiguration
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let personLastName = (getFieldValueByName  "LastName"   personArgs)
-            let personFirstName = (getFieldValueByName  "FirstName"     personArgs)
-            let personMidInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName = (getFieldValueByName  "LastName"   personArgs)
+            let firstName = (getFieldValueByName  "FirstName"     personArgs)
+            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
             
-            match API.Person.tryGetByFullName personFirstName personMidInitials personLastName investigation with
+            let persons = investigation.Contacts
+            match API.Person.tryGetByFullName firstName midInitials lastName persons with
             | Some person -> 
                 ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                    (List.singleton >> IO.writePersons "Person") 
-                    (IO.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
+                    (List.singleton >> Contacts.writePersons "Person") 
+                    (Contacts.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
                     person
-                |> fun p -> API.Person.updateBy ((=) person) p investigation
+                |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                |> API.Investigation.setContacts investigation
             | None ->
+                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
                 investigation
-            |> IO.toFile investigationFilePath
+            |> Investigation.toFile investigationFilePath
 
 
         /// Registers a person in the arc's investigation file with the given person metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+
+            if verbosity >= 1 then printfn "Start Person Register"
+
+            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let firstName   = getFieldValueByName "FirstName"   personArgs
+            let midInitials = getFieldValueByName "MidInitials" personArgs
+
             let person = 
-                Person.create
-                    (getFieldValueByName  "LastName"                    personArgs)
-                    (getFieldValueByName  "FirstName"                   personArgs)
-                    (getFieldValueByName  "MidInitials"                 personArgs)
+                Contacts.fromString
+                    lastName
+                    firstName
+                    midInitials
                     (getFieldValueByName  "Email"                       personArgs)
                     (getFieldValueByName  "Phone"                       personArgs)
                     (getFieldValueByName  "Fax"                         personArgs)
@@ -156,57 +205,76 @@ module InvestigationAPI =
             
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
 
-            API.Person.add person investigation
-            |> IO.toFile investigationFilePath
+            let persons = investigation.Contacts
+
+            if API.Person.existsByFullName firstName midInitials lastName persons then               
+                if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
+                investigation
+            else
+                API.Person.add persons person               
+                |> API.Investigation.setContacts investigation
+            |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let personLastName = (getFieldValueByName  "LastName"   personArgs)
-            let personFirstName = (getFieldValueByName  "FirstName"     personArgs)
-            let personMidInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+
+            if verbosity >= 1 then printfn "Start Person Unregister"
+
+            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let firstName   = getFieldValueByName "FirstName"   personArgs
+            let midInitials = getFieldValueByName "MidInitials" personArgs
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
             
-            API.Person.removeByFullName personFirstName personMidInitials personLastName investigation
-            |> IO.toFile investigationFilePath
+            let persons = investigation.Contacts
+
+            if API.Person.existsByFullName firstName midInitials lastName persons then               
+                API.Person.removeByFullName firstName midInitials lastName persons   
+                |> API.Investigation.setContacts investigation
+            else
+                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation file" firstName midInitials lastName
+                investigation                
+            |> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
         let get (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+           
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
-            let personLastName = (getFieldValueByName  "LastName"   personArgs)
-            let personFirstName = (getFieldValueByName  "FirstName"     personArgs)
-            let personMidInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            if verbosity >= 1 then printfn "Start Person Get"
+
+            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let firstName   = getFieldValueByName "FirstName"   personArgs
+            let midInitials = getFieldValueByName "MidInitials" personArgs
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
             
-            match API.Person.tryGetByFullName personFirstName personMidInitials personLastName investigation with
+            match API.Person.tryGetByFullName firstName midInitials lastName investigation.Contacts with
             | Some person ->
-                printfn "%s:%s" Person.LastNameLabel person.LastName
-                printfn "%s:%s" Person.FirstNameLabel person.FirstName
-                printfn "%s:%s" Person.MidInitialsLabel person.MidInitials
-                printfn "%s:%s" Person.EmailLabel person.Email
-                printfn "%s:%s" Person.PhoneLabel person.Phone
-                printfn "%s:%s" Person.FaxLabel person.Fax
-                printfn "%s:%s" Person.AddressLabel person.Address
-                printfn "%s:%s" Person.AffiliationLabel person.Affiliation
-                printfn "%s:%s" Person.RolesLabel person.Roles
-                printfn "%s:%s" Person.RolesTermAccessionNumberLabel person.RolesTermAccessionNumber
-                printfn "%s:%s" Person.RolesTermSourceREFLabel person.RolesTermSourceREF
-            | None -> ()
+                [person]
+                |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons "Person")
+                |> printfn "%s"
+            | None -> printfn "Person with the name %s %s %s  does not exist in the investigation" firstName midInitials lastName
+
 
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 
 
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+
+            if verbosity >= 1 then printfn "Start Person Get"
+
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
 
             investigation.Contacts
             |> Seq.iter (fun person ->
@@ -222,108 +290,163 @@ module InvestigationAPI =
         /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Publication update"
+
+            let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
+
+            let doi = getFieldValueByName  "DOI"                                  publicationArgs
+
             let publication = 
-                Publications.fr
-                    (getFieldValueByName  "PubMedID"                    publicationArgs)
-                    (getFieldValueByName  "DOI"                         publicationArgs)
-                    (getFieldValueByName  "AuthorList"                  publicationArgs)
-                    (getFieldValueByName  "PublicationTitle"            publicationArgs)
-                    (getFieldValueByName  "PublicationStatus"           publicationArgs)
-                    (getFieldValueByName  "StatusTermAccessionNumber"   publicationArgs)
-                    (getFieldValueByName  "StatusTermSourceREF"         publicationArgs)
-                    []
+                 Publications.fromString
+                     (getFieldValueByName  "PubMedID"                             publicationArgs)
+                     doi
+                     (getFieldValueByName  "AuthorList"                           publicationArgs)
+                     (getFieldValueByName  "PublicationTitle"                     publicationArgs)
+                     (getFieldValueByName  "PublicationStatus"                    publicationArgs)
+                     (getFieldValueByName  "PublicationStatusTermAccessionNumber" publicationArgs)
+                     (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
+                     []
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
 
-            API.Publication.updateByDoi publication investigation
-            |> IO.toFile investigationFilePath
+            let publications = investigation.Publications
+
+            if API.Publication.existsByDoi doi publications then
+                API.Publication.updateByDOI updateOption publication publications
+                |> API.Investigation.setPublications investigation
+            else
+                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                investigation
+            |> Investigation.toFile investigationFilePath
         
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            printf "Start assay edit"
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Publication Edit"
+
             let editor = GeneralConfiguration.getEditor arcConfiguration
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let doi = (getFieldValueByName  "DOI"   publicationArgs)
+            let doi = getFieldValueByName "DOI" publicationArgs
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
             
-            match API.Publication.tryGetByDOI doi investigation with
-            | Some publication -> 
+            let publications = investigation.Publications
+
+            match API.Publication.tryGetByDoi doi publications with
+            | Some publication ->                    
                 ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                    (List.singleton >> IO.writePublications "Publication") 
-                    (IO.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
+                    (List.singleton >> Publications.writePublications "Publication") 
+                    (Publications.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
                     publication
-                |> fun p -> API.Publication.updateBy ((=) publication) p investigation
+                |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
+                |> API.Investigation.setPublications investigation
+
             | None ->
+                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
                 investigation
-            |> IO.toFile investigationFilePath
+            |> Investigation.toFile investigationFilePath
 
 
         /// Registers a person in the arc's investigation file with the given person metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Publication Register"
+
+            let doi = getFieldValueByName  "DOI"                                  publicationArgs
+
             let publication = 
-                Publication.create
-                    (getFieldValueByName  "PubMedID"                             publicationArgs)
-                    (getFieldValueByName  "DOI"                                  publicationArgs)
-                    (getFieldValueByName  "AuthorList"                           publicationArgs)
-                    (getFieldValueByName  "PublicationTitle"                     publicationArgs)
-                    (getFieldValueByName  "PublicationStatus"                    publicationArgs)
-                    (getFieldValueByName  "StatusTermAccessionNumber" publicationArgs)
-                    (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
-                    []
+                 Publications.fromString
+                     (getFieldValueByName  "PubMedID"                             publicationArgs)
+                     doi
+                     (getFieldValueByName  "AuthorList"                           publicationArgs)
+                     (getFieldValueByName  "PublicationTitle"                     publicationArgs)
+                     (getFieldValueByName  "PublicationStatus"                    publicationArgs)
+                     (getFieldValueByName  "PublicationStatusTermAccessionNumber" publicationArgs)
+                     (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
+                     []
             
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
 
-            API.Publication.add publication investigation
-            |> IO.toFile investigationFilePath
+            let publications = investigation.Publications
+
+            if API.Publication.existsByDoi doi publications then           
+                if verbosity >= 1 then printfn "Publication with the doi %s already exists in the investigation" doi
+                investigation
+            else
+                API.Publication.add publications publication
+                |> API.Investigation.setPublications investigation
+            |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let doi = getFieldValueByName  "DOI"   publicationArgs
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Publication Unregister"
+
+            let doi = getFieldValueByName  "DOI" publicationArgs
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
-            
-            API.Publication.removeByDoi doi investigation
-            |> IO.toFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
+
+            let publications = investigation.Publications
+
+            if API.Publication.existsByDoi doi publications then           
+                API.Publication.removeByDoi doi publications
+                |> API.Investigation.setPublications investigation
+            else
+                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                investigation
+
+            |> Investigation.toFile investigationFilePath
 
         /// Gets an existing publication by its doi and prints its metadata
         let get (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let doi = getFieldValueByName  "DOI"   publicationArgs
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Publication Get"
+
+            let doi = getFieldValueByName  "DOI" publicationArgs
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
             
-            match API.Publication.tryGetByDOI doi investigation with
+            match API.Publication.tryGetByDoi doi investigation.Publications with
             | Some publication ->
-                printfn "%s:%s" Publication.PubMedIDLabel publication.PubMedID
-                printfn "%s:%s" Publication.DOILabel publication.DOI
-                printfn "%s:%s" Publication.AuthorListLabel publication.AuthorList
-                printfn "%s:%s" Publication.TitleLabel publication.Title
-                printfn "%s:%s" Publication.StatusLabel publication.Status
-                printfn "%s:%s" Publication.StatusTermAccessionNumberLabel publication.StatusTermAccessionNumber
-                printfn "%s:%s" Publication.StatusTermSourceREFLabel publication.StatusTermSourceREF
-            | None -> ()
+                [publication]
+                |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
+                |> printfn "%s"
+
+            | None -> 
+                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                
 
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 
 
+            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            
+            if verbosity >= 1 then printfn "Start Publication List"
+
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
-            let investigation = IO.fromFile investigationFilePath
+            let investigation = Investigation.fromFile investigationFilePath
 
             investigation.Publications
             |> Seq.iter (fun publication ->
