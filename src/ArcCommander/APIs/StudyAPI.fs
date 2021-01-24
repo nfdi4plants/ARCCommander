@@ -29,7 +29,9 @@ module StudyAPI =
         
         if verbosity >= 1 then printfn "Start Study Init"
 
-        let studyFilePath = IsaModelConfiguration.tryGetStudiesFilePath arcConfiguration |> Option.get
+        let identifier = getFieldValueByName "Identifier" studyArgs
+
+        let studyFilePath = IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
 
         System.IO.File.Create studyFilePath
         |> ignore
@@ -54,7 +56,7 @@ module StudyAPI =
                     (getFieldValueByName "Description"          studyArgs)
                     (getFieldValueByName "SubmissionDate"       studyArgs)
                     (getFieldValueByName "PublicReleaseDate"    studyArgs)
-                    (IsaModelConfiguration.tryGetStudiesFileName arcConfiguration |> Option.get)
+                    (IsaModelConfiguration.getStudiesFileName identifier arcConfiguration)
                     []
             Study.fromParts studyInfo [] [] [] [] [] [] 
 
@@ -123,7 +125,7 @@ module StudyAPI =
                     (getFieldValueByName "Description"          studyArgs)
                     (getFieldValueByName "SubmissionDate"       studyArgs)
                     (getFieldValueByName "PublicReleaseDate"    studyArgs)
-                    (IsaModelConfiguration.tryGetStudiesFileName arcConfiguration |> Option.get)
+                    (IsaModelConfiguration.getStudiesFileName identifier arcConfiguration)
                     []
             Study.fromParts studyInfo [] [] [] [] [] [] 
 
@@ -154,7 +156,9 @@ module StudyAPI =
         
         if verbosity >= 1 then printfn "Start Study Delete"
 
-        let studyFilePath = IsaModelConfiguration.tryGetStudiesFilePath arcConfiguration |> Option.get
+        let identifier = getFieldValueByName "Identifier" studyArgs
+
+        let studyFilePath = IsaModelConfiguration.getStudiesFileName identifier arcConfiguration
 
         System.IO.File.Delete studyFilePath
         |> ignore

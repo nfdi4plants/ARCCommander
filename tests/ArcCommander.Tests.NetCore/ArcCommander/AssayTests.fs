@@ -82,7 +82,6 @@ let testAssayRegister =
             (standardISAArgs)
             Map.empty Map.empty Map.empty Map.empty
 
-
     testList "AssayRegister" [
 
         testCase "AddToExistingStudy" (fun () -> 

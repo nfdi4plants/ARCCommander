@@ -8,6 +8,8 @@
   <ItemGroup>
     <None Include="paket.references" />
     <Compile Include="Utils.fs" />
+    <Compile Include="ArcCommander\InvestigationTests.fs" />
+    <Compile Include="ArcCommander\StudyTests.fs" />
     <Compile Include="ArcCommander\AssayTests.fs" />
     <Compile Include="ArcCommander\ConfigurationTests.fs" />
     <Compile Include="Main.fs" />
