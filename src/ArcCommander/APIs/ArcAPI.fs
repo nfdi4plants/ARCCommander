@@ -14,6 +14,10 @@ module ArcAPI =
     /// Initializes the arc specific folder structure
     let init (arcConfiguration:ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
+        let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration
+
+        Directory.CreateDirectory workdir |> ignore
+
         ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)
 

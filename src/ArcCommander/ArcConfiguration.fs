@@ -108,19 +108,8 @@ module GeneralConfiguration =
 /// Functions for retrieving isa file settings from the configuration
 module IsaModelConfiguration =
 
-    /// Returns the full path of the assay file
-    let tryGetAssayFilePath assayIdentifier (configuration:ArcConfiguration) =
-        let workDir = Map.find "workdir" configuration.General
-        let assayFileName = Map.tryFind "assayfilename" configuration.IsaModel
-        let rootFolder = Map.tryFind "rootfolder" configuration.Assay
-        match assayFileName,rootFolder with
-        | Some f, Some r -> 
-            Path.Combine([|workDir;r;assayIdentifier;f|])
-            |> Some
-        | _ -> None
-
-    /// Returns the full path of the assay file
-    let tryGetAssayIdentifierOfFileName (assayFileName : string) =
+    /// Returns the assayIdentifier from a filename
+    let getAssayIdentifierOfFileName (assayFileName : string) =
         System.IO.Path.GetFileName assayFileName
 
     /// Returns the relative path of the assay file
@@ -132,18 +121,49 @@ module IsaModelConfiguration =
             |> Some
         | _ -> None
 
+    /// Returns the relative path of the assay file
+    let getAssayFileName assayIdentifier (configuration:ArcConfiguration) =
+        tryGetAssayFileName assayIdentifier configuration
+        |> Option.get 
+
+    /// Returns the full path of the assay file
+    let tryGetAssayFilePath assayIdentifier (configuration:ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        let assayFileName = tryGetAssayFileName assayIdentifier configuration
+        let rootFolder = Map.tryFind "rootfolder" configuration.Assay
+        match assayFileName,rootFolder with
+        | Some f, Some r -> 
+            Path.Combine([|workDir;r;f|])
+            |> Some
+        | _ -> None
+
+    /// Returns the full path of the assay file
+    let getAssayFilePath assayIdentifier (configuration:ArcConfiguration)=
+        tryGetAssayFilePath assayIdentifier configuration
+        |> Option.get
+
     /// Returns the name of the studies file
-    let tryGetStudiesFileName (configuration:ArcConfiguration) =
+    let tryGetStudiesFileName identifier (configuration:ArcConfiguration) =
         Map.tryFind "studiesfilename" configuration.IsaModel
 
+    /// Returns the name of the studies file
+    let getStudiesFileName identifier (configuration:ArcConfiguration) =
+        tryGetStudiesFileName identifier configuration
+        |> Option.get 
+
     /// Returns the full path of the studies file
-    let tryGetStudiesFilePath (configuration:ArcConfiguration) =
+    let tryGetStudiesFilePath identifier (configuration:ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
-        match Map.tryFind "studiesfilename" configuration.IsaModel with
+        match tryGetStudiesFileName identifier configuration with
         | Some i -> 
             Path.Combine(workDir,i)
             |> Some
         | _ -> None
+      
+    /// Returns the full path of the studies file
+    let getStudiesFilePath identifier (configuration:ArcConfiguration) =
+        tryGetStudiesFilePath identifier configuration
+        |> Option.get
 
     /// Returns the full path of the investigation file
     let tryGetInvestigationFilePath (configuration:ArcConfiguration) =
@@ -154,6 +174,10 @@ module IsaModelConfiguration =
             |> Some
         | _ -> None
 
+    /// Returns the full path of the investigation file
+    let getInvestigationFilePath (configuration:ArcConfiguration) =
+        tryGetInvestigationFilePath configuration
+        |> Option.get
 
 /// Functions for retrieving Assay related information from the configuration
 module AssayConfiguration =

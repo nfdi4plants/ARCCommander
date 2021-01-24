@@ -1,10 +1,10 @@
-﻿module IsaXLSXTests
+﻿module ConfigurationTests
 
 open Expecto
 open TestingUtils
 
 [<Tests>]
-let testIsaXLSXIO = 
+let testConfiguration = 
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"
     let referenceInvestigationFilePath = System.IO.Path.Combine(testDirectory,"isa.investigation.xlsx")

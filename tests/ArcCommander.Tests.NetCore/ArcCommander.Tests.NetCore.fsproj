@@ -1,17 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
-
   <ItemGroup>
+    <None Include="paket.references" />
     <Compile Include="Utils.fs" />
-    <Compile Include="ArcCommander\IsaXLSX.fs" />
+    <Compile Include="ArcCommander\AssayTests.fs" />
+    <Compile Include="ArcCommander\ConfigurationTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="AltCover" Version="7.1.778" />
     <PackageReference Include="Expecto" Version="9.*" />
@@ -19,8 +19,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
     <PackageReference Update="FSharp.Core" Version="4.*" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ArcCommander\ArcCommander.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

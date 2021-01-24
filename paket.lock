@@ -42,7 +42,7 @@ NUGET
     FSharp.SystemTextJson (0.15.14)
       FSharp.Core (>= 4.7)
       System.Text.Json (>= 4.6) - restriction: || (&& (== netcoreapp3.1) (< netcoreapp3.0)) (== netstandard2.0)
-    FSharpSpreadsheetML (0.0.1)
+    FSharpSpreadsheetML (0.0.2)
       DocumentFormat.OpenXml
       FSharp.Core (4.7.2)
     Iced (1.10)
