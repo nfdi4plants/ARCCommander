@@ -245,8 +245,13 @@ let copyBinariesDotnet =
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner. Of course build the assemblies to test first
 
+let cleanTestResults = 
+    BuildTask.create "cleanTestResults" [] {
+        Shell.cleanDirs (!! "tests/**/**/TestResult")
+    }
+
 let runTestsAll = 
-    BuildTask.create "runTestsAll" [clean.IfNeeded; assemblyInfo.IfNeeded; copyBinaries.IfNeeded; buildAll] {
+    BuildTask.create "runTestsAll" [cleanTestResults; clean.IfNeeded; assemblyInfo.IfNeeded; copyBinaries.IfNeeded; buildAll] {
         
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
 
@@ -267,7 +272,7 @@ let runTestsAll =
     }
 
 let runTestsDotnet = 
-    BuildTask.create "runTestsDotnet" [clean.IfNeeded; assemblyInfo.IfNeeded; copyBinariesDotnet.IfNeeded; buildDotnet] {
+    BuildTask.create "runTestsDotnet" [cleanTestResults; clean.IfNeeded; assemblyInfo.IfNeeded; copyBinariesDotnet.IfNeeded; buildDotnet] {
         
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
 

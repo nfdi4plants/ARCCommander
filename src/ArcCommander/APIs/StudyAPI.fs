@@ -64,13 +64,16 @@ module StudyAPI =
        
         let investigation = Investigation.fromFile investigationFilePath
 
-        let studies = investigation.Studies
-
-        if API.Study.existsByIdentifier identifier studies then
-            API.Study.updateByIdentifier updateOption study studies
-            |> API.Investigation.setStudies investigation
-        else 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
+        match investigation.Studies with
+        | Some studies -> 
+            if API.Study.existsByIdentifier identifier studies then
+                API.Study.updateByIdentifier updateOption study studies
+                |> API.Investigation.setStudies investigation
+            else 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
+                investigation
+        | None -> 
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
         
@@ -93,18 +96,21 @@ module StudyAPI =
        
         let investigation = Investigation.fromFile investigationFilePath
 
-        let studies = investigation.Studies
-
-        match API.Study.tryGetByIdentifier identifier studies with
-        | Some study -> 
-            let editedStudy =
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.WriteStudyInfo 
-                    (Study.StudyInfo.ReadStudyInfo 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
-                    study                   
-            API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
-            |> API.Investigation.setStudies investigation
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier identifier studies with
+            | Some study -> 
+                let editedStudy =
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.WriteStudyInfo 
+                        (Study.StudyInfo.ReadStudyInfo 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
+                        study                   
+                API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
+                |> API.Investigation.setStudies investigation
+            | None -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
+                investigation
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -133,15 +139,17 @@ module StudyAPI =
         
         let investigation = Investigation.fromFile investigationFilePath
 
-        let studies = investigation.Studies
-
-        match API.Study.tryGetByIdentifier identifier studies with
-        | Some study -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s already exists in the investigation file" identifier
-            investigation
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier identifier studies with
+            | Some study -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s already exists in the investigation file" identifier
+                studies
+            | None -> 
+                API.Study.add studies study                
         | None -> 
-            API.Study.add studies study
-            |> API.Investigation.setStudies investigation
+            [study]
+        |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
 
     /// Creates a new study file in the arc and registers it in the arc's investigation file with the given study metadata contained in cliArgs.
@@ -178,13 +186,18 @@ module StudyAPI =
 
         let studies = investigation.Studies
 
-        match API.Study.tryGetByIdentifier identifier studies with
-        | Some study -> 
-            API.Study.removeByIdentifier identifier studies 
-            |> API.Investigation.setStudies investigation            
-        | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier identifier studies with
+            | Some study -> 
+                API.Study.removeByIdentifier identifier studies 
+                |> API.Investigation.setStudies investigation            
+            | None -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
 
+                investigation
+        | None -> 
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -206,15 +219,19 @@ module StudyAPI =
 
         let investigation = Investigation.fromFile investigationFilePath
         
-
-        match API.Study.tryGetByIdentifier identifier investigation.Studies with
-        | Some study ->
-            study
-            |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.WriteStudyInfo
-            |> printfn "%s"
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier identifier studies with
+            | Some study ->
+                study
+                |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.WriteStudyInfo
+                |> printfn "%s"
+            | None -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
+                ()
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
-            ()
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            
 
     /// Lists all study identifiers registered in this arc's investigation file
     let list (arcConfiguration:ArcConfiguration) =
@@ -228,14 +245,16 @@ module StudyAPI =
 
         let investigation = Investigation.fromFile investigationFilePath
         
-        if List.isEmpty investigation.Studies then 
-            printfn "The Investigation contains no studies"
-        else 
-            investigation.Studies
+        match investigation.Studies with
+        | Some studies -> 
+            studies
             |> List.iter (fun s ->
             
-                printfn "Study: %s" s.Identifier
+                printfn "Study: %s" (Option.defaultValue "" s.Identifier)
             )
+        | None -> 
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+           
 
     /// Functions for altering investigation contacts
     module Contacts =
@@ -274,21 +293,28 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let persons = study.Contacts
-                if API.Person.existsByFullName lastName midInitials firstName persons then
-                    API.Person.updateByFullName updateOption person persons
-                    |> API.Study.setContacts study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Contacts with
+                    | Some persons -> 
+                        if API.Person.existsByFullName lastName midInitials firstName persons then
+                            API.Person.updateByFullName updateOption person persons
+                            |> API.Study.setContacts study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -314,22 +340,33 @@ module StudyAPI =
             
             let studies = investigation.Studies
 
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let persons = study.Contacts
-                match API.Person.tryGetByFullName firstName midInitials lastName persons with
-                | Some person -> 
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Contacts.writePersons "Person") 
-                        (Contacts.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
-                        person
-                    |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                    |> API.Study.setContacts study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                | None ->
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Contacts with
+                    | Some persons -> 
+                        match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                        | Some person -> 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                                (List.singleton >> Contacts.writePersons "Person") 
+                                (Contacts.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
+                                person
+                            |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                            |> API.Study.setContacts study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        | None ->
+                            if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -365,21 +402,28 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let persons = study.Contacts
-                if API.Person.existsByFullName firstName midInitials lastName persons then               
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
-                    investigation
-                else
-                    API.Person.add persons person
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Contacts with
+                    | Some persons -> 
+                        if API.Person.existsByFullName firstName midInitials lastName persons then               
+                            if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
+                            persons
+                        else
+                            API.Person.add persons person                           
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        [person]
                     |> API.Study.setContacts study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
     
@@ -401,21 +445,28 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let persons = study.Contacts
-                if API.Person.existsByFullName firstName midInitials lastName persons then
-                    API.Person.removeByFullName firstName midInitials lastName persons
-                    |> API.Study.setContacts study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Contacts with
+                    | Some persons -> 
+                        if API.Person.existsByFullName firstName midInitials lastName persons then
+                            API.Person.removeByFullName firstName midInitials lastName persons
+                            |> API.Study.setContacts study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -436,16 +487,25 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies with
-            | Some study -> 
-                match API.Person.tryGetByFullName firstName midInitials lastName study.Contacts with
-                | Some person ->
-                    [person]
-                    |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons "Person")
-                    |> printfn "%s"
-                | None -> printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Contacts with
+                    | Some persons -> 
+                        match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                        | Some person ->
+                            [person]
+                            |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons "Person")
+                            |> printfn "%s"
+                        | None -> printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"
+
 
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 
@@ -458,18 +518,27 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Studies
-            |> Seq.iter (fun study ->
-                let persons = study.Contacts
-                if Seq.isEmpty persons |> not then
-                    printfn "Study: %s" study.Identifier
-                    persons 
-                    |> Seq.iter (fun person -> 
-                        if person.MidInitials = "" then
-                            printfn "--Person: %s %s" person.FirstName person.LastName
-                        else
-                            printfn "--Person: %s %s %s" person.FirstName person.MidInitials person.LastName)
-            )
+            match investigation.Studies with
+            | Some studies -> 
+                studies
+                |> Seq.iter (fun study ->
+                    match study.Contacts with
+                    | Some persons -> 
+                   
+                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        persons 
+                        |> Seq.iter (fun person -> 
+                            let firstName = Option.defaultValue "" person.FirstName
+                            let midInitials = Option.defaultValue "" person.MidInitials
+                            let lastName = Option.defaultValue "" person.LastName
+                            if midInitials = "" then
+                                printfn "--Person: %s %s" firstName lastName
+                            else
+                                printfn "--Person: %s %s %s" firstName midInitials lastName)
+                    | None -> ()
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
     /// Functions for altering investigation Publications
     module Publications =
@@ -502,21 +571,28 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" publicationArgs
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let publications = study.Publications
-                if API.Publication.existsByDoi doi publications then
-                    API.Publication.updateByDOI updateOption publication publications
-                    |> API.Study.setPublications study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Publications with
+                    | Some publications -> 
+                        if API.Publication.existsByDoi doi publications then
+                            API.Publication.updateByDOI updateOption publication publications
+                            |> API.Study.setPublications study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -538,27 +614,35 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let studies = investigation.Studies
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Publications with
+                    | Some publications -> 
+                        // TODO : Remove the "Some" when the
+                        match API.Publication.tryGetByDoi (Some doi) publications with
+                        | Some publication ->                    
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                                (List.singleton >> Publications.writePublications "Publication") 
+                                (Publications.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
+                                publication
+                            |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
+                            |> API.Study.setPublications study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
 
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let publications = study.Publications
-                match API.Publication.tryGetByDoi doi publications with
-                | Some publication ->                    
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Publications.writePublications "Publication") 
-                        (Publications.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
-                        publication
-                    |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
-                    |> API.Study.setPublications study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-
-                | None ->
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                        | None ->
+                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -589,21 +673,27 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let publications = study.Publications
-                if API.Publication.existsByDoi doi publications then           
-                    if verbosity >= 1 then printfn "Publication with the doi %s already exists in the study with the identifier %s" doi studyIdentifier
-                    investigation
-                else
-                    API.Publication.add publications publication
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Publications with
+                    | Some publications -> 
+                        if API.Publication.existsByDoi doi publications then           
+                            if verbosity >= 1 then printfn "Publication with the doi %s already exists in the study with the identifier %s" doi studyIdentifier
+                            publications
+                        else
+                            API.Publication.add publications publication                           
+                    | None ->
+                        [publication]
                     |> API.Study.setPublications study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -622,21 +712,28 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let publications = study.Publications
-                if API.Publication.existsByDoi doi publications then           
-                    API.Publication.removeByDoi doi publications
-                    |> API.Study.setPublications study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
-                    investigation                   
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Publications with
+                    | Some publications -> 
+                        if API.Publication.existsByDoi doi publications then           
+                            API.Publication.removeByDoi doi publications
+                            |> API.Study.setPublications study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            investigation               
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        investigation
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -655,19 +752,26 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies with
-            | Some study -> 
-                match API.Publication.tryGetByDoi doi study.Publications with
-                | Some publication ->
-                    [publication]
-                    |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
-                    |> printfn "%s"
-
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Publications with
+                    | Some publications -> 
+                        match API.Publication.tryGetByDoi (Some doi) publications with
+                        | Some publication ->
+                            [publication]
+                            |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
+                            |> printfn "%s"
+                        | None -> 
+                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
                 | None -> 
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
-                    
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+
 
         /// Lists the dois of all publications included in the investigation study
         let list (arcConfiguration:ArcConfiguration) = 
@@ -680,14 +784,20 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Studies
-            |> Seq.iter (fun study ->
-                let publications = study.Publications
-                if Seq.isEmpty publications |> not then
-                    printfn "Study: %s" study.Identifier
-                    publications
-                    |> Seq.iter (fun publication -> printfn "--Publication DOI: %s" publication.DOI)
-            )
+            match investigation.Studies with
+            | Some studies -> 
+                studies 
+                |> Seq.iter (fun study ->
+                    match study.Publications with
+                    | Some publications -> 
+                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        publications
+                        |> Seq.iter (fun publication -> printfn "--Publication DOI: %s" (Option.defaultValue "" publication.DOI))
+                    | None -> ()
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+
 
     /// Functions for altering investigation Designs
     module Designs =
@@ -717,21 +827,28 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let designs = study.StudyDesignDescriptors
-                if API.OntologyAnnotation.existsByName design.Name designs then
-                    API.OntologyAnnotation.updateByName updateOption design designs
-                    |> API.Study.setDescriptors study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.StudyDesignDescriptors with
+                    | Some designs -> 
+                        if API.OntologyAnnotation.existsByName design.Name.Value designs then
+                            API.OntologyAnnotation.updateByName updateOption design designs
+                            |> API.Study.setDescriptors study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -753,27 +870,34 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let studies = investigation.Studies
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.StudyDesignDescriptors with
+                    | Some designs -> 
+                        match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
+                        | Some design ->                    
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                                (List.singleton >> DesignDescriptors.writeDesigns "Design") 
+                                (DesignDescriptors.readDesigns "Design" 1 >> fun (_,_,_,items) -> items.Head) 
+                                design
+                            |> fun d -> API.OntologyAnnotation.updateBy ((=) design) API.Update.UpdateAll d designs
+                            |> API.Study.setDescriptors study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
 
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let designs = study.StudyDesignDescriptors
-                match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
-                | Some design ->                    
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> DesignDescriptors.writeDesigns "Design") 
-                        (DesignDescriptors.readDesigns "Design" 1 >> fun (_,_,_,items) -> items.Head) 
-                        design
-                    |> fun d -> API.OntologyAnnotation.updateBy ((=) design) API.Update.UpdateAll d designs
-                    |> API.Study.setDescriptors study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-
-                | None ->
-                    if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                        | None ->
+                            if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -801,21 +925,27 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let designs = study.StudyDesignDescriptors
-                if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then           
-                    if verbosity >= 1 then printfn "Design with the name %s already exists in the study with the identifier %s" name studyIdentifier
-                    investigation
-                else
-                    API.OntologyAnnotation.add designs design
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.StudyDesignDescriptors with
+                    | Some designs -> 
+                        if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then           
+                            if verbosity >= 1 then printfn "Design with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                            designs
+                        else
+                            API.OntologyAnnotation.add designs design                           
+                    | None -> 
+                        [design]
                     |> API.Study.setDescriptors study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -834,21 +964,28 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let designs = study.StudyDesignDescriptors
-                if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then           
-                    API.OntologyAnnotation.removeByName (AnnotationValue.fromString name) designs
-                    |> API.Study.setDescriptors study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                    investigation                   
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.StudyDesignDescriptors with
+                    | Some designs -> 
+                        if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then           
+                            API.OntologyAnnotation.removeByName (AnnotationValue.fromString name) designs
+                            |> API.Study.setDescriptors study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation    
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        investigation
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -867,18 +1004,25 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies with
-            | Some study -> 
-                match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) study.StudyDesignDescriptors with
-                | Some design ->
-                    [design]
-                    |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.writeDesigns "Design")
-                    |> printfn "%s"
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.StudyDesignDescriptors with
+                    | Some designs -> 
+                        match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
+                        | Some design ->
+                            [design]
+                            |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.writeDesigns "Design")
+                            |> printfn "%s"
+                        | None -> 
+                            if verbosity >= 1 then printfn "Design with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
                 | None -> 
-                    if verbosity >= 1 then printfn "Design with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
         /// Lists the designs included in the investigation study
         let list (arcConfiguration:ArcConfiguration) = 
 
@@ -890,14 +1034,19 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Studies
-            |> Seq.iter (fun study ->
-                let designs = study.StudyDesignDescriptors
-                if Seq.isEmpty designs |> not then
-                    printfn "Study: %s" study.Identifier
-                    designs
-                    |> Seq.iter (fun design -> printfn "--Design Type: %s" (AnnotationValue.toString design.Name))
-            )
+            match investigation.Studies with
+            | Some studies -> 
+                studies
+                |> Seq.iter (fun study ->
+                    match study.StudyDesignDescriptors with
+                    | Some designs -> 
+                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        designs
+                        |> Seq.iter (fun design -> printfn "--Design Type: %s" (design.Name |> Option.map AnnotationValue.toString |> Option.defaultValue "" ))
+                    | None -> ()
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
     /// Functions for altering investigation factors
     module Factors =
@@ -927,21 +1076,28 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" factorArgs
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let factors = study.Factors
-                if API.Factor.existsByName name factors then
-                    API.Factor.updateByName updateOption factor factors
-                    |> API.Study.setFactors study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Factors with
+                    | Some factors -> 
+                        if API.Factor.existsByName name factors then
+                            API.Factor.updateByName updateOption factor factors
+                            |> API.Study.setFactors study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -963,27 +1119,34 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let studies = investigation.Studies
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Factors with
+                    | Some factors -> 
+                        match API.Factor.tryGetByName name factors with
+                        | Some factor ->                    
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                                (List.singleton >> Factors.writeFactors "Factor") 
+                                (Factors.readFactors "Factor" 1 >> fun (_,_,_,items) -> items.Head) 
+                                factor
+                            |> fun f -> API.Factor.updateBy ((=) factor) API.Update.UpdateAll f factors
+                            |> API.Study.setFactors study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
 
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let factors = study.Factors
-                match API.Factor.tryGetByName name factors with
-                | Some factor ->                    
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Factors.writeFactors "Factor") 
-                        (Factors.readFactors "Factor" 1 >> fun (_,_,_,items) -> items.Head) 
-                        factor
-                    |> fun f -> API.Factor.updateBy ((=) factor) API.Update.UpdateAll f factors
-                    |> API.Study.setFactors study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-
-                | None ->
-                    if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                        | None ->
+                            if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1011,21 +1174,26 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let factors = study.Factors
-                if API.Factor.existsByName name factors then           
-                    if verbosity >= 1 then printfn "Factor with the name %s already exists in the study with the identifier %s" name studyIdentifier
-                    investigation
-                else
-                    API.Factor.add factors factor
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Factors with
+                    | Some factors -> 
+                        if API.Factor.existsByName name factors then           
+                            if verbosity >= 1 then printfn "Factor with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                            factors
+                        else
+                            API.Factor.add factors factor
+                    | None -> [factor]
                     |> API.Study.setFactors study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1044,21 +1212,28 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let factors = study.Factors
-                if API.Factor.existsByName name factors then           
-                    API.Factor.removeByName name factors
-                    |> API.Study.setFactors study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                    investigation                   
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Factors with
+                    | Some factors -> 
+                        if API.Factor.existsByName name factors then           
+                            API.Factor.removeByName name factors
+                            |> API.Study.setFactors study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation         
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        investigation
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1077,18 +1252,25 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies with
-            | Some study -> 
-                match API.Factor.tryGetByName name study.Factors with
-                | Some factor ->
-                    [factor]
-                    |> Prompt.serializeXSLXWriterOutput (Factors.writeFactors "Factor")
-                    |> printfn "%s"
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Factors with
+                    | Some factors -> 
+                        match API.Factor.tryGetByName name factors with
+                        | Some factor ->
+                            [factor]
+                            |> Prompt.serializeXSLXWriterOutput (Factors.writeFactors "Factor")
+                            |> printfn "%s"
+                        | None -> 
+                            if verbosity >= 1 then printfn "Factor with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
                 | None -> 
-                    if verbosity >= 1 then printfn "Factor with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
         /// Lists the factors included in the investigation study
         let list (arcConfiguration:ArcConfiguration) = 
@@ -1101,14 +1283,19 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Studies
-            |> Seq.iter (fun study ->
-                let factors = study.Factors
-                if Seq.isEmpty factors |> not then
-                    printfn "Study: %s" study.Identifier
-                    factors
-                    |> Seq.iter (fun factor -> printfn "--Factor Name: %s" factor.Name)
-            )
+            match investigation.Studies with
+            | Some studies -> 
+                studies
+                |> Seq.iter (fun study ->
+                    match study.Factors with
+                    | Some factors -> 
+                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        factors
+                        |> Seq.iter (fun factor -> printfn "--Factor Name: %s" (Option.defaultValue "" factor.Name))
+                    | None -> ()
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
     /// Functions for altering investigation protocols
     module Protocols =
@@ -1149,21 +1336,28 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let protocols = study.Protocols
-                if API.Protocol.existsByName name protocols then
-                    API.Protocol.updateByName updateOption protocol protocols
-                    |> API.Study.setProtocols study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Protocols with
+                    | Some protocols -> 
+                        if API.Protocol.existsByName name protocols then
+                            API.Protocol.updateByName updateOption protocol protocols
+                            |> API.Study.setProtocols study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -1185,27 +1379,33 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let protocols = study.Protocols
-                match API.Protocol.tryGetByName name protocols with
-                | Some protocol ->                    
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Protocols.writeProtocols "Protocol") 
-                        (Protocols.readProtocols "Protocol" 1 >> fun (_,_,_,items) -> items.Head) 
-                        protocol
-                    |> fun f -> API.Protocol.updateBy ((=) protocol) API.Update.UpdateAll f protocols
-                    |> API.Study.setProtocols study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-
-                | None ->
-                    if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Protocols with
+                    | Some protocols -> 
+                        match API.Protocol.tryGetByName name protocols with
+                        | Some protocol ->                    
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                                (List.singleton >> Protocols.writeProtocols "Protocol") 
+                                (Protocols.readProtocols "Protocol" 1 >> fun (_,_,_,items) -> items.Head) 
+                                protocol
+                            |> fun f -> API.Protocol.updateBy ((=) protocol) API.Update.UpdateAll f protocols
+                            |> API.Study.setProtocols study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        | None ->
+                            if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1243,21 +1443,26 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let protocols = study.Protocols
-                if API.Protocol.existsByName name protocols then           
-                    if verbosity >= 1 then printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
-                    investigation
-                else
-                    API.Protocol.add protocols protocol
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Protocols with
+                    | Some protocols -> 
+                        if API.Protocol.existsByName name protocols then           
+                            if verbosity >= 1 then printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                            protocols
+                        else
+                            API.Protocol.add protocols protocol                          
+                    | None -> [protocol]
                     |> API.Study.setProtocols study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1276,21 +1481,28 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let protocols = study.Protocols
-                if API.Protocol.existsByName name protocols then           
-                    API.Protocol.removeByName name protocols
-                    |> API.Study.setProtocols study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                else
-                    if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                    investigation                   
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Protocols with
+                    | Some protocols -> 
+                        if API.Protocol.existsByName name protocols then           
+                            API.Protocol.removeByName name protocols
+                            |> API.Study.setProtocols study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        else
+                            if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            investigation             
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        investigation
+                | None ->
+                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1300,15 +1512,26 @@ module StudyAPI =
             
             if verbosity >= 1 then printfn "Start Protocol Load"
 
+            let editor = GeneralConfiguration.getEditor arcConfiguration
+            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+
             let path = getFieldValueByName "InputPath" protocolArgs
-            
 
             let protocol =
                 if containsFlag "IsProcessFile" protocolArgs then
                     let isaProcess = Json.Process.fromFile path
                     isaProcess.ExecutesProtocol
                 else
-                    Json.Protocol.fromFile path
+                    Json.Protocol.fromFile path |> Some
+                |> Option.map (fun p -> 
+                    if p.Name.IsNone then
+                        if verbosity >= 1 then printfn "Given protocol does not contain name, please add it in the editor" 
+                        ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            (List.singleton >> Protocols.writeProtocols "Protocol") 
+                            (Protocols.readProtocols "Protocol" 1 >> fun (_,_,_,items) -> items.Head) 
+                            p
+                    else p               
+                )
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
 
@@ -1316,34 +1539,42 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
            
-            let studies = investigation.Studies
-
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                let name = protocol.Name
-                let protocols = study.Protocols
-                if API.Protocol.existsByName name protocols then  
-                    if verbosity >= 1 then 
-                        printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
-                    if containsFlag "UpdateExisting" protocolArgs then
-                        if verbosity >= 1 then printfn "Updating protocol as \"UpdateExisting\" flag was given" 
-                        API.Protocol.updateByName API.Update.UpdateAll protocol protocols
-                    else
-                        if verbosity >= 1 then printfn "Not updating protocol as \"UpdateExisting\" flag was not given" 
-                        protocols
-                else
+            match investigation.Studies with
+            | Some studies -> 
+                match protocol with 
+                | Some protocol ->                
+                    match API.Study.tryGetByIdentifier studyIdentifier studies with
+                    | Some study -> 
+                        let name = protocol.Name.Value
+                        match study.Protocols with
+                        | Some protocols ->
+                            if API.Protocol.existsByName name protocols then  
+                                if verbosity >= 1 then 
+                                    printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                                if containsFlag "UpdateExisting" protocolArgs then
+                                    if verbosity >= 1 then printfn "Updating protocol as \"UpdateExisting\" flag was given" 
+                                    API.Protocol.updateByName API.Update.UpdateAll protocol protocols
+                                else
+                                    if verbosity >= 1 then printfn "Not updating protocol as \"UpdateExisting\" flag was not given" 
+                                    protocols
+                            else                  
+                                if verbosity >= 2 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                                API.Protocol.add protocols protocol
+                        | None -> [protocol]
                     
-                    if verbosity >= 2 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                    API.Protocol.add protocols protocol
-                    
-                |> API.Study.setProtocols study
-                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                |> API.Investigation.setStudies investigation
-            | None ->
-                printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                        |> API.Study.setProtocols study
+                        |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                        |> API.Investigation.setStudies investigation
+                    | None ->
+                        printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                        investigation              
+                | None ->
+                    if verbosity >= 1 then printfn "The process file did not contain a protocol" 
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 investigation
             |> Investigation.toFile investigationFilePath
-
 
         /// Gets an existing protocol by name from the arc investigation study and prints its metadata.
         let get (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
@@ -1360,18 +1591,26 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies with
-            | Some study -> 
-                match API.Protocol.tryGetByName name study.Protocols with
-                | Some protocol ->
-                    [protocol]
-                    |> Prompt.serializeXSLXWriterOutput (Protocols.writeProtocols "Protocol")
-                    |> printfn "%s"
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Protocols with
+                    | Some protocols -> 
+                        match API.Protocol.tryGetByName name protocols with
+                        | Some protocol ->
+                            [protocol]
+                            |> Prompt.serializeXSLXWriterOutput (Protocols.writeProtocols "Protocol")
+                            |> printfn "%s"
+                        | None -> 
+                            if verbosity >= 1 then printfn "Protocol with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
                 | None -> 
-                    if verbosity >= 1 then printfn "Protocol with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                
 
         /// Lists the protocols included in the investigation study
         let list (arcConfiguration:ArcConfiguration) = 
@@ -1384,11 +1623,16 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Studies
-            |> Seq.iter (fun study ->
-                let protocols = study.Protocols
-                if Seq.isEmpty protocols |> not then
-                    printfn "Study: %s" study.Identifier
-                    protocols
-                    |> Seq.iter (fun factor -> printfn "--Protocol Name: %s" factor.Name)
-            )
+            match investigation.Studies with
+            | Some studies -> 
+                studies
+                |> Seq.iter (fun study ->
+                    match study.Protocols with
+                    | Some protocols -> 
+                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        protocols
+                        |> Seq.iter (fun factor -> printfn "--Protocol Name: %s" (Option.defaultValue "" factor.Name))
+                    | None -> ()
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"  

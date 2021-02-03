@@ -72,24 +72,33 @@ module AssayAPI =
         
         let investigation = Investigation.fromFile investigationFilePath
 
-        let studies = investigation.Studies
 
-        match API.Study.tryGetByIdentifier studyIdentifier studies with
-        | Some study -> 
-            let assays = study.Assays
-            if API.Assay.existsByFileName assayFileName assays then
-                API.Assay.updateByFileName updateOption assay assays
-                |> API.Study.setAssays study
-                |> fun s -> API.Study.updateByIdentifier updateOption s studies
-                |> API.Investigation.setStudies investigation
-            else
-                if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                match study.Assays with
+                | Some assays -> 
+                    if API.Assay.existsByFileName assayFileName assays then
+                        API.Assay.updateByFileName updateOption assay assays
+                        |> API.Study.setAssays study
+                        |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                        |> API.Investigation.setStudies investigation
+                    else
+                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
-    
+        
+
     /// Opens an existing assay file in the arc with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
     let edit (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
         
@@ -118,28 +127,35 @@ module AssayAPI =
         let investigation = Investigation.fromFile investigationFilePath
 
         
-        let studies = investigation.Studies
-
-        match API.Study.tryGetByIdentifier studyIdentifier studies with
-        | Some study -> 
-            let assays = study.Assays
-            match API.Assay.tryGetByFileName assayFileName assays with
-            | Some assay ->
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                match study.Assays with
+                | Some assays -> 
+                    match API.Assay.tryGetByFileName assayFileName assays with
+                    | Some assay ->
                 
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                    (List.singleton >> Assays.writeAssays "Assay") 
-                    (Assays.readAssays "Assay" 1 >> fun (_,_,_,items) -> items.Head) 
-                    assay
-                |> fun a -> API.Assay.updateBy ((=) assay) API.Update.UpdateAll a assays
-                |> API.Study.setAssays study
-                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                |> API.Investigation.setStudies investigation
+                        ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            (List.singleton >> Assays.writeAssays "Assay") 
+                            (Assays.readAssays "Assay" 1 >> fun (_,_,_,items) -> items.Head) 
+                            assay
+                        |> fun a -> API.Assay.updateBy ((=) assay) API.Update.UpdateAll a assays
+                        |> API.Study.setAssays study
+                        |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                        |> API.Investigation.setStudies investigation
 
-            | None ->
-                if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                    | None ->
+                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -182,23 +198,31 @@ module AssayAPI =
         
         let studies = investigation.Studies
         
-        match API.Study.tryGetByIdentifier studyIdentifier studies with
-        | Some study -> 
-            let assays = study.Assays
-            match API.Assay.tryGetByFileName assayFileName assays with
-            | Some assay ->
-                if verbosity >= 1 then printfn "Assay with the identifier %s already exists in the investigation file" assayIdentifier
-                investigation
-            | None ->
-                API.Assay.add assays assay
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                match study.Assays with
+                | Some assays -> 
+                    match API.Assay.tryGetByFileName assayFileName assays with
+                    | Some assay ->
+                        if verbosity >= 1 then printfn "Assay with the identifier %s already exists in the investigation file" assayIdentifier
+                        assays
+                    | None ->                       
+                        API.Assay.add assays assay                     
+                | None ->
+                    [assay]
                 |> API.Study.setAssays study
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                |> API.Investigation.setStudies investigation
+                
+            | None ->
+                let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
+                Study.fromParts info [] [] [] [assay] [] []
+                |> API.Study.add studies
         | None ->
             let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
-            Study.fromParts info [] [] [] [assay] [] []
-            |> API.Study.add studies
-            |> API.Investigation.setStudies investigation
+            [Study.fromParts info [] [] [] [assay] [] []]
+        |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
     
     /// Creates a new assay file and associated folder structure in the arc and registers it in the arc's investigation file with the given assay metadata contained in assayArgs.
@@ -233,20 +257,29 @@ module AssayAPI =
 
         let studies = investigation.Studies
 
-        match API.Study.tryGetByIdentifier studyIdentifier studies with
-        | Some study -> 
-            let assays = study.Assays
-            match API.Assay.tryGetByFileName assayFileName assays with
-            | Some assay ->
-                API.Assay.removeByFileName assayFileName assays
-                |> API.Study.setAssays study
-                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                |> API.Investigation.setStudies investigation
-            | None ->
-                if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                match study.Assays with
+                | Some assays -> 
+                    match API.Assay.tryGetByFileName assayFileName assays with
+                    | Some assay ->
+                        API.Assay.removeByFileName assayFileName assays
+                        |> API.Study.setAssays study
+                        |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                        |> API.Investigation.setStudies investigation
+                    | None ->
+                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        investigation
+                | None -> 
+                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
     
@@ -289,33 +322,42 @@ module AssayAPI =
         
         let studies = investigation.Studies
 
-        match API.Study.tryGetByIdentifier studyIdentifier studies with
-        | Some study -> 
-            let assays = study.Assays
-            match API.Assay.tryGetByFileName assayFileName assays with
-            | Some assay ->
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                match study.Assays with
+                | Some assays -> 
+                    match API.Assay.tryGetByFileName assayFileName assays with
+                    | Some assay ->
                 
-                let studies = 
-                    // Remove Assay from old study
-                    API.Study.mapAssays (API.Assay.removeByFileName assayFileName) study
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                        let studies = 
+                            // Remove Assay from old study
+                            API.Study.mapAssays (API.Assay.removeByFileName assayFileName) study
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
 
-                match API.Study.tryGetByIdentifier targetStudyIdentifer studies with
-                | Some targetStudy -> 
-                    API.Study.mapAssays (fun assays -> API.Assay.add assays assay) targetStudy
-                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
+                        match API.Study.tryGetByIdentifier targetStudyIdentifer studies with
+                        | Some targetStudy -> 
+                            API.Study.mapAssays (fun assays -> API.Assay.add assays assay) targetStudy
+                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            |> API.Investigation.setStudies investigation
+                        | None -> 
+                            if verbosity >= 2 then printfn "Target Study with the identifier %s does not exist in the investigation file, creating new study to move assay to" studyIdentifier
+                            let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
+                            Study.fromParts info [] [] [] [assay] [] []
+                            |> API.Study.add studies
+                            |> API.Investigation.setStudies investigation
+                    | None -> 
+                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        investigation
                 | None -> 
-                    if verbosity >= 2 then printfn "Target Study with the identifier %s does not exist in the investigation file, creating new study to move assay to" studyIdentifier
-                    let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
-                    Study.fromParts info [] [] [] [assay] [] []
-                    |> API.Study.add studies
-                    |> API.Investigation.setStudies investigation
+                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    investigation
             | None -> 
-                if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -341,20 +383,25 @@ module AssayAPI =
         
         let investigation = Investigation.fromFile investigationFilePath
         
-        match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies with
-        | Some study -> 
-            match API.Assay.tryGetByFileName assayFileName study.Assays with
-            | Some assay ->
-                [assay]
-                |> Prompt.serializeXSLXWriterOutput (Assays.writeAssays "Assay")
-                |> printfn "%s"
-
+        match investigation.Studies with
+        | Some studies -> 
+            match API.Study.tryGetByIdentifier studyIdentifier studies with
+            | Some study -> 
+                match study.Assays with
+                | Some assays -> 
+                    match API.Assay.tryGetByFileName assayFileName assays with
+                    | Some assay ->
+                        [assay]
+                        |> Prompt.serializeXSLXWriterOutput (Assays.writeAssays "Assay")
+                        |> printfn "%s"
+                    | None -> 
+                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                | None -> 
+                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier                   
             | None -> 
-                if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
-                
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
         | None -> 
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-            
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"    
 
 
 
@@ -369,11 +416,20 @@ module AssayAPI =
 
         let investigation = Investigation.fromFile investigationFilePath
 
-        investigation.Studies
-        |> List.iter (fun study ->
-            let assays = study.Assays
-            if List.isEmpty assays |> not then
-                printfn "Study: %s" study.Identifier
-                assays 
-                |> Seq.iter (fun assay -> printfn "--Assay: %s" assay.FileName)
-        )
+
+        match investigation.Studies with
+        | Some studies -> 
+            studies
+            |> List.iter (fun study ->
+                let studyIdentifier = Option.defaultValue "" study.Identifier
+                match study.Assays with
+                | Some assays -> 
+                    if List.isEmpty assays |> not then
+                        printfn "Study: %s" studyIdentifier
+                        assays 
+                        |> Seq.iter (fun assay -> printfn "--Assay: %s" (Option.defaultValue "" assay.FileName))
+                | None -> 
+                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier   
+            )
+        | None -> 
+            if verbosity >= 1 then printfn "The investigation does not contain any studies"  

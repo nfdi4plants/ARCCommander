@@ -9,6 +9,7 @@ let main argv =
   //ArcCommander core tests
   Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv AssayTests.testAssayTestFunction |> ignore
   Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv AssayTests.testAssayRegister |> ignore
+  Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv AssayTests.testAssayUpdate |> ignore
 
   Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv InvestigationTests.testInvestigationReading |> ignore
   Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv InvestigationTests.testInvestigationCreate |> ignore

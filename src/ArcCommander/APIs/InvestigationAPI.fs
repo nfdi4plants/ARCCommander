@@ -96,7 +96,7 @@ module InvestigationAPI =
 
         let identifier = getFieldValueByName "Identifier" investigationArgs
         
-        if identifier = investigation.Identifier then
+        if Some identifier = investigation.Identifier then
             System.IO.File.Delete investigationFilePath
 
     /// Functions for altering investigation contacts
@@ -134,13 +134,16 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let persons = investigation.Contacts
-
-            if API.Person.existsByFullName lastName midInitials firstName persons then
-                API.Person.updateByFullName updateOption person persons
-                |> API.Investigation.setContacts investigation
-            else
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+            match investigation.Contacts with
+            | Some persons ->
+                if API.Person.existsByFullName lastName midInitials firstName persons then
+                    API.Person.updateByFullName updateOption person persons
+                    |> API.Investigation.setContacts investigation
+                else
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any persons"
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -162,17 +165,21 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let persons = investigation.Contacts
-            match API.Person.tryGetByFullName firstName midInitials lastName persons with
-            | Some person -> 
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                    (List.singleton >> Contacts.writePersons "Person") 
-                    (Contacts.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
-                    person
-                |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                |> API.Investigation.setContacts investigation
-            | None ->
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+            match investigation.Contacts with
+            | Some persons ->
+                match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                | Some person -> 
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                        (List.singleton >> Contacts.writePersons "Person") 
+                        (Contacts.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
+                        person
+                    |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                    |> API.Investigation.setContacts investigation
+                | None ->
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any persons"
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -207,14 +214,15 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let persons = investigation.Contacts
-
-            if API.Person.existsByFullName firstName midInitials lastName persons then               
-                if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
-                investigation
-            else
-                API.Person.add persons person               
-                |> API.Investigation.setContacts investigation
+            match investigation.Contacts with
+            | Some persons ->
+                if API.Person.existsByFullName firstName midInitials lastName persons then               
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
+                    persons
+                else
+                    API.Person.add persons person            
+            | None -> [person]   
+            |> API.Investigation.setContacts investigation
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
@@ -232,14 +240,17 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let persons = investigation.Contacts
-
-            if API.Person.existsByFullName firstName midInitials lastName persons then               
-                API.Person.removeByFullName firstName midInitials lastName persons   
-                |> API.Investigation.setContacts investigation
-            else
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation file" firstName midInitials lastName
-                investigation                
+            match investigation.Contacts with
+            | Some persons ->
+                if API.Person.existsByFullName firstName midInitials lastName persons then               
+                    API.Person.removeByFullName firstName midInitials lastName persons   
+                    |> API.Investigation.setContacts investigation
+                else
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation file" firstName midInitials lastName
+                    investigation    
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+                investigation
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
@@ -257,13 +268,17 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            match API.Person.tryGetByFullName firstName midInitials lastName investigation.Contacts with
-            | Some person ->
-                [person]
-                |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons "Person")
-                |> printfn "%s"
-            | None -> printfn "Person with the name %s %s %s  does not exist in the investigation" firstName midInitials lastName
-
+            match investigation.Contacts with
+            | Some persons ->
+                match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                | Some person ->
+                    [person]
+                    |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons "Person")
+                    |> printfn "%s"
+                | None -> printfn "Person with the name %s %s %s  does not exist in the investigation" firstName midInitials lastName
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+               
 
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 
@@ -276,13 +291,20 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Contacts
-            |> Seq.iter (fun person ->
-                if person.MidInitials <> "" then
-                    printfn "Person: %s %s %s" person.FirstName person.MidInitials person.LastName
-                else
-                    printfn "Person: %s %s" person.FirstName person.LastName
-            )
+            match investigation.Contacts with
+            | Some persons ->
+                persons
+                |> Seq.iter (fun person ->
+                    let firstName = Option.defaultValue "" person.FirstName
+                    let midInitials = Option.defaultValue "" person.MidInitials
+                    let lastName = Option.defaultValue "" person.LastName
+                    if midInitials = "" then
+                        printfn "--Person: %s %s" firstName lastName
+                    else
+                        printfn "--Person: %s %s %s" firstName midInitials lastName
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any persons"
 
     /// Functions for altering investigation publications
     module Publications =
@@ -313,13 +335,16 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let publications = investigation.Publications
-
-            if API.Publication.existsByDoi doi publications then
-                API.Publication.updateByDOI updateOption publication publications
-                |> API.Investigation.setPublications investigation
-            else
-                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+            match investigation.Publications with
+            | Some publications ->
+                if API.Publication.existsByDoi doi publications then
+                    API.Publication.updateByDOI updateOption publication publications
+                    |> API.Investigation.setPublications investigation
+                else
+                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any publications"
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -339,20 +364,23 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            let publications = investigation.Publications
+            match investigation.Publications with
+            | Some publications ->
+                match API.Publication.tryGetByDoi (Some doi) publications with
+                | Some publication ->                    
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                        (List.singleton >> Publications.writePublications "Publication") 
+                        (Publications.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
+                        publication
+                    |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
+                    |> API.Investigation.setPublications investigation
 
-            match API.Publication.tryGetByDoi doi publications with
-            | Some publication ->                    
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                    (List.singleton >> Publications.writePublications "Publication") 
-                    (Publications.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
-                    publication
-                |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
-                |> API.Investigation.setPublications investigation
-
-            | None ->
-                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
-                investigation
+                | None ->
+                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any publications"
+                investigation  
             |> Investigation.toFile investigationFilePath
 
 
@@ -380,14 +408,15 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let publications = investigation.Publications
-
-            if API.Publication.existsByDoi doi publications then           
-                if verbosity >= 1 then printfn "Publication with the doi %s already exists in the investigation" doi
-                investigation
-            else
-                API.Publication.add publications publication
-                |> API.Investigation.setPublications investigation
+            match investigation.Publications with
+            | Some publications ->
+                if API.Publication.existsByDoi doi publications then           
+                    if verbosity >= 1 then printfn "Publication with the doi %s already exists in the investigation" doi
+                    publications
+                else
+                    API.Publication.add publications publication
+            | None -> [publication]
+            |> API.Investigation.setPublications investigation
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
@@ -403,15 +432,17 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            let publications = investigation.Publications
-
-            if API.Publication.existsByDoi doi publications then           
-                API.Publication.removeByDoi doi publications
-                |> API.Investigation.setPublications investigation
-            else
-                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+            match investigation.Publications with
+            | Some publications ->
+                if API.Publication.existsByDoi doi publications then           
+                    API.Publication.removeByDoi doi publications
+                    |> API.Investigation.setPublications investigation
+                else
+                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    investigation
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any publications"
                 investigation
-
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing publication by its doi and prints its metadata
@@ -427,15 +458,18 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
             
-            match API.Publication.tryGetByDoi doi investigation.Publications with
-            | Some publication ->
-                [publication]
-                |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
-                |> printfn "%s"
+            match investigation.Publications with
+            | Some publications ->
+                match API.Publication.tryGetByDoi (Some doi) publications with
+                | Some publication ->
+                    [publication]
+                    |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
+                    |> printfn "%s"
 
+                | None -> 
+                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
             | None -> 
-                if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
-                
+                if verbosity >= 1 then printfn "The investigation does not contain any publications"
 
         /// Lists the full names of all persons included in the investigation
         let list (arcConfiguration:ArcConfiguration) = 
@@ -448,7 +482,11 @@ module InvestigationAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
-            investigation.Publications
-            |> Seq.iter (fun publication ->
-                printfn "Publication (DOI): %s" publication.DOI
-            )
+            match investigation.Publications with
+            | Some publications ->
+                publications
+                |> Seq.iter (fun publication ->
+                    printfn "Publication (DOI): %s" (Option.defaultValue "" publication.DOI)
+                )
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any publications"

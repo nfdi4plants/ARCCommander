@@ -50,11 +50,11 @@ let testInvestigationReading =
                 
         let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
 
-        Expect.equal investigation.Contacts.Length 3 "There should be 3 Persons in the investigation"
-        Expect.equal investigation.Studies.Head.Assays.Length 3 "There should be 3 Assays in the first study"
-        Expect.equal investigation.Studies.Length 2 "There should be two studies in the investigation"
-        Expect.equal investigation.Identifier testInvestigation.Identifier "Investigation Identifier does not match"
-        Expect.sequenceEqual investigation.Comments testInvestigation.Comments "Investigation Comments do not match"
+        Expect.equal investigation.Contacts.Value.Length 3 "There should be 3 Persons in the investigation"
+        Expect.equal investigation.Studies.Value.Head.Assays.Value.Length 3 "There should be 3 Assays in the first study"
+        Expect.equal investigation.Studies.Value.Length 2 "There should be two studies in the investigation"
+        Expect.equal investigation.Identifier.Value testInvestigation.Identifier "Investigation Identifier does not match"
+        Expect.sequenceEqual investigation.Comments.Value testInvestigation.Comments "Investigation Comments do not match"
     )
 
 [<Tests>]
@@ -102,7 +102,7 @@ let testInvestigationUpdate =
     testList "InvestigationUpdateTests" [
         testCase "UpdateStandard" (fun () -> 
             let newTitle = "newTitle"
-            let investigationArgs = [InvestigationUpdateArgs.Title newTitle]
+            let investigationArgs = [InvestigationUpdateArgs.Identifier "BII-I-1";InvestigationUpdateArgs.Title newTitle]
             let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
 
             let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
@@ -110,16 +110,16 @@ let testInvestigationUpdate =
             //Copy testInvestigation
             System.IO.File.Copy(investigationToCopy,investigationFilePath)
             processCommand configuration InvestigationAPI.update investigationArgs
-
+            
             let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
             // Updated with given value
-            Expect.equal investigation.Title newTitle "The value which should be updated was not updated"
+            Expect.equal investigation.Title.Value newTitle "The value which should be updated was not updated"
             // Updated with given value
-            Expect.equal investigation.Identifier investigationBeforeChangingIt.Identifier "No update value was given for identifier and the \"ReplaceWithEmptyValues\" flag was not given but the identifier was still changed"
+            Expect.equal investigation.Description investigationBeforeChangingIt.Description "No update value was given for description and the \"ReplaceWithEmptyValues\" flag was not given but the description was still changed"
             // Updated with given value
-            Expect.sequenceEqual  investigation.Studies investigationBeforeChangingIt.Studies "Studies should not have been affected by update function"
+            Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
             // Updated with given value
-            Expect.sequenceEqual  investigation.Comments investigationBeforeChangingIt.Comments "Comments should not have been affected by update function"      
+            Expect.sequenceEqual  investigation.Comments.Value investigationBeforeChangingIt.Comments.Value "Comments should not have been affected by update function"      
         )
         testCase "UpdateReplaceWithEmpty" (fun () -> 
             let newIdentifier = "BestInvestigation"
@@ -132,13 +132,13 @@ let testInvestigationUpdate =
 
             let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
             // Updated with given value
-            Expect.equal investigation.Identifier newIdentifier "The value which should be updated was not updated"
+            Expect.equal investigation.Identifier.Value newIdentifier "The value which should be updated was not updated"
             // Updated with given value
-            Expect.equal investigation.SubmissionDate "" "No update value was given for submission date and the \"ReplaceWithEmptyValues\" flag was given but the value was not removed"
+            Expect.equal investigation.SubmissionDate.Value "" "No update value was given for submission date and the \"ReplaceWithEmptyValues\" flag was given but the value was not removed"
             // Updated with given value
-            Expect.sequenceEqual  investigation.Studies investigationBeforeChangingIt.Studies "Studies should not have been affected by update function"
+            Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
             // Updated with given value
-            Expect.sequenceEqual  investigation.Comments investigationBeforeChangingIt.Comments "Comments should not have been affected by update function"      
+            Expect.sequenceEqual  investigation.Comments.Value investigationBeforeChangingIt.Comments.Value "Comments should not have been affected by update function"      
         )
         |> testSequenced
     ]

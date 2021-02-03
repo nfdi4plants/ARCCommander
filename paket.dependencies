@@ -10,8 +10,8 @@ nuget System.Text.Encodings.Web
 nuget ini-parser-netstandard
 nuget FSharp.Data
 
-nuget ISADotNet
-nuget ISADotNet.XLSX
+nuget ISADotNet ~> 0.0.3
+nuget ISADotNet.XLSX ~> 0.0.3
 
 nuget Argu      
 nuget Expecto
