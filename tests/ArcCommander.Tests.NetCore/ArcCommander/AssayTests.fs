@@ -40,7 +40,7 @@ let testAssayTestFunction =
     let investigationFileName = "isa.investigation.xlsx"
     let investigationFilePath = System.IO.Path.Combine(testDirectory,investigationFileName)
 
-    testList "AssayTestFunction" [
+    testList "AssayTestFunctionTests" [
         testCase "MatchesAssayValues" (fun () -> 
             let testAssay = ISADotNet.XLSX.Assays.fromString
                                 "protein expression profiling" "http://purl.obolibrary.org/obo/OBI_0000615" "OBI"
@@ -82,7 +82,7 @@ let testAssayRegister =
             (standardISAArgs)
             Map.empty Map.empty Map.empty Map.empty
 
-    testList "AssayRegister" [
+    testList "AssayRegisterTests" [
 
         testCase "AddToExistingStudy" (fun () -> 
 
@@ -250,7 +250,7 @@ let testAssayUpdate =
             (standardISAArgs)
             Map.empty Map.empty Map.empty Map.empty
 
-    testList "AssayUpdate" [
+    testList "AssayUpdateTests" [
 
         testCase "UpdateStandard" (fun () -> 
 
@@ -262,7 +262,7 @@ let testAssayUpdate =
             let assayIdentifier = "Assay2"
             let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "NewMeasurementType"
-            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "Assay3Tech" "" "" "" assayFileName []
+            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "Assay2Tech" "" "" "" assayFileName []
 
             let assayArgs : AssayUpdateArgs list = [AssayUpdateArgs.StudyIdentifier studyIdentifier;AssayUpdateArgs.AssayIdentifier assayIdentifier;AssayUpdateArgs.MeasurementType measurementType]
             
@@ -290,6 +290,208 @@ let testAssayUpdate =
             Expect.equal assay.TechnologyType testAssay.TechnologyType "Assay technology type has changed, even though no value was given and the \"ReplaceWithEmptyValues\" flag was not set"
             Expect.equal assay.MeasurementType testAssay.MeasurementType "Assay Measurement type was not updated correctly"
 
+        )
+        testCase "UpdateReplaceWithEmpty" (fun () -> 
+           
+            let studyIdentifier = "Study2"
+            let assayIdentifier = "Assay3"
+            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
+            let measurementType = "NewMeasurementType"
+            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
+
+            let assayArgs : AssayUpdateArgs list = [AssayUpdateArgs.ReplaceWithEmptyValues; AssayUpdateArgs.StudyIdentifier studyIdentifier;AssayUpdateArgs.AssayIdentifier assayIdentifier;AssayUpdateArgs.MeasurementType measurementType]           
+
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            processCommand configuration AssayAPI.update assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+
+            Expect.equal investigation.Studies.Value.[0] investigationBeforeUpdate.Studies.Value.[0] "Only assay in second study was supposed to be updated, but study 1 is also different"
+            
+            let study = investigation.Studies.Value.[1]
+
+            let assay = study.Assays.Value.[0]
+
+            Expect.equal assay.FileName testAssay.FileName "Assay Filename has changed even though it shouldnt"
+            Expect.isNone assay.TechnologyType "Assay technology type has not been removed, even though no value was given and the \"ReplaceWithEmptyValues\" flag was set"
+            Expect.equal assay.MeasurementType testAssay.MeasurementType "Assay Measurement type was not updated correctly"
+        )
+    ]
+    |> testSequenced
+
+[<Tests>]
+let testAssayUnregister = 
+
+    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/assayUnregisterTest"
+
+    let configuration = 
+        ArcConfiguration.create 
+            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+            (standardISAArgs)
+            Map.empty Map.empty Map.empty Map.empty
+
+    testList "AssayUnregisterTests" [
+
+        testCase "AssayExists" (fun () -> 
+
+            let assay1Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay1";AssayRegisterArgs.MeasurementType "Assay1Method"]
+            let assay2Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay2";AssayRegisterArgs.MeasurementType "Assay2Method";AssayRegisterArgs.TechnologyType "Assay2Tech"]
+            let assay3Args = [AssayRegisterArgs.StudyIdentifier "Study2"; AssayRegisterArgs.AssayIdentifier "Assay3";AssayRegisterArgs.TechnologyType "Assay3Tech"]
+
+            let studyIdentifier = "Study1"
+            let assayIdentifier = "Assay2"
+
+            let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
+            
+            setupArc configuration
+            processCommand configuration AssayAPI.register assay1Args
+            processCommand configuration AssayAPI.register assay2Args
+            processCommand configuration AssayAPI.register assay3Args
+
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            processCommand configuration AssayAPI.unregister assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            
+
+            Expect.equal investigation.Studies.Value.[1] investigationBeforeUpdate.Studies.Value.[1] "Only assay in first study was supposed to be unregistered, but study 2 is also different"
+            
+            let study = investigation.Studies.Value.[0]
+            let studyBeforeUpdate = investigationBeforeUpdate.Studies.Value.[0]
+
+            Expect.isSome study.Assays "Only assay number 2 in first study was supposed to be unregistered, but both assays were removed"
+            Expect.notEqual study.Assays.Value [] "Only assay number 2 in first study was supposed to be unregistered, but both assays were removed"
+            Expect.equal study.Assays.Value.[0] studyBeforeUpdate.Assays.Value.[0] "Only assay number 2 in first study was supposed to be unregistered, but first assay is also different"
+            Expect.equal study.Assays.Value.Length 1 "Only first assay was supposed to be left in the study after removing the second but both are still present"
+        )
+        testCase "AssayDoesNotExist" (fun () -> 
+           
+            let studyIdentifier = "Study2"
+            let assayIdentifier = "FakeAssayName"
+
+            let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
+
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            processCommand configuration AssayAPI.unregister assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+
+            Expect.equal investigation investigationBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been removed"
+            
+        )
+        testCase "StudyDoesNotExist" (fun () -> 
+           
+            let studyIdentifier = "FakeStudyName"
+            let assayIdentifier = "Assay2"
+
+            let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
+
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            processCommand configuration AssayAPI.unregister assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+
+            Expect.equal investigation investigationBeforeUpdate "Investigation values did change even though the given study does not exist and none should have been removed"
+            
+        )
+    ]
+    |> testSequenced
+
+[<Tests>]
+let testAssayMove = 
+
+    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/assayMoveTest"
+
+    let configuration = 
+        ArcConfiguration.create 
+            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+            (standardISAArgs)
+            Map.empty Map.empty Map.empty Map.empty
+
+    testList "AssayMoveTests" [
+
+        testCase "ToExistingStudy" (fun () -> 
+
+            let assay1Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay1";AssayRegisterArgs.MeasurementType "Assay1Method"]
+            let assay2Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay2";AssayRegisterArgs.MeasurementType "Assay2Method";AssayRegisterArgs.TechnologyType "Assay2Tech"]
+            let assay3Args = [AssayRegisterArgs.StudyIdentifier "Study2"; AssayRegisterArgs.AssayIdentifier "Assay3";AssayRegisterArgs.TechnologyType "Assay3Tech"]
+
+            let studyIdentifier = "Study1"
+            let targetStudyIdentfier = "Study2"
+            let assayIdentifier = "Assay2"
+
+            let assayArgs : AssayMoveArgs list = [AssayMoveArgs.StudyIdentifier studyIdentifier;AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier;AssayMoveArgs.AssayIdentifier assayIdentifier]
+            
+            setupArc configuration
+            processCommand configuration AssayAPI.register assay1Args
+            processCommand configuration AssayAPI.register assay2Args
+            processCommand configuration AssayAPI.register assay3Args
+
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let testAssay = investigationBeforeUpdate.Studies.Value.[0].Assays.Value.[1]
+            let fileName = testAssay.FileName.Value
+
+            processCommand configuration AssayAPI.move assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            
+            let studies = investigation.Studies.Value
+
+            Expect.isNone (API.Assay.tryGetByFileName fileName studies.[0].Assays.Value) "Assay was not removed from source study"
+
+            let assay = API.Assay.tryGetByFileName fileName studies.[1].Assays.Value
+
+            Expect.isSome assay "Assay was not added to target study"
+
+            Expect.equal assay.Value testAssay "Assay was moved but some values are not correct"
+            
+        )
+        testCase "ToNewStudy" (fun () -> 
+
+            let studyIdentifier = "Study1"
+            let targetStudyIdentfier = "NewStudy"
+            let assayIdentifier = "Assay1"
+
+            let assayArgs : AssayMoveArgs list = [AssayMoveArgs.StudyIdentifier studyIdentifier;AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier;AssayMoveArgs.AssayIdentifier assayIdentifier]
+ 
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let testAssay = investigationBeforeUpdate.Studies.Value.[0].Assays.Value.[0]
+            let fileName = testAssay.FileName.Value
+
+            processCommand configuration AssayAPI.move assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            
+            let studies = investigation.Studies.Value
+
+            Expect.isNone (API.Assay.tryGetByFileName fileName studies.[0].Assays.Value) "Assay was not removed from source study"
+
+            let study = API.Study.tryGetByIdentifier "NewStudy" studies
+
+            Expect.isSome study "New Study was not created"
+
+            let assay = API.Assay.tryGetByFileName fileName study.Value.Assays.Value
+
+            Expect.isSome assay "Assay was not added to target study"
+
+            Expect.equal assay.Value testAssay "Assay was moved but some values are not correct"
+            
+        )
+        testCase "AssayDoesNotExist" (fun () -> 
+           
+            let studyIdentifier = "Study2"
+            let targetStudyIdentifier = "Study1"
+            let assayIdentifier = "FakeAssayName"
+
+            let assayArgs : AssayMoveArgs list = [AssayMoveArgs.StudyIdentifier studyIdentifier;AssayMoveArgs.TargetStudyIdentifier targetStudyIdentifier;AssayMoveArgs.AssayIdentifier assayIdentifier]
+
+            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            processCommand configuration AssayAPI.move assayArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+
+            Expect.equal investigation investigationBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been moved"
+            
         )
     ]
     |> testSequenced

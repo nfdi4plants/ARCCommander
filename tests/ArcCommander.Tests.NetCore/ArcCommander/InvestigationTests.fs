@@ -134,7 +134,7 @@ let testInvestigationUpdate =
             // Updated with given value
             Expect.equal investigation.Identifier.Value newIdentifier "The value which should be updated was not updated"
             // Updated with given value
-            Expect.equal investigation.SubmissionDate.Value "" "No update value was given for submission date and the \"ReplaceWithEmptyValues\" flag was given but the value was not removed"
+            Expect.isNone investigation.SubmissionDate "No update value was given for submission date and the \"ReplaceWithEmptyValues\" flag was given but the value was not removed"
             // Updated with given value
             Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
             // Updated with given value

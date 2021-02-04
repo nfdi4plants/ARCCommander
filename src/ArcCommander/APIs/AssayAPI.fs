@@ -195,9 +195,7 @@ module AssayAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let investigation = Investigation.fromFile investigationFilePath
-        
-        let studies = investigation.Studies
-        
+                
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -254,8 +252,6 @@ module AssayAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let investigation = Investigation.fromFile investigationFilePath
-
-        let studies = investigation.Studies
 
         match investigation.Studies with
         | Some studies -> 
@@ -320,8 +316,6 @@ module AssayAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get      
         let investigation = Investigation.fromFile investigationFilePath
         
-        let studies = investigation.Studies
-
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier studyIdentifier studies with

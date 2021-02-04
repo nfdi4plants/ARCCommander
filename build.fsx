@@ -258,14 +258,16 @@ let runTestsAll =
         Fake.DotNet.DotNet.test(fun testParams ->
             {
                 testParams with
-                    MSBuildParams = {
-                        standardParams with
-                            Properties = [
-                                "AltCover","true"
-                                "AltCoverCobertura","../../codeCov.xml"
-                                "AltCoverForce","true"
-                            ]
-                    }
+                    MSBuildParams = 
+                        standardParams
+                    //    {
+                    //    standardParams with
+                    //        Properties = [
+                    //            "AltCover","true"
+                    //            "AltCoverCobertura","../../codeCov.xml"
+                    //            "AltCoverForce","true"
+                    //        ]
+                    //}
             }
         
         ) testProject
