@@ -2,7 +2,6 @@
 
 open Argu
 open Expecto
-open TestingUtils
 open ISADotNet
 open ArcCommander
 open ArgumentProcessing
