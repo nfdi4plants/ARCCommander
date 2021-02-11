@@ -33,5 +33,10 @@
   <ItemGroup>
     <ProjectReference Include="..\IsaXLSX\IsaXLSX.fsproj" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.*" />
+    <PackageReference Include="Argu" Version="6.1.1" />
+    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.3" />
+    <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+  </ItemGroup>
 </Project>
