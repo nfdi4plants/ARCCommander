@@ -9,13 +9,13 @@
       ]
     },
     "paket": {
-      "version": "5.249.2",
+      "version": "5.257.0",
       "commands": [
         "paket"
       ]
     },
     "fsharp.formatting.commandtool": {
-      "version": "7.2.9",
+      "version": "8.0.1",
       "commands": [
         "fsdocs"
       ]

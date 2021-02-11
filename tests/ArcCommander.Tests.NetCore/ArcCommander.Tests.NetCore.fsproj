@@ -19,13 +19,15 @@
     <PackageReference Include="Expecto" Version="9.*" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
-    <PackageReference Update="FSharp.Core" Version="4.*" />
+    <PackageReference Update="FSharp.Core" Version="5.*" />
+    <PackageReference Include="Argu" Version="6.1.1" />
+    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.3" />
+    <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+    <PackageReference Include="ISADotNet" Version="0.1.0" />
+    <PackageReference Include="ISADotNet.XLSX" Version="0.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\src\ArcCommander\ArcCommander.fsproj" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
