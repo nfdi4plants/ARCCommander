@@ -15,5 +15,9 @@
     <Compile Include="AssayFile\API.fs" />
     <Compile Include="AssayFile\IO.fs" />
   </ItemGroup>
-  <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.*" />
+    <PackageReference Include="FSharp.Data" Version="3.3.3" />
+    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.3" />
+  </ItemGroup>
 </Project>
