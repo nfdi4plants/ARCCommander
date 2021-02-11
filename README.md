@@ -4,95 +4,143 @@ ArcCommander is a command line tool to create, manage and share your ARCs.
 
 <!-- TOC -->
 
-- [General cli structure](#general-cli-structure)
-- [Subcommand verbs](#subcommand-verbs)
-- [CLI argument help](#cli-argument-help)
-    - [Top level:](#top-level)
-        - [init](#init)
-    - [investigation:](#investigation)
-        - [investigation create](#investigation-create)
-        - [investigation update](#investigation-update)
-        - investigation edit
-        - [investigation delete](#investigation-delete)
-        - [investigation person:](#investigation-person)
+- [Develop](#develop)
+    - [Prerequisites](#prerequisites)
+    - [Build](#build)
+        - [via dotnet cli](#via-dotnet-cli)
+        - [using the shell scripts](#using-the-shell-scripts)
+- [Usage](#usage)
+    - [General cli structure](#general-cli-structure)
+    - [Subcommand verbs](#subcommand-verbs)
+    - [CLI argument help](#cli-argument-help)
+        - [Top level:](#top-level)
+        - [init:](#init)
+        - [investigation:](#investigation)
+            - [investigation create](#investigation-create)
+            - [investigation update](#investigation-update)
+            - [investigation delete](#investigation-delete)
+            - [investigation person](#investigation-person)
             - [investigation person update](#investigation-person-update)
             - [investigation person edit](#investigation-person-edit)
             - [investigation person register](#investigation-person-register)
             - [investigation person unregister](#investigation-person-unregister)
             - [investigation person get](#investigation-person-get)
-            - investigation person list
-        - [investigation publication:](#investigation-publication)
+            - [investigation publication](#investigation-publication)
             - [investigation publication update](#investigation-publication-update)
             - [investigation publication edit](#investigation-publication-edit)
             - [investigation publication register](#investigation-publication-register)
             - [investigation publication unregister](#investigation-publication-unregister)
             - [investigation publication get](#investigation-publication-get)
-            - investigation publication list
-    - [study:](#study)
-        - [study init](#study-init)
-        - [study register](#study-register)
-        - [study add](#study-add)
-        - [study delete](#study-delete)
-        - [study unregiser](#study-unregister)
-        - [study remove](#study-remove)
-        - [study update](#study-update)
-        - [study edit](#study-edit)
-        - [study get](#study-get)
-        - study list
-        - [study person:](#study-person)
+        - [study:](#study)
+            - [study init](#study-init)
+            - [study register](#study-register)
+            - [study add](#study-add)
+            - [study delete](#study-delete)
+            - [study unregister](#study-unregister)
+            - [study remove](#study-remove)
+            - [study update](#study-update)
+            - [study edit](#study-edit)
+            - [study get](#study-get)
+            - [study person](#study-person)
             - [study person update](#study-person-update)
             - [study person edit](#study-person-edit)
             - [study person register](#study-person-register)
             - [study person unregister](#study-person-unregister)
             - [study person get](#study-person-get)
-            - study person list
-        - [study publication:](#study-publication)
+            - [study publication](#study-publication)
             - [study publication update](#study-publication-update)
             - [study publication edit](#study-publication-edit)
             - [study publication register](#study-publication-register)
             - [study publication unregister](#study-publication-unregister)
             - [study publication get](#study-publication-get)
-            - study publication list
-        - [study design:](#study-design)
+            - [study design](#study-design)
             - [study design update](#study-design-update)
             - [study design edit](#study-design-edit)
             - [study design register](#study-design-register)
             - [study design unregister](#study-design-unregister)
             - [study design get](#study-design-get)
-            - study design list
-        - [study factor:](#study-factor)
+            - [study factor](#study-factor)
             - [study factor update](#study-factor-update)
             - [study factor edit](#study-factor-edit)
             - [study factor register](#study-factor-register)
             - [study factor unregister](#study-factor-unregister)
             - [study factor get](#study-factor-get)
-            - study factor list
-        - [study protocol:](#study-protocol)
+            - [study protocol](#study-protocol)
             - [study protocol update](#study-protocol-update)
             - [study protocol edit](#study-protocol-edit)
             - [study protocol register](#study-protocol-register)
             - [study protocol unregister](#study-protocol-unregister)
             - [study protocol get](#study-protocol-get)
-            - study protocol list
-    - [assay:](#assay)
-        - [assay init](#assay-init)
-        - [assay register](#assay-register)
-        - [assay add](#assay-add)
-        - [assay delete](#assay-delete)
-        - [assay remove](#assay-remove)
-        - [assay unregister](#assay-unregister)
-        - [assay update](#assay-update)
-        - [assay edit](#assay-edit)      
-        - [assay move](#assay-move)
-        - [assay get](#assay-get)
-        - assay list
-    - [configuration:](#configuration)
-        - [configuration list](#configuration-list)
-        - [configuration edit](#configuration-edit)
-        - [configuration set](#configuration-set)
-        - [configuration unset](#configuration-unset)
+        - [assay:](#assay)
+            - [assay init](#assay-init)
+            - [assay register](#assay-register)
+            - [assay add](#assay-add)
+            - [assay delete](#assay-delete)
+            - [assay unregister](#assay-unregister)
+            - [assay remove](#assay-remove)
+            - [assay update](#assay-update)
+            - [assay edit](#assay-edit)
+            - [assay move](#assay-move)
+            - [assay get](#assay-get)
+        - [configuration:](#configuration)
+            - [configuration list](#configuration-list)
+            - [configuration edit](#configuration-edit)
+            - [configuration set](#configuration-set)
+            - [configuration unset](#configuration-unset)
 
 <!-- /TOC -->
+
+## Develop
+
+### Prerequisites
+
+- .NET SDK >= 3.1.00 (should roll forward to .net 5 if you are using that)
+
+### Build
+
+Check the [build.fsx file](https://github.com/nfdi4plants/arcCommander/blob/developer/build.fsx) to take a look at the  build targets. Here are some examples:
+
+#### via dotnet cli
+
+- run `dotnet tool restore` once to restore local tools needed in the buildchain
+
+- run `dotnet fake build -t <YourBuildTargetHere>` to run the buildchain of `<YourBuildTargetHere>`
+
+    Examples:
+
+    - `dotnet fake build` run the default buildchain (clean artifacts, build projects, copy binaries to /bin)
+
+    - `dotnet fake build -t runTests` (clean artifacts, build projects, copy binaries to /bin, run unit tests)
+
+#### using the shell scripts
+
+```shell
+# Windows
+
+# Build only
+./build.cmd
+
+# Full release buildchain: build, test, pack, build the docs, push a git tag, publsih the nuget package, release the docs
+./build.cmd -t release
+
+# The same for prerelease versions:
+./build.cmd -t prerelease
+
+
+# Linux/mac
+
+# Build only
+build.sh
+
+# Full release buildchain: build, test, pack, build the docs, push a git tag, publsih the nuget package, release the docs
+build.sh -t release
+
+# The same for prerelease versions:
+build.sh -t prerelease
+
+```
+
+## Usage
 
 ### General cli structure
 
