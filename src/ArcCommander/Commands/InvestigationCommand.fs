@@ -18,8 +18,8 @@ type InvestigationCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Create            _ -> "Create a new investigation with the given metadata"
-            | Update            _ -> "Update the arc's investigation with the given metdadata"
+            | Create            _ -> "Create a new investigation with the given Metadata"
+            | Update            _ -> "Update the arc's investigation with the given Metdadata"
             | Edit              _ -> "Open an editor window to directly edit the arc's investigation file"
             | Delete            _ -> "Delete the arc's investigation file (danger zone!)"
             | Person            _ -> "Person functions"
@@ -30,7 +30,7 @@ and InvestigationPersonCommand =
     | [<CliPrefix(CliPrefix.None)>] Update      of update_args:     ParseResults<PersonUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<PersonEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<PersonRegisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Unregister  of remove_args:     ParseResults<PersonUnregisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<PersonUnregisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<PersonGetArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
@@ -49,7 +49,7 @@ and InvestigationPublicationCommand =
     | [<CliPrefix(CliPrefix.None)>] Update      of update_args:     ParseResults<PublicationUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<PublicationEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<PublicationRegisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Unregister      of remove_args:     ParseResults<PublicationUnregisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<PublicationUnregisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<PublicationGetArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 

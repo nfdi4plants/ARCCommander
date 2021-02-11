@@ -116,6 +116,11 @@ module BasicTasks =
         |> Shell.cleanDirs 
     }
 
+    let cleanTestResults = 
+        BuildTask.create "cleanTestResults" [] {
+            Shell.cleanDirs (!! "tests/**/**/TestResult")
+        }
+    
     let build = BuildTask.create "Build" [clean] {
         solutionFile
         |> DotNet.build id
@@ -137,7 +142,7 @@ module TestTasks =
     open ProjectInfo
     open BasicTasks
 
-    let runTests = BuildTask.create "RunTests" [clean; build; copyBinaries] {
+    let runTests = BuildTask.create "RunTests" [clean; cleanTestResults; build; copyBinaries] {
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         Fake.DotNet.DotNet.test(fun testParams ->
             {
@@ -148,7 +153,7 @@ module TestTasks =
     }
 
     // to do: use this once we have actual tests
-    let runTestsWithCodeCov = BuildTask.create "RunTestsWithCodeCov" [clean; build; copyBinaries] {
+    let runTestsWithCodeCov = BuildTask.create "RunTestsWithCodeCov" [clean; cleanTestResults; build; copyBinaries] {
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         Fake.DotNet.DotNet.test(fun testParams ->
             {
