@@ -140,6 +140,10 @@ build.sh -t prerelease
 
 ```
 
+#### testing the binary
+
+After running the default build target, binaries of the arcCommander tool will lie in ./bin/ArcCommander. To run the binary, either use the `ArcCommander.exe` file on windows or `dotnet ArcCommander.dll` on linux
+
 ## Usage
 
 ### General cli structure
