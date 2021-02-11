@@ -190,3 +190,6 @@ coverage.xml
 /temp
 /src/FSharpSpreadsheetML/Playground
 /tests/cliTests
+.ionide
+tmp/watch/Dockerfile
+tmp/watch
