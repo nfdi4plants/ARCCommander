@@ -366,7 +366,7 @@ module InvestigationAPI =
             
             match investigation.Publications with
             | Some publications ->
-                match API.Publication.tryGetByDoi (Some doi) publications with
+                match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->                    
                     ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
                         (List.singleton >> Publications.writePublications "Publication") 
@@ -460,7 +460,7 @@ module InvestigationAPI =
             
             match investigation.Publications with
             | Some publications ->
-                match API.Publication.tryGetByDoi (Some doi) publications with
+                match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->
                     [publication]
                     |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")

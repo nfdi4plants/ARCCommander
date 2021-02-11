@@ -27,8 +27,8 @@ module AssayAPI =
 
         IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
         |> Option.get
-        |> System.IO.File.Create
-        |> ignore
+        |> FSharpSpreadsheetML.Spreadsheet.initWithSST name
+        |> FSharpSpreadsheetML.Spreadsheet.close
 
         AssayConfiguration.getFilePaths name arcConfiguration
         |> Array.iter (System.IO.File.Create >> ignore)
@@ -337,7 +337,7 @@ module AssayAPI =
                             |> API.Investigation.setStudies investigation
                         | None -> 
                             if verbosity >= 2 then printfn "Target Study with the identifier %s does not exist in the investigation file, creating new study to move assay to" studyIdentifier
-                            let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
+                            let info = Study.StudyInfo.create targetStudyIdentifer "" "" "" "" "" []
                             Study.fromParts info [] [] [] [assay] [] []
                             |> API.Study.add studies
                             |> API.Investigation.setStudies investigation

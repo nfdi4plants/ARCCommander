@@ -464,7 +464,7 @@ let testAssayMove =
             
             let studies = investigation.Studies.Value
 
-            Expect.isNone (API.Assay.tryGetByFileName fileName studies.[0].Assays.Value) "Assay was not removed from source study"
+            Expect.isNone (studies.[0].Assays |> Option.defaultValue [] |> API.Assay.tryGetByFileName fileName) "Assay was not removed from source study"
 
             let study = API.Study.tryGetByIdentifier "NewStudy" studies
 

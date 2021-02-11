@@ -8,17 +8,6 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 
-// TO DO: Delete this when the appropriate function gets 
-module API =
-    module Publication =
-        let tryGetByDoi doi (publications:Publication list) =
-            publications
-            |> List.tryFind (fun publication -> publication.DOI = doi)
-
-    module Investigation = 
-        let update (updateOption:API.Update.UpdateOptions) (investigation : Investigation) newInvestigation =
-            updateOption.updateRecordType investigation newInvestigation
-
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs
 module StudyAPI =
 
@@ -621,7 +610,7 @@ module StudyAPI =
                     match study.Publications with
                     | Some publications -> 
                         // TODO : Remove the "Some" when the
-                        match API.Publication.tryGetByDoi (Some doi) publications with
+                        match API.Publication.tryGetByDoi doi publications with
                         | Some publication ->                    
                             ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
                                 (List.singleton >> Publications.writePublications "Publication") 
@@ -758,7 +747,7 @@ module StudyAPI =
                 | Some study -> 
                     match study.Publications with
                     | Some publications -> 
-                        match API.Publication.tryGetByDoi (Some doi) publications with
+                        match API.Publication.tryGetByDoi doi publications with
                         | Some publication ->
                             [publication]
                             |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
