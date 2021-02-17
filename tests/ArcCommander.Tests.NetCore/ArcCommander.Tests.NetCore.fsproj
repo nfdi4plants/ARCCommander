@@ -6,7 +6,6 @@
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="paket.references" />
     <Compile Include="Utils.fs" />
     <Compile Include="ArcCommander\InvestigationTests.fs" />
     <Compile Include="ArcCommander\StudyTests.fs" />
@@ -23,8 +22,8 @@
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.3" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.1.0" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.1.0" />
+    <PackageReference Include="ISADotNet" Version="0.1.1" />
+    <PackageReference Include="ISADotNet.XLSX" Version="0.1.1" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />

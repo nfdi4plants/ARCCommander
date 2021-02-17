@@ -170,8 +170,8 @@ module InvestigationAPI =
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person -> 
                     ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Contacts.writePersons "Person") 
-                        (Contacts.readPersons "Person" 1 >> fun (_,_,_,items) -> items.Head) 
+                        (List.singleton >> Contacts.writePersons None) 
+                        (Contacts.readPersons None 1 >> fun (_,_,_,items) -> items.Head) 
                         person
                     |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                     |> API.Investigation.setContacts investigation
@@ -273,7 +273,7 @@ module InvestigationAPI =
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person ->
                     [person]
-                    |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons "Person")
+                    |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons None)
                     |> printfn "%s"
                 | None -> printfn "Person with the name %s %s %s  does not exist in the investigation" firstName midInitials lastName
             | None -> 
@@ -369,8 +369,8 @@ module InvestigationAPI =
                 match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->                    
                     ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Publications.writePublications "Publication") 
-                        (Publications.readPublications "Publication" 1 >> fun (_,_,_,items) -> items.Head) 
+                        (List.singleton >> Publications.writePublications None) 
+                        (Publications.readPublications None 1 >> fun (_,_,_,items) -> items.Head) 
                         publication
                     |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
                     |> API.Investigation.setPublications investigation
@@ -463,7 +463,7 @@ module InvestigationAPI =
                 match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->
                     [publication]
-                    |> Prompt.serializeXSLXWriterOutput (Publications.writePublications "Publication")
+                    |> Prompt.serializeXSLXWriterOutput (Publications.writePublications None)
                     |> printfn "%s"
 
                 | None -> 

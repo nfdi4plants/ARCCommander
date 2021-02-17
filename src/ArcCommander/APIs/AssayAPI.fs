@@ -27,8 +27,7 @@ module AssayAPI =
 
         IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
         |> Option.get
-        |> FSharpSpreadsheetML.Spreadsheet.initWithSST name
-        |> FSharpSpreadsheetML.Spreadsheet.close
+        |> ISADotNet.XLSX.AssayFile.init "Investigation" "name"
 
         AssayConfiguration.getFilePaths name arcConfiguration
         |> Array.iter (System.IO.File.Create >> ignore)
@@ -137,8 +136,8 @@ module AssayAPI =
                     | Some assay ->
                 
                         ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                            (List.singleton >> Assays.writeAssays "Assay") 
-                            (Assays.readAssays "Assay" 1 >> fun (_,_,_,items) -> items.Head) 
+                            (List.singleton >> Assays.writeAssays None) 
+                            (Assays.readAssays None 1 >> fun (_,_,_,items) -> items.Head) 
                             assay
                         |> fun a -> API.Assay.updateBy ((=) assay) API.Update.UpdateAll a assays
                         |> API.Study.setAssays study
@@ -386,7 +385,7 @@ module AssayAPI =
                     match API.Assay.tryGetByFileName assayFileName assays with
                     | Some assay ->
                         [assay]
-                        |> Prompt.serializeXSLXWriterOutput (Assays.writeAssays "Assay")
+                        |> Prompt.serializeXSLXWriterOutput (Assays.writeAssays None)
                         |> printfn "%s"
                     | None -> 
                         if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
