@@ -541,17 +541,17 @@ module StudyAPI =
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
-            let doi = getFieldValueByName  "DOI"                                  publicationArgs
+            let doi = getFieldValueByName  "DOI"                        publicationArgs
 
-            let publication = 
+            let publication =
                  Publications.fromString
-                     (getFieldValueByName  "PubMedID"                             publicationArgs)
+                     (getFieldValueByName  "PubMedID"                   publicationArgs)
                      doi
-                     (getFieldValueByName  "AuthorList"                           publicationArgs)
-                     (getFieldValueByName  "PublicationTitle"                     publicationArgs)
-                     (getFieldValueByName  "PublicationStatus"                    publicationArgs)
-                     (getFieldValueByName  "PublicationStatusTermAccessionNumber" publicationArgs)
-                     (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
+                     (getFieldValueByName  "AuthorList"                 publicationArgs)
+                     (getFieldValueByName  "Title"                      publicationArgs)
+                     (getFieldValueByName  "Status"                     publicationArgs)
+                     (getFieldValueByName  "StatusTermAccessionNumber"  publicationArgs)
+                     (getFieldValueByName  "StatusTermSourceREF"        publicationArgs)
                      []
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -643,17 +643,17 @@ module StudyAPI =
             
             if verbosity >= 1 then printfn "Start Publication Register"
 
-            let doi = getFieldValueByName  "DOI"                                  publicationArgs
+            let doi = getFieldValueByName  "DOI"                        publicationArgs
 
-            let publication = 
+            let publication =
                  Publications.fromString
-                     (getFieldValueByName  "PubMedID"                             publicationArgs)
+                     (getFieldValueByName  "PubMedID"                   publicationArgs)
                      doi
-                     (getFieldValueByName  "AuthorList"                           publicationArgs)
-                     (getFieldValueByName  "PublicationTitle"                     publicationArgs)
-                     (getFieldValueByName  "PublicationStatus"                    publicationArgs)
-                     (getFieldValueByName  "PublicationStatusTermAccessionNumber" publicationArgs)
-                     (getFieldValueByName  "StatusTermSourceREF"                  publicationArgs)
+                     (getFieldValueByName  "AuthorList"                 publicationArgs)
+                     (getFieldValueByName  "Title"                      publicationArgs)
+                     (getFieldValueByName  "Status"                     publicationArgs)
+                     (getFieldValueByName  "StatusTermAccessionNumber"  publicationArgs)
+                     (getFieldValueByName  "StatusTermSourceREF"        publicationArgs)
                      []
             
             let studyIdentifier = getFieldValueByName "StudyIdentifier" publicationArgs
