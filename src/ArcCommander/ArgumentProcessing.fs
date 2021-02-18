@@ -171,7 +171,8 @@ module ArgumentProcessing =
         let private serializeAnnotatedArguments (arguments:(string*AnnotatedArgument) []) =
             let header = 
                 """# Not all mandatory input arguments were given
-# Please fill out at least all mandatory fields, commented out flags (arguments with no value) can be set by removing the # in front of them
+# Please fill out at least all mandatory fields by providing a value to the key in the form of "key:value"
+# Commented out flags (keys with no ":") can be set by removing the # in front of them
 # When finished save and close the editor"""
             arguments
             |> Array.map (fun (key,arg) -> 
@@ -190,6 +191,7 @@ module ArgumentProcessing =
                 sprintf "#%s\n%s" comment value
             )
             |> Array.reduce (fun a b -> a + "\n" + b)
+            |> sprintf "%s\n\n%s" header
     
         /// Splits the string at the first occurence of the char 
         let private splitAtFirst (c:char) (s:string) =
@@ -270,6 +272,11 @@ module ArgumentProcessing =
             (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
             (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> 'A)
             (isaItem : 'A) = 
+
+            let header = 
+                """# For editing the selected item, just provide the desired values for the keys below or change preexisting values
+# "key:value"
+# When finished save and close the editor"""
 
             let serializeF = serializeXSLXWriterOutput writeF
 
