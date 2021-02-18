@@ -22,8 +22,8 @@ module StudyAPI =
 
         let studyFilePath = IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
 
-        System.IO.File.Create studyFilePath
-        |> ignore
+        FSharpSpreadsheetML.Spreadsheet.initWithSST identifier studyFilePath
+        |> FSharpSpreadsheetML.Spreadsheet.close
 
     /// Updates an existing study info in the arc with the given study metadata contained in cliArgs.
     let update (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = // NotImplementedException()
@@ -157,8 +157,8 @@ module StudyAPI =
 
         let studyFilePath = IsaModelConfiguration.getStudiesFileName identifier arcConfiguration
 
-        System.IO.File.Delete studyFilePath
-        |> ignore
+        try System.IO.File.Delete studyFilePath with
+        | err -> printfn "Error: Couldn't delete study file: \n %s" err.Message
 
     /// Unregisters an existing study from the arc's investigation file.
     let unregister (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
