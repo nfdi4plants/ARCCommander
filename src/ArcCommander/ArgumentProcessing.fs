@@ -190,7 +190,7 @@ module ArgumentProcessing =
                     | None                  -> sprintf "%s:" key
                 sprintf "#%s\n%s" comment value
             )
-            |> Array.reduce (fun a b -> a + "\n" + b)
+            |> Array.reduce (fun a b -> a + "\n\n" + b)
             |> sprintf "%s\n\n%s" header
     
         /// Splits the string at the first occurence of the char 
@@ -278,7 +278,7 @@ module ArgumentProcessing =
 # "key:value"
 # When finished save and close the editor"""
 
-            let serializeF = serializeXSLXWriterOutput writeF
+            let serializeF = serializeXSLXWriterOutput writeF >> sprintf "%s\n\n%s" header
 
             let deserializeF (s:string) : 'A =
                 s.Split '\n'
