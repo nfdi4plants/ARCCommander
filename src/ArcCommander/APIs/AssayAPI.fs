@@ -27,7 +27,7 @@ module AssayAPI =
 
         IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
         |> Option.get
-        |> ISADotNet.XLSX.AssayFile.init "Investigation" "name"
+        |> ISADotNet.XLSX.AssayFile.AssayFile.init "Investigation" name
 
         AssayConfiguration.getFilePaths name arcConfiguration
         |> Array.iter (System.IO.File.Create >> ignore)

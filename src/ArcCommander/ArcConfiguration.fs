@@ -184,6 +184,15 @@ module IsaModelConfiguration =
 /// Functions for retrieving Assay related information from the configuration
 module AssayConfiguration =
 
+    /// Returns the full path of the assays rootfolder
+    let tryGetRootFolderPath configuration =
+        Map.tryFind "rootfolder" configuration.Assay
+
+    /// Returns the full path of the assays rootfolder
+    let getRootFolderPath configuration =
+        tryGetRootFolderPath configuration
+        |> Option.get
+
     /// Returns the full path of the files associated with the assay
     let getFilePaths assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General

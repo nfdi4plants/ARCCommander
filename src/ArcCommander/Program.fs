@@ -179,7 +179,8 @@ let handleCommand arcConfiguration command =
     | Assay subCommand          -> handleAssaySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Configuration subcommand  -> handleConfigurationSubCommands   arcConfiguration (subcommand.GetSubCommand())
     // Verbs
-    | Init r                    -> processCommand   arcConfiguration ArcAPI.init r
+    | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
+    | Synchronize               -> processCommandWithoutArgs        arcConfiguration ArcAPI.synchronize
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
