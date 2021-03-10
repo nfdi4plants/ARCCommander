@@ -9,14 +9,21 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ArcCommander.Tests.NetCore"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "meta", "meta", "{655069DF-7C2B-4771-BD96-226EB6808D95}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		build.cmd = build.cmd
 		build.fsx = build.fsx
+		build.sh = build.sh
 		.config\dotnet-tools.json = .config\dotnet-tools.json
-		fake.cmd = fake.cmd
-		fake.sh = fake.sh
 		global.json = global.json
-		paket.dependencies = paket.dependencies
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".devcontainer", ".devcontainer", "{74EDC92B-7AC8-4737-B51E-25D17D4FC8D4}"
+	ProjectSection(SolutionItems) = preProject
+		.devcontainer\devcontainer.json = .devcontainer\devcontainer.json
+		.devcontainer\Dockerfile = .devcontainer\Dockerfile
 	EndProjectSection
 EndProject
 Global
