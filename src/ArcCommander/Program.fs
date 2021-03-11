@@ -170,6 +170,10 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
     | ConfigurationCommand.Set      r -> processCommand arcConfiguration ConfigurationAPI.set   r
     | ConfigurationCommand.Unset    r -> processCommand arcConfiguration ConfigurationAPI.unset r
 
+let handleGitSubCommands arcConfiguration gitVerb =
+    match gitVerb with
+    | GitCommand.Update     r -> processCommand arcConfiguration GitAPI.update  r
+    | GitCommand.Push       r -> processCommand arcConfiguration GitAPI.push  r
 
 let handleCommand arcConfiguration command =
     match command with
@@ -178,6 +182,7 @@ let handleCommand arcConfiguration command =
     | Study subCommand          -> handleStudySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Assay subCommand          -> handleAssaySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Configuration subcommand  -> handleConfigurationSubCommands   arcConfiguration (subcommand.GetSubCommand())
+    | Git subcommand            -> handleGitSubCommands             arcConfiguration (subcommand.GetSubCommand())
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
     | Synchronize               -> processCommandWithoutArgs        arcConfiguration ArcAPI.synchronize
