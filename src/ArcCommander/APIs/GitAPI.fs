@@ -4,26 +4,42 @@ open System
 open ArcCommander
 open ArgumentProcessing
 open Fake.Tools.Git
-// open Fake.DotNet
-// open Fake.IO
-// open Fake.IO.FileSystemOperators
-// open Fake.IO.Globbing.Operators
-// open Fake.Tools
-
-/// ArcCommander Configuration API functions that get executed by the configuration focused subcommand verbs
 
 module GitAPI =
 
     let getRepoDir (arcConfiguration:ArcConfiguration) =
         let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration + "/../TEMP/arc0/"
+        printfn "%s" workdir
+
         let gitDir = Fake.Tools.Git.CommandHelper.findGitDir(workdir).FullName
         gitDir.Substring(0,gitDir.Length-4)
 
     let update (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
-        printfn "-----------------------------"
 
+        // get repository directory
         let repoDir = getRepoDir(arcConfiguration)
 
+        // add remote if specified
+        match tryGetFieldValueByName "RepositoryAdress" gitArgs with
+            | Some "" | None -> ()
+            | Some remote ->
+                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote remove origin") |> ignore
+                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote add origin "+remote) |> ignore
+
+        // detect existing remote
+        let hasRemote () =
+            let ok,msg,error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
+            msg.Length>0
+
+        // pull if remote exists
+        if hasRemote() then
+            printfn "git fetch origin"
+            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("fetch origin") |> ignore
+            printfn "git pull --rebase origin master"
+            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("pull --rebase origin master") |> ignore
+
+        // track all untracked files
+        printfn "-----------------------------"
         let rec getAllFiles(cDir:string) =
             let mutable l = []
 
@@ -54,18 +70,25 @@ module GitAPI =
             fun pair ->
                 let (file,size) = pair
 
-                if size>1500000L
+                if size>150000000L
                   then trackWithLFS file
                   else trackWithAdd file
         )
+        printfn "git add -u"
+        Fake.Tools.Git.CommandHelper.runGitCommand repoDir ("add -u") |> ignore
         printfn "-----------------------------"
-        Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("commit -m 'Update'") |> ignore
 
-    let push (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
-        let repoDir = getRepoDir(arcConfiguration)
-        Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("push origin master") |> ignore
+        // commit all changes
+        let commitMessage =
+            match tryGetFieldValueByName "CommitMessage" gitArgs with
+            | None -> "Update"
+            | Some s -> s
+        // printfn "%A" (Fake.Tools.Git.CommandHelper.runGitCommand repoDir ("status"))
+        printfn "commit -m '%s'" commitMessage
+        Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
 
-    let init (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
-        let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration + "/../TEMP/arc0/"
-        Fake.Tools.Git.CommandHelper.directRunGitCommand workdir ("init") |> ignore
-        Fake.Tools.Git.CommandHelper.directRunGitCommand workdir ("lfs install") |> ignore
+        // push if remote exists
+        if hasRemote() then
+            printfn "git push origin master"
+            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("push origin master") |> ignore
+
