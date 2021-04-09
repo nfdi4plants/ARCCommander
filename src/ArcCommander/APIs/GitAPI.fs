@@ -8,7 +8,7 @@ open Fake.Tools.Git
 module GitAPI =
 
     let getRepoDir (arcConfiguration:ArcConfiguration) =
-        let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration + "/../TEMP/arc0/"
+        let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration
         printfn "%s" workdir
 
         let gitDir = Fake.Tools.Git.CommandHelper.findGitDir(workdir).FullName
@@ -18,25 +18,6 @@ module GitAPI =
 
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)
-
-        // add remote if specified
-        match tryGetFieldValueByName "RepositoryAdress" gitArgs with
-            | Some "" | None -> ()
-            | Some remote ->
-                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote remove origin") |> ignore
-                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote add origin "+remote) |> ignore
-
-        // detect existing remote
-        let hasRemote () =
-            let ok,msg,error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
-            msg.Length>0
-
-        // pull if remote exists
-        if hasRemote() then
-            printfn "git fetch origin"
-            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("fetch origin") |> ignore
-            printfn "git pull --rebase origin master"
-            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("pull --rebase origin master") |> ignore
 
         // track all untracked files
         printfn "-----------------------------"
@@ -86,6 +67,25 @@ module GitAPI =
         // printfn "%A" (Fake.Tools.Git.CommandHelper.runGitCommand repoDir ("status"))
         printfn "commit -m '%s'" commitMessage
         Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
+
+        // add remote if specified
+        match tryGetFieldValueByName "RepositoryAdress" gitArgs with
+            | Some "" | None -> ()
+            | Some remote ->
+                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote remove origin") |> ignore
+                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote add origin "+remote) |> ignore
+
+        // detect existing remote
+        let hasRemote () =
+            let ok,msg,error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
+            msg.Length>0
+
+        // pull if remote exists
+        if hasRemote() then
+            printfn "git fetch origin"
+            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("fetch origin") |> ignore
+            printfn "git pull --rebase origin master"
+            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("pull --rebase origin master") |> ignore
 
         // push if remote exists
         if hasRemote() then
