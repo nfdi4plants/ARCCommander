@@ -4,15 +4,22 @@ open System
 open ArcCommander
 open ArgumentProcessing
 open Fake.Tools.Git
+open Fake.IO
 
 module GitAPI =
 
+    let executeGitCommand (repoDir:string) (command:string) =
+        printfn "git %s" command
+        let success = Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir command
+        if not success
+        then printfn "[ERROR]"
+        success
+
     let getRepoDir (arcConfiguration:ArcConfiguration) =
         let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration
-        printfn "%s" workdir
-
         let gitDir = Fake.Tools.Git.CommandHelper.findGitDir(workdir).FullName
-        gitDir.Substring(0,gitDir.Length-4)
+
+        Fake.IO.Path.getDirectory(gitDir)
 
     let update (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
 
@@ -38,14 +45,11 @@ module GitAPI =
         let allFilesPlusSizes = allFiles |> List.map( fun x -> x, System.IO.FileInfo(x).Length )
 
         let trackWithAdd (file:string) =
-            if Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("add "+file)
-            then printfn "git add %s" file
-            else printfn "[ERROR] git add %s" file
+            executeGitCommand repoDir ("add "+file) |> ignore
 
         let trackWithLFS (file:string) =
-            if Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("lfs track "+file)
-            then printfn "git lfs track %s" file; trackWithAdd (repoDir+".gitattributes")
-            else printfn "[ERROR] git lfs track %s" file
+            executeGitCommand repoDir ("lfs track "+file) |> ignore
+            trackWithAdd (repoDir+".gitattributes")
 
         allFilesPlusSizes |> List.iter(
             fun pair ->
@@ -55,40 +59,40 @@ module GitAPI =
                   then trackWithLFS file
                   else trackWithAdd file
         )
-        printfn "git add -u"
-        Fake.Tools.Git.CommandHelper.runGitCommand repoDir ("add -u") |> ignore
+        executeGitCommand repoDir ("add -u") |> ignore
         printfn "-----------------------------"
 
         // commit all changes
         let commitMessage =
             match tryGetFieldValueByName "CommitMessage" gitArgs with
-            | None -> "Update"
+            | Some "" | None -> "Update"
             | Some s -> s
-        // printfn "%A" (Fake.Tools.Git.CommandHelper.runGitCommand repoDir ("status"))
+
+        // print git status if verbose
+        // executeGitCommand repoDir ("status") |> ignore
+
         printfn "commit -m '%s'" commitMessage
         Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
-
-        // add remote if specified
-        match tryGetFieldValueByName "RepositoryAdress" gitArgs with
-            | Some "" | None -> ()
-            | Some remote ->
-                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote remove origin") |> ignore
-                Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("remote add origin "+remote) |> ignore
 
         // detect existing remote
         let hasRemote () =
             let ok,msg,error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
             msg.Length>0
 
+        // add remote if specified
+        match tryGetFieldValueByName "RepositoryAdress" gitArgs with
+            | Some "" | None -> ()
+            | Some remote ->
+                if hasRemote() then executeGitCommand repoDir ("remote remove origin") |> ignore
+
+                executeGitCommand repoDir ("remote add origin "+remote) |> ignore
+
         // pull if remote exists
         if hasRemote() then
-            printfn "git fetch origin"
-            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("fetch origin") |> ignore
-            printfn "git pull --rebase origin master"
-            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("pull --rebase origin master") |> ignore
+            executeGitCommand repoDir ("fetch origin") |> ignore
+            executeGitCommand repoDir ("pull --rebase origin master") |> ignore
 
         // push if remote exists
         if hasRemote() then
-            printfn "git push origin master"
-            Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir ("push origin master") |> ignore
+            executeGitCommand repoDir ("push origin master") |> ignore
 
