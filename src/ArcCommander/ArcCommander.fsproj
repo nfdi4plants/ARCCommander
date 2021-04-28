@@ -8,6 +8,16 @@
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ArcCommander</ToolCommandName>
+    <Authors>Heinrich Lukas Weil, Kevin Schneider, Timo Muehlhaus nfdi4plants OSS contributors</Authors>
+    <Description>Tool to manage your ARCs</Description>
+    <Summary>Tool to manage your ARCs</Summary>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/nfdi4plants/arcCommander</PackageProjectUrl>
+    <PackageTags>rdm dotnet arc</PackageTags>
+    <RepositoryUrl>https://github.com/nfdi4plants/arcCommander</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <FsDocsLicenseLink>https://github.com/nfdi4plants/arcCommander/blob/developer/LICENSE</FsDocsLicenseLink>
+    <FsDocsReleaseNotesLink>https://github.com/nfdi4plants/arcCommander/blob/developer/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
   </PropertyGroup>   
   <ItemGroup>
     <None Include="config" CopyToOutputDirectory="PreserveNewest" />
