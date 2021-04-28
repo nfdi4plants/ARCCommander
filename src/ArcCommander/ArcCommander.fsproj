@@ -5,6 +5,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>ArcCommander</ToolCommandName>
+  </PropertyGroup>   
   <ItemGroup>
     <None Include="config" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="IniData.fs" />
