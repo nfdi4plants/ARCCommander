@@ -148,25 +148,8 @@ module TestTasks =
             {
                 testParams with
                     Logger = Some "console;verbosity=detailed"
-            }
-        ) testProject
-    }
-
-    // to do: use this once we have actual tests
-    let runTestsWithCodeCov = BuildTask.create "RunTestsWithCodeCov" [clean; cleanTestResults; build; copyBinaries] {
-        let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-        Fake.DotNet.DotNet.test(fun testParams ->
-            {
-                testParams with
-                    MSBuildParams = {
-                        standardParams with
-                            Properties = [
-                                "AltCover","true"
-                                "AltCoverCobertura","../../codeCov.xml"
-                                "AltCoverForce","true"
-                            ]
-                    };
-                    Logger = Some "console;verbosity=detailed"
+                    Configuration = DotNet.BuildConfiguration.fromString configuration
+                    NoBuild = true
             }
         ) testProject
     }
@@ -195,6 +178,8 @@ module PackageTasks =
                         p with 
                             MSBuildParams = msBuildParams
                             OutputPath = Some pkgDir
+                            NoBuild = true
+                            Configuration = DotNet.BuildConfiguration.fromString configuration
                     }
                 ))
         else failwith "aborted"
@@ -217,11 +202,29 @@ module PackageTasks =
                                 p with 
                                     VersionSuffix = Some prereleaseSuffix
                                     OutputPath = Some pkgDir
-                                    MSBuildParams = msBuildParams
+                                    NoBuild = true
+                                    Configuration = DotNet.BuildConfiguration.fromString configuration
                             }
                 ))
         else
             failwith "aborted"
+    }
+
+module ToolTasks =
+
+    open ProjectInfo
+    open BasicTasks
+    open TestTasks
+    open PackageTasks
+
+    let installPackagedTool = BuildTask.create "InstallPackagedTool" [packPrerelease] {
+        Directory.ensure "tests/tool-tests"
+        runDotNet "new tool-manifest --force" "tests/tool-tests"
+        runDotNet (sprintf "tool install --add-source ../../%s ArcCommander --version %s" pkgDir prereleaseTag) "tests/tool-tests"
+    }
+
+    let testPackagedTool = BuildTask.create "TestPackagedTool" [installPackagedTool] {
+        runDotNet "ArcCommander --help" "tests/tool-tests"
     }
 
 /// Build tasks for documentation setup and development
@@ -230,40 +233,6 @@ module DocumentationTasks =
     open ProjectInfo
 
     open BasicTasks
-
-    let initDocPage = BuildTask.create "InitDocsPage" [] {
-        printfn "Please enter filename"
-        let filename = System.Console.ReadLine()
-        
-        printfn "Please enter title"
-        let title = System.Console.ReadLine()
-
-        let path = "./docs" </> filename
-
-        let lines = """
-    (*** hide ***)
-    (*** condition: prepare ***)
-    #r @"..\packages\Newtonsoft.Json\lib\netstandard2.0\Newtonsoft.Json.dll"
-    #r "../bin/Plotly.NET/netstandard2.1/Plotly.NET.dll"
-    (*** condition: ipynb ***)
-    #if IPYNB
-    #r "nuget: Plotly.NET, {{fsdocs-package-version}}"
-    #r "nuget: Plotly.NET.Interactive, {{fsdocs-package-version}}"
-    #endif // IPYNB
-    (**
-    # {{TITLE}}
-    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/plotly/Plotly.NET/gh-pages?filepath={{FILENAME}}.ipynb)
-    *)
-    """
-
-        if (promptYesNo (sprintf "creating file %s with title %s OK?" path title)) then
-            lines
-            |> String.replace "{{FILENAME}}" filename
-            |> String.replace "{{TITLE}}" title
-            |> fun content -> File.WriteAllText (path,content)
-        else
-            failwith "aborted"
-    }
 
     let buildDocs = BuildTask.create "BuildDocs" [build; copyBinaries] {
         printfn "building docs with stable version %s" stableVersionTag

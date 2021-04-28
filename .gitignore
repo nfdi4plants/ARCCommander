@@ -193,3 +193,5 @@ coverage.xml
 .ionide
 tmp/watch/Dockerfile
 tmp/watch
+/pkg
+/tests/tool-tests/
