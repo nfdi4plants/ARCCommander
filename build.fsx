@@ -20,6 +20,22 @@ nuget Fake.Tools.Git //"
 #r "netstandard" // Temp fix for https://github.com/dotnet/fsharp/issues/5216
 #endif
 
+//#r "nuget: BlackFox.Fake.BuildTask"
+//#r "nuget: Fake.Core.Target"
+//#r "nuget: Fake.Core.Process"
+//#r "nuget: Fake.Core.ReleaseNotes"
+//#r "nuget: Fake.IO.FileSystem"
+//#r "nuget: Fake.DotNet.Cli"
+//#r "nuget: Fake.DotNet.MSBuild"
+//#r "nuget: Fake.DotNet.AssemblyInfoFile"
+//#r "nuget: Fake.DotNet.Paket"
+//#r "nuget: Fake.DotNet.FSFormatting"
+//#r "nuget: Fake.DotNet.Fsi"
+//#r "nuget: Fake.DotNet.NuGet"
+//#r "nuget: Fake.Api.Github"
+//#r "nuget: Fake.DotNet.Testing.Expecto"
+//#r "nuget: Fake.Tools.Git"
+
 open BlackFox.Fake
 open System.IO
 open Fake.Core
@@ -122,6 +138,44 @@ module BasicTasks =
         }
     
     let build = BuildTask.create "Build" [clean] {
+        solutionFile
+        |> DotNet.build id
+    }
+
+    let publishWin = BuildTask.create "PublishWin" [clean] {
+        let publishOps _ = 
+            DotNet.PublishOptions.Create ()
+            |> fun x -> {
+                x with
+                    Runtime = Some "win-x64"
+                }
+        solutionFile
+        |> DotNet.publish publishOps
+    }
+
+    let publishMac = BuildTask.create "PublishMac" [clean] {
+        let publishOps _ = 
+            DotNet.PublishOptions.Create ()
+            |> fun x -> {
+                x with
+                    Runtime = Some "osx-x64"
+                }
+        solutionFile
+        |> DotNet.publish publishOps
+    }
+
+    let publishLnx = BuildTask.create "PublishLnx" [clean] {
+        let publishOps _ = 
+            DotNet.PublishOptions.Create ()
+            |> fun x -> {
+                x with
+                    Runtime = Some "linux-x64"
+                }
+        solutionFile
+        |> DotNet.publish publishOps
+    }
+
+    let publishAll = BuildTask.create "PublishAll" [publishWin; publishMac; publishLnx] {
         solutionFile
         |> DotNet.build id
     }
