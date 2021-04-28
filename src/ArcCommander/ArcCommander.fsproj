@@ -8,9 +8,8 @@
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ArcCommander</ToolCommandName>
-    <Authors>Heinrich Lukas Weil, Kevin Schneider, Timo Muehlhaus nfdi4plants OSS contributors</Authors>
+    <Authors>Heinrich Lukas Weil, Kevin Schneider, Timo Muehlhaus, nfdi4plants OSS contributors</Authors>
     <Description>Tool to manage your ARCs</Description>
-    <Summary>Tool to manage your ARCs</Summary>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/nfdi4plants/arcCommander</PackageProjectUrl>
     <PackageTags>rdm dotnet arc</PackageTags>
