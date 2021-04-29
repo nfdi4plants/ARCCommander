@@ -36,6 +36,8 @@
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="5.*" />
     <PackageReference Include="Argu" Version="6.1.1" />
+    <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
+    <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.4" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     <PackageReference Include="ISADotNet" Version="0.2.0" />

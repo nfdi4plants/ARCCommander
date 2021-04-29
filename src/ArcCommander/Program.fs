@@ -1,7 +1,7 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
-open Argu 
+open Argu
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
@@ -17,8 +17,8 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
 
     let stillMissingMandatoryArgs,parameterGroup =
         let g = groupArguments (r.GetAllResults())
-        Prompt.createArgumentQueryIfNecessary editor workDir g  
-    
+        Prompt.createArgumentQueryIfNecessary editor workDir g
+
     if stillMissingMandatoryArgs then
         failwith "Mandatory arguments were not given either via cli or editor prompt."
 
@@ -29,8 +29,8 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
 
     if verbosity >= 2 then
 
-        printfn "\nand the config: \n" 
-        arcConfiguration 
+        printfn "\nand the config: \n"
+        arcConfiguration
         |> ArcConfiguration.flatten
         |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
 
@@ -39,7 +39,7 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
         if verbosity >= 1 then printfn "Done processing command"
 
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
-    
+
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
     if verbosity >= 1 then
@@ -48,7 +48,7 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
     if verbosity >= 2 then
         printfn "with the config"
-        arcConfiguration 
+        arcConfiguration
         |> ArcConfiguration.flatten
         |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
 
@@ -161,7 +161,7 @@ let handleAssaySubCommands arcConfiguration assayVerb =
     | AssayCommand.Edit         r -> processCommand arcConfiguration AssayAPI.edit          r
     | AssayCommand.Move         r -> processCommand arcConfiguration AssayAPI.move          r
     | AssayCommand.Get          r -> processCommand arcConfiguration AssayAPI.get           r
-    | AssayCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
+    | AssayCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.list
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
@@ -173,7 +173,6 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
 let handleGitSubCommands arcConfiguration gitVerb =
     match gitVerb with
     | GitCommand.Update     r -> processCommand arcConfiguration GitAPI.update  r
-    | GitCommand.Push       r -> processCommand arcConfiguration GitAPI.push  r
 
 let handleCommand arcConfiguration command =
     match command with
@@ -193,28 +192,28 @@ let handleCommand arcConfiguration command =
 let main argv =
     try
         let parser = ArgumentParser.Create<ArcCommand>()
-        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
+        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
 
-        let workingDir = 
+        let workingDir =
             match results.TryGetResult(WorkingDir) with
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let verbosity = 
+        let verbosity =
             match results.TryGetResult(Verbosity) with
             | Some i    -> string i
             | None      -> "1"
 
-        let arcConfiguration = 
+        let arcConfiguration =
             [
                 "general.workdir",workingDir
                 "general.verbosity",verbosity
             ]
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
-            
+
         //Testing the configuration reading (Delete when configuration functionality is setup)
-        //printfn "load config:"    
+        //printfn "load config:"
         //Configuration.loadConfiguration workingDir
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
