@@ -26,13 +26,15 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
 
         printfn "Start processing command with the arguments"
         parameterGroup|> Map.iter (printfn "\t%s:%O")
+        printfn "" 
 
     if verbosity >= 2 then
 
-        printfn "\nand the config: \n"
+        printfn "and the config:"
         arcConfiguration
         |> ArcConfiguration.flatten
         |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
+        printfn "" 
 
     try commandF arcConfiguration parameterGroup
     finally
@@ -199,16 +201,15 @@ let main argv =
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let verbosity =
-            match results.TryGetResult(Verbosity) with
-            | Some i    -> string i
-            | None      -> "1"
+        let verbosity = results.TryGetResult(Verbosity) |> Option.map string
+
 
         let arcConfiguration =
             [
-                "general.workdir",workingDir
+                "general.workdir",Some workingDir
                 "general.verbosity",verbosity
             ]
+            |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
 

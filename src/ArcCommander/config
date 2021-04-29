@@ -1,6 +1,7 @@
 [general]
 rootfolder=.arc
 editor=notepad
+verbosity=1
 gitlfsbytethreshold=150000000
 
 [isamodel]

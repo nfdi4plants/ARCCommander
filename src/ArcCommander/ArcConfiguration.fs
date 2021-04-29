@@ -31,6 +31,7 @@ type ArcConfiguration =
     static member getDefault() =
         let editor = "notepad"////GET DEFAULT EDITOR for linux
         [
+        "general.verbosity", "1"   
         "general.editor", editor     
         ]
         |> fromNameValuePairs

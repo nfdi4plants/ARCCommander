@@ -16,12 +16,31 @@ module ArcAPI =
     /// Initializes the arc specific folder structure
     let init (arcConfiguration:ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
-        let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Arc Init"
 
-        Directory.CreateDirectory workdir |> ignore
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+
+        let editor =            (tryGetFieldValueByName  "EditorPath" arcArgs)
+        let gitLFSThreshold =   (tryGetFieldValueByName  "GitLFSByteThreshold" arcArgs)
+
+        Directory.CreateDirectory workDir |> ignore
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)
+
+        match editor with
+        | Some editorValue -> 
+            let path = IniData.getLocalConfigPath workDir
+            IniData.setValueInIniPath path "general.editor" editorValue
+        | None -> ()
+
+        match gitLFSThreshold with
+        | Some gitLFSThresholdValue -> 
+            let path = IniData.getLocalConfigPath workDir
+            IniData.setValueInIniPath path "general.gitlfsbytethreshold" gitLFSThresholdValue
+        | None -> ()
 
     let synchronize (arcConfiguration:ArcConfiguration) =
 

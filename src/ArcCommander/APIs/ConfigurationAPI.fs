@@ -93,12 +93,7 @@ module ConfigurationAPI =
         let name = getFieldValueByName "Name" configurationArgs
         let value = getFieldValueByName "Value" configurationArgs
 
-        let setValueInIniPath path = 
-            let iniData = path |> IniData.fromFile
-            match IniData.trySetValue name value iniData with
-            | Some ini -> ini
-            | None -> IniData.addValue name value iniData
-            |> IniData.toFile path
+        let setValueInIniPath path = IniData.setValueInIniPath path name value
 
         match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
         // If only global flag is set, the setting is set globally
