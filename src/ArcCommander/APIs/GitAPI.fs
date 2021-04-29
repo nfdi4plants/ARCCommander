@@ -23,6 +23,10 @@ module GitAPI =
 
     let update (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
 
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start git update"
+
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)
 
@@ -45,31 +49,44 @@ module GitAPI =
         let allFilesPlusSizes = allFiles |> List.map( fun x -> x, System.IO.FileInfo(x).Length )
 
         let trackWithAdd (file:string) =
+
+            if verbosity >= 2 then printfn "Track file with git: %s" file
+
             executeGitCommand repoDir ("add "+file) |> ignore
 
         let trackWithLFS (file:string) =
+
+            if verbosity >= 2 then printfn "Track file with git-lfs: %s" file
+
             executeGitCommand repoDir ("lfs track "+file) |> ignore
             trackWithAdd (repoDir+".gitattributes")
 
-        allFilesPlusSizes |> List.iter(
-            fun pair ->
-                let (file,size) = pair
+        let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
 
-                if size>150000000L
-                  then trackWithLFS file
-                  else trackWithAdd file
+        if verbosity >= 2 then printfn "Start tracking files" 
+
+        allFilesPlusSizes 
+        |> List.iter (fun (file,size) ->
+
+                /// Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
+                match gitLfsThreshold with
+                | Some thr when size > thr -> trackWithLFS file
+                | _ -> trackWithAdd file
         )
+
         executeGitCommand repoDir ("add -u") |> ignore
         printfn "-----------------------------"
 
         // commit all changes
         let commitMessage =
             match tryGetFieldValueByName "CommitMessage" gitArgs with
-            | Some "" | None -> "Update"
+            | None -> "Update"
             | Some s -> s
 
         // print git status if verbose
         // executeGitCommand repoDir ("status") |> ignore
+
+        if verbosity >= 2 then printfn "Commit tracked files" 
 
         printfn "commit -m '%s'" commitMessage
         Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
@@ -81,18 +98,24 @@ module GitAPI =
 
         // add remote if specified
         match tryGetFieldValueByName "RepositoryAdress" gitArgs with
-            | Some "" | None -> ()
+            | None -> ()
             | Some remote ->
                 if hasRemote() then executeGitCommand repoDir ("remote remove origin") |> ignore
 
-                executeGitCommand repoDir ("remote add origin "+remote) |> ignore
+                executeGitCommand repoDir ("remote add origin " + remote) |> ignore
+
+        if verbosity >= 2 then
+            if hasRemote() then printfn "Start syncing with remote" 
+            else                printfn "Can not sync with remote as no remote repository adress was specified"
 
         // pull if remote exists
         if hasRemote() then
+            if verbosity >= 2 then printfn "Pull" 
             executeGitCommand repoDir ("fetch origin") |> ignore
             executeGitCommand repoDir ("pull --rebase origin master") |> ignore
 
         // push if remote exists
         if hasRemote() then
+            if verbosity >= 2 then printfn "Push"            
             executeGitCommand repoDir ("push origin master") |> ignore
 

@@ -45,6 +45,7 @@ module ArgumentProcessing =
     /// Returns the value given by the user for name k
     let tryGetFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.tryFind k arguments with
+        | Some (Field "") -> None
         | Some (Field v) -> Some v
         | Some Flag -> None
         | None -> None

@@ -97,13 +97,21 @@ module GeneralConfiguration =
     let getWorkDirectory configuration = 
         Map.find "workdir" configuration.General
 
-    /// Returns the path to the arc
+    /// Returns the verbosity level
     let tryGetVerbosity configuration = 
         Map.tryFind "verbosity" configuration.General |> Option.map int
 
-    /// Returns the path to the arc
+    /// Returns the verbosity level
     let getVerbosity configuration = 
         Map.find "verbosity" configuration.General |> int
+
+    /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
+    let tryGetGitLfsByteThreshold configuration = 
+        Map.tryFind "gitlfsbytethreshold" configuration.General |> Option.map int64
+
+    /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
+    let getGitLfsByteThreshold configuration = 
+        Map.find "gitlfsbytethreshold" configuration.General |> int64
 
 /// Functions for retrieving isa file settings from the configuration
 module IsaModelConfiguration =

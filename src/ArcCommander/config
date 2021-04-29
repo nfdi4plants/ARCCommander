@@ -1,6 +1,7 @@
 [general]
 rootfolder=.arc
 editor=notepad
+gitlfsbytethreshold=150000000
 
 [isamodel]
 investigationfilename=isa.investigation.xlsx
