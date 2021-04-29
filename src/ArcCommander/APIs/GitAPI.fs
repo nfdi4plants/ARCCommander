@@ -8,8 +8,8 @@ open Fake.IO
 
 module GitAPI =
 
-    let executeGitCommand (repoDir:string) (command:string) =
-        printfn "git %s" command
+    let executeGitCommand (verbosity : int) (repoDir:string) (command:string) =
+        if verbosity >= 2 then printfn "git %s" command
         let success = Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir command
         if not success
         then printfn "[ERROR]"
@@ -50,16 +50,12 @@ module GitAPI =
 
         let trackWithAdd (file:string) =
 
-            if verbosity >= 2 then printfn "Track file with git: %s" file
-
-            executeGitCommand repoDir ("add "+file) |> ignore
+            executeGitCommand verbosity repoDir ("add "+file) |> ignore
 
         let trackWithLFS (file:string) =
 
-            if verbosity >= 2 then printfn "Track file with git-lfs: %s" file
-
-            executeGitCommand repoDir ("lfs track "+file) |> ignore
-            trackWithAdd (repoDir+".gitattributes")
+            executeGitCommand verbosity repoDir ("lfs track "+file) |> ignore
+            trackWithAdd (System.IO.Path.Combine(repoDir,".gitattributes"))
 
         let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
 
@@ -74,7 +70,7 @@ module GitAPI =
                 | _ -> trackWithAdd file
         )
 
-        executeGitCommand repoDir ("add -u") |> ignore
+        executeGitCommand verbosity repoDir ("add -u") |> ignore
         printfn "-----------------------------"
 
         // commit all changes
@@ -86,10 +82,13 @@ module GitAPI =
         // print git status if verbose
         // executeGitCommand repoDir ("status") |> ignore
 
-        if verbosity >= 2 then printfn "Commit tracked files" 
+        if verbosity >= 2 then 
+            printfn "Commit tracked files" 
+            printfn "git commit -m '%s'" commitMessage
 
-        printfn "commit -m '%s'" commitMessage
         Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
+        
+        executeGitCommand verbosity repoDir "branch -M main" |> ignore
 
         // detect existing remote
         let hasRemote () =
@@ -100,9 +99,9 @@ module GitAPI =
         match tryGetFieldValueByName "RepositoryAdress" gitArgs with
             | None -> ()
             | Some remote ->
-                if hasRemote() then executeGitCommand repoDir ("remote remove origin") |> ignore
+                if hasRemote() then executeGitCommand verbosity repoDir ("remote remove origin") |> ignore
 
-                executeGitCommand repoDir ("remote add origin " + remote) |> ignore
+                executeGitCommand verbosity repoDir ("remote add origin " + remote) |> ignore
 
         if verbosity >= 2 then
             if hasRemote() then printfn "Start syncing with remote" 
@@ -111,11 +110,11 @@ module GitAPI =
         // pull if remote exists
         if hasRemote() then
             if verbosity >= 2 then printfn "Pull" 
-            executeGitCommand repoDir ("fetch origin") |> ignore
-            executeGitCommand repoDir ("pull --rebase origin master") |> ignore
+            executeGitCommand verbosity repoDir ("fetch origin") |> ignore
+            executeGitCommand verbosity repoDir ("pull --rebase origin main") |> ignore
 
         // push if remote exists
         if hasRemote() then
             if verbosity >= 2 then printfn "Push"            
-            executeGitCommand repoDir ("push origin master") |> ignore
+            executeGitCommand verbosity repoDir ("push -u origin main") |> ignore
 

@@ -22,8 +22,10 @@ module ArcAPI =
 
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let editor =            (tryGetFieldValueByName  "EditorPath" arcArgs)
-        let gitLFSThreshold =   (tryGetFieldValueByName  "GitLFSByteThreshold" arcArgs)
+        let editor =            tryGetFieldValueByName "EditorPath" arcArgs
+        let gitLFSThreshold =   tryGetFieldValueByName "GitLFSByteThreshold" arcArgs
+        let repositoryAdress =  tryGetFieldValueByName "RepositoryAdress" arcArgs 
+
 
         if verbosity >= 2 then printfn "Create Directory"
 
@@ -51,6 +53,11 @@ module ArcAPI =
         if verbosity >= 2 then printfn "Init git repository"
 
         Fake.Tools.Git.Repository.init workDir false true
+
+        match repositoryAdress with
+        | None -> ()
+        | Some remote ->
+            GitAPI.executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
 
     let synchronize (arcConfiguration:ArcConfiguration) =
 
