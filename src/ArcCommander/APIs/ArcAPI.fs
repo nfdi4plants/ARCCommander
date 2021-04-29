@@ -25,10 +25,16 @@ module ArcAPI =
         let editor =            (tryGetFieldValueByName  "EditorPath" arcArgs)
         let gitLFSThreshold =   (tryGetFieldValueByName  "GitLFSByteThreshold" arcArgs)
 
+        if verbosity >= 2 then printfn "Create Directory"
+
         Directory.CreateDirectory workDir |> ignore
+
+        if verbosity >= 2 then printfn "Initiate folder structure"
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)
+
+        if verbosity >= 2 then printfn "Set configuration"
 
         match editor with
         | Some editorValue -> 
@@ -41,6 +47,10 @@ module ArcAPI =
             let path = IniData.getLocalConfigPath workDir
             IniData.setValueInIniPath path "general.gitlfsbytethreshold" gitLFSThresholdValue
         | None -> ()
+
+        if verbosity >= 2 then printfn "Init git repository"
+
+        Fake.Tools.Git.Repository.init workDir false true
 
     let synchronize (arcConfiguration:ArcConfiguration) =
 

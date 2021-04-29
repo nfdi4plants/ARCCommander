@@ -112,7 +112,15 @@ module GeneralConfiguration =
 
     /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
     let getGitLfsByteThreshold configuration = 
-        Map.find "gitlfsbytethreshold" configuration.General |> int64
+        Map.find "gitlfsbytethreshold" configuration.General |> int
+
+    /// Returns force editor parameter. If set to true, all 
+    let tryGetForceEditor configuration = 
+        Map.tryFind "forceeditor" configuration.General |> Option.map (fun s -> s.ToLower() = "true")
+
+    /// Returns force editor parameter. If set to true, all 
+    let getForceEditor configuration = 
+        Map.find "forceeditor" configuration.General |> (fun s -> s.ToLower() = "true")
 
 /// Functions for retrieving isa file settings from the configuration
 module IsaModelConfiguration =

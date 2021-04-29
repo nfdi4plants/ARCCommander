@@ -21,8 +21,7 @@ let standardISAArgs =
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
 
     let g = groupArguments r
-    Prompt.createArgumentQueryIfNecessary "" "" g 
-    |> snd
+    Prompt.deannotateArguments g 
     |> commandF arcConfiguration
 
 let setupArc (arcConfiguration:ArcConfiguration) =

@@ -14,18 +14,30 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     let editor = GeneralConfiguration.getEditor arcConfiguration
     let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+    let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
 
-    let stillMissingMandatoryArgs,parameterGroup =
-        let g = groupArguments (r.GetAllResults())
-        Prompt.createArgumentQueryIfNecessary editor workDir g
 
-    if stillMissingMandatoryArgs then
-        failwith "Mandatory arguments were not given either via cli or editor prompt."
+    let annotatedArguments = groupArguments (r.GetAllResults())
+
+    let arguments = 
+
+        if containsMissingMandatoryAttribute annotatedArguments then
+            let stillMissingMandatoryArgs,arguments =
+                Prompt.createMissingArgumentQuery editor workDir annotatedArguments
+            if stillMissingMandatoryArgs then
+                failwith "Mandatory arguments were not given either via cli or editor prompt."
+            arguments
+
+        elif forceEditor then
+            Prompt.createArgumentQuery editor workDir annotatedArguments
+
+        else 
+            Prompt.deannotateArguments annotatedArguments
 
     if verbosity >= 1 then
 
         printfn "Start processing command with the arguments"
-        parameterGroup|> Map.iter (printfn "\t%s:%O")
+        arguments |> Map.iter (printfn "\t%s:%O")
         printfn "" 
 
     if verbosity >= 2 then
@@ -36,7 +48,7 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
         |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
         printfn "" 
 
-    try commandF arcConfiguration parameterGroup
+    try commandF arcConfiguration arguments
     finally
         if verbosity >= 1 then printfn "Done processing command"
 
