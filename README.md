@@ -4,6 +4,7 @@ ArcCommander is a command line tool to create, manage and share your ARCs.
 
 <!-- TOC -->
 
+- [Install and start](#install-and-start)
 - [Develop](#develop)
     - [Prerequisites](#prerequisites)
     - [Build](#build)
