@@ -12,7 +12,7 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
 ## Develop
 
 The following part addresses all who want to contribute to the ArcCommander.  
-If you only want to simply use the ArcCommander, head over to [Install and start](##install-and-start).
+If you only want to simply use the ArcCommander, head over to [Install and start](https://github.com/nfdi4plants/arcCommander#install-and-start).
 
 ### Prerequisites
 
