@@ -26,8 +26,6 @@ If applicable, add screenshots to help explain your problem.
 **OS and framework information (please complete the following information):**
  - OS: [e.g. Windows 10]
  - OS Version [e.g. 1809] 
- - MS Excel: [e.g. Excel Desktop, Excel Online]
- - MS Excel version [only for Excel Desktop]
 
 **Additional context**
 Add any other context about the problem here, like ideas for a solution.
