@@ -31,6 +31,7 @@ type ArcConfiguration =
     static member getDefault() =
         let editor = "notepad"////GET DEFAULT EDITOR for linux
         [
+        "general.verbosity", "1"   
         "general.editor", editor     
         ]
         |> fromNameValuePairs
@@ -97,13 +98,29 @@ module GeneralConfiguration =
     let getWorkDirectory configuration = 
         Map.find "workdir" configuration.General
 
-    /// Returns the path to the arc
+    /// Returns the verbosity level
     let tryGetVerbosity configuration = 
         Map.tryFind "verbosity" configuration.General |> Option.map int
 
-    /// Returns the path to the arc
+    /// Returns the verbosity level
     let getVerbosity configuration = 
         Map.find "verbosity" configuration.General |> int
+
+    /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
+    let tryGetGitLfsByteThreshold configuration = 
+        Map.tryFind "gitlfsbytethreshold" configuration.General |> Option.map int64
+
+    /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
+    let getGitLfsByteThreshold configuration = 
+        Map.find "gitlfsbytethreshold" configuration.General |> int
+
+    /// Returns force editor parameter. If set to true, all 
+    let tryGetForceEditor configuration = 
+        Map.tryFind "forceeditor" configuration.General |> Option.map (fun s -> s.ToLower() = "true")
+
+    /// Returns force editor parameter. If set to true, all 
+    let getForceEditor configuration = 
+        Map.find "forceeditor" configuration.General |> (fun s -> s.ToLower() = "true")
 
 /// Functions for retrieving isa file settings from the configuration
 module IsaModelConfiguration =

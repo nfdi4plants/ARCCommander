@@ -13,6 +13,7 @@ type ArcCommand =
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study of verb_and_args:ParseResults<StudyCommand>
     | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay of verb_and_args:ParseResults<AssayCommand>
     | [<AltCommandLine("config")>][<CliPrefix(CliPrefix.None)>] Configuration of verb_and_args:ParseResults<ConfigurationCommand>
+    | [<CliPrefix(CliPrefix.None)>] Git of verb_and_args:ParseResults<GitCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -25,3 +26,4 @@ type ArcCommand =
             | Study         _   -> "Study functions"
             | Assay         _   -> "Assay functions"
             | Configuration _   -> "Configuration editing"
+            | Git           _   -> "Git related"

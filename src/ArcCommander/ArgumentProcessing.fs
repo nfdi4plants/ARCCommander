@@ -45,6 +45,7 @@ module ArgumentProcessing =
     /// Returns the value given by the user for name k
     let tryGetFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.tryFind k arguments with
+        | Some (Field "") -> None
         | Some (Field v) -> Some v
         | Some Flag -> None
         | None -> None
@@ -74,7 +75,7 @@ module ArgumentProcessing =
         | _ -> true
    
     /// Returns true, if a value in the array contains the Mandatory attribute, but is empty
-    let private containsMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
+    let containsMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
         arguments
         |> Seq.exists (fun (k,v) ->
             v.Arg.IsNone && v.IsMandatory
@@ -236,27 +237,27 @@ module ArgumentProcessing =
             |> Map.ofArray
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
-        let createArgumentQueryIfNecessary editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
-            if containsMissingMandatoryAttribute arguments then             
-                let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
-                let queryResults = createArgumentQuery editorPath arcPath arguments
-                let stillMissingMandatoryArgs =  
-                    mandatoryArgs
-                    |> Array.map (fun k -> 
-                        let field = tryGetFieldValueByName k queryResults
-                        field = None || field = Some ""                    
-                    )
-                    |> Array.reduce ((||))
-                stillMissingMandatoryArgs,queryResults
-            else 
-                false,
-                arguments
-                |> Array.choose (fun (k,v) -> 
-                    match v.Arg with 
-                    | Some arg -> Some (k,arg)
-                    | None when v.IsFlag -> None
-                    | None -> Some (k,Field ""))
-                |> Map.ofArray
+        let createMissingArgumentQuery editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
+            let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
+            let queryResults = createArgumentQuery editorPath arcPath arguments
+            let stillMissingMandatoryArgs =  
+                mandatoryArgs
+                |> Array.map (fun k -> 
+                    let field = tryGetFieldValueByName k queryResults
+                    field = None || field = Some ""                    
+                )
+                |> Array.reduce ((||))
+            stillMissingMandatoryArgs,queryResults
+            
+        /// Removes additional annotation (isMandatory and tooltip) from argument
+        let deannotateArguments (arguments:(string*AnnotatedArgument) []) =
+            arguments
+            |> Array.choose (fun (k,v) -> 
+                match v.Arg with 
+                | Some arg -> Some (k,arg)
+                | None when v.IsFlag -> None
+                | None -> Some (k,Field ""))
+            |> Map.ofArray
 
         let serializeXSLXWriterOutput (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>) (inp : 'A) = 
             writeF inp

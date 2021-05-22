@@ -1,7 +1,7 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
-open Argu 
+open Argu
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
@@ -14,32 +14,46 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     let editor = GeneralConfiguration.getEditor arcConfiguration
     let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+    let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
 
-    let stillMissingMandatoryArgs,parameterGroup =
-        let g = groupArguments (r.GetAllResults())
-        Prompt.createArgumentQueryIfNecessary editor workDir g  
-    
-    if stillMissingMandatoryArgs then
-        failwith "Mandatory arguments were not given either via cli or editor prompt."
+
+    let annotatedArguments = groupArguments (r.GetAllResults())
+
+    let arguments = 
+
+        if containsMissingMandatoryAttribute annotatedArguments then
+            let stillMissingMandatoryArgs,arguments =
+                Prompt.createMissingArgumentQuery editor workDir annotatedArguments
+            if stillMissingMandatoryArgs then
+                failwith "Mandatory arguments were not given either via cli or editor prompt."
+            arguments
+
+        elif forceEditor then
+            Prompt.createArgumentQuery editor workDir annotatedArguments
+
+        else 
+            Prompt.deannotateArguments annotatedArguments
 
     if verbosity >= 1 then
 
         printfn "Start processing command with the arguments"
-        parameterGroup|> Map.iter (printfn "\t%s:%O")
+        arguments |> Map.iter (printfn "\t%s:%O")
+        printfn "" 
 
     if verbosity >= 2 then
 
-        printfn "\nand the config: \n" 
-        arcConfiguration 
+        printfn "and the config:"
+        arcConfiguration
         |> ArcConfiguration.flatten
         |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
+        printfn "" 
 
-    try commandF arcConfiguration parameterGroup
+    try commandF arcConfiguration arguments
     finally
         if verbosity >= 1 then printfn "Done processing command"
 
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
-    
+
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
     if verbosity >= 1 then
@@ -48,7 +62,7 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
     if verbosity >= 2 then
         printfn "with the config"
-        arcConfiguration 
+        arcConfiguration
         |> ArcConfiguration.flatten
         |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
 
@@ -161,7 +175,7 @@ let handleAssaySubCommands arcConfiguration assayVerb =
     | AssayCommand.Edit         r -> processCommand arcConfiguration AssayAPI.edit          r
     | AssayCommand.Move         r -> processCommand arcConfiguration AssayAPI.move          r
     | AssayCommand.Get          r -> processCommand arcConfiguration AssayAPI.get           r
-    | AssayCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.list 
+    | AssayCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.list
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
@@ -170,6 +184,10 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
     | ConfigurationCommand.Set      r -> processCommand arcConfiguration ConfigurationAPI.set   r
     | ConfigurationCommand.Unset    r -> processCommand arcConfiguration ConfigurationAPI.unset r
 
+let handleGitSubCommands arcConfiguration gitVerb =
+    match gitVerb with
+    | GitCommand.Init       r -> processCommand arcConfiguration GitAPI.init    r
+    | GitCommand.Update     r -> processCommand arcConfiguration GitAPI.update  r
 
 let handleCommand arcConfiguration command =
     match command with
@@ -178,6 +196,7 @@ let handleCommand arcConfiguration command =
     | Study subCommand          -> handleStudySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Assay subCommand          -> handleAssaySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Configuration subcommand  -> handleConfigurationSubCommands   arcConfiguration (subcommand.GetSubCommand())
+    | Git subcommand            -> handleGitSubCommands             arcConfiguration (subcommand.GetSubCommand())
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
     | Synchronize               -> processCommandWithoutArgs        arcConfiguration ArcAPI.synchronize
@@ -188,28 +207,27 @@ let handleCommand arcConfiguration command =
 let main argv =
     try
         let parser = ArgumentParser.Create<ArcCommand>()
-        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
+        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
 
-        let workingDir = 
+        let workingDir =
             match results.TryGetResult(WorkingDir) with
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let verbosity = 
-            match results.TryGetResult(Verbosity) with
-            | Some i    -> string i
-            | None      -> "1"
+        let verbosity = results.TryGetResult(Verbosity) |> Option.map string
 
-        let arcConfiguration = 
+
+        let arcConfiguration =
             [
-                "general.workdir",workingDir
+                "general.workdir",Some workingDir
                 "general.verbosity",verbosity
             ]
+            |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
-            
+
         //Testing the configuration reading (Delete when configuration functionality is setup)
-        //printfn "load config:"    
+        //printfn "load config:"
         //Configuration.loadConfiguration workingDir
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)

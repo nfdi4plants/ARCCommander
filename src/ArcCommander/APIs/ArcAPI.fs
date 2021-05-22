@@ -16,12 +16,56 @@ module ArcAPI =
     /// Initializes the arc specific folder structure
     let init (arcConfiguration:ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
-        let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Arc Init"
 
-        Directory.CreateDirectory workdir |> ignore
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+
+        let editor =            tryGetFieldValueByName "EditorPath" arcArgs
+        let gitLFSThreshold =   tryGetFieldValueByName "GitLFSByteThreshold" arcArgs
+        let repositoryAdress =  tryGetFieldValueByName "RepositoryAdress" arcArgs 
+
+
+        if verbosity >= 2 then printfn "Create Directory"
+
+        Directory.CreateDirectory workDir |> ignore
+
+        if verbosity >= 2 then printfn "Initiate folder structure"
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)
+
+        if verbosity >= 2 then printfn "Set configuration"
+
+        match editor with
+        | Some editorValue -> 
+            let path = IniData.getLocalConfigPath workDir
+            IniData.setValueInIniPath path "general.editor" editorValue
+        | None -> ()
+
+        match gitLFSThreshold with
+        | Some gitLFSThresholdValue -> 
+            let path = IniData.getLocalConfigPath workDir
+            IniData.setValueInIniPath path "general.gitlfsbytethreshold" gitLFSThresholdValue
+        | None -> ()
+
+        if verbosity >= 2 then printfn "Init git repository"
+
+        try
+
+            Fake.Tools.Git.Repository.init workDir false true
+
+            match repositoryAdress with
+            | None -> ()
+            | Some remote ->
+                GitAPI.executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
+
+        with 
+        | _ -> 
+
+            if verbosity >= 1 then printfn "Git could not be set up, try installing git cli and run `arc git init`"
+
 
     let synchronize (arcConfiguration:ArcConfiguration) =
 

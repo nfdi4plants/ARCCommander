@@ -209,3 +209,11 @@ module IniData =
             merge (localConfigPath |> fromFile) (globalConfigPath |> fromFile)
         else
             (globalConfigPath |> fromFile) 
+
+    /// Set the given value for the key in the ini file, overwriting a possibly existing value
+    let setValueInIniPath path name value = 
+        let iniData = path |> fromFile
+        match trySetValue name value iniData with
+        | Some ini -> ini
+        | None -> addValue name value iniData
+        |> toFile path
