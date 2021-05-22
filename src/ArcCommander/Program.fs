@@ -186,6 +186,7 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
 
 let handleGitSubCommands arcConfiguration gitVerb =
     match gitVerb with
+    | GitCommand.Init       r -> processCommand arcConfiguration GitAPI.init    r
     | GitCommand.Update     r -> processCommand arcConfiguration GitAPI.update  r
 
 let handleCommand arcConfiguration command =

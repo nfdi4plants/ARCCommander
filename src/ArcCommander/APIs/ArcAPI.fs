@@ -52,12 +52,20 @@ module ArcAPI =
 
         if verbosity >= 2 then printfn "Init git repository"
 
-        Fake.Tools.Git.Repository.init workDir false true
+        try
 
-        match repositoryAdress with
-        | None -> ()
-        | Some remote ->
-            GitAPI.executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
+            Fake.Tools.Git.Repository.init workDir false true
+
+            match repositoryAdress with
+            | None -> ()
+            | Some remote ->
+                GitAPI.executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
+
+        with 
+        | _ -> 
+
+            if verbosity >= 1 then printfn "Git could not be set up, try installing git cli and run `arc git init`"
+
 
     let synchronize (arcConfiguration:ArcConfiguration) =
 

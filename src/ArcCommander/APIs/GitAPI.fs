@@ -21,6 +21,24 @@ module GitAPI =
 
         Fake.IO.Path.getDirectory(gitDir)
 
+    let init (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
+
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start git init"
+
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+
+        let repositoryAdress =  tryGetFieldValueByName "RepositoryAdress" gitArgs 
+
+        Fake.Tools.Git.Repository.init workDir false true
+
+        match repositoryAdress with
+        | None -> ()
+        | Some remote ->
+            executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
+
+
     let update (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
