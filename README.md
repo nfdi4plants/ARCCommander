@@ -17,6 +17,7 @@ If you only want to simply use the ArcCommander, head over to [Install and start
 ### Prerequisites
 
 - .NET SDK >= 3.1.00 (should roll forward to .net 5 if you are using that)
+- To test the generated cli tool you will ned the .NET 3.1 runtime.   
 
 ### Build
 
