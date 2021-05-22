@@ -13,6 +13,23 @@ open ISADotNet.XLSX
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
 module AssayAPI =        
 
+
+    module AssayFolder =
+        
+        let exists (arcConfiguration:ArcConfiguration) (identifier : string) =
+            AssayConfiguration.getFolderPath identifier arcConfiguration
+            |> System.IO.Directory.Exists
+
+    module AssayFile =
+        
+        let exists (arcConfiguration:ArcConfiguration) (identifier : string) =
+            IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
+            |> System.IO.File.Exists
+        
+        let create (arcConfiguration:ArcConfiguration) (identifier : string) =
+            IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
+            |> ISADotNet.XLSX.AssayFile.AssayFile.init "Investigation" identifier
+
     /// Initializes a new empty assay file and associated folder structure in the arc.
     let init (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
@@ -22,15 +39,16 @@ module AssayAPI =
 
         let name = getFieldValueByName "AssayIdentifier" assayArgs
 
-        AssayConfiguration.getSubFolderPaths name arcConfiguration
-        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
+        if AssayFolder.exists arcConfiguration name then
+            if verbosity >= 1 then printfn "Assay folder with identifier %s already exists" name
+        else
+            AssayConfiguration.getSubFolderPaths name arcConfiguration
+            |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
 
-        IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
-        |> Option.get
-        |> ISADotNet.XLSX.AssayFile.AssayFile.init "Investigation" name
+            AssayFile.create arcConfiguration name 
 
-        AssayConfiguration.getFilePaths name arcConfiguration
-        |> Array.iter (System.IO.File.Create >> ignore)
+            AssayConfiguration.getFilePaths name arcConfiguration
+            |> Array.iter (System.IO.File.Create >> ignore)
 
 
     /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.

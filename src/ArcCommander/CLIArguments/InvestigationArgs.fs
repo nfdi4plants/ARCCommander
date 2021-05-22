@@ -7,7 +7,7 @@ open Argu
 // investigation without studies/assays. To reflect the need for metadata here,
 // this command is called `create` instead of `init`
 type InvestigationCreateArgs = 
-    | [<Mandatory>][<Unique>] Identifier of investigation_identifier:string
+    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
     | [<Unique>] Title of title:string
     | [<Unique>] Description of description:string
     | [<Unique>] SubmissionDate of submission_date:string
@@ -24,7 +24,7 @@ type InvestigationCreateArgs =
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 
-    | [<Mandatory>][<Unique>] Identifier of investigation_identifier:string
+    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
     | [<Unique>] Title of title:string
     | [<Unique>] Description of description:string
     | [<Unique>] SubmissionDate of submission_date:string
@@ -44,7 +44,7 @@ type InvestigationUpdateArgs =
 
 /// CLI arguments for deleting the arc's investigation file (danger zone!)
 type InvestigationDeleteArgs =
-    | [<Mandatory>][<Unique>] Identifier of investigation_identifier:string
+    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
 
     interface IArgParserTemplate with
         member this.Usage =

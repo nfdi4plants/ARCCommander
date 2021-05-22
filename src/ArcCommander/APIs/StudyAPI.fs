@@ -11,6 +11,17 @@ open ISADotNet.XLSX
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs
 module StudyAPI =
 
+    module StudyFile =
+    
+        let exists (arcConfiguration:ArcConfiguration) (identifier : string) =
+            IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
+            |> System.IO.File.Exists
+    
+        let create (arcConfiguration:ArcConfiguration) (identifier : string) =
+            IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
+            |> FSharpSpreadsheetML.Spreadsheet.initWithSST identifier
+            |> FSharpSpreadsheetML.Spreadsheet.close
+
     /// Initializes a new empty study file in the arc.
     let init (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
             
@@ -20,10 +31,10 @@ module StudyAPI =
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
-        let studyFilePath = IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
-
-        FSharpSpreadsheetML.Spreadsheet.initWithSST identifier studyFilePath
-        |> FSharpSpreadsheetML.Spreadsheet.close
+        if StudyFile.exists arcConfiguration identifier then
+            if verbosity >= 1 then printfn "Study file already exists"
+        else 
+            StudyFile.create arcConfiguration identifier
 
     /// Updates an existing study info in the arc with the given study metadata contained in cliArgs.
     let update (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = // NotImplementedException()
@@ -158,7 +169,8 @@ module StudyAPI =
         let studyFilePath = IsaModelConfiguration.getStudiesFileName identifier arcConfiguration
 
         try System.IO.File.Delete studyFilePath with
-        | err -> printfn "Error: Couldn't delete study file: \n %s" err.Message
+        | err -> 
+            if verbosity >= 1 then printfn "Error: Couldn't delete study file: \n %s" err.Message
 
     /// Unregisters an existing study from the arc's investigation file.
     let unregister (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
@@ -172,8 +184,6 @@ module StudyAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let investigation = Investigation.fromFile investigationFilePath
-
-        let studies = investigation.Studies
 
         match investigation.Studies with
         | Some studies -> 

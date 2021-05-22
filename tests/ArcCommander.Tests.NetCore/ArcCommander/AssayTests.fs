@@ -90,7 +90,7 @@ let testAssayRegister =
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
             
-            let studyArgs : StudyRegisterArgs list = [Identifier studyIdentifier]
+            let studyArgs : StudyRegisterArgs list = [StudyRegisterArgs.Identifier studyIdentifier]
             let assayArgs : AssayRegisterArgs list = [AssayRegisterArgs.StudyIdentifier studyIdentifier;AssayRegisterArgs.AssayIdentifier assayIdentifier;MeasurementType measurementType]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
