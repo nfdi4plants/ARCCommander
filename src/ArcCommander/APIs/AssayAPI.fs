@@ -204,10 +204,10 @@ module AssayAPI =
                
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
-            | "" -> assayIdentifier
-            | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
-                s
+            | "" -> 
+                if verbosity >= 1 then printfn "No Study Identifier given, use assayIdentifier instead"
+                assayIdentifier
+            | s -> s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
@@ -231,10 +231,16 @@ module AssayAPI =
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                 
             | None ->
+                if verbosity >= 1 then printfn "Study with the identifier %s does not yet exist, creating it now" studyIdentifier
+                if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
+                    StudyAPI.StudyFile.create arcConfiguration studyIdentifier
                 let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
+            if verbosity >= 1 then printfn "Study with the identifier %s does not yet exist, creating it now" studyIdentifier
+            if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
+                StudyAPI.StudyFile.create arcConfiguration studyIdentifier
             let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
             [Study.fromParts info [] [] [] [assay] [] []]
         |> API.Investigation.setStudies investigation
