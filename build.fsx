@@ -29,6 +29,13 @@ open Fake.IO.FileSystemOperators
 open Fake.IO.Globbing.Operators
 open Fake.Tools
 
+module AuxFunctions =
+
+    let renameExecutableFile outputPath oldName newName =
+        let fullPathBefore = outputPath </> oldName
+        let fullPathAfter = outputPath </> newName
+        System.IO.File.Move (fullPathBefore, fullPathAfter)
+
 [<AutoOpen>]
 /// user interaction prompts for critical build tasks where you may want to interrupt when you see wrong inputs.
 module MessagePrompts =
@@ -79,6 +86,8 @@ module ProjectInfo =
     let website = "/arcCommander"
 
     let pkgDir = "pkg"
+
+    let publishDir = "publish"
 
     let release = ReleaseNotes.load "RELEASE_NOTES.md"
 
@@ -159,8 +168,12 @@ module PackageTasks =
 
     open ProjectInfo
 
+    open AuxFunctions
+
     open BasicTasks
     open TestTasks
+
+    let blabl x = x
 
     let pack = BuildTask.create "Pack" [clean; build; runTests; copyBinaries] {
         if promptYesNo (sprintf "creating stable package with version %s OK?" stableVersionTag ) 
@@ -209,6 +222,74 @@ module PackageTasks =
         else
             failwith "aborted"
     }
+
+    let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
+        let outputPath = sprintf "%s/win-x64" publishDir
+        solutionFile
+        |> DotNet.publish (fun p ->
+            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
+            {
+                p with
+                    Runtime = Some "win-x64"
+                    Configuration = DotNet.BuildConfiguration.fromString configuration
+                    OutputPath = Some (sprintf "%s/win-x64" publishDir)
+                    MSBuildParams = {
+                        standardParams with
+                            Properties = [
+                                "Platform","x64"
+                                "PublishSingleFile","true"
+                            ]
+                    };
+            }
+        )
+        renameExecutableFile outputPath "ArcCommander.exe" "arc.exe"
+    }
+
+    let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
+        let outputPath = sprintf "%s/linux-x64" publishDir
+        solutionFile
+        |> DotNet.publish (fun p ->
+            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
+            {
+                p with
+                    Runtime = Some "linux-x64"
+                    Configuration = DotNet.BuildConfiguration.fromString configuration
+                    OutputPath = Some (sprintf "%s/linux-x64" publishDir)
+                    MSBuildParams = {
+                        standardParams with
+                            Properties = [
+                                "Platform","x64"
+                                "PublishSingleFile","true"
+                            ]
+                    }
+            }
+        )
+        renameExecutableFile outputPath "ArcCommander" "arc"
+    }
+
+    let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
+        let outputPath = sprintf "%s/osx-x64" publishDir
+        solutionFile
+        |> DotNet.publish (fun p ->
+            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
+            {
+                p with
+                    Runtime = Some "osx-x64"
+                    Configuration = DotNet.BuildConfiguration.fromString configuration
+                    OutputPath = Some outputPath
+                    MSBuildParams = {
+                        standardParams with
+                            Properties = [
+                                "Platform","x64"
+                                "PublishSingleFile","true"
+                            ]
+                    }
+            }
+        )
+        renameExecutableFile outputPath "ArcCommander" "arc"
+    }
+
+    let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac]
 
 module ToolTasks =
 
