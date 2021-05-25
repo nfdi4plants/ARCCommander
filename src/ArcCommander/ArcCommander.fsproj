@@ -18,6 +18,7 @@
     <RepositoryType>git</RepositoryType>
     <FsDocsLicenseLink>https://github.com/nfdi4plants/arcCommander/blob/developer/LICENSE</FsDocsLicenseLink>
     <FsDocsReleaseNotesLink>https://github.com/nfdi4plants/arcCommander/blob/developer/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
+    <AssemblyName>arc</AssemblyName>
   </PropertyGroup>   
   <ItemGroup>
     <None Include="config" CopyToOutputDirectory="PreserveNewest" />

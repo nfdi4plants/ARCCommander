@@ -29,13 +29,6 @@ open Fake.IO.FileSystemOperators
 open Fake.IO.Globbing.Operators
 open Fake.Tools
 
-module AuxFunctions =
-
-    let renameExecutableFile outputPath oldName newName =
-        let fullPathBefore = outputPath </> oldName
-        let fullPathAfter = outputPath </> newName
-        System.IO.File.Move (fullPathBefore, fullPathAfter)
-
 [<AutoOpen>]
 /// user interaction prompts for critical build tasks where you may want to interrupt when you see wrong inputs.
 module MessagePrompts =
@@ -168,8 +161,6 @@ module PackageTasks =
 
     open ProjectInfo
 
-    open AuxFunctions
-
     open BasicTasks
     open TestTasks
 
@@ -242,7 +233,7 @@ module PackageTasks =
                     };
             }
         )
-        renameExecutableFile outputPath "ArcCommander.exe" "arc.exe"
+        printfn "Beware that assemblyName differs from projectName!"
     }
 
     let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
@@ -264,7 +255,7 @@ module PackageTasks =
                     }
             }
         )
-        renameExecutableFile outputPath "ArcCommander" "arc"
+        printfn "Beware that assemblyName differs from projectName!"
     }
 
     let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
@@ -286,7 +277,7 @@ module PackageTasks =
                     }
             }
         )
-        renameExecutableFile outputPath "ArcCommander" "arc"
+        printfn "Beware that assemblyName differs from projectName!"
     }
 
     let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac]
