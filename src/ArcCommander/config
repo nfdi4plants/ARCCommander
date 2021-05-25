@@ -14,7 +14,7 @@ assayfilename=assay.isa.xlsx
 [assay]
 rootfolder=assays 
 # rootfolder.<assayIdentifier>.folder
-folders=dataset
+folders=dataset;protocols
 files=README.md
 
 [workflow]

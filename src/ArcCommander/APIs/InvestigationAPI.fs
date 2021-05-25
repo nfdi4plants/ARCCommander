@@ -12,6 +12,12 @@ open ISADotNet.XLSX
 /// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs
 module InvestigationAPI =
 
+    module InvestigationFile =
+
+        let exists (arcConfiguration:ArcConfiguration) =
+            IsaModelConfiguration.getInvestigationFilePath arcConfiguration
+            |> System.IO.File.Exists
+
     /// Creates an investigation file in the arc from the given investigation metadata contained in cliArgs that contains no studies or assays.
     let create (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) =
            
@@ -19,20 +25,24 @@ module InvestigationAPI =
         
         if verbosity >= 1 then printfn "Start Investigation Create"
 
-        let investigation = 
-            let info =
-                Investigation.InvestigationInfo.create
-                    (getFieldValueByName "Identifier" investigationArgs)
-                    (getFieldValueByName "Title" investigationArgs)
-                    (getFieldValueByName "Description" investigationArgs)
-                    (getFieldValueByName "SubmissionDate" investigationArgs)
-                    (getFieldValueByName "PublicReleaseDate" investigationArgs)
-                    []
-            Investigation.fromParts info [] [] [] [] [] 
+        if InvestigationFile.exists arcConfiguration then
+            if verbosity >= 1 then printfn "Investigation file does already exist"
 
-        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+        else 
+            let investigation = 
+                let info =
+                    Investigation.InvestigationInfo.create
+                        (getFieldValueByName "Identifier" investigationArgs)
+                        (getFieldValueByName "Title" investigationArgs)
+                        (getFieldValueByName "Description" investigationArgs)
+                        (getFieldValueByName "SubmissionDate" investigationArgs)
+                        (getFieldValueByName "PublicReleaseDate" investigationArgs)
+                        []
+                Investigation.fromParts info [] [] [] [] [] 
+
+            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
                           
-        Investigation.toFile investigationFilePath investigation
+            Investigation.toFile investigationFilePath investigation
 
     /// Updates the existing investigation file in the arc with the given investigation metadata contained in cliArgs.
     let update (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = 

@@ -230,6 +230,11 @@ module AssayConfiguration =
         Map.tryFind "rootfolder" configuration.Assay
         |> Option.map (fun r -> Path.Combine([|workDir;r;assayIdentifier|]))
 
+    /// Returns the full path of the assay folder
+    let getFolderPath assayIdentifier configuration =
+        tryGetFolderPath assayIdentifier configuration 
+        |> Option.get
+
     /// Returns the full path of the subFolders associated with the assay
     let getSubFolderPaths assayIdentifier configuration =
         let subFolderNames = Map.tryFind "folders" configuration.Assay

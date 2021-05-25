@@ -65,23 +65,37 @@ let testInvestigationCreate =
             (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
             (standardISAArgs)
             Map.empty Map.empty Map.empty Map.empty
+    testList "InvestigationCreateTests" [
+        testCase "MatchesInvestigationValues" (fun () -> 
+            let investigationName = "TestInvestigation"
+            let submissionDate = "FirstOctillember"
+            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName;InvestigationCreateArgs.SubmissionDate submissionDate]
 
-    testCase "MatchesInvestigationValues" (fun () -> 
-        let investigationName = "TestInvestigation"
-        let submissionDate = "FirstOctillember"
-        let investigationArgs = [InvestigationCreateArgs.Identifier investigationName;InvestigationCreateArgs.SubmissionDate submissionDate]
-
-        let testInvestigation = 
-            ISADotNet.XLSX.Investigation.fromParts 
-                (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
-                [] [] [] [] []
+            let testInvestigation = 
+                ISADotNet.XLSX.Investigation.fromParts 
+                    (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
+                    [] [] [] [] []
    
-        setupArc configuration
-        processCommand configuration InvestigationAPI.create investigationArgs
+            setupArc configuration
+            processCommand configuration InvestigationAPI.create investigationArgs
 
-        let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-        Expect.equal investigation testInvestigation "The assay in the file should match the one created per hand but did not"
-    )
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            Expect.equal investigation testInvestigation "The assay in the file should match the one created per hand but did not"
+        )
+        testCase "ShouldNotOverwrite" (fun () -> 
+            let investigationName = "OverwriteInvestigation"
+            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName]
+
+            let testInvestigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+
+            processCommand configuration InvestigationAPI.create investigationArgs
+
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            Expect.equal investigation testInvestigation "Investigation file was overwritten even if it should not have been"
+        )
+    ]
+    |> testSequenced
+
 
 [<Tests>]
 let testInvestigationUpdate = 

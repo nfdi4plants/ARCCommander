@@ -13,6 +13,23 @@ open ISADotNet.XLSX
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
 module AssayAPI =        
 
+
+    module AssayFolder =
+        
+        let exists (arcConfiguration:ArcConfiguration) (identifier : string) =
+            AssayConfiguration.getFolderPath identifier arcConfiguration
+            |> System.IO.Directory.Exists
+
+    module AssayFile =
+        
+        let exists (arcConfiguration:ArcConfiguration) (identifier : string) =
+            IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
+            |> System.IO.File.Exists
+        
+        let create (arcConfiguration:ArcConfiguration) (identifier : string) =
+            IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
+            |> ISADotNet.XLSX.AssayFile.AssayFile.init "Investigation" identifier
+
     /// Initializes a new empty assay file and associated folder structure in the arc.
     let init (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
@@ -22,15 +39,16 @@ module AssayAPI =
 
         let name = getFieldValueByName "AssayIdentifier" assayArgs
 
-        AssayConfiguration.getSubFolderPaths name arcConfiguration
-        |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
+        if AssayFolder.exists arcConfiguration name then
+            if verbosity >= 1 then printfn "Assay folder with identifier %s already exists" name
+        else
+            AssayConfiguration.getSubFolderPaths name arcConfiguration
+            |> Array.iter (System.IO.Directory.CreateDirectory >> ignore)
 
-        IsaModelConfiguration.tryGetAssayFilePath name arcConfiguration
-        |> Option.get
-        |> ISADotNet.XLSX.AssayFile.AssayFile.init "Investigation" name
+            AssayFile.create arcConfiguration name 
 
-        AssayConfiguration.getFilePaths name arcConfiguration
-        |> Array.iter (System.IO.File.Create >> ignore)
+            AssayConfiguration.getFilePaths name arcConfiguration
+            |> Array.iter (System.IO.File.Create >> ignore)
 
 
     /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
@@ -186,10 +204,10 @@ module AssayAPI =
                
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
-            | "" -> assayIdentifier
-            | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
-                s
+            | "" -> 
+                if verbosity >= 1 then printfn "No Study Identifier given, use assayIdentifier instead"
+                assayIdentifier
+            | s -> s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
@@ -213,10 +231,16 @@ module AssayAPI =
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                 
             | None ->
+                if verbosity >= 1 then printfn "Study with the identifier %s does not yet exist, creating it now" studyIdentifier
+                if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
+                    StudyAPI.StudyFile.create arcConfiguration studyIdentifier
                 let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
+            if verbosity >= 1 then printfn "Study with the identifier %s does not yet exist, creating it now" studyIdentifier
+            if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
+                StudyAPI.StudyFile.create arcConfiguration studyIdentifier
             let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
             [Study.fromParts info [] [] [] [assay] [] []]
         |> API.Investigation.setStudies investigation
