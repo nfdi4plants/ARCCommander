@@ -22,7 +22,7 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
     - this allows you to start the ArcCommander from any folder
 4. Navigate to a folder in which you want to initialize an ARC
 5. Open the Command Prompt (CMD) via typing in `cmd` in the folder address, press Enter
-![image](https://user-images.githubusercontent.com/47781170/119675448-58618280-be3d-11eb-9d6a-4e4e38b4caa5.png)
+![image](https://user-images.githubusercontent.com/47781170/119680874-dd4e9b00-be41-11eb-8faf-ed699c827395.png)
 6. Run the ArcCommander from the CMD by executing `arc`
 
 ### Linux
