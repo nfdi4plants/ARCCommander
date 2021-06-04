@@ -298,7 +298,7 @@ module StudyAPI =
                 | Some study -> 
                     match study.Contacts with
                     | Some persons -> 
-                        if API.Person.existsByFullName lastName midInitials firstName persons then
+                        if API.Person.existsByFullName firstName midInitials lastName persons then
                             API.Person.updateByFullName updateOption person persons
                             |> API.Study.setContacts study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies

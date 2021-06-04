@@ -154,3 +154,52 @@ let testInvestigationUpdate =
         )
         |> testSequenced
     ]
+
+//[<Tests>]
+//let testInvestigationContacts = 
+//    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationContactTest"
+//    let investigationFileName = "isa.investigation.xlsx"
+//    let source = __SOURCE_DIRECTORY__
+//    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+
+//    let configuration = 
+//        ArcConfiguration.create 
+//            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+//            (standardISAArgs)
+//            Map.empty Map.empty Map.empty Map.empty
+
+//    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
+    
+//    let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
+//    setupArc configuration
+//    //Copy testInvestigation
+//    System.IO.File.Copy(investigationToCopy,investigationFilePath)
+
+//    testList "InvestigationContactTests" [
+//        testCase "Update" (fun () -> 
+//            let newAdress = "FunStreet"
+//            let contactArgs = 
+//                [
+//                    InvestigationContacts.PersonUpdateArgs.FirstName "Oliver";
+//                    InvestigationContacts.PersonUpdateArgs.MidInitials "G";
+//                    InvestigationContacts.PersonUpdateArgs.LastName "Stephen";
+//                    InvestigationContacts.PersonUpdateArgs.Address "FunStreet";
+//                ]
+
+
+            
+//            processCommand configuration InvestigationAPI.Contacts.update contactArgs
+            
+//            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+//            // Updated with given value
+//            Expect.equal investigation.Title.Value newTitle "The value which should be updated was not updated"
+//            // Updated with given value
+//            Expect.equal investigation.Description investigationBeforeChangingIt.Description "No update value was given for description and the \"ReplaceWithEmptyValues\" flag was not given but the description was still changed"
+//            // Updated with given value
+//            Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
+//            // Updated with given value
+//            Expect.sequenceEqual  investigation.Comments.Value investigationBeforeChangingIt.Comments.Value "Comments should not have been affected by update function"      
+//        )
+
+//    ]
+//    |> testSequenced

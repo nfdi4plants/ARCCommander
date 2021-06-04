@@ -146,7 +146,7 @@ module InvestigationAPI =
 
             match investigation.Contacts with
             | Some persons ->
-                if API.Person.existsByFullName lastName midInitials firstName persons then
+                if API.Person.existsByFullName firstName midInitials lastName persons then
                     API.Person.updateByFullName updateOption person persons
                     |> API.Investigation.setContacts investigation
                 else
