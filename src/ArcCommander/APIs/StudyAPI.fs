@@ -71,10 +71,22 @@ module StudyAPI =
                 |> API.Investigation.setStudies investigation
             else 
                 if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
-                investigation
+                if containsFlag "AddIfMissing" studyArgs then
+                    if verbosity >= 1 then printfn "Registering study as AddIfMissing Flag was set" 
+                    API.Study.add studies study
+                    |> API.Investigation.setStudies investigation
+                else 
+                    if verbosity >= 2 then printfn "AddIfMissing argument can be used to register study with the update command if it is missing" 
+                    investigation
         | None -> 
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-            investigation
+            if containsFlag "AddIfMissing" studyArgs then
+                if verbosity >= 1 then printfn "Registering study as AddIfMissing Flag was set" 
+                [study]
+                |> API.Investigation.setStudies investigation
+            else 
+                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register study with the update command if it is missing" 
+                investigation
         |> Investigation.toFile investigationFilePath
         
 
@@ -306,14 +318,27 @@ module StudyAPI =
                         if API.Person.existsByFullName firstName midInitials lastName persons then
                             API.Person.updateByFullName updateOption person persons
                             |> API.Study.setContacts study
-                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                            |> API.Investigation.setStudies investigation
+
                         else
                             if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
-                            investigation
+                            if containsFlag "AddIfMissing" personArgs then
+                                if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                                API.Person.add persons person
+                                |> API.Study.setContacts study
+                            else 
+                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                                study
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
-                        investigation
+                        if containsFlag "AddIfMissing" personArgs then
+                            if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                            [person]
+                            |> API.Study.setContacts study
+                        else 
+                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                            study
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                    |> API.Investigation.setStudies investigation
                 | None -> 
                     if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
@@ -588,14 +613,26 @@ module StudyAPI =
                         if API.Publication.existsByDoi doi publications then
                             API.Publication.updateByDOI updateOption publication publications
                             |> API.Study.setPublications study
-                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                            |> API.Investigation.setStudies investigation
                         else
                             if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
-                            investigation
+                            if containsFlag "AddIfMissing" publicationArgs then
+                                if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                                API.Publication.add publications publication
+                                |> API.Study.setPublications study
+                            else 
+                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                                study
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
-                        investigation
+                        if containsFlag "AddIfMissing" publicationArgs then
+                            if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                            [publication]
+                            |> API.Study.setPublications study
+                        else 
+                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                            study
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                    |> API.Investigation.setStudies investigation
                 | None -> 
                     if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
@@ -844,14 +881,27 @@ module StudyAPI =
                         if API.OntologyAnnotation.existsByName design.Name.Value designs then
                             API.OntologyAnnotation.updateByName updateOption design designs
                             |> API.Study.setDescriptors study
-                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                            |> API.Investigation.setStudies investigation
+
                         else
                             if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                            investigation
+                            if containsFlag "AddIfMissing" designArgs then
+                                if verbosity >= 1 then printfn "Registering design as AddIfMissing Flag was set" 
+                                API.OntologyAnnotation.add designs design
+                                |> API.Study.setDescriptors study
+                            else 
+                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register design with the update command if it is missing" 
+                                study
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
-                        investigation
+                        if containsFlag "AddIfMissing" designArgs then
+                            if verbosity >= 1 then printfn "Registering design as AddIfMissing Flag was set" 
+                            [design]
+                            |> API.Study.setDescriptors study
+                        else 
+                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register design with the update command if it is missing" 
+                            study
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                    |> API.Investigation.setStudies investigation
                 | None -> 
                     if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
@@ -1093,14 +1143,26 @@ module StudyAPI =
                         if API.Factor.existsByName name factors then
                             API.Factor.updateByName updateOption factor factors
                             |> API.Study.setFactors study
-                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                            |> API.Investigation.setStudies investigation
                         else
                             if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                            investigation
+                            if containsFlag "AddIfMissing" factorArgs then
+                                if verbosity >= 1 then printfn "Registering factor as AddIfMissing Flag was set" 
+                                API.Factor.add factors factor
+                                |> API.Study.setFactors study
+                            else 
+                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register factor with the update command if it is missing" 
+                                study
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
-                        investigation
+                        if containsFlag "AddIfMissing" factorArgs then
+                            if verbosity >= 1 then printfn "Registering factor as AddIfMissing Flag was set" 
+                            [factor]
+                            |> API.Study.setFactors study
+                        else 
+                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register factor with the update command if it is missing" 
+                            study
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                    |> API.Investigation.setStudies investigation
                 | None -> 
                     if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation
@@ -1353,14 +1415,27 @@ module StudyAPI =
                         if API.Protocol.existsByName name protocols then
                             API.Protocol.updateByName updateOption protocol protocols
                             |> API.Study.setProtocols study
-                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll  s studies
-                            |> API.Investigation.setStudies investigation
+
                         else
                             if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                            investigation
+                            if containsFlag "AddIfMissing" protocolArgs then
+                                if verbosity >= 1 then printfn "Registering protocol as AddIfMissing Flag was set" 
+                                API.Protocol.add protocols protocol
+                                |> API.Study.setProtocols study
+                            else 
+                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register protocol with the update command if it is missing" 
+                                study
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
-                        investigation
+                        if containsFlag "AddIfMissing" protocolArgs then
+                            if verbosity >= 1 then printfn "Registering protocol as AddIfMissing Flag was set" 
+                            [protocol]
+                            |> API.Study.setProtocols study
+                        else 
+                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register protocol with the update command if it is missing" 
+                            study
+                    |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                    |> API.Investigation.setStudies investigation
                 | None -> 
                     if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
                     investigation

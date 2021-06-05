@@ -156,10 +156,22 @@ module InvestigationAPI =
                     |> API.Investigation.setContacts investigation
                 else
                     if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
-                    investigation
+                    if containsFlag "AddIfMissing" personArgs then
+                        if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                        API.Person.add persons person
+                        |> API.Investigation.setContacts investigation
+                    else 
+                        if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                        investigation
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any persons"
-                investigation
+                if containsFlag "AddIfMissing" personArgs then
+                    if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                    [person]
+                    |> API.Investigation.setContacts investigation
+                else 
+                    if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                    investigation
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
@@ -362,10 +374,22 @@ module InvestigationAPI =
                     |> API.Investigation.setPublications investigation
                 else
                     if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
-                    investigation
+                    if containsFlag "AddIfMissing" publicationArgs then
+                        if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                        API.Publication.add publications publication
+                        |> API.Investigation.setPublications investigation
+                    else 
+                        if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                        investigation
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any publications"
-                investigation
+                if containsFlag "AddIfMissing" publicationArgs then
+                    if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                    [publication]
+                    |> API.Investigation.setPublications investigation
+                else 
+                    if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                    investigation
             |> Investigation.toFile investigationFilePath
         
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.

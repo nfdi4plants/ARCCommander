@@ -99,16 +99,28 @@ module AssayAPI =
                     if API.Assay.existsByFileName assayFileName assays then
                         API.Assay.updateByFileName updateOption assay assays
                         |> API.Study.setAssays study
-                        |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                        |> API.Investigation.setStudies investigation
                     else
                         if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
-                        investigation
+                        if containsFlag "AddIfMissing" assayArgs then
+                            if verbosity >= 1 then printfn "Registering assay as AddIfMissing Flag was set" 
+                            API.Assay.add assays assay
+                            |> API.Study.setAssays study
+                        else 
+                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register assay with the update command if it is missing" 
+                            study
                 | None -> 
                     if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
-                    investigation
+                    if containsFlag "AddIfMissing" assayArgs then
+                        if verbosity >= 1 then printfn "Registering assay as AddIfMissing Flag was set" 
+                        [assay]
+                        |> API.Study.setAssays study
+                    else 
+                        if verbosity >= 2 then printfn "AddIfMissing argument can be used to register assay with the update command if it is missing" 
+                        study
+                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                |> API.Investigation.setStudies investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier              
                 investigation
         | None -> 
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  

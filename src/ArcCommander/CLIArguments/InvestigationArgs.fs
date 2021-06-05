@@ -69,6 +69,8 @@ module InvestigationContacts =
         | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number:string
         | [<Unique>] RolesTermSourceREF of roles_term_source_ref:string
         | [<Unique>] ReplaceWithEmptyValues
+        | [<Unique>] AddIfMissing
+
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -86,6 +88,7 @@ module InvestigationContacts =
                 | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term."
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
                 | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the person. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing              _ -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing person metadata 
     type PersonEditArgs = 
@@ -153,6 +156,7 @@ module InvestigationPublications =
         | [<Unique>] StatusTermAccessionNumber of publication_status_term_accession_number:string
         | [<Unique>] StatusTermSourceREF of publication_status_term_source_ref:string
         | [<Unique>] ReplaceWithEmptyValues
+        | [<Unique>] AddIfMissing
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -165,6 +169,8 @@ module InvestigationPublications =
                 | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term."
                 | StatusTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one the Term Source Name declared in the in the Ontology Source Reference section."
                 | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the publication. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing              _ -> "If this flag is set, a new publication will be registered with the given parameters, if it did not previously exist"
+
 
     /// CLI arguments for interactively editing existing publication metadata 
     type PublicationEditArgs = 
