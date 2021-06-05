@@ -125,6 +125,11 @@ module InvestigationAPI =
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
+            let comments = 
+                match tryGetFieldValueByName "ORCID" personArgs with
+                | Some orcid -> [Comment.fromString "Investigation Person ORCID" orcid]
+                | None -> []
+
             let person = 
                 Contacts.fromString
                     lastName
@@ -138,7 +143,7 @@ module InvestigationAPI =
                     (getFieldValueByName  "Roles"                       personArgs)
                     (getFieldValueByName  "RolesTermAccessionNumber"    personArgs)
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
-                    []
+                    comments
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -205,6 +210,11 @@ module InvestigationAPI =
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
+            let comments = 
+                match tryGetFieldValueByName "ORCID" personArgs with
+                | Some orcid -> [Comment.fromString "Investigation Person ORCID" orcid]
+                | None -> []
+
             let person = 
                 Contacts.fromString
                     lastName
@@ -218,7 +228,7 @@ module InvestigationAPI =
                     (getFieldValueByName  "Roles"                       personArgs)
                     (getFieldValueByName  "RolesTermAccessionNumber"    personArgs)
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
-                    []
+                    comments
             
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             

@@ -64,6 +64,7 @@ module InvestigationContacts =
         | [<Unique>] Fax of fax_number:string
         | [<Unique>] Address of adress:string
         | [<Unique>] Affiliation of affiliation:string
+        | [<Unique>] ORCID of orcid:string
         | [<Unique>] Roles of roles:string
         | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number:string
         | [<Unique>] RolesTermSourceREF of roles_term_source_ref:string
@@ -80,6 +81,7 @@ module InvestigationContacts =
                 | Fax                       _ -> "The fax number of a person associated with the investigation."
                 | Address                   _ -> "The address of a person associated with the investigation."
                 | Affiliation               _ -> "The organization affiliation for a person associated with the investigation."
+                | ORCID                     _ -> "The ORCID ID of the person"
                 | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here need not correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
                 | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term."
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
@@ -108,6 +110,7 @@ module InvestigationContacts =
         | [<Unique>] Fax of fax_number:string
         | [<Unique>] Address of adress:string
         | [<Unique>] Affiliation of affiliation:string
+        | [<Unique>] ORCID of orcid:string
         | [<Unique>] Roles of roles:string
         | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number:string
         | [<Unique>] RolesTermSourceREF of roles_term_source_ref:string
@@ -123,6 +126,7 @@ module InvestigationContacts =
                 | Fax                       _ -> "The fax number of a person associated with the investigation."
                 | Address                   _ -> "The address of a person associated with the investigation."
                 | Affiliation               _ -> "The organization affiliation for a person associated with the investigation."
+                | ORCID                     _ -> "The ORCID ID of the person"
                 | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here need not correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
                 | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term."
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."

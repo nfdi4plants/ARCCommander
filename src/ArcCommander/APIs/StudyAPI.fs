@@ -271,6 +271,11 @@ module StudyAPI =
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
+            let comments = 
+                match tryGetFieldValueByName "ORCID" personArgs with
+                | Some orcid -> [Comment.fromString "Investigation Person ORCID" orcid]
+                | None -> []
+
             let person = 
                 Contacts.fromString
                     lastName
@@ -284,7 +289,7 @@ module StudyAPI =
                     (getFieldValueByName  "Roles"                       personArgs)
                     (getFieldValueByName  "RolesTermAccessionNumber"    personArgs)
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
-                    []
+                    comments
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -380,6 +385,11 @@ module StudyAPI =
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
+            let comments = 
+                match tryGetFieldValueByName "ORCID" personArgs with
+                | Some orcid -> [Comment.fromString "Investigation Person ORCID" orcid]
+                | None -> []
+
             let person = 
                 Contacts.fromString
                     lastName
@@ -393,7 +403,7 @@ module StudyAPI =
                     (getFieldValueByName  "Roles"                       personArgs)
                     (getFieldValueByName  "RolesTermAccessionNumber"    personArgs)
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
-                    []
+                    comments
             
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
@@ -413,7 +423,6 @@ module StudyAPI =
                         else
                             API.Person.add persons person                           
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
                         [person]
                     |> API.Study.setContacts study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
