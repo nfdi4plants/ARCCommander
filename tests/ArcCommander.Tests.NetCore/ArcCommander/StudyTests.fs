@@ -174,3 +174,78 @@ let testStudyProtocolLoad =
         )
     ]
     |> testSequenced
+
+
+[<Tests>]
+let testStudyContacts = 
+    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/studyContactTest"
+    let investigationFileName = "isa.investigation.xlsx"
+    let source = __SOURCE_DIRECTORY__
+    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+
+    let studyIdentifier = "BII-S-1"
+
+    let configuration = 
+        ArcConfiguration.create 
+            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+            (standardISAArgs)
+            Map.empty Map.empty Map.empty Map.empty
+
+    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
+    
+    let studyBeforeChangingIt = 
+        ISADotNet.XLSX.Investigation.fromFile investigationToCopy
+        |> API.Investigation.getStudies
+        |> Option.get
+        |> API.Study.tryGetByIdentifier studyIdentifier
+        |> Option.get
+
+    setupArc configuration
+    //Copy testInvestigation
+    System.IO.File.Copy(investigationToCopy,investigationFilePath,true)
+
+    testList "StudyContactTests" [
+        testCase "Update" (fun () -> 
+            let newAddress = "FunStreet"
+
+            let firstName = "Stephen"
+            let midInitials = "G"
+            let lastName = "Oliver"
+
+            let contactArgs = 
+                [
+                    StudyContacts.PersonUpdateArgs.StudyIdentifier studyIdentifier
+                    StudyContacts.PersonUpdateArgs.FirstName firstName;
+                    StudyContacts.PersonUpdateArgs.MidInitials midInitials;
+                    StudyContacts.PersonUpdateArgs.LastName lastName;
+                    StudyContacts.PersonUpdateArgs.Address newAddress;
+                ]
+
+            let personBeforeUpdating = 
+                studyBeforeChangingIt.Contacts.Value
+                |> API.Person.tryGetByFullName firstName midInitials lastName
+                |> Option.get
+            
+            processCommand configuration StudyAPI.Contacts.update contactArgs
+            
+            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+
+            let study = investigation.Studies |> Option.bind (API.Study.tryGetByIdentifier studyIdentifier)
+
+            Expect.isSome study "Study missing after updating person"
+            Expect.isSome study.Value.Contacts "Study Contacts missing after updating one person"
+
+            let person = API.Person.tryGetByFullName firstName midInitials lastName study.Value.Contacts.Value
+
+            Expect.isSome person "Person missing after updating person"
+
+            let adress = person.Value.Address
+
+            Expect.isSome adress "Adress missing after updating person"
+            Expect.equal adress.Value newAddress "Adress was not updated with new value"
+            Expect.equal person.Value {personBeforeUpdating with Address = Some newAddress} "Other values of person were changed even though only the Address should have been updated"
+
+        )
+
+    ]
+    |> testSequenced

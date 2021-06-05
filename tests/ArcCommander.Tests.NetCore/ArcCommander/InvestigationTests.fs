@@ -155,51 +155,63 @@ let testInvestigationUpdate =
         |> testSequenced
     ]
 
-//[<Tests>]
-//let testInvestigationContacts = 
-//    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationContactTest"
-//    let investigationFileName = "isa.investigation.xlsx"
-//    let source = __SOURCE_DIRECTORY__
-//    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+[<Tests>]
+let testInvestigationContacts = 
+    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationContactTest"
+    let investigationFileName = "isa.investigation.xlsx"
+    let source = __SOURCE_DIRECTORY__
+    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
 
-//    let configuration = 
-//        ArcConfiguration.create 
-//            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-//            (standardISAArgs)
-//            Map.empty Map.empty Map.empty Map.empty
+    let configuration = 
+        ArcConfiguration.create 
+            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+            (standardISAArgs)
+            Map.empty Map.empty Map.empty Map.empty
 
-//    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
+    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
     
-//    let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
-//    setupArc configuration
-//    //Copy testInvestigation
-//    System.IO.File.Copy(investigationToCopy,investigationFilePath)
+    let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
+    setupArc configuration
+    //Copy testInvestigation
+    System.IO.File.Copy(investigationToCopy,investigationFilePath)
 
-//    testList "InvestigationContactTests" [
-//        testCase "Update" (fun () -> 
-//            let newAdress = "FunStreet"
-//            let contactArgs = 
-//                [
-//                    InvestigationContacts.PersonUpdateArgs.FirstName "Oliver";
-//                    InvestigationContacts.PersonUpdateArgs.MidInitials "G";
-//                    InvestigationContacts.PersonUpdateArgs.LastName "Stephen";
-//                    InvestigationContacts.PersonUpdateArgs.Address "FunStreet";
-//                ]
+    testList "InvestigationContactTests" [
+        testCase "Update" (fun () -> 
+            let newAddress = "FunStreet"
 
+            let firstName = "Oliver"
+            let midInitials = "G"
+            let lastName = "Stephen"
 
+            let contactArgs = 
+                [
+                    InvestigationContacts.PersonUpdateArgs.FirstName firstName;
+                    InvestigationContacts.PersonUpdateArgs.MidInitials midInitials;
+                    InvestigationContacts.PersonUpdateArgs.LastName lastName;
+                    InvestigationContacts.PersonUpdateArgs.Address newAddress;
+                ]
+
+            let personBeforeUpdating = 
+                investigationBeforeChangingIt.Contacts.Value
+                |> API.Person.tryGetByFullName firstName midInitials lastName
+                |> Option.get
             
-//            processCommand configuration InvestigationAPI.Contacts.update contactArgs
+            processCommand configuration InvestigationAPI.Contacts.update contactArgs
             
-//            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
-//            // Updated with given value
-//            Expect.equal investigation.Title.Value newTitle "The value which should be updated was not updated"
-//            // Updated with given value
-//            Expect.equal investigation.Description investigationBeforeChangingIt.Description "No update value was given for description and the \"ReplaceWithEmptyValues\" flag was not given but the description was still changed"
-//            // Updated with given value
-//            Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
-//            // Updated with given value
-//            Expect.sequenceEqual  investigation.Comments.Value investigationBeforeChangingIt.Comments.Value "Comments should not have been affected by update function"      
-//        )
+            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+            Expect.isSome investigation.Contacts "Investigation Contacts missing after updating one person"
 
-//    ]
-//    |> testSequenced
+            let person = API.Person.tryGetByFullName firstName midInitials lastName investigation.Contacts.Value
+
+            Expect.isSome person "Person missing after updating person"
+
+            let adress = person.Value.Address
+
+            Expect.isSome adress "Adress missing after updating person"
+            Expect.equal adress.Value newAddress "Adress was not updated with new value"
+            Expect.equal person.Value {personBeforeUpdating with Address = Some newAddress} "Other values of person were changed even though only the Address should have been updated"
+
+        )
+
+    ]
+    |> testSequenced
