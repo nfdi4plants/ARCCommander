@@ -1,0 +1,29 @@
+[general]
+rootfolder=.arc
+editor=nano
+verbosity=1
+gitlfsbytethreshold=150000000
+forceeditor=false
+
+[isamodel]
+investigationfilename=isa.investigation.xlsx
+studiesfilename=isa.studies.xlsx
+# assay location=folder.assay.rootfolder
+assayfilename=assay.isa.xlsx
+
+[assay]
+rootfolder=assays 
+# rootfolder.<assayIdentifier>.folder
+folders=dataset;protocols
+files=README.md
+
+[workflow]
+rootfolder=workflows
+dockerfile=Dockerfile
+
+[external]
+rootfolder=externals
+externalsfile=isa.tab
+
+[run]
+rootfolder=runs
