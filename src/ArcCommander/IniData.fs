@@ -23,7 +23,38 @@ module IniData =
 
     /// Returns the path at which the global iniData file is located
     let getGlobalConfigPath () =
-        Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
+        let getFolderPath specialFolder inOwnFolder = 
+            System.Environment.GetFolderPath specialFolder
+            |> fun x -> 
+                if inOwnFolder then 
+                    Path.Combine(x,"ArcCommander","config") 
+                else 
+                    Path.Combine(x,"config")
+        let inConfigFolder  = getFolderPath System.Environment.SpecialFolder.ApplicationData        true
+        let inConfigFolder2 = getFolderPath System.Environment.SpecialFolder.ApplicationData        false
+        let inCache         = getFolderPath System.Environment.SpecialFolder.InternetCache          false
+        let inCache2        = getFolderPath System.Environment.SpecialFolder.InternetCache          true
+        let inDesktop       = getFolderPath System.Environment.SpecialFolder.DesktopDirectory       false
+        let inDesktop2      = getFolderPath System.Environment.SpecialFolder.DesktopDirectory       true
+        let inLocal         = getFolderPath System.Environment.SpecialFolder.LocalApplicationData   true
+        let inLocal2        = getFolderPath System.Environment.SpecialFolder.LocalApplicationData   false
+        let inUser          = getFolderPath System.Environment.SpecialFolder.UserProfile            true
+        let inUser2         = getFolderPath System.Environment.SpecialFolder.UserProfile            false
+        match System.IO.File.Exists with
+        | x when x inConfigFolder   -> inConfigFolder
+        | x when x inConfigFolder2  -> inConfigFolder2
+        | x when x inUser           -> inUser
+        | x when x inUser2          -> inUser2
+        | x when x inLocal          -> inLocal
+        | x when x inLocal2         -> inLocal2
+        | x when x inCache          -> inCache
+        | x when x inDesktop        -> inDesktop
+        | x when x inDesktop2       -> inDesktop2
+        | x when x inCache2         -> inCache2
+        | _ -> failwith "No global config file found.\nPlease add the specific config file for your OS to your config folder."
+        //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
+        //Path.Combine(System.Environment.SpecialFolder.ApplicationData |> System.Environment.GetFolderPath, "arcCommanderConfig")
+        //System.Environment.SpecialFolder.UserProfile |> System.Environment.GetFolderPath
 
     /// Returns the path at which the local iniData file for this specific path is located
     let getLocalConfigPath workDir =

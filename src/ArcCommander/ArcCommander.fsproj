@@ -21,7 +21,8 @@
     <AssemblyName>arc</AssemblyName>
   </PropertyGroup>   
   <ItemGroup>
-    <None Include="config" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
