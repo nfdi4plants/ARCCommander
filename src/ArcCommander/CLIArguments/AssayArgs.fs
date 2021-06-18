@@ -25,6 +25,7 @@ type AssayUpdateArgs =
     | [<Unique>] TechnologyTypeTermSourceREF of technology_type_term_source:string
     | [<Unique>] TechnologyPlatform of technology_platform:string
     | [<Unique>] ReplaceWithEmptyValues
+    | [<Unique>] AddIfMissing
     
     interface IArgParserTemplate with
         member this.Usage =
@@ -39,6 +40,7 @@ type AssayUpdateArgs =
             | TechnologyTypeTermSourceREF _         -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
             | TechnologyPlatform _                  -> "Manufacturer and platform name, e.g. Bruker AVANCE"
             | ReplaceWithEmptyValues _              -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
+            | AddIfMissing _                        -> "If this flag is set, a new assay will be registered with the given parameters, if it did not previously exist"
 
 /// CLI arguments for interactively editing existing assay metadata 
 type AssayEditArgs = 
