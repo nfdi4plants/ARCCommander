@@ -216,7 +216,9 @@ module ArgumentProcessing =
         let createQuery editorPath arcPath serializeF deserializeF inp =
             let yamlString = serializeF inp
             let hash = MD5Hash yamlString
-            let filePath = sprintf "%s/.arc/%s.yml" arcPath hash
+            let filename = sprintf "%s.yml" hash
+            let filePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(),filename)
+
     
             writeForce filePath yamlString
             try
