@@ -42,22 +42,22 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
 
 ### MacOS
 
-1. Open a Terminal (Applications -> Utilities -> Terminal)
-2. Change to the directory where you downloaded the ArcCommander, e.g. `cd ~/Downloads/`
-3. Change permissions to make the ArcCommander executable: `chmod a+x arc`
-4. Move the ArcCommander to a place you like, e.g. `mv arc ~/Applications/`
-5. Add that place to your bash_profile to make it executable via terminal from everywhere, e.g. `echo 'export PATH="$HOME/Applications/:$PATH"' >> ~/.bash_profile`
-6. Start a new terminal for this to take effect.
-7. Run arcCommander from the terminal by executing `arc`
-
-_MacOS security note:_  
-On first execution, MacOS will not allow arc to be run. Instead it opens a pop-up: 
+1. Download the latest release from https://github.com/nfdi4plants/arcCommander/releases
+2. Open a Terminal (Applications -> Utilities -> Terminal)
+3. Change to directory where you downloaded the arc e.g. `cd ~/Downloads/`
+4. Change permissions to make arcCommander executable: `chmod a+x arc`
+5. Move arc to a place you like e.g. `mv arc ~/Applications/`
+6. Add that place to your bash_profile to make it executable via terminal from everywhere e.g. `echo 'export PATH="$HOME/Applications/:$PATH"' >> ~/.bash_profile`
+7. Move config file to config folder `mkdir ~/.config/arccommander/; mv config ~/.config/arccommander/config`
+8. Quit and start a fresh terminal for this to take effect.
+9. Run arcCommander from the terminal by executing `arc`
+10. MacOS security note: On first execution, MacOS will not allow arc to be run. Instead it opens a pop-up: 
 > "arc" cannot be opened because it is from an unidentified developer
-
-Open the Security Panel in system Preferences (Applications -> System Preferences -> "Security & Privacy") and click the bottom-right button "Allow Anyway" right next to 
+11. Open the Security Panel in system Preferences via terminal  
+  `open "x-apple.systempreferences:com.apple.preference.security"` or Applications -> System Preferences -> "Security & Privacy" and click the bottom-right button "Allow Anyway" right next to 
 > arc was blocked from use because it is not from an identified developer. 
-
-Head back to the terminal and execute `arc` again. Another pop-up will ask you to confirm by clicking "Open". 
+12. Head back to the terminal and execute `arc` again. Another pop-up will ask you to confirm by clicking "Open". 
+  
 
 ---
 
