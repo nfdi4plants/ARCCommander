@@ -162,7 +162,7 @@ module IsaModelConfiguration =
     /// Returns the name of the studies file
     let tryGetStudiesFileName identifier (configuration:ArcConfiguration) =
         //Map.tryFind "studiesfilename" configuration.IsaModel
-        sprintf "%s.study.xlsx" identifier
+        sprintf "%s_isa.study.xlsx" identifier
         |> Some
 
     /// Returns the name of the studies file

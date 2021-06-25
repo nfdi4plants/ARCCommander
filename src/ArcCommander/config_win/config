@@ -9,7 +9,7 @@ forceeditor=false
 investigationfilename=isa.investigation.xlsx
 studiesfilename=isa.studies.xlsx
 # assay location=folder.assay.rootfolder
-assayfilename=assay.isa.xlsx
+assayfilename=isa.assay.xlsx
 
 [assay]
 rootfolder=assays 
