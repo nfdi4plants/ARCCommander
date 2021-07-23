@@ -39,11 +39,11 @@ module GitAPI =
             executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
 
 
-    let update (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
+    let sync (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start git update"
+        if verbosity >= 1 then printfn "Start git sync"
 
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)

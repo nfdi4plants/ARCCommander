@@ -10,7 +10,7 @@ type GitInitArgs =
             | RepositoryAdress _    ->  "Github Adress"
 
 /// TO-DO: Argumente anpassen
-type GitUpdateArgs =
+type GitSyncArgs =
     | [<Unique>][<AltCommandLine("-r")>] RepositoryAdress of repository_adress:string
     | [<Unique>][<AltCommandLine("-m")>] CommitMessage of commit_message:string
 
@@ -19,3 +19,13 @@ type GitUpdateArgs =
             match this with
             | RepositoryAdress _    ->  "Github Adress"
             | CommitMessage _       ->  "Commit Message"
+
+type GitDiffArgs =
+    | [<Unique>][<AltCommandLine("-d")>] Diff
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Diff _                -> "Shows the differences between this arc's files locally and one the respective server."
+
+and GitDiff
