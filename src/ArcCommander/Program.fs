@@ -197,7 +197,7 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
 let handleGitSubCommands arcConfiguration gitVerb =
     match gitVerb with
     | GitCommand.Init       r -> processCommand arcConfiguration GitAPI.init    r
-    | GitCommand.Update     r -> processCommand arcConfiguration GitAPI.update  r
+    | GitCommand.Sync       r -> processCommand arcConfiguration GitAPI.sync    r
 
 let handleCommand arcConfiguration command =
     match command with
@@ -216,7 +216,7 @@ let handleCommand arcConfiguration command =
 [<EntryPoint>]
 let main argv =
     try
-        let parser = ArgumentParser.Create<ArcCommand>()
+        let parser = ArgumentParser.Create<ArcCommand>(programName = "arc")
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
 
         let workingDir =
