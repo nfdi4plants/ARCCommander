@@ -164,8 +164,6 @@ module PackageTasks =
     open BasicTasks
     open TestTasks
 
-    let blabl x = x
-
     let pack = BuildTask.create "Pack" [clean; build; runTests; copyBinaries] {
         if promptYesNo (sprintf "creating stable package with version %s OK?" stableVersionTag ) 
             then
@@ -215,7 +213,6 @@ module PackageTasks =
     }
 
     let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
-        let outputPath = sprintf "%s/win-x64" publishDir
         solutionFile
         |> DotNet.publish (fun p ->
             let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
@@ -237,7 +234,6 @@ module PackageTasks =
     }
 
     let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
-        let outputPath = sprintf "%s/linux-x64" publishDir
         solutionFile
         |> DotNet.publish (fun p ->
             let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
@@ -259,7 +255,6 @@ module PackageTasks =
     }
 
     let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
-        let outputPath = sprintf "%s/osx-x64" publishDir
         solutionFile
         |> DotNet.publish (fun p ->
             let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
@@ -267,7 +262,7 @@ module PackageTasks =
                 p with
                     Runtime = Some "osx-x64"
                     Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some outputPath
+                    OutputPath = Some (sprintf "%s/osx-x64" publishDir)
                     MSBuildParams = {
                         standardParams with
                             Properties = [
