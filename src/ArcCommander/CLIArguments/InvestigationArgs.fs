@@ -17,10 +17,10 @@ type InvestigationCreateArgs =
         member this.Usage =
             match this with
             | Identifier        _-> "A identifier or an accession number provided by a repository. This SHOULD be locally unique."
-            | Title             _-> "A concise name given to the investigation."
-            | Description       _-> "A textual description of the investigation."
-            | SubmissionDate    _-> "The date on which the investigation was reported to the repository."
-            | PublicReleaseDate _-> "The date on which the investigation was released publicly."
+            | Title             _-> "A concise name given to the investigation"
+            | Description       _-> "A textual description of the investigation"
+            | SubmissionDate    _-> "The date on which the investigation was reported to the repository"
+            | PublicReleaseDate _-> "The date on which the investigation was released publicly"
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 
@@ -35,10 +35,10 @@ type InvestigationUpdateArgs =
         member this.Usage =
             match this with
             | Identifier                _ -> "A identifier or an accession number provided by a repository. This SHOULD be locally unique."
-            | Title                     _ -> "A concise name given to the investigation."
-            | Description               _ -> "A textual description of the investigation."
-            | SubmissionDate            _ -> "The date on which the investigation was reported to the repository."
-            | PublicReleaseDate         _ -> "The date on which the investigation was released publicly."
+            | Title                     _ -> "A concise name given to the investigation"
+            | Description               _ -> "A textual description of the investigation"
+            | SubmissionDate            _ -> "The date on which the investigation was reported to the repository"
+            | PublicReleaseDate         _ -> "The date on which the investigation was released publicly"
             | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the investigation. If this flag is not set, only these fields for which a value was given will be updated."
 
 
@@ -49,7 +49,7 @@ type InvestigationDeleteArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Identifier _-> "DangerZone: In order to delete this investigation file please provide its identifier here."
+            | Identifier _-> "DANGER ZONE: In order to delete this investigation file, please provide its identifier here"
 
 /// CLI arguments for Investigation Contacts
 module InvestigationContacts = 
@@ -75,17 +75,17 @@ module InvestigationContacts =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | LastName                  _ -> "The last name of a person associated with the investigation."
-                | FirstName                 _ -> "The first name of a person associated with the investigation."
-                | MidInitials               _ -> "The middle initials of a person associated with the investigation."
-                | Email                     _ -> "The email address of a person associated with the investigation."
-                | Phone                     _ -> "The telephone number of a person associated with the investigation."
-                | Fax                       _ -> "The fax number of a person associated with the investigation."
-                | Address                   _ -> "The address of a person associated with the investigation."
-                | Affiliation               _ -> "The organization affiliation for a person associated with the investigation."
+                | LastName                  _ -> "The last name of a person associated with the investigation"
+                | FirstName                 _ -> "The first name of a person associated with the investigation"
+                | MidInitials               _ -> "The middle initials of a person associated with the investigation"
+                | Email                     _ -> "The email address of a person associated with the investigation"
+                | Phone                     _ -> "The telephone number of a person associated with the investigation"
+                | Fax                       _ -> "The fax number of a person associated with the investigation"
+                | Address                   _ -> "The address of a person associated with the investigation"
+                | Affiliation               _ -> "The organization affiliation for a person associated with the investigation"
                 | ORCID                     _ -> "The ORCID ID of the person"
-                | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here need not correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
-                | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term."
+                | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here do not need to correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
+                | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term"
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
                 | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the person. If this flag is not set, only these fields for which a value was given will be updated."
                 | AddIfMissing              _ -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
@@ -99,9 +99,9 @@ module InvestigationContacts =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | LastName                  _ -> "The last name of a person associated with the investigation."
-                | FirstName                 _ -> "The first name of a person associated with the investigation."
-                | MidInitials               _ -> "The middle initials of a person associated with the investigation."
+                | LastName                  _ -> "The last name of a person associated with the investigation"
+                | FirstName                 _ -> "The first name of a person associated with the investigation"
+                | MidInitials               _ -> "The middle initials of a person associated with the investigation"
 
     /// CLI arguments for registering person metadata 
     type PersonRegisterArgs = 
@@ -121,17 +121,17 @@ module InvestigationContacts =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | LastName                  _ -> "The last name of a person associated with the investigation."
-                | FirstName                 _ -> "The first name of a person associated with the investigation."
-                | MidInitials               _ -> "The middle initials of a person associated with the investigation."
-                | Email                     _ -> "The email address of a person associated with the investigation."
-                | Phone                     _ -> "The telephone number of a person associated with the investigation."
-                | Fax                       _ -> "The fax number of a person associated with the investigation."
-                | Address                   _ -> "The address of a person associated with the investigation."
-                | Affiliation               _ -> "The organization affiliation for a person associated with the investigation."
+                | LastName                  _ -> "The last name of a person associated with the investigation"
+                | FirstName                 _ -> "The first name of a person associated with the investigation"
+                | MidInitials               _ -> "The middle initials of a person associated with the investigation"
+                | Email                     _ -> "The email address of a person associated with the investigation"
+                | Phone                     _ -> "The telephone number of a person associated with the investigation"
+                | Fax                       _ -> "The fax number of a person associated with the investigation"
+                | Address                   _ -> "The address of a person associated with the investigation"
+                | Affiliation               _ -> "The organization affiliation for a person associated with the investigation"
                 | ORCID                     _ -> "The ORCID ID of the person"
-                | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here need not correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
-                | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term."
+                | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here do not need to correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
+                | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term"
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
 
 
@@ -161,12 +161,12 @@ module InvestigationPublications =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | DOI                       _ -> "A Digital Object Identifier (DOI) for that publication (where available)."
-                | PubMedID                  _ -> "The PubMed IDs of the described publication(s) associated with this investigation."
-                | AuthorList                _ -> "The list of authors associated with that publication."
-                | Title                     _ -> "The title of publication associated with the investigation."
-                | Status                    _ -> "A term describing the status of that publication (i.e. submitted, in preparation, published)."
-                | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term."
+                | DOI                       _ -> "A Digital Object Identifier (DOI) for that publication (where available)"
+                | PubMedID                  _ -> "The PubMed IDs of the described publication(s) associated with this investigation"
+                | AuthorList                _ -> "The list of authors associated with that publication"
+                | Title                     _ -> "The title of publication associated with the investigation"
+                | Status                    _ -> "A term describing the status of that publication (i.e. submitted, in preparation, published)"
+                | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term"
                 | StatusTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one the Term Source Name declared in the in the Ontology Source Reference section."
                 | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the publication. If this flag is not set, only these fields for which a value was given will be updated."
                 | AddIfMissing              _ -> "If this flag is set, a new publication will be registered with the given parameters, if it did not previously exist"
@@ -179,7 +179,7 @@ module InvestigationPublications =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | DOI _ -> "A Digital Object Identifier (DOI) for that publication (where available)."
+                | DOI _ -> "A Digital Object Identifier (DOI) for that publication (where available)"
 
     /// CLI arguments for registering publication metadata 
     type PublicationRegisterArgs = 
@@ -194,13 +194,13 @@ module InvestigationPublications =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | DOI                       _ -> "A Digital Object Identifier (DOI) for that publication (where available)."
-                | PubMedID                  _ -> "The PubMed IDs of the described publication(s) associated with this investigation."
-                | AuthorList                _ -> "The list of authors associated with that publication."
-                | Title                     _ -> "The title of publication associated with the investigation."
-                | Status                    _ -> "A term describing the status of that publication (i.e. submitted, in preparation, published)."
-                | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term."
-                | StatusTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one the Term Source Name declared in the in the Ontology Source Reference section."
+                | DOI                       _ -> "A Digital Object Identifier (DOI) for that publication (where available)"
+                | PubMedID                  _ -> "The PubMed IDs of the described publication(s) associated with this investigation"
+                | AuthorList                _ -> "The list of authors associated with that publication"
+                | Title                     _ -> "The title of publication associated with the investigation"
+                | Status                    _ -> "A term describing the status of that publication (i.e. submitted, in preparation, published)"
+                | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term"
+                | StatusTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the in the Ontology Source Reference section."
 
 
     /// CLI arguments for publication removal

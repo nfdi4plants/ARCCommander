@@ -24,8 +24,8 @@ type AssayCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Init              _ -> "Initialize a new empty assay and associated folder structure in the arc."
-            | Register          _ -> "Register an existing assay in the arc with the given assay metadata."
+            | Init              _ -> "Initialize a new empty assay and associated folder structure in the ARC"
+            | Register          _ -> "Register an existing assay in the arc with the given assay metadata"
             | Add               _ -> "Create a new assay file and associated folder structure in the arc and subsequently register it with the given assay metadata"
             
             | Delete            _ -> "Delete the given assays folder and its underlying file structure"
@@ -37,4 +37,4 @@ type AssayCommand =
             | Move              _ -> "Move an assay from one study to another"
 
             | Get               _ -> "Gets the values of an existing assay"
-            | List              _ -> "List all assays registered in the arc"
+            | List              _ -> "List all assays registered in the ARC"

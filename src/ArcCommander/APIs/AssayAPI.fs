@@ -243,14 +243,14 @@ module AssayAPI =
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                 
             | None ->
-                if verbosity >= 1 then printfn "Study with the identifier %s does not yet exist, creating it now" studyIdentifier
+                if verbosity >= 1 then printfn "Study with the identifier %s does not exist yet, creating it now" studyIdentifier
                 if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                     StudyAPI.StudyFile.create arcConfiguration studyIdentifier
                 let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
-            if verbosity >= 1 then printfn "Study with the identifier %s does not yet exist, creating it now" studyIdentifier
+            if verbosity >= 1 then printfn "Study with the identifier %s does not exist yet, creating it now" studyIdentifier
             if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                 StudyAPI.StudyFile.create arcConfiguration studyIdentifier
             let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
