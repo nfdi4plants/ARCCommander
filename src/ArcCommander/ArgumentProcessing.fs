@@ -284,7 +284,7 @@ module ArgumentProcessing =
             let serializeF = serializeXSLXWriterOutput writeF >> sprintf "%s\n\n%s" header
 
             let deserializeF (s:string) : 'A =
-                s.Split '\n'
+                s.Replace(sprintf "%s\n\n" header, "").Split '\n'
                 |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
                     | k, Field v ->
