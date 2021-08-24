@@ -25,7 +25,7 @@ module GitAPI =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start git init"
+        if verbosity >= 1 then printfn "Start Git Init"
 
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
@@ -43,7 +43,7 @@ module GitAPI =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start git update"
+        if verbosity >= 1 then printfn "Start Git Update"
 
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)

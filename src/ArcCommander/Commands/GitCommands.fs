@@ -12,5 +12,5 @@ type GitCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Init      _ -> "Set up git locally for this arc"
-            | Update    _ -> "Commits changes made in the arc. If a remote is set or is given, also pulls from there and pushes all previously made commits."
+            | Init      _ -> "Set up git locally for this ARC"
+            | Update    _ -> "Commits changes made in the ARC. If a remote is set or is given, also pulls from there and pushes all previously made commits."

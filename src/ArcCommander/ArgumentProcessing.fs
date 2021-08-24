@@ -284,12 +284,12 @@ module ArgumentProcessing =
             let serializeF = serializeXSLXWriterOutput writeF >> sprintf "%s\n\n%s" header
 
             let deserializeF (s:string) : 'A =
-                s.Split '\n'
+                s.Replace(sprintf "%s\n\n" header, "").Split '\n'
                 |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
                     | k, Field v ->
                         FSharpSpreadsheetML.Row.ofValues None 1u [k;v]
-                    | _ -> failwith "Error: file was corrupted in Edtior"
+                    | _ -> failwith "ERROR: File was corrupted in Editor"
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 
             createQuery editorPath arcPath serializeF deserializeF isaItem
@@ -307,7 +307,7 @@ module ArgumentProcessing =
                 |> Array.map (fun x ->      
                     match splitAtFirst '=' x with
                     | k, Field v -> k,v
-                    | _ -> failwith "Error: file was corrupted in Edtior"
+                    | _ -> failwith "ERROR: File was corrupted in Editor"
                 )              
                 |> IniData.fromNameValuePairs
             createQuery editorPath arcPath serializeF deserializeF iniData 

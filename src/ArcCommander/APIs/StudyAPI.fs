@@ -614,7 +614,7 @@ module StudyAPI =
                             API.Publication.updateByDOI updateOption publication publications
                             |> API.Study.setPublications study
                         else
-                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
                             if containsFlag "AddIfMissing" publicationArgs then
                                 if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
                                 API.Publication.add publications publication
@@ -646,7 +646,7 @@ module StudyAPI =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
-            if verbosity >= 1 then printfn "Start Publication edit"
+            if verbosity >= 1 then printfn "Start Publication Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -678,7 +678,7 @@ module StudyAPI =
                             |> API.Investigation.setStudies investigation
 
                         | None ->
-                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
                             investigation
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
@@ -725,7 +725,7 @@ module StudyAPI =
                     match study.Publications with
                     | Some publications -> 
                         if API.Publication.existsByDoi doi publications then           
-                            if verbosity >= 1 then printfn "Publication with the doi %s already exists in the study with the identifier %s" doi studyIdentifier
+                            if verbosity >= 1 then printfn "Publication with the DOI %s already exists in the study with the identifier %s" doi studyIdentifier
                             publications
                         else
                             API.Publication.add publications publication                           
@@ -769,7 +769,7 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
                             investigation               
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
@@ -809,7 +809,7 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (Publications.writePublications None)
                             |> printfn "%s"
                         | None -> 
-                            if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
                 | None -> 
@@ -1074,7 +1074,7 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.writeDesigns None)
                             |> printfn "%s"
                         | None -> 
-                            if verbosity >= 1 then printfn "Design with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                            if verbosity >= 1 then printfn "Design with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
                 | None -> 
@@ -1114,7 +1114,7 @@ module StudyAPI =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
-            if verbosity >= 1 then printfn "Start Factor update"
+            if verbosity >= 1 then printfn "Start Factor Update"
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" factorArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -1334,7 +1334,7 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (Factors.writeFactors None)
                             |> printfn "%s"
                         | None -> 
-                            if verbosity >= 1 then printfn "Factor with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                            if verbosity >= 1 then printfn "Factor with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
                 | None -> 
@@ -1608,7 +1608,7 @@ module StudyAPI =
                     Json.Protocol.fromFile path |> Some
                 |> Option.map (fun p -> 
                     if p.Name.IsNone then
-                        if verbosity >= 1 then printfn "Given protocol does not contain name, please add it in the editor" 
+                        if verbosity >= 1 then printfn "Given protocol does not contain a name, please add it in the editor" 
                         ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
                             (List.singleton >> Protocols.writeProtocols None) 
                             (Protocols.readProtocols None 1 >> fun (_,_,_,items) -> items.Head) 
@@ -1686,7 +1686,7 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (Protocols.writeProtocols None)
                             |> printfn "%s"
                         | None -> 
-                            if verbosity >= 1 then printfn "Protocol with the doi %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                            if verbosity >= 1 then printfn "Protocol with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
                     | None -> 
                         if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
                 | None -> 
