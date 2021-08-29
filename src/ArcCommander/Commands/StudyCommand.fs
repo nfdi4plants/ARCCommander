@@ -35,16 +35,16 @@ type StudyCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Init          _ -> "Initialize a new empty study file in the arc"
-            | Register      _ -> "Register an existing study in the arc with the given assay metadata."
-            | Add           _ -> "Create a new study file in the arc and subsequently register it with the given study metadata"
-            | Delete        _ -> "Delete a study from the arc file structure"
-            | Unregister    _ -> "Unregister a study from the arc investigation file"
-            | Remove        _ -> "Remove a study from the arc"
-            | Update        _ -> "Update an existing study in the arc with the given study metadata"
-            | Edit          _ -> "Open and edit an existing study in the arc with a text editor. Arguments passed for this command will be pre-set in the editor."
+            | Init          _ -> "Initialize a new empty study file in the ARC"
+            | Register      _ -> "Register an existing study in the ARC with the given assay metadata"
+            | Add           _ -> "Create a new study file in the ARC and subsequently register it with the given study metadata"
+            | Delete        _ -> "Delete a study from the ARC file structure"
+            | Unregister    _ -> "Unregister a study from the ARC investigation file"
+            | Remove        _ -> "Remove a study from the ARC"
+            | Update        _ -> "Update an existing study in the ARC with the given study metadata"
+            | Edit          _ -> "Open and edit an existing study in the ARC with a text editor. Arguments passed for this command will be pre-set in the editor."
             | Get           _ -> "Get the values of a study"
-            | List          _ -> "List all studies registered in the arc"
+            | List          _ -> "List all studies registered in the ARC"
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
             | Design        _ -> "Design functions"
@@ -63,12 +63,12 @@ and StudyPersonCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Update            _ -> "Update an existing person in the arc investigation study with the given person metadata. The person is identified by the full name (first name, last name, mid initials)"
-            | Edit              _ -> "Open and edit an existing person in the arc investigation study with a text editor. The person is identified by the full name (first name, last name, mid initials)"
-            | Register          _ -> "Register a person in the arc investigation study with the given assay metadata."
+            | Update            _ -> "Update an existing person in the ARC investigation study with the given person metadata. The person is identified by the full name (first name, last name, mid initials)."
+            | Edit              _ -> "Open and edit an existing person in the arc investigation study with a text editor. The person is identified by the full name (first name, last name, mid initials)."
+            | Register          _ -> "Register a person in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation study. The person is identified by the full name (first name, last name, mid initials)."
             | Get               _ -> "Get the metadata of a person registered in the arc investigation study"
-            | List              _ -> "List all persons registered in the arc investigation"
+            | List              _ -> "List all persons registered in the ARC investigation"
 
 and StudyPublicationCommand =
 
@@ -82,12 +82,12 @@ and StudyPublicationCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Update            _ -> "Update an existing publication in the arc investigation study with the given publication metadata. The publication is identified by the doi"
-            | Edit              _ -> "Open and edit an existing publication in the arc investigation study with a text editor. The publication is identified by the doi"
-            | Register          _ -> "Register a publication in the arc investigation study with the given assay metadata."
-            | Unregister        _ -> "Unregister a publication from the given investigation study. The publication is identified by the doi"
-            | Get               _ -> "Get the metadata of a publication registered in the arc investigation study"
-            | List              _ -> "List all publication registered in the arc investigation study"
+            | Update            _ -> "Update an existing publication in the ARC investigation study with the given publication metadata. The publication is identified by the DOI."
+            | Edit              _ -> "Open and edit an existing publication in the ARC investigation study with a text editor. The publication is identified by the DOI."
+            | Register          _ -> "Register a publication in the ARC investigation study with the given assay metadata"
+            | Unregister        _ -> "Unregister a publication from the given investigation study. The publication is identified by the DOI."
+            | Get               _ -> "Get the metadata of a publication registered in the ARC investigation study"
+            | List              _ -> "List all publication registered in the ARC investigation study"
 
 and StudyDesignCommand =
 
@@ -101,12 +101,12 @@ and StudyDesignCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Update            _ -> "Update an existing design in the arc investigation study with the given design metadata. The design is identified by the design type"
-            | Edit              _ -> "Open and edit an existing design in the arc investigation study with a text editor. The design is identified by the design type"
-            | Register          _ -> "Register a design in the arc investigation study with the given assay metadata."
-            | Unregister        _ -> "Unregister a design from the given investigation study. The design is identified by the design type"
-            | Get               _ -> "Get the metadata of a design registered in the arc investigation study"
-            | List              _ -> "List all designs registered in the arc investigation study"
+            | Update            _ -> "Update an existing design in the ARC investigation study with the given design metadata. The design is identified by the design type."
+            | Edit              _ -> "Open and edit an existing design in the ARC investigation study with a text editor. The design is identified by the design type."
+            | Register          _ -> "Register a design in the ARC investigation study with the given assay metadata"
+            | Unregister        _ -> "Unregister a design from the given investigation study. The design is identified by the design type."
+            | Get               _ -> "Get the metadata of a design registered in the ARC investigation study"
+            | List              _ -> "List all designs registered in the ARC investigation study"
 
 and StudyFactorCommand =
 
@@ -120,12 +120,12 @@ and StudyFactorCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Update            _ -> "Update an existing factor in the arc investigation study with the given factor metadata. The factor is identified by name"
-            | Edit              _ -> "Open and edit an existing factor in the arc investigation study with a text editor. The factor is identified by name"
-            | Register          _ -> "Register a factor in the arc investigation study with the given assay metadata."
-            | Unregister        _ -> "Unregister a factor from the given investigation study. The factor is identified by name"
-            | Get               _ -> "Get the metadata of a factor registered in the arc investigation study"
-            | List              _ -> "List all factor registered in the arc investigation study"
+            | Update            _ -> "Update an existing factor in the ARC investigation study with the given factor metadata. The factor is identified by name."
+            | Edit              _ -> "Open and edit an existing factor in the ARC investigation study with a text editor. The factor is identified by name."
+            | Register          _ -> "Register a factor in the ARC investigation study with the given assay metadata"
+            | Unregister        _ -> "Unregister a factor from the given investigation study. The factor is identified by name."
+            | Get               _ -> "Get the metadata of a factor registered in the ARC investigation study"
+            | List              _ -> "List all factor registered in the ARC investigation study"
 
 and StudyProtocolCommand =
 
@@ -140,10 +140,10 @@ and StudyProtocolCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Update            _ -> "Update an existing protocol in the arc investigation study with the given protocol metadata. The protocol is identified by name"
-            | Edit              _ -> "Open and edit an existing protocol in the arc investigation study with a text editor. The protocol is identified by name"
-            | Register          _ -> "Register a protocol in the arc investigation study with the given assay metadata."
-            | Unregister        _ -> "Unregister a protocol from the given investigation study. The protocol is identified by name"
-            | Load              _ -> "Load a protocol from an ISA json file and add it to the study"
+            | Update            _ -> "Update an existing protocol in the ARC investigation study with the given protocol metadata. The protocol is identified by name."
+            | Edit              _ -> "Open and edit an existing protocol in the ARC investigation study with a text editor. The protocol is identified by name."
+            | Register          _ -> "Register a protocol in the ARC investigation study with the given assay metadata"
+            | Unregister        _ -> "Unregister a protocol from the given investigation study. The protocol is identified by name."
+            | Load              _ -> "Load a protocol from an ISA JSON file and add it to the study"
             | Get               _ -> "Get the metadata of a protocol registered in the arc investigation study"
-            | List              _ -> "List all protocol registered in the arc investigation study"
+            | List              _ -> "List all protocol registered in the ARC investigation study"

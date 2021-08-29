@@ -25,7 +25,7 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
             let stillMissingMandatoryArgs,arguments =
                 Prompt.createMissingArgumentQuery editor workDir annotatedArguments
             if stillMissingMandatoryArgs then
-                failwith "Mandatory arguments were not given either via cli or editor prompt."
+                failwith "Mandatory arguments were not given either via cli or editor prompt"
             arguments
 
         elif forceEditor then
@@ -58,7 +58,7 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
     if verbosity >= 1 then
 
-        printf "start processing parameterless command"
+        printf "Start processing parameterless command"
 
     if verbosity >= 2 then
         printfn "with the config"
@@ -70,7 +70,7 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
     try commandF arcConfiguration
     finally
-        if verbosity >= 1 then printfn "done processing command"
+        if verbosity >= 1 then printfn "Done processing command"
 
 let handleStudyContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with

@@ -19,8 +19,8 @@ type ArcCommand =
         member this.Usage =
             match this with
             | WorkingDir    _   -> "Set the base directory of your ARC"
-            | Verbosity     _   -> "Sets the amount of additional printed information: 0->No information, 1 (Default) -> Basic Information, 2 -> Additional information"
-            | Init          _   -> "Initializes basic folder structure"
+            | Verbosity     _   -> "Set the amount of additional printed information: 0 -> No information, 1 (Default) -> Basic Information, 2 -> Additional information"
+            | Init          _   -> "Initialize basic folder structure"
             | Synchronize   _   -> "Synchronize ISA and and other items"
             | Investigation _   -> "Investigation file functions"
             | Study         _   -> "Study functions"

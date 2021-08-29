@@ -346,7 +346,7 @@ module InvestigationAPI =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
-            if verbosity >= 1 then printfn "Start Publication update"
+            if verbosity >= 1 then printfn "Start Publication Update"
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -373,7 +373,7 @@ module InvestigationAPI =
                     API.Publication.updateByDOI updateOption publication publications
                     |> API.Investigation.setPublications investigation
                 else
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
                     if containsFlag "AddIfMissing" publicationArgs then
                         if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
                         API.Publication.add publications publication
@@ -420,7 +420,7 @@ module InvestigationAPI =
                     |> API.Investigation.setPublications investigation
 
                 | None ->
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
                     investigation
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any publications"
@@ -455,7 +455,7 @@ module InvestigationAPI =
             match investigation.Publications with
             | Some publications ->
                 if API.Publication.existsByDoi doi publications then           
-                    if verbosity >= 1 then printfn "Publication with the doi %s already exists in the investigation" doi
+                    if verbosity >= 1 then printfn "Publication with the DOI %s already exists in the investigation" doi
                     publications
                 else
                     API.Publication.add publications publication
@@ -482,7 +482,7 @@ module InvestigationAPI =
                     API.Publication.removeByDoi doi publications
                     |> API.Investigation.setPublications investigation
                 else
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
                     investigation
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any publications"
@@ -511,7 +511,7 @@ module InvestigationAPI =
                     |> printfn "%s"
 
                 | None -> 
-                    if verbosity >= 1 then printfn "Publication with the doi %s does not exist in the investigation" doi
+                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any publications"
 

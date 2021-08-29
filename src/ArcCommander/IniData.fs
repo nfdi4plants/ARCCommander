@@ -16,7 +16,7 @@ module IniData =
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
-            failwithf "name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name
+            failwithf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name
 
     let splitValues (value:string) =
         value.Split(';')
@@ -138,7 +138,7 @@ module IniData =
             |> Option.bind (tryGetValue key)
         with 
         | err -> 
-            printfn "Error: Could not retrieve value with given name\n %s" err.Message
+            printfn "ERROR: Could not retrieve value with given name\n %s" err.Message
             None
 
     /// Returns true if the name (section+key) is set in the iniData
@@ -159,7 +159,7 @@ module IniData =
             iniData.[section].[key] <- value
             Some iniData
         else
-            printfn "name %s does not exist in the config" name
+            printfn "Name %s does not exist in the config" name
             None
 
     /// If the name is already set in the config, assigns a new value to it
@@ -179,7 +179,7 @@ module IniData =
             iniData.[section].RemoveKey key |> ignore
             Some iniData
         else
-            printfn "name %s does not exist in the config" name
+            printfn "Name %s does not exist in the config" name
             None
 
     /// If the name is set in the config, remove it
@@ -195,7 +195,7 @@ module IniData =
     /// The name is given as string in form "section.key"
     let tryAddValue (name:string) (value:string) (iniData:IniData) =
         if nameExists (name:string) (iniData:IniData) then
-            printfn "name %s already exists in the config" name
+            printfn "Name %s already exists in the config" name
             Some iniData
         else
             let section,key = splitName name 
