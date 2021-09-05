@@ -55,9 +55,10 @@
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
     <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
-    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.4" />
+    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.5" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     <PackageReference Include="ISADotNet" Version="0.2.6" />
     <PackageReference Include="ISADotNet.XLSX" Version="0.2.6" />
+    <PackageReference Include="Spectre.Console" Version="0.41.1-preview.0.12" />
   </ItemGroup>
 </Project>
