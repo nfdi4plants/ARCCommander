@@ -136,3 +136,5 @@ module GitAPI =
             if verbosity >= 2 then printfn "Push"            
             executeGitCommand verbosity repoDir ("push -u origin main") |> ignore
 
+    //let diff (arcConfiguration : ArcConfiguration) =
+    //    Fake.Tools.Git.
