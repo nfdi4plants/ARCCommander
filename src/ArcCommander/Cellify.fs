@@ -2,7 +2,38 @@
 
 open FSharpSpreadsheetML
 open Spectre.Console
+open System.Collections.Generic
 
+type ChangeType =
+| Add
+| Del
+| Mod
+
+/// Takes two cells and compares if their values differentiates.
+let hasChange cell1 cell2 = cell1 <> cell2
+
+/// Takes two cells and get the type of change between them.
+let getChangeType cell1 (cell2 : string) =
+    match (cell1,cell2) with
+    | (c1,c2) when c1 = "" && c2.Length > 0 -> Add
+    | (c1,c2) when c1.Length > 0 && c2 = "" -> Del
+    | _                                     -> Mod
+
+/// Takes the coordinates of two cells as well as their values, checks for changes between them and, if present, gives a tuple of the cell coordinates and the change type.
+let getChange cellC (cellV1 : string) (cellV2 : string) =
+    if hasChange cellV1 cellV2 then Some (cellC, getChangeType cellV1 cellV2)
+    else None
+
+let getChanges (cellMatrix1 : Dictionary<(int * int), string>) (cellMatrix2 : Dictionary<(int * int), string>) =
+    [for k in cellMatrix1 do
+        getChange cellMatrix2.[k.Key]
+    ]
+
+
+
+
+
+/// Converts numbers to letters like the column keys in MS Excel.
 let toExcelLetters number =
     if int number < 1 then failwith "ERROR: Only numbers > 0 can be converted to Excel letters."
     let rec loop no list =
@@ -15,6 +46,8 @@ let toExcelLetters number =
     loop (float number) []
     |> System.String.Concat
 
+// besser erst später, für die changes weiterhin sparse matrix benutzen
+/// Transforms a sparse matrix (as a dictionary) into a dense one (realized as a 2D array).
 let transformSparseMatrixToDense (dict : System.Collections.Generic.Dictionary<int * int, string>) =
     let noOfCols = dict.Keys |> Seq.map fst |> Seq.max
     let noOfRows = dict.Keys |> Seq.map snd |> Seq.max
