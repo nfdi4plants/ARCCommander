@@ -8,6 +8,158 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 
+open ISADotNet
+open FSharpSpreadsheetML
+open ISADotNet.XLSX.AssayFile.MetaData
+open DocumentFormat.OpenXml.Packaging
+open DocumentFormat.OpenXml.Spreadsheet
+
+module Worksheet =
+
+    let setSheetData (sheetData:SheetData) (worksheet:Worksheet) =
+        if Worksheet.hasSheetData worksheet then
+            worksheet.RemoveChild(Worksheet.getSheetData worksheet)
+            |> ignore
+        Worksheet.addSheetData sheetData worksheet
+
+
+//
+// ISADotNet lacks some functionality missing here. 
+// Unfortunately it cannot be updated right now without breaking the version continuity, 
+// as some breaking changes depend on the new Swate version being updated. 
+// Until then these helper functions are parked here
+//
+
+///let doc = Spreadsheet.fromFile path true  
+///  
+///MetadataSheet.overwriteWithAssayInfo "Investigation" testAssay2 doc
+///
+///MetadataSheet.overwriteWithPersons "Investigation" [person] doc
+/// 
+///MetadataSheet.getPersons "Investigation" doc
+///
+///MetadataSheet.tryGetAssay "Investigation" doc
+///  
+///doc.Close()
+module MetadataSheet = 
+
+    /// Append an assay metadata sheet with the given sheetname to an existing assay file excel spreadsheet
+    let init sheetName assay (doc: DocumentFormat.OpenXml.Packaging.SpreadsheetDocument) = 
+
+        let sheet = SheetData.empty()
+
+        let worksheetComment = Comment.create None (Some "Worksheet") None
+        let personWithComment = Person.create None None None None None None None None None None (Some [worksheetComment])
+        
+        toRows assay [personWithComment]
+        |> Seq.fold (fun s r -> 
+            SheetData.appendRow r s
+        ) sheet
+        |> ignore
+
+        doc
+        |> Spreadsheet.getWorkbookPart
+        |> WorkbookPart.appendSheet sheetName sheet
+        |> ignore 
+
+        doc
+
+    /// Replace the sheetdata of the sheet with the given sheetname
+    let private replaceSheetData (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
+
+        let workbook = Workbook.getOrInit  workbookPart
+    
+        let sheets = Sheet.Sheets.getOrInit workbook
+        let id = 
+            sheets |> Sheet.Sheets.getSheets
+            |> Seq.find (fun sheet -> Sheet.getName sheet = sheetName)
+            |> Sheet.getID
+
+        WorkbookPart.getWorksheetPartById id workbookPart
+        |> Worksheet.getOrInit
+        |> Worksheet.setSheetData data
+        |> ignore 
+
+        workbookPart
+
+    /// Try get assay from metadatasheet with given sheetName
+    let tryGetAssay sheetName (doc: DocumentFormat.OpenXml.Packaging.SpreadsheetDocument) = 
+        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
+        | Some sheet -> 
+            sheet
+            |> SheetData.getRows
+            |> fromRows
+            |> fun (a,p) ->
+                a
+        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
+
+    /// Try get persons from metadatasheet with given sheetName
+    let getPersons sheetName (doc: DocumentFormat.OpenXml.Packaging.SpreadsheetDocument) = 
+        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
+        | Some sheet -> 
+            sheet
+            |> SheetData.getRows
+            |> fromRows
+            |> fun (a,p) ->
+                p
+        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
+
+    /// Replaces assay metadata from metadatasheet with given sheetName
+    let overwriteWithAssayInfo sheetName assay (doc: DocumentFormat.OpenXml.Packaging.SpreadsheetDocument) = 
+
+        let workBookPart = Spreadsheet.getWorkbookPart doc
+        let newSheet = SheetData.empty()
+        
+        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
+        | Some sheet -> 
+            sheet
+            |> SheetData.getRows
+            |> fromRows
+            |> fun (_,p) ->
+            
+                toRows assay p
+                |> Seq.fold (fun s r -> 
+                    SheetData.appendRow r s
+                ) newSheet
+                |> fun s -> replaceSheetData sheetName s workBookPart
+        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
+        |> ignore
+
+        doc.Save() 
+
+    /// Replaces persons from metadatasheet with given sheetName
+    let overwriteWithPersons sheetName persons (doc: DocumentFormat.OpenXml.Packaging.SpreadsheetDocument) = 
+
+        let workBookPart = Spreadsheet.getWorkbookPart doc
+        let newSheet = SheetData.empty()
+        
+        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
+        | Some sheet -> 
+            sheet
+            |> SheetData.getRows
+            |> fromRows
+            |> fun (a,_) ->            
+                toRows (Option.defaultValue Assay.empty a) persons
+                |> Seq.fold (fun s r -> 
+                    SheetData.appendRow r s
+                ) newSheet
+                |> fun s -> replaceSheetData sheetName s workBookPart
+        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
+        |> ignore
+
+        doc.Save() 
+
+module AssayFile =
+
+    /// AssayFile.initToPath "Investigation" "lel" testAssay path
+    let initToPath metadataSheetName assayIdentifier assay path =
+        Spreadsheet.initWithSST assayIdentifier path
+        |> MetadataSheet.init metadataSheetName assay
+        |> Spreadsheet.close
+
+
+
+
 
 
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
