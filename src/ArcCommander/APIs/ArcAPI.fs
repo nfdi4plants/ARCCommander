@@ -14,7 +14,7 @@ module ArcAPI =
 
     // TODO TO-DO TO DO: make use of args
     /// Initializes the arc specific folder structure
-    let init (arcConfiguration:ArcConfiguration) (arcArgs : Map<string,Argument>) =
+    let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -67,24 +67,24 @@ module ArcAPI =
             if verbosity >= 1 then printfn "Git could not be set up, try installing git cli and run `arc git init`"
 
 
-    let synchronize (arcConfiguration:ArcConfiguration) =
+    let update (arcConfiguration : ArcConfiguration) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start Arc Synchronize"
+        if verbosity >= 1 then printfn "Start Arc Update"
 
         let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
 
         let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
 
         let assayNames = 
-            System.IO.DirectoryInfo(assayRootFolder).GetDirectories()
+            DirectoryInfo(assayRootFolder).GetDirectories()
             |> Array.map (fun d -> d.Name)
             
         let investigation =
             try Investigation.fromFile investigationFilePath 
             with
-            | :? System.IO.FileNotFoundException -> 
+            | :? FileNotFoundException -> 
                 Investigation.empty
             | err -> raise err
 
@@ -119,4 +119,4 @@ module ArcAPI =
         |> Investigation.toFile investigationFilePath
 
     /// Returns true if called anywhere in an arc 
-    let isArc (arcConfiguration:ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())
+    let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())

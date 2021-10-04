@@ -4,12 +4,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ArcCommander</ToolCommandName>
-    <Authors>Heinrich Lukas Weil, Kevin Schneider, Timo Muehlhaus, nfdi4plants OSS contributors</Authors>
+    <Authors>Heinrich Lukas Weil, Kevin Schneider, Oliver Maus, Timo Muehlhaus, nfdi4plants OSS contributors</Authors>
     <Description>Tool to manage your ARCs</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/nfdi4plants/arcCommander</PackageProjectUrl>
@@ -20,6 +18,8 @@
     <FsDocsReleaseNotesLink>https://github.com/nfdi4plants/arcCommander/blob/developer/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
     <AssemblyName>arc</AssemblyName>
   </PropertyGroup>   
+  
+  <!--Compile-States-->
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
@@ -49,6 +49,8 @@
     <Compile Include="APIs\ArcAPI.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
+  
+  <!--References-->
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="5.*" />
     <PackageReference Include="Argu" Version="6.1.1" />

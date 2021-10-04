@@ -5,10 +5,10 @@ open Argu
 
 type ArcInitArgs = 
 
-    | [<Unique>] Owner of owner:string
-    | [<Unique>] RepositoryAdress of repository_adress:string
-    | [<Unique>] EditorPath of editor_path:string
-    | [<Unique>] GitLFSByteThreshold of git_lfs_threshold:string
+    | [<Unique>] Owner of owner : string
+    | [<Unique>] RepositoryAdress of repository_adress : string
+    | [<Unique>] EditorPath of editor_path : string
+    | [<Unique>] GitLFSByteThreshold of git_lfs_threshold : string
 
     interface IArgParserTemplate with
         member this.Usage =

@@ -12,25 +12,25 @@ open StudyProtocols
 /// Study object subcommand verbs
 type StudyCommand =
 
-    | [<CliPrefix(CliPrefix.None)>] Init        of init_args:ParseResults<StudyInitArgs>
-    | [<CliPrefix(CliPrefix.None)>] Register    of register_args:ParseResults<StudyRegisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Add         of add_args:ParseResults<StudyAddArgs>
+    | [<CliPrefix(CliPrefix.None)>] Init        of init_args            : ParseResults<StudyInitArgs>
+    | [<CliPrefix(CliPrefix.None)>] Register    of register_args        : ParseResults<StudyRegisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Add         of add_args             : ParseResults<StudyAddArgs>
 
-    | [<CliPrefix(CliPrefix.None)>] Delete      of delete_args:ParseResults<StudyDeleteArgs>
-    | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args:ParseResults<StudyUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Remove      of remove_args:ParseResults<StudyRemoveArgs>
+    | [<CliPrefix(CliPrefix.None)>] Delete      of delete_args          : ParseResults<StudyDeleteArgs>
+    | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args      : ParseResults<StudyUnregisterArgs>
+    | [<CliPrefix(CliPrefix.None)>] Remove      of remove_args          : ParseResults<StudyRemoveArgs>
 
-    | [<CliPrefix(CliPrefix.None)>] Update      of update_args:ParseResults<StudyUpdateArgs>
-    | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:ParseResults<StudyEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Update      of update_args          : ParseResults<StudyUpdateArgs>
+    | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args            : ParseResults<StudyEditArgs>
 
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:ParseResults<StudyGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Get         of get_args             : ParseResults<StudyGetArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List 
 
-    | [<CliPrefix(CliPrefix.None)>] Person      of person_verbs:ParseResults<StudyPersonCommand>
-    | [<CliPrefix(CliPrefix.None)>] Publication of publication_verbs:ParseResults<StudyPublicationCommand>
-    | [<CliPrefix(CliPrefix.None)>] Design      of design_verbs:ParseResults<StudyDesignCommand>
-    | [<CliPrefix(CliPrefix.None)>] Factor      of factor_verbs:ParseResults<StudyFactorCommand>
-    | [<CliPrefix(CliPrefix.None)>] Protocol    of protocol_verbs:ParseResults<StudyProtocolCommand>
+    | [<CliPrefix(CliPrefix.None)>] Person      of person_verbs         : ParseResults<StudyPersonCommand>
+    | [<CliPrefix(CliPrefix.None)>] Publication of publication_verbs    : ParseResults<StudyPublicationCommand>
+    | [<CliPrefix(CliPrefix.None)>] Design      of design_verbs         : ParseResults<StudyDesignCommand>
+    | [<CliPrefix(CliPrefix.None)>] Factor      of factor_verbs         : ParseResults<StudyFactorCommand>
+    | [<CliPrefix(CliPrefix.None)>] Protocol    of protocol_verbs       : ParseResults<StudyProtocolCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -64,10 +64,10 @@ and StudyPersonCommand =
         member this.Usage =
             match this with
             | Update            _ -> "Update an existing person in the ARC investigation study with the given person metadata. The person is identified by the full name (first name, last name, mid initials)."
-            | Edit              _ -> "Open and edit an existing person in the arc investigation study with a text editor. The person is identified by the full name (first name, last name, mid initials)."
+            | Edit              _ -> "Open and edit an existing person in the ARC investigation study with a text editor. The person is identified by the full name (first name, last name, mid initials)."
             | Register          _ -> "Register a person in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation study. The person is identified by the full name (first name, last name, mid initials)."
-            | Get               _ -> "Get the metadata of a person registered in the arc investigation study"
+            | Get               _ -> "Get the metadata of a person registered in the ARC investigation study"
             | List              _ -> "List all persons registered in the ARC investigation"
 
 and StudyPublicationCommand =

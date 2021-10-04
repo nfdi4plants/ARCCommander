@@ -4,7 +4,7 @@ open Argu
 
 /// CLI arguments for empty study initialization
 type StudyInitArgs =
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier:string
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -13,11 +13,11 @@ type StudyInitArgs =
 
 /// CLI arguments for updating existing study metadata
 type StudyUpdateArgs =
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier:string
-    | [<Unique>] Title of title:string
-    | [<Unique>] Description of description:string
-    | [<Unique>] SubmissionDate of submission_date:string
-    | [<Unique>] PublicReleaseDate of public_release_date:string
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
+    | [<Unique>] Title of title : string
+    | [<Unique>] Description of description : string
+    | [<Unique>] SubmissionDate of submission_date : string
+    | [<Unique>] PublicReleaseDate of public_release_date : string
     | [<Unique>] ReplaceWithEmptyValues
     | [<Unique>] AddIfMissing
 
@@ -39,11 +39,11 @@ type StudyEditArgs = StudyInitArgs
 
 /// CLI arguments for registering existing study metadata 
 type StudyRegisterArgs = 
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier:string
-    | [<Unique>] Title of title:string
-    | [<Unique>] Description of description:string
-    | [<Unique>] SubmissionDate of submission_date:string
-    | [<Unique>] PublicReleaseDate of public_release_date:string
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
+    | [<Unique>] Title of title : string
+    | [<Unique>] Description of description : string
+    | [<Unique>] SubmissionDate of submission_date : string
+    | [<Unique>] PublicReleaseDate of public_release_date : string
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -74,24 +74,24 @@ type StudyRemoveArgs = StudyInitArgs
 // same as `init` because both commands only need to be passed a study identifier
 type StudyGetArgs = StudyInitArgs
 
-/// CLI arguments for study Contacts
+/// CLI arguments for study contacts
 module StudyContacts = 
 
     /// CLI arguments for updating existing person metadata
     type PersonUpdateArgs =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-l")>][<Unique>] LastName of last_name:string
-        | [<Mandatory>][<AltCommandLine("-f")>][<Unique>] FirstName of first_name:string
-        | [<AltCommandLine("-m")>][<Unique>] MidInitials of mid_initials:string
-        | [<Unique>] Email of e_mail:string
-        | [<Unique>] Phone of phone_number:string
-        | [<Unique>] Fax of fax_number:string
-        | [<Unique>] Address of adress:string
-        | [<Unique>] Affiliation of affiliation:string
-        | [<Unique>] ORCID of orcid:string
-        | [<Unique>] Roles of roles:string
-        | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number:string
-        | [<Unique>] RolesTermSourceREF of roles_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-l")>][<Unique>] LastName of last_name : string
+        | [<Mandatory>][<AltCommandLine("-f")>][<Unique>] FirstName of first_name : string
+        | [<AltCommandLine("-m")>][<Unique>] MidInitials of mid_initials : string
+        | [<Unique>] Email of e_mail : string
+        | [<Unique>] Phone of phone_number : string
+        | [<Unique>] Fax of fax_number : string
+        | [<Unique>] Address of adress : string
+        | [<Unique>] Affiliation of affiliation : string
+        | [<Unique>] ORCID of orcid : string
+        | [<Unique>] Roles of roles : string
+        | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number : string
+        | [<Unique>] RolesTermSourceREF of roles_term_source_ref : string
         | [<Unique>] ReplaceWithEmptyValues
         | [<Unique>] AddIfMissing
 
@@ -117,9 +117,9 @@ module StudyContacts =
     /// CLI arguments for interactively editing existing person metadata 
     type PersonEditArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-l")>][<Unique>] LastName of last_name:string
-        | [<Mandatory>][<AltCommandLine("-f")>][<Unique>] FirstName of first_name:string
-        | [<AltCommandLine("-m")>][<Unique>] MidInitials of mid_initials:string
+        | [<Mandatory>][<AltCommandLine("-l")>][<Unique>] LastName of last_name : string
+        | [<Mandatory>][<AltCommandLine("-f")>][<Unique>] FirstName of first_name : string
+        | [<AltCommandLine("-m")>][<Unique>] MidInitials of mid_initials : string
         
         interface IArgParserTemplate with
             member this.Usage =
@@ -132,18 +132,18 @@ module StudyContacts =
     /// CLI arguments for registering person metadata 
     type PersonRegisterArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-l")>][<Unique>] LastName of last_name:string
-        | [<Mandatory>][<AltCommandLine("-f")>][<Unique>] FirstName of first_name:string
-        | [<AltCommandLine("-m")>][<Unique>] MidInitials of mid_initials:string
-        | [<Unique>] Email of e_mail:string
-        | [<Unique>] Phone of phone_number:string
-        | [<Unique>] Fax of fax_number:string
-        | [<Unique>] Address of adress:string
-        | [<Unique>] Affiliation of affiliation:string
-        | [<Unique>] ORCID of orcid:string
-        | [<Unique>] Roles of roles:string
-        | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number:string
-        | [<Unique>] RolesTermSourceREF of roles_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-l")>][<Unique>] LastName of last_name : string
+        | [<Mandatory>][<AltCommandLine("-f")>][<Unique>] FirstName of first_name : string
+        | [<AltCommandLine("-m")>][<Unique>] MidInitials of mid_initials : string
+        | [<Unique>] Email of e_mail : string
+        | [<Unique>] Phone of phone_number : string
+        | [<Unique>] Fax of fax_number : string
+        | [<Unique>] Address of adress : string
+        | [<Unique>] Affiliation of affiliation : string
+        | [<Unique>] ORCID of orcid : string
+        | [<Unique>] Roles of roles : string
+        | [<Unique>] RolesTermAccessionNumber of roles_term_accession_number : string
+        | [<Unique>] RolesTermSourceREF of roles_term_source_ref : string
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -177,13 +177,13 @@ module StudyPublications =
     /// CLI arguments for updating existing publication metadata
     type PublicationUpdateArgs =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi:string
-        | [<AltCommandLine("-p")>][<Unique>] PubMedID of pubmed_id:string
-        | [<Unique>] AuthorList of author_list:string
-        | [<Unique>] Title of publication_title:string
-        | [<Unique>] Status of publication_status:string
-        | [<Unique>] StatusTermAccessionNumber of publication_status_term_accession_number:string
-        | [<Unique>] StatusTermSourceREF of publication_status_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi : string
+        | [<AltCommandLine("-p")>][<Unique>] PubMedID of pubmed_id : string
+        | [<Unique>] AuthorList of author_list : string
+        | [<Unique>] Title of publication_title : string
+        | [<Unique>] Status of publication_status : string
+        | [<Unique>] StatusTermAccessionNumber of publication_status_term_accession_number : string
+        | [<Unique>] StatusTermSourceREF of publication_status_term_source_ref : string
         | [<Unique>] ReplaceWithEmptyValues
         | [<Unique>] AddIfMissing
 
@@ -204,7 +204,7 @@ module StudyPublications =
     /// CLI arguments for interactively editing existing publication metadata 
     type PublicationEditArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi:string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi : string
     
         interface IArgParserTemplate with
             member this.Usage =
@@ -215,13 +215,13 @@ module StudyPublications =
     /// CLI arguments for registering publication metadata 
     type PublicationRegisterArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi:string
-        | [<AltCommandLine("-p")>][<Unique>] PubMedID of pubmed_id:string
-        | [<Unique>] AuthorList of author_list:string
-        | [<Unique>] Title of publication_title:string
-        | [<Unique>] Status of publication_status:string
-        | [<Unique>] StatusTermAccessionNumber of publication_status_term_accession_number:string
-        | [<Unique>] StatusTermSourceREF of publication_status_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DOI of doi : string
+        | [<AltCommandLine("-p")>][<Unique>] PubMedID of pubmed_id : string
+        | [<Unique>] AuthorList of author_list : string
+        | [<Unique>] Title of publication_title : string
+        | [<Unique>] Status of publication_status : string
+        | [<Unique>] StatusTermAccessionNumber of publication_status_term_accession_number : string
+        | [<Unique>] StatusTermSourceREF of publication_status_term_source_ref : string
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -250,9 +250,9 @@ module StudyDesignDescriptors =
     /// CLI arguments for updating existing design metadata
     type DesignUpdateArgs =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type:string
-        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
-        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type : string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number : string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref : string
         | [<Unique>] ReplaceWithEmptyValues
         | [<Unique>] AddIfMissing
 
@@ -269,7 +269,7 @@ module StudyDesignDescriptors =
     /// CLI arguments for interactively editing existing design metadata 
     type DesignEditArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type:string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type : string
     
         interface IArgParserTemplate with
             member this.Usage =
@@ -280,9 +280,9 @@ module StudyDesignDescriptors =
     /// CLI arguments for registering design metadata 
     type DesignRegisterArgs =
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type:string
-        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
-        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-d")>][<Unique>] DesignType of design_type : string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number : string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref : string
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -307,10 +307,10 @@ module StudyFactors =
     /// CLI arguments for updating existing design metadata
     type FactorUpdateArgs =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
-        | [<Unique>] FactorType of factor_type:string
-        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
-        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name : string
+        | [<Unique>] FactorType of factor_type : string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number : string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref : string
         | [<Unique>] ReplaceWithEmptyValues
         | [<Unique>] AddIfMissing
 
@@ -339,10 +339,10 @@ module StudyFactors =
     /// CLI arguments for registering factor metadata 
     type FactorRegisterArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name : string
         | [<Unique>] FactorType of factor_type:string
-        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
-        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number : string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref : string
 
         interface IArgParserTemplate with
             member this.Usage =
@@ -367,20 +367,20 @@ module StudyProtocols =
     /// CLI arguments for updating existing protocol metadata
     type ProtocolUpdateArgs =  
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name : string
         | [<Unique>] ProtocolType of protocol_type:string
-        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
-        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
-        | [<Unique>] Description of description:string
-        | [<Unique>] URI of uri:string
-        | [<Unique>] Version of version:string
-        | [<Unique>] ParametersName of parameters_name:string
-        | [<Unique>] ParametersTermAccessionNumber of parameters_term_accession_number:string
-        | [<Unique>] ParametersTermSourceREF of parameters_term_source_ref:string
-        | [<Unique>] ComponentsName of compoments_name:string
-        | [<Unique>] ComponentsType of compoments_type:string
-        | [<Unique>] ComponentsTypeTermAccessionNumber of compoments_type_accession_number:string
-        | [<Unique>] ComponentsTypeTermSourceREF of compoments_type_term_source_ref:string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number : string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref : string
+        | [<Unique>] Description of description : string
+        | [<Unique>] URI of uri : string
+        | [<Unique>] Version of version : string
+        | [<Unique>] ParametersName of parameters_name : string
+        | [<Unique>] ParametersTermAccessionNumber of parameters_term_accession_number : string
+        | [<Unique>] ParametersTermSourceREF of parameters_term_source_ref : string
+        | [<Unique>] ComponentsName of compoments_name : string
+        | [<Unique>] ComponentsType of compoments_type : string
+        | [<Unique>] ComponentsTypeTermAccessionNumber of compoments_type_accession_number : string
+        | [<Unique>] ComponentsTypeTermSourceREF of compoments_type_term_source_ref : string
         | [<Unique>] ReplaceWithEmptyValues
         | [<Unique>] AddIfMissing
 
@@ -419,20 +419,20 @@ module StudyProtocols =
     /// CLI arguments for registering protocol metadata 
     type ProtocolRegisterArgs = 
         | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of string
-        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name:string
-        | [<Unique>] ProtocolType of protocol_type:string
-        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number:string
-        | [<Unique>] TypeTermSourceREF of type_term_source_ref:string
-        | [<Unique>] Description of description:string
-        | [<Unique>] URI of uri:string
-        | [<Unique>] Version of version:string
-        | [<Unique>] ParametersName of parameters_name:string
-        | [<Unique>] ParametersTermAccessionNumber of parameters_term_accession_number:string
-        | [<Unique>] ParametersTermSourceREF of parameters_term_source_ref:string
-        | [<Unique>] ComponentsName of compoments_name:string
-        | [<Unique>] ComponentsType of compoments_type:string
-        | [<Unique>] ComponentsTypeTermAccessionNumber of compoments_type_accession_number:string
-        | [<Unique>] ComponentsTypeTermSourceREF of compoments_type_term_source_ref:string
+        | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] Name of name : string
+        | [<Unique>] ProtocolType of protocol_type : string
+        | [<Unique>] TypeTermAccessionNumber of type_term_accession_number : string
+        | [<Unique>] TypeTermSourceREF of type_term_source_ref : string
+        | [<Unique>] Description of description : string
+        | [<Unique>] URI of uri : string
+        | [<Unique>] Version of version : string
+        | [<Unique>] ParametersName of parameters_name : string
+        | [<Unique>] ParametersTermAccessionNumber of parameters_term_accession_number : string
+        | [<Unique>] ParametersTermSourceREF of parameters_term_source_ref : string
+        | [<Unique>] ComponentsName of compoments_name : string
+        | [<Unique>] ComponentsType of compoments_type : string
+        | [<Unique>] ComponentsTypeTermAccessionNumber of compoments_type_accession_number : string
+        | [<Unique>] ComponentsTypeTermSourceREF of compoments_type_term_source_ref : string
 
         interface IArgParserTemplate with
             member this.Usage =

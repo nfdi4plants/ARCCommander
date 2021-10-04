@@ -1,8 +1,5 @@
 ﻿namespace ArcCommander
 
-open System
-
-open System.Reflection
 open Microsoft.FSharp.Reflection
 
 open System.Diagnostics
@@ -25,7 +22,6 @@ module ArgumentProcessing =
             IsMandatory : bool
             IsFlag      : bool
         }
-
     
     let createAnnotatedArgument arg tt mand isFlag = 
         {
@@ -65,7 +61,6 @@ module ArgumentProcessing =
     let private unionToString (x:'a) = 
         match splitUnion x with
         | (field,value) -> field, string value.[0]
-
 
     /// Returns given attribute from property info as optional 
     let private containsCustomAttribute<'a> (case : UnionCaseInfo) =   
@@ -148,28 +143,27 @@ module ArgumentProcessing =
             System.IO.File.Delete(path) 
 
         /// Writes a text string to a path
-        let private write (path:string) (text:string) = 
+        let private write (path : string) (text : string) = 
             use w = new System.IO.StreamWriter(path)
             w.Write(text)
             w.Flush()
             w.Close()
         
         /// Writes a text string to a path, Creates the directory if it doens't yet exist
-        let private writeForce (path:string) (text:string) = 
+        let private writeForce (path : string) (text : string) = 
             delete path
             System.IO.FileInfo(path).Directory.Create()
             write path text
 
         /// Reads the content of a file
-        let private read (path:string) = 
+        let private read (path : string) = 
             use r = new System.IO.StreamReader(path)
             r.ReadToEnd()
-    
 
         /// Serializes annotated argument in yaml format (key:value)
         ///
         /// For each value, a comment is created and put above the line using the given commentF function
-        let private serializeAnnotatedArguments (arguments:(string*AnnotatedArgument) []) =
+        let private serializeAnnotatedArguments (arguments : (string * AnnotatedArgument) []) =
             let header = 
                 """# Not all mandatory input arguments were given
 # Please fill out at least all mandatory fields by providing a value to the key in the form of "key:value"
@@ -195,12 +189,11 @@ module ArgumentProcessing =
             |> sprintf "%s\n\n%s" header
     
         /// Splits the string at the first occurence of the char 
-        let private splitAtFirst (c:char) (s:string) =
+        let private splitAtFirst (c : char) (s : string) =
             match s.Split c with
             | [|k|]     -> k.Trim(), Flag 
             | [|k ; v|] -> k.Trim(), v.Trim() |> Field 
             | a         -> a.[0].Trim(), Array.skip 1 a |> Array.reduce (fun a b ->sprintf "%s%c%s" a c b) |> fun v -> v.Trim() |> Field
-
 
         /// Deserializes yaml format (key:value) arguments
         let private deserializeArguments (s:string) =
@@ -233,13 +226,13 @@ module ArgumentProcessing =
                 failwithf "could not parse query: %s" err.Message
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
-        let createArgumentQuery editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
+        let createArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
             arguments
             |> createQuery editorPath arcPath serializeAnnotatedArguments deserializeArguments 
             |> Map.ofArray
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
-        let createMissingArgumentQuery editorPath arcPath (arguments:(string*AnnotatedArgument) []) = 
+        let createMissingArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
             let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
             let queryResults = createArgumentQuery editorPath arcPath arguments
             let stillMissingMandatoryArgs =  
@@ -252,7 +245,7 @@ module ArgumentProcessing =
             stillMissingMandatoryArgs,queryResults
             
         /// Removes additional annotation (isMandatory and tooltip) from argument
-        let deannotateArguments (arguments:(string*AnnotatedArgument) []) =
+        let deannotateArguments (arguments : (string * AnnotatedArgument) []) =
             arguments
             |> Array.choose (fun (k,v) -> 
                 match v.Arg with 
@@ -283,7 +276,7 @@ module ArgumentProcessing =
 
             let serializeF = serializeXSLXWriterOutput writeF >> sprintf "%s\n\n%s" header
 
-            let deserializeF (s:string) : 'A =
+            let deserializeF (s : string) : 'A =
                 s.Replace(sprintf "%s\n\n" header, "").Split '\n'
                 |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
@@ -293,8 +286,6 @@ module ArgumentProcessing =
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 
             createQuery editorPath arcPath serializeF deserializeF isaItem
-
-        
 
         /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
         let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =

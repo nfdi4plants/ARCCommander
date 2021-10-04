@@ -118,6 +118,15 @@ let handleStudyProtocolSubCommands arcConfiguration protocolVerb =
     | StudyProtocolCommand.Get r          -> processCommand arcConfiguration StudyAPI.Protocols.get        r
     | StudyProtocolCommand.List           -> processCommandWithoutArgs arcConfiguration StudyAPI.Protocols.list
 
+let handleAssayContactsSubCommands arcConfiguration contactsVerb =
+    match contactsVerb with
+    | AssayPersonCommand.Update r       -> processCommand arcConfiguration AssayAPI.Contacts.update     r
+    | AssayPersonCommand.Edit r         -> processCommand arcConfiguration AssayAPI.Contacts.edit       r
+    | AssayPersonCommand.Register r     -> processCommand arcConfiguration AssayAPI.Contacts.register   r
+    | AssayPersonCommand.Unregister r   -> processCommand arcConfiguration AssayAPI.Contacts.unregister r
+    | AssayPersonCommand.Get r          -> processCommand arcConfiguration AssayAPI.Contacts.get        r
+    | AssayPersonCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.Contacts.list
+
 let handleInvestigationContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
     | InvestigationPersonCommand.Update r       -> processCommand arcConfiguration InvestigationAPI.Contacts.update     r
@@ -165,17 +174,18 @@ let handleStudySubCommands arcConfiguration studyVerb =
 
 let handleAssaySubCommands arcConfiguration assayVerb =
     match assayVerb with
-    | AssayCommand.Init         r -> processCommand arcConfiguration AssayAPI.init          r
-    | AssayCommand.Register     r -> processCommand arcConfiguration AssayAPI.register      r
-    | AssayCommand.Add          r -> processCommand arcConfiguration AssayAPI.add           r
-    | AssayCommand.Delete       r -> processCommand arcConfiguration AssayAPI.delete        r
-    | AssayCommand.Unregister   r -> processCommand arcConfiguration AssayAPI.unregister    r
-    | AssayCommand.Remove       r -> processCommand arcConfiguration AssayAPI.remove        r
-    | AssayCommand.Update       r -> processCommand arcConfiguration AssayAPI.update        r
-    | AssayCommand.Edit         r -> processCommand arcConfiguration AssayAPI.edit          r
-    | AssayCommand.Move         r -> processCommand arcConfiguration AssayAPI.move          r
-    | AssayCommand.Get          r -> processCommand arcConfiguration AssayAPI.get           r
-    | AssayCommand.List           -> processCommandWithoutArgs arcConfiguration AssayAPI.list
+    | AssayCommand.Init               r -> processCommand arcConfiguration AssayAPI.init          r
+    | AssayCommand.Register           r -> processCommand arcConfiguration AssayAPI.register      r
+    | AssayCommand.Add                r -> processCommand arcConfiguration AssayAPI.add           r
+    | AssayCommand.Delete             r -> processCommand arcConfiguration AssayAPI.delete        r
+    | AssayCommand.Unregister         r -> processCommand arcConfiguration AssayAPI.unregister    r
+    | AssayCommand.Remove             r -> processCommand arcConfiguration AssayAPI.remove        r
+    | AssayCommand.Update             r -> processCommand arcConfiguration AssayAPI.update        r
+    | AssayCommand.Edit               r -> processCommand arcConfiguration AssayAPI.edit          r
+    | AssayCommand.Move               r -> processCommand arcConfiguration AssayAPI.move          r
+    | AssayCommand.Get                r -> processCommand arcConfiguration AssayAPI.get           r
+    | AssayCommand.List                 -> processCommandWithoutArgs arcConfiguration AssayAPI.list
+    | AssayCommand.Person subCommand    -> handleAssayContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
@@ -199,7 +209,7 @@ let handleCommand arcConfiguration command =
     | Git subcommand            -> handleGitSubCommands             arcConfiguration (subcommand.GetSubCommand())
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
-    | Synchronize               -> processCommandWithoutArgs        arcConfiguration ArcAPI.synchronize
+    | Update                    -> processCommandWithoutArgs        arcConfiguration ArcAPI.update
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
