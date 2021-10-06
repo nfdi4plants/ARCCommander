@@ -26,6 +26,8 @@
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
+    <Compile Include="ExcelCell.fs" />
+    <Compile Include="Change.fs" />
     <Compile Include="Cellify.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
