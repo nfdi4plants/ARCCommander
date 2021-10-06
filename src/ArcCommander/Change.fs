@@ -1,6 +1,6 @@
 ﻿module Change
 
-open ExcelCell
+open XlsxCell
 open System.Collections.Generic
 
 /// The type of change occuring at a given ChangeSite.
@@ -30,7 +30,7 @@ type ChangeSite =
 | Formula
 
 type CellChange = {
-    CellInformation : Cell
+    CellInformation : Cell * Cell
     Changes         : seq<ChangeSite * ChangeType>
     }
 
@@ -66,7 +66,7 @@ let getCellChange (cell1 : Cell) (cell2 : Cell) =
         if hasChange cell1 cell2 then noChanges |> List.map (fun (cs,ct) -> cs, (matchCs cs) cell1 cell2)
         else noChanges
     {
-        CellInformation = cell2
+        CellInformation = cell1, cell2
         Changes         = change
     }
 
@@ -81,10 +81,8 @@ let getChangeMatrix (cellMatrix1 : Dictionary<int * int, Cell>) (cellMatrix2 : D
         Formula     = Option<_>.None
     }
     let keys = Seq.append cellMatrix1.Keys cellMatrix2.Keys
-    printfn "DEBUG: keys: %A" keys
     let noOfRows = keys |> Seq.map fst |> Seq.max
     let noOfCols = keys |> Seq.map snd |> Seq.max
-    printfn "DEBUG: nR: %i, nC: %i" noOfRows noOfCols
     Array2D.init noOfRows noOfCols (
         fun iR iC ->
             let currkey = (iR + 1, iC + 1)

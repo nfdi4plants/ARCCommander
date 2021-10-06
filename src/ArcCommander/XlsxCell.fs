@@ -1,4 +1,4 @@
-﻿module ExcelCell
+﻿module XlsxCell
 
 open FSharpSpreadsheetML
 open System.Collections.Generic
@@ -261,7 +261,7 @@ type Comment = {
 }
 
 // Position (or/also: Reference) is provided via key in tuble or dictionary representation
-/// The model representation of an MS Excel cell.
+/// The model representation of an Xlsx cell.
 type Cell = {
     /// The written content of a cell.
     Content     : string option

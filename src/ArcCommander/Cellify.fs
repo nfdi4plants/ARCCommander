@@ -3,7 +3,7 @@
 open FSharpSpreadsheetML
 open Spectre.Console
 open System.Collections.Generic
-open ExcelCell
+open XlsxCell
 open Change
 
 /// Converts numbers to letters like the column keys in MS Excel.
@@ -54,8 +54,35 @@ let getCellMatrices doc =
             sn, getCellMatrix sst sheetData
     )
 
+/// Transforms a sparse cell matrix into a dense matrix (2D array).
+let getDenseMatrix (cellMatrix : Dictionary<int * int, Cell>) =
+    let emptyCell = {
+        Content     = Option<_>.None
+        TextFormat  = Option<_>.None
+        CellFormat  = Option<_>.None
+        Comment     = Option<_>.None
+        Note        = Option<_>.None
+        Formula     = Option<_>.None
+    }
+    let noOfRows = cellMatrix.Keys |> Seq.map fst |> Seq.max
+    let noOfCols = cellMatrix.Keys |> Seq.map snd |> Seq.max
+    Array2D.init noOfRows noOfCols (
+        fun iR iC ->
+            let currkey = (iR + 1, iC + 1)
+            if cellMatrix.ContainsKey(currkey) then cellMatrix.[currkey] else emptyCell
+    )
 
-/// Reads an .xlsx file and prints the coordinates and values of the cells of its sheets.
+/// <summary>Adds a dense matrix (2D array) to a Spectre Table.</summary>
+/// <remarks>It is adviced to always use an empty Spectre Table.</remarks>
+let addMatrixToTable (denseMatrix : string [,]) (spectreTable : Table) =
+    spectreTable.AddColumns(denseMatrix.[0,0 ..]) |> ignore
+    for i = 1 to Array2D.length1 denseMatrix - 1 do
+        spectreTable.AddRow(denseMatrix.[i,0 ..]) |> ignore
+
+/// Replaces '[' and ']' with '[[' and ']]' for correct Markup-parsing reasons.
+let escapeForSquareBrackets (s : string) = (s.Replace("[","[[")).Replace("]","]]")
+
+/// Reads two .xlsx files and prints table representations of their cell differences into the console.
 let parse infile1 infile2 =
 
     let doc1 = Spreadsheet.fromFile infile1 false
@@ -79,39 +106,55 @@ let parse infile1 infile2 =
             let sheet2 = Array.pick (fun t -> if fst t = sn then Some (snd t) else Option.None) cellMatrices2
             let tit = TableTitle(string sn)
             let chm = getChangeMatrix sheet1 sheet2
-            chm
-            |> Array2D.map (
-                fun v -> 
-                    match v.Changes |> Seq.find (fun t -> fst t = Content) |> snd with
-                    | Add -> v.CellInformation.Content
-                    | Del -> ""
-                    | 
-            )
+            let dm =
+                chm
+                |> Array2D.map (
+                    fun v -> 
+                        match v.Changes |> Seq.find (fun t -> fst t = Content) |> snd with
+                        | Add -> 
+                            (snd v.CellInformation).Content 
+                            |> Option.get
+                            |> escapeForSquareBrackets
+                            |> sprintf "[bold green]%s[/]"
+                        | Del -> 
+                            (fst v.CellInformation).Content
+                            |> Option.get
+                            |> escapeForSquareBrackets
+                            |> sprintf "[bold red]%s[/]"
+                        | Mod -> 
+                            (snd v.CellInformation).Content 
+                            |> Option.get
+                            |> escapeForSquareBrackets
+                            |> sprintf "[bold yellow]%s[/]"
+                        | No  -> 
+                            match (snd v.CellInformation).Content with
+                            | Some a -> escapeForSquareBrackets a
+                            | Option.None -> ""
+                )
+                |> addOuterFrame
+            addMatrixToTable dm spectreTables.[i]
             spectreTables.[i].Title <- tit
-            //let sheet = Worksheet.getSheetData wsp.Worksheet
-            //SheetData.toSparseValueMatrix (Option.get sst) sheet
-            //|> transformSparseMatrixToDense
-            //|> addOuterFrame
-            //|> fun fullMatrix ->
-            //    let tt = TableTitle(sheetName)
-            //    spectreTable.Title <- tt
-            //    spectreTable.AddColumns(fullMatrix.[0,0 ..]) |> ignore
-            //    for i = 1 to Array2D.length1 fullMatrix - 1 do
-            //        spectreTable.AddRow(fullMatrix.[i,0 ..]) |> ignore
         | (false,true) ->
             let tit = TableTitle(sprintf "%s -- HAS BEEN ADDED" sn)
-
+            let sheet2 = Array.pick (fun t -> if fst t = sn then Some (snd t) else Option.None) cellMatrices2
             spectreTables.[i].Title <- tit
+            let dm = 
+                getDenseMatrix sheet2 
+                |> Array2D.map (fun v -> sprintf "[bold green]%s[/]" (Option.get v.Content |> escapeForSquareBrackets))
+                |> addOuterFrame
+            addMatrixToTable dm spectreTables.[i]
         | (_,false) -> 
             let tit = TableTitle(sprintf "%s -- HAS BEEN DELETED" sn)
+            let sheet1 = Array.pick (fun t -> if fst t = sn then Some (snd t) else Option.None) cellMatrices1
             spectreTables.[i].Title <- tit
+            let dm = 
+                getDenseMatrix sheet1 
+                |> Array2D.map (fun v -> sprintf "[bold red]%s[/]" (Option.get v.Content |> escapeForSquareBrackets))
+                |> addOuterFrame
+            addMatrixToTable dm spectreTables.[i]
     )
 
     Spreadsheet.close doc1
     Spreadsheet.close doc2
 
     spectreTables |> Array.iter AnsiConsole.Render
-
-let main () =
-    let argsNo = System.Environment.GetCommandLineArgs()
-    parse (Array.last argsNo)
