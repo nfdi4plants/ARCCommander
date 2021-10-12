@@ -21,6 +21,7 @@ type AssayCommand =
     //Retrievals
     | [<CliPrefix(CliPrefix.None)>] Get         of get_args :           ParseResults<AssayGetArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
+    | [<CliPrefix(CliPrefix.None)>] Export      of export_args :        ParseResults<AssayExportArgs>
 
     | [<CliPrefix(CliPrefix.None)>] Person      of person_verbs :       ParseResults<AssayPersonCommand>
 
@@ -41,6 +42,7 @@ type AssayCommand =
 
             | Get               _ -> "Gets the values of an existing assay"
             | List              _ -> "List all assays registered in the ARC"
+            | Export            _ -> "Export a specific assay to json"
 
             | Person            _ -> "Person functions"
 

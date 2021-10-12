@@ -104,6 +104,19 @@ type AssayMoveArgs =
 /// CLI arguments for getting the values of a specific assay
 type AssayGetArgs = AssayEditArgs
 
+/// CLI arguments for exporting a specific assay to json
+type AssayExportArgs = 
+    | [<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier : string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of assay_identifier : string
+    | [<AltCommandLine("-p")>][<Unique>] Path of path : string
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | StudyIdentifier   _ -> "Identifier of the study in which the assay is registered"
+            | AssayIdentifier   _ -> "Identifier of the assay of interest"
+            | Path              _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
+
 /// CLI arguments for assay contacts
 module AssayContacts = 
 

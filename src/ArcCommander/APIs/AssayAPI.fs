@@ -614,6 +614,82 @@ module AssayAPI =
         | None -> 
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
+    /// Export an assay to json.
+    let export (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
+
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Assay export"
+        
+        let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+        
+        let assayFileName = IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration |> Option.get
+        
+        let assayFilePath = IsaModelConfiguration.getAssayFilePath assayIdentifier arcConfiguration
+
+        let studyIdentifier = 
+            match getFieldValueByName "StudyIdentifier" assayArgs with
+            | "" -> assayIdentifier
+            | s -> 
+                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                s
+        
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+                
+        let investigation = Investigation.fromFile investigationFilePath
+
+        // Try retrieve given assay from investigation file
+        let assayInInvestigation = 
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Assays with
+                    | Some assays -> 
+                        match API.Assay.tryGetByFileName assayFileName assays with
+                        | Some assay ->
+                            Some assay                           
+                        | None -> 
+                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                            None
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier                   
+                        None
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    None
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies"     
+                None
+
+        let persons,assayFromFile =
+
+            if System.IO.File.Exists assayFilePath then
+                try
+                    let _,_,p,a = AssayFile.AssayFile.fromFile assayFilePath
+                    p, Some a
+                with
+                | err -> 
+                    if verbosity >= 1 then printfn "Assay file \"%s\" could not be read" assayFilePath    
+                    [],None
+            else
+                if verbosity >= 1 then printfn "Assay file \"%s\" does not exist" assayFilePath     
+                [],None
+        
+        let mergedAssay = 
+            match assayInInvestigation,assayFromFile with
+            | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
+            | None, Some a -> a
+            | Some ai, None -> ai
+            | None, None -> failwith "No assay could be retrieved"     
+            
+        let output = Study.create None None None None None None None None (API.Option.fromValueWithDefault [] persons) None None None None (Some [mergedAssay]) None None None None
+     
+        match tryGetFieldValueByName "Path" assayArgs with
+        | Some p -> ISADotNet.Json.Study.toFile p output
+        | None -> ()
+
+        System.Console.Write(ISADotNet.Json.Study.toString output)
 
     /// Functions for altering investigation contacts
     module Contacts =
