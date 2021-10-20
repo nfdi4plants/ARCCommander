@@ -302,3 +302,10 @@ module ArgumentProcessing =
                 )              
                 |> IniData.fromNameValuePairs
             createQuery editorPath arcPath serializeF deserializeF iniData 
+
+    let serializeToString (item : 'A) =
+        System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
+
+    let serializeToFile (p : string) (item : 'A) =
+        System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
+        |> fun s -> System.IO.File.WriteAllText(p,s)

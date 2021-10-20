@@ -169,12 +169,28 @@ module ArcAPI =
                 
             let output = updateInvestigationAssays (assayNames |> List.ofArray) investigation
 
+            if containsFlag "ProcessSequence" arcArgs then
 
-            match tryGetFieldValueByName "Path" arcArgs with
-            | Some p -> ISADotNet.Json.Investigation.toFile p output
-            | None -> ()
+                let output = 
+                    output.Studies 
+                    |> Option.defaultValue [] |> List.collect (fun s -> 
+                        s.Assays
+                        |> Option.defaultValue [] |> List.collect (fun a -> 
+                            a.ProcessSequence |> Option.defaultValue []
+                        )
+                    )
 
-            System.Console.Write(ISADotNet.Json.Investigation.toString output)
+                match tryGetFieldValueByName "Path" arcArgs with
+                | Some p -> ArgumentProcessing.serializeToFile p output
+                | None -> ()
 
+                System.Console.Write(ArgumentProcessing.serializeToString output)
+            else 
+               
+                match tryGetFieldValueByName "Path" arcArgs with
+                | Some p -> ISADotNet.Json.Investigation.toFile p output
+                | None -> ()
+
+                System.Console.Write(ISADotNet.Json.Investigation.toString output)
     /// Returns true if called anywhere in an arc 
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())
