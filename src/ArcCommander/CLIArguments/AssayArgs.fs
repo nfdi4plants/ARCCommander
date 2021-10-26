@@ -102,7 +102,7 @@ type AssayMoveArgs =
             | TargetStudyIdentifier _ -> "Target study to which the assay should be moved"
 
 /// CLI arguments for getting the values of a specific assay
-type AssayGetArgs = AssayEditArgs
+type AssayShowArgs = AssayEditArgs
 
 /// CLI arguments for exporting a specific assay to json
 type AssayExportArgs = 
@@ -214,4 +214,4 @@ module AssayContacts =
 
     /// CLI arguments for getting person
     // Same arguments as `edit` because all metadata fields needed for identifying the person also have to be used when editing
-    type PersonGetArgs = PersonEditArgs
+    type PersonShowArgs = PersonEditArgs

@@ -72,7 +72,7 @@ type StudyRemoveArgs = StudyInitArgs
 
 /// CLI arguments for getting a study
 // same as `init` because both commands only need to be passed a study identifier
-type StudyGetArgs = StudyInitArgs
+type StudyShowArgs = StudyInitArgs
 
 /// CLI arguments for study contacts
 module StudyContacts = 
@@ -169,7 +169,7 @@ module StudyContacts =
 
     /// CLI arguments for getting person
     // Same arguments as `edit` because all metadata fields needed for identifying the person also have to be used when editing
-    type PersonGetArgs = PersonEditArgs
+    type PersonShowArgs = PersonEditArgs
 
 /// CLI arguments for study Contacts
 module StudyPublications = 
@@ -242,7 +242,7 @@ module StudyPublications =
 
     /// CLI arguments for getting publication
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type PublicationGetArgs = PublicationEditArgs
+    type PublicationShowArgs = PublicationEditArgs
 
 /// CLI arguments for study design descriptors
 module StudyDesignDescriptors = 
@@ -299,7 +299,7 @@ module StudyDesignDescriptors =
 
     /// CLI arguments for getting design
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type DesignGetArgs = DesignEditArgs
+    type DesignShowArgs = DesignEditArgs
 
 /// CLI arguments for study factors
 module StudyFactors = 
@@ -359,7 +359,7 @@ module StudyFactors =
 
     /// CLI arguments for getting factor
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type FactorGetArgs = FactorEditArgs
+    type FactorShowArgs = FactorEditArgs
 
 /// CLI arguments for study factors
 module StudyProtocols = 
@@ -475,4 +475,4 @@ module StudyProtocols =
 
     /// CLI arguments for getting protocol
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type ProtocolGetArgs = ProtocolEditArgs
+    type ProtocolShowArgs = ProtocolEditArgs

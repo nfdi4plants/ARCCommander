@@ -141,7 +141,7 @@ module InvestigationContacts =
 
     /// CLI arguments for getting person
     // Same arguments as `edit` because all metadata fields needed for identifying the person also have to be used when editing
-    type PersonGetArgs = PersonEditArgs
+    type PersonShowArgs = PersonEditArgs
 
 /// CLI arguments for Investigation Contacts
 module InvestigationPublications = 
@@ -209,4 +209,4 @@ module InvestigationPublications =
 
     /// CLI arguments for getting publication
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
-    type PublicationGetArgs = PublicationEditArgs
+    type PublicationShowArgs = PublicationEditArgs

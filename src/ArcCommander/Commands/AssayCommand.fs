@@ -19,7 +19,7 @@ type AssayCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args :          ParseResults<AssayEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Move        of move_args :          ParseResults<AssayMoveArgs>
     //Retrievals
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args :           ParseResults<AssayGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args :          ParseResults<AssayShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
     | [<CliPrefix(CliPrefix.None)>] Export      of export_args :        ParseResults<AssayExportArgs>
 
@@ -40,7 +40,7 @@ type AssayCommand =
             | Edit              _ -> "Open and edit an existing assay in the arc with a text editor. Arguments passed for this command will be pre-set in the editor."
             | Move              _ -> "Move an assay from one study to another"
 
-            | Get               _ -> "Gets the values of an existing assay"
+            | Show              _ -> "Gets the values of an existing assay"
             | List              _ -> "List all assays registered in the ARC"
             | Export            _ -> "Export a specific assay to json"
 
@@ -52,7 +52,7 @@ and AssayPersonCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args :          ParseResults<PersonEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args :      ParseResults<PersonRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args :    ParseResults<PersonUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args :           ParseResults<PersonGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args :          ParseResults<PersonShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -62,5 +62,5 @@ and AssayPersonCommand =
             | Edit              _ -> "Open and edit an existing person in the ARC investigation study with a text editor. The person is identified by the full name (first name, last name, mid initials)."
             | Register          _ -> "Register a person in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation study. The person is identified by the full name (first name, last name, mid initials)."
-            | Get               _ -> "Get the metadata of a person registered in the ARC investigation study"
+            | Show              _ -> "Get the metadata of a person registered in the ARC investigation study"
             | List              _ -> "List all persons registered in the ARC investigation"

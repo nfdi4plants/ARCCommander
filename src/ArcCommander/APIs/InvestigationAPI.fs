@@ -286,7 +286,7 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
-        let get (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
            
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -490,7 +490,7 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing publication by its doi and prints its metadata
-        let get (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
