@@ -68,11 +68,15 @@ module GitAPI =
 
         let trackWithAdd (file:string) =
 
-            executeGitCommand verbosity repoDir ("add "+file) |> ignore
+            executeGitCommand verbosity repoDir $"add \"{file}\"" |> ignore
 
         let trackWithLFS (file:string) =
 
-            executeGitCommand verbosity repoDir ("lfs track "+file) |> ignore
+            let lfsPath = file.Replace(repoDir,"").Replace("\\","/")
+
+            executeGitCommand verbosity repoDir $"lfs track \"{lfsPath}\"" |> ignore
+
+            trackWithAdd file
             trackWithAdd (System.IO.Path.Combine(repoDir,".gitattributes"))
 
         let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
