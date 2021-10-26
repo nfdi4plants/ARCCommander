@@ -31,7 +31,7 @@ let addOuterFrame denseMatrix =
             | (0,0) -> ""
             | (0,_) -> toExcelLetters (iC)
             | (_,0) -> string iR
-            | _ -> denseMatrix.[iR - 1,iC - 1]
+            | _     -> denseMatrix.[iR - 1,iC - 1]
     )
 
 /// Takes a Spreadsheet document and returns an array of the names of all the sheets that it consists of.
@@ -79,7 +79,7 @@ let addMatrixToTable (denseMatrix : string [,]) (spectreTable : Table) =
     for i = 1 to Array2D.length1 denseMatrix - 1 do
         spectreTable.AddRow(denseMatrix.[i,0 ..]) |> ignore
 
-/// Replaces '[' and ']' with '[[' and ']]' for correct Markup-parsing reasons.
+/// Replaces '[' and ']' with '[[' and ']]' for correct Markup-parsing.
 let escapeForSquareBrackets (s : string) = (s.Replace("[","[[")).Replace("]","]]")
 
 /// Reads two .xlsx files and prints table representations of their cell differences into the console.
