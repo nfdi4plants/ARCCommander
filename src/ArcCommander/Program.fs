@@ -184,6 +184,7 @@ let handleAssaySubCommands arcConfiguration assayVerb =
     | AssayCommand.Edit               r -> processCommand arcConfiguration AssayAPI.edit          r
     | AssayCommand.Move               r -> processCommand arcConfiguration AssayAPI.move          r
     | AssayCommand.Get                r -> processCommand arcConfiguration AssayAPI.get           r
+    | AssayCommand.Export             r -> processCommand arcConfiguration AssayAPI.export        r
     | AssayCommand.List                 -> processCommandWithoutArgs arcConfiguration AssayAPI.list
     | AssayCommand.Person subCommand    -> handleAssayContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
 
@@ -209,6 +210,7 @@ let handleCommand arcConfiguration command =
     | Git subcommand            -> handleGitSubCommands             arcConfiguration (subcommand.GetSubCommand())
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
+    | Export r                  -> processCommand                   arcConfiguration ArcAPI.export r
     | Update                    -> processCommandWithoutArgs        arcConfiguration ArcAPI.update
     // Settings
     | WorkingDir _ | Verbosity _-> ()

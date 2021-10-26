@@ -210,6 +210,18 @@ module AssayConfiguration =
         tryGetRootFolderPath configuration
         |> Option.get
 
+    /// Returns the full paths of the assay folders
+    let getAssayPaths configuration =
+        getRootFolderPath configuration
+        |> System.IO.Directory.GetDirectories
+
+    /// Returns the names of the assay folders
+    let getAssayNames configuration =
+        getRootFolderPath configuration
+        |> System.IO.DirectoryInfo
+        |> fun di -> di.GetDirectories()
+        |> Array.map (fun d -> d.Name)
+
     /// Returns the full path of the files associated with the assay
     let getFilePaths assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General
