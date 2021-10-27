@@ -21,29 +21,33 @@ module GitAPI =
 
         Fake.IO.Path.getDirectory(gitDir)
 
-    let init (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
+    /// Clones git repository arc
+    let get (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start Git Init"
+        if verbosity >= 1 then printfn "Start Arc get"
 
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        // get repository directory
+        let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let repositoryAdress =  tryGetFieldValueByName "RepositoryAdress" gitArgs 
+        let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
 
-        Fake.Tools.Git.Repository.init workDir false true
+        if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
+            if verbosity >= 2 then printfn "Downloading into current folder"
+            executeGitCommand verbosity repoDir $"clone {remoteAddress} ." |> ignore
+        else 
+            if verbosity >= 2 then printfn "Specified folder \"%s\" is not empty. " repoDir
+            if verbosity >= 2 then printfn "Downloading into subfolder"
+            executeGitCommand verbosity repoDir $"clone {remoteAddress}" |> ignore
 
-        match repositoryAdress with
-        | None -> ()
-        | Some remote ->
-            executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
 
-
-    let update (arcConfiguration:ArcConfiguration) (gitArgs:Map<string,Argument>) =
+    /// sync with remote. Commit changes, then pull remote and push to remote
+    let sync (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start Git Update"
+        if verbosity >= 1 then printfn "Start Arc sync"
 
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)

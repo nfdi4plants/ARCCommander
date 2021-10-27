@@ -28,3 +28,26 @@ type ArcExportArgs =
             match this with
             | Path              _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
             | ProcessSequence   _ -> "If this flag is set, the return value of this arc will be its list of all its processes"
+
+
+/// TO-DO: Argumente anpassen
+type ArcSyncArgs =
+    | [<Unique>][<AltCommandLine("-r")>] RepositoryAddress  of repository_address:string
+    | [<Unique>][<AltCommandLine("-m")>] CommitMessage      of commit_message:string
+    | [<Unique>][<AltCommandLine("-b")>] BranchName         of branch_name:string
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | RepositoryAddress _   -> "Git remote address with which to sync the ARC. If no address is either given here or set previously when initing or getting the ARC, changes are only committed but not synced."
+            | CommitMessage _       -> "Descriptive title for the changes made (e.g. add new assay). If none is given, default commit message is used."
+            | BranchName _          -> "Name of the branch to which the changes should be pushed. If none is given, defaults to \"main\""
+
+/// TO-DO: Argumente anpassen
+type ArcGetArgs =
+    | [<Mandatory>][<Unique>][<AltCommandLine("-r")>] RepositoryAddress of repository_address:string
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | RepositoryAddress _   -> "Git remote address from which to pull the ARC"

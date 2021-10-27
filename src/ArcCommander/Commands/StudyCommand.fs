@@ -114,7 +114,7 @@ and StudyFactorCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<FactorEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<FactorRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<FactorUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:           ParseResults<FactorShowArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<FactorShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with

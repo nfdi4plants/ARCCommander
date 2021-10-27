@@ -195,10 +195,6 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
     | ConfigurationCommand.Set      r -> processCommand arcConfiguration ConfigurationAPI.set   r
     | ConfigurationCommand.Unset    r -> processCommand arcConfiguration ConfigurationAPI.unset r
 
-let handleGitSubCommands arcConfiguration gitVerb =
-    match gitVerb with
-    | GitCommand.Init       r -> processCommand arcConfiguration GitAPI.init    r
-    | GitCommand.Update     r -> processCommand arcConfiguration GitAPI.update  r
 
 let handleCommand arcConfiguration command =
     match command with
@@ -207,11 +203,13 @@ let handleCommand arcConfiguration command =
     | Study subCommand          -> handleStudySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Assay subCommand          -> handleAssaySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Configuration subcommand  -> handleConfigurationSubCommands   arcConfiguration (subcommand.GetSubCommand())
-    | Git subcommand            -> handleGitSubCommands             arcConfiguration (subcommand.GetSubCommand())
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
     | Export r                  -> processCommand                   arcConfiguration ArcAPI.export r
     | Update                    -> processCommandWithoutArgs        arcConfiguration ArcAPI.update
+    // Git Verbs
+    | Sync r                    -> processCommand                   arcConfiguration GitAPI.sync r
+    | Get r                     -> processCommand                   arcConfiguration GitAPI.get r
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
