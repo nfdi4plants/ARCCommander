@@ -34,13 +34,18 @@ module GitAPI =
 
         let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
 
+        let branch = 
+            match tryGetFieldValueByName "BranchName" gitArgs with 
+            | Some branchName -> $" -b {branchName}"
+            | None -> ""
+
         if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
             if verbosity >= 2 then printfn "Downloading into current folder"
-            executeGitCommand verbosity repoDir $"clone {remoteAddress} ." |> ignore
+            executeGitCommand verbosity repoDir $"clone {remoteAddress}{branch} ." |> ignore
         else 
             if verbosity >= 2 then printfn "Specified folder \"%s\" is not empty. " repoDir
             if verbosity >= 2 then printfn "Downloading into subfolder"
-            executeGitCommand verbosity repoDir $"clone {remoteAddress}" |> ignore
+            executeGitCommand verbosity repoDir $"clone {remoteAddress}{branch}" |> ignore
 
 
     /// sync with remote. Commit changes, then pull remote and push to remote
@@ -128,7 +133,9 @@ module GitAPI =
 
         Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
-        executeGitCommand verbosity repoDir "branch -M main" |> ignore
+        let branch = tryGetFieldValueByName "BranchName" gitArgs |> Option.defaultValue "main"
+
+        executeGitCommand verbosity repoDir $"branch -M {branch}" |> ignore
 
         // detect existing remote
         let hasRemote () =
@@ -151,10 +158,10 @@ module GitAPI =
         if hasRemote() then
             if verbosity >= 2 then printfn "Pull" 
             executeGitCommand verbosity repoDir ("fetch origin") |> ignore
-            executeGitCommand verbosity repoDir ("pull --rebase origin main") |> ignore
+            executeGitCommand verbosity repoDir ($"pull --rebase origin {branch}") |> ignore
 
         // push if remote exists
         if hasRemote() then
             if verbosity >= 2 then printfn "Push"            
-            executeGitCommand verbosity repoDir ("push -u origin main") |> ignore
+            executeGitCommand verbosity repoDir ($"push -u origin {branch}") |> ignore
 

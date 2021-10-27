@@ -46,8 +46,10 @@ type ArcSyncArgs =
 /// TO-DO: Argumente anpassen
 type ArcGetArgs =
     | [<Mandatory>][<Unique>][<AltCommandLine("-r")>] RepositoryAddress of repository_address:string
+    | [<Unique>][<AltCommandLine("-b")>] BranchName         of branch_name:string
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
             | RepositoryAddress _   -> "Git remote address from which to pull the ARC"
+            | BranchName _          -> "Branch of the remote address which should be used. If none is given, uses \"main\""
