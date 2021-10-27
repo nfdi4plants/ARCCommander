@@ -5,6 +5,7 @@ open ArcCommander
 open ArgumentProcessing
 open Fake.Tools.Git
 open Fake.IO
+open System.IO
 
 module GitAPI =
 
@@ -52,6 +53,10 @@ module GitAPI =
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)
 
+        if verbosity >= 2 then printfn "Delete .gitattributes"
+
+        File.Delete(Path.Combine(repoDir,".gitattributes"))
+
         // track all untracked files
         printfn "-----------------------------"
         let rec getAllFiles(cDir:string) =
@@ -83,6 +88,14 @@ module GitAPI =
             trackWithAdd file
             trackWithAdd (System.IO.Path.Combine(repoDir,".gitattributes"))
 
+        
+        let gitLfsRules = GeneralConfiguration.getGitLfsRules arcConfiguration
+
+        gitLfsRules
+        |> Array.iter (fun rule ->
+            executeGitCommand verbosity repoDir $"lfs track \"{rule}\"" |> ignore
+        )
+
         let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
 
         if verbosity >= 2 then printfn "Start tracking files" 
@@ -95,6 +108,7 @@ module GitAPI =
                 | Some thr when size > thr -> trackWithLFS file
                 | _ -> trackWithAdd file
         )
+
 
         executeGitCommand verbosity repoDir ("add -u") |> ignore
         printfn "-----------------------------"
