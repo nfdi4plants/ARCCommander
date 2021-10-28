@@ -8,12 +8,6 @@
         "fake"
       ]
     },
-    "paket": {
-      "version": "5.257.0",
-      "commands": [
-        "paket"
-      ]
-    },
     "fsharp.formatting.commandtool": {
       "version": "11.2.0",
       "commands": [
