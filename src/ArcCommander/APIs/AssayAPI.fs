@@ -543,7 +543,7 @@ module AssayAPI =
         |> Investigation.toFile investigationFilePath
 
     /// Moves an assay file from one study group to another (provided by assayArgs).
-    let get (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
+    let show (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
      
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -1070,7 +1070,7 @@ module AssayAPI =
             //|> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
-        let get (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             printfn "Not implemented yet."
           

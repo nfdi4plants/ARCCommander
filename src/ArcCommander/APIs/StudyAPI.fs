@@ -218,7 +218,7 @@ module StudyAPI =
         unregister arcConfiguration studyArgs
 
     /// Lists all study identifiers registered in this arc's investigation file
-    let get (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
+    let show (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -504,7 +504,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
-        let get (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
           
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -783,7 +783,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing publication by doi from the arc investigation study and prints its metadata.
-        let get (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -1048,7 +1048,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing design by design type from the arc investigation study and prints its metadata.
-        let get (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -1308,7 +1308,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing factor by name from the arc investigation study and prints its metadata.
-        let get (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -1660,7 +1660,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing protocol by name from the arc investigation study and prints its metadata.
-        let get (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
          
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             

@@ -31,7 +31,7 @@ and InvestigationPersonCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<PersonEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<PersonRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<PersonUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<PersonGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<PersonShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -41,7 +41,7 @@ and InvestigationPersonCommand =
             | Edit              _ -> "Open and edit an existing person in the ARC investigation with a text editor. The person is identified by the full name (first name, last name, mid initials)."
             | Register          _ -> "Register a person in the ARC investigation with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation. The person is identified by the full name (first name, last name, mid initials)."
-            | Get               _ -> "Get the metadata of a person registered in the ARC investigation"
+            | Show              _ -> "Get the metadata of a person registered in the ARC investigation"
             | List              _ -> "List all persons registered in the ARC investigation"
 
 and InvestigationPublicationCommand =
@@ -50,7 +50,7 @@ and InvestigationPublicationCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<PublicationEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<PublicationRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<PublicationUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<PublicationGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<PublicationShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -60,5 +60,5 @@ and InvestigationPublicationCommand =
             | Edit              _ -> "Open and edit an existing publication in the ARC investigation with a text editor. The publication is identified by the DOI."
             | Register          _ -> "Register a publication in the ARC investigation with the given assay metadata"
             | Unregister        _ -> "Unregister a publication from the given investigation. The publication is identified by the DOI."
-            | Get               _ -> "Get the metadata of a publication registered in the ARC investigation"
+            | Show              _ -> "Get the metadata of a publication registered in the ARC investigation"
             | List              _ -> "List all publication registered in the ARC investigation"

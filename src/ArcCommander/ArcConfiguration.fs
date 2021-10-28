@@ -114,6 +114,14 @@ module GeneralConfiguration =
     let getGitLfsByteThreshold configuration = 
         Map.find "gitlfsbytethreshold" configuration.General |> int
 
+    /// Returns the git lfs rules. Files matching these rules will be tracked by git lfs
+    let tryGetGitLfsRules configuration = 
+        Map.tryFind "gitlfsrules" configuration.General |> Option.map splitValues
+
+    /// Returns the git lfs threshold. Files matching these rules will be tracked by git lfs
+    let getGitLfsRules configuration = 
+        Map.find "gitlfsrules" configuration.General |> splitValues
+
     /// Returns force editor parameter. If set to true, all 
     let tryGetForceEditor configuration = 
         Map.tryFind "forceeditor" configuration.General |> Option.map (fun s -> s.ToLower() = "true")

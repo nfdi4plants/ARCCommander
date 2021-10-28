@@ -3,6 +3,7 @@ rootfolder=.arc
 editor=nano
 verbosity=1
 gitlfsbytethreshold=150000000
+gitlfsrules=**/dataset/**
 forceeditor=false
 
 [isamodel]

@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "meta", "meta", "{655069DF-7
 	ProjectSection(SolutionItems) = preProject
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		.github\workflows\build-and-test.yml = .github\workflows\build-and-test.yml
 		build.cmd = build.cmd
 		build.fsx = build.fsx
 		build.sh = build.sh

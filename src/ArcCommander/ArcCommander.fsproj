@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackAsTool>true</PackAsTool>
@@ -28,14 +28,12 @@
     <Compile Include="ArgumentProcessing.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
-    <Compile Include="CLIArguments\GitArgs.fs" />
     <Compile Include="CLIArguments\InvestigationArgs.fs" />
     <Compile Include="CLIArguments\StudyArgs.fs" />
     <Compile Include="CLIArguments\AssayArgs.fs" />
     <Compile Include="CLIArguments\ArcArgs.fs" />
     <None Include="Commands\README.md" />
     <Compile Include="Commands\ConfigurationCommand.fs" />
-    <Compile Include="Commands\GitCommands.fs" />
     <Compile Include="Commands\InvestigationCommand.fs" />
     <Compile Include="Commands\StudyCommand.fs" />
     <Compile Include="Commands\AssayCommand.fs" />

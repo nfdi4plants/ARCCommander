@@ -23,7 +23,7 @@ type StudyCommand =
     | [<CliPrefix(CliPrefix.None)>] Update      of update_args          : ParseResults<StudyUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args            : ParseResults<StudyEditArgs>
 
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args             : ParseResults<StudyGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args            : ParseResults<StudyShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List 
 
     | [<CliPrefix(CliPrefix.None)>] Person      of person_verbs         : ParseResults<StudyPersonCommand>
@@ -43,7 +43,7 @@ type StudyCommand =
             | Remove        _ -> "Remove a study from the ARC"
             | Update        _ -> "Update an existing study in the ARC with the given study metadata"
             | Edit          _ -> "Open and edit an existing study in the ARC with a text editor. Arguments passed for this command will be pre-set in the editor."
-            | Get           _ -> "Get the values of a study"
+            | Show          _ -> "Get the values of a study"
             | List          _ -> "List all studies registered in the ARC"
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
@@ -57,7 +57,7 @@ and StudyPersonCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<PersonEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<PersonRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<PersonUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<PersonGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<PersonShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -67,7 +67,7 @@ and StudyPersonCommand =
             | Edit              _ -> "Open and edit an existing person in the ARC investigation study with a text editor. The person is identified by the full name (first name, last name, mid initials)."
             | Register          _ -> "Register a person in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation study. The person is identified by the full name (first name, last name, mid initials)."
-            | Get               _ -> "Get the metadata of a person registered in the ARC investigation study"
+            | Show              _ -> "Get the metadata of a person registered in the ARC investigation study"
             | List              _ -> "List all persons registered in the ARC investigation"
 
 and StudyPublicationCommand =
@@ -76,7 +76,7 @@ and StudyPublicationCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<PublicationEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<PublicationRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<PublicationUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<PublicationGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<PublicationShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -86,7 +86,7 @@ and StudyPublicationCommand =
             | Edit              _ -> "Open and edit an existing publication in the ARC investigation study with a text editor. The publication is identified by the DOI."
             | Register          _ -> "Register a publication in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a publication from the given investigation study. The publication is identified by the DOI."
-            | Get               _ -> "Get the metadata of a publication registered in the ARC investigation study"
+            | Show              _ -> "Get the metadata of a publication registered in the ARC investigation study"
             | List              _ -> "List all publication registered in the ARC investigation study"
 
 and StudyDesignCommand =
@@ -95,7 +95,7 @@ and StudyDesignCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<DesignEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<DesignRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<DesignUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<DesignGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<DesignShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -105,7 +105,7 @@ and StudyDesignCommand =
             | Edit              _ -> "Open and edit an existing design in the ARC investigation study with a text editor. The design is identified by the design type."
             | Register          _ -> "Register a design in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a design from the given investigation study. The design is identified by the design type."
-            | Get               _ -> "Get the metadata of a design registered in the ARC investigation study"
+            | Show              _ -> "Get the metadata of a design registered in the ARC investigation study"
             | List              _ -> "List all designs registered in the ARC investigation study"
 
 and StudyFactorCommand =
@@ -114,7 +114,7 @@ and StudyFactorCommand =
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<FactorEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<FactorRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<FactorUnregisterArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<FactorGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<FactorShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -124,7 +124,7 @@ and StudyFactorCommand =
             | Edit              _ -> "Open and edit an existing factor in the ARC investigation study with a text editor. The factor is identified by name."
             | Register          _ -> "Register a factor in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a factor from the given investigation study. The factor is identified by name."
-            | Get               _ -> "Get the metadata of a factor registered in the ARC investigation study"
+            | Show              _ -> "Get the metadata of a factor registered in the ARC investigation study"
             | List              _ -> "List all factor registered in the ARC investigation study"
 
 and StudyProtocolCommand =
@@ -134,7 +134,7 @@ and StudyProtocolCommand =
     | [<CliPrefix(CliPrefix.None)>] Register    of register_args:   ParseResults<ProtocolRegisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Unregister  of unregister_args: ParseResults<ProtocolUnregisterArgs>
     | [<CliPrefix(CliPrefix.None)>] Load        of load_args:       ParseResults<ProtocolLoadArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get         of get_args:        ParseResults<ProtocolGetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Show        of show_args:       ParseResults<ProtocolShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
 
     interface IArgParserTemplate with
@@ -145,5 +145,5 @@ and StudyProtocolCommand =
             | Register          _ -> "Register a protocol in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a protocol from the given investigation study. The protocol is identified by name."
             | Load              _ -> "Load a protocol from an ISA JSON file and add it to the study"
-            | Get               _ -> "Get the metadata of a protocol registered in the arc investigation study"
+            | Show              _ -> "Get the metadata of a protocol registered in the arc investigation study"
             | List              _ -> "List all protocol registered in the ARC investigation study"
