@@ -54,7 +54,7 @@ module IniData =
     let getGlobalConfigPath () =
         // most of this part only remains for legacy reasons. Config file should not be downloaded and placed by the user (as before) but installed by the ArcCommander itself.
         let getFolderPath specialFolder inOwnFolder inCompanyFolder = 
-            Environment.GetFolderPath specialFolder
+            Environment.GetFolderPath(specialFolder, Environment.SpecialFolderOption.DoNotVerify)
             |> fun x -> 
                 if inOwnFolder then 
                     Path.Combine(x, "ArcCommander", "config") 
@@ -85,7 +85,7 @@ module IniData =
         | x when x inDesktop        -> inDesktop
         | x when x inDesktop2       -> inDesktop2
         | x when x inCache2         -> inCache2
-        | _                         -> createDefault (); getFolderPath Environment.SpecialFolder.ApplicationData false true
+        | _                         -> createDefault (); inConfigFolder
         //| _ -> failwith "ERROR: No global config file found. Initiation of default config file not possible.\nPlease add the specific config file for your OS to your config folder."
         //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
         //Path.Combine(System.Environment.SpecialFolder.ApplicationData |> System.Environment.GetFolderPath, "arcCommanderConfig")
