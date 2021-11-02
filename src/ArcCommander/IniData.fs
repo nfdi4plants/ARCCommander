@@ -36,19 +36,16 @@ module IniData =
 
     /// Creates a default config file in the user's config folder (AppData\Local in Windows, ~/config in Unix).
     let createDefault () =
+        let os = getOs ()
         let srcFilepath = 
             let appDir = Threading.Thread.GetDomain().BaseDirectory
-            printfn "appDir: %s" appDir
-            let os = getOs ()
             let osConfFolder = 
                 match os with
                 | Windows   -> "config_win"
                 | Unix      -> "config_unix"
             Path.Combine(appDir, osConfFolder, "config")
-        let destDirPath = 
-            let configFolder = Environment.SpecialFolder.ApplicationData |> Environment.GetFolderPath
-            Path.Combine(configFolder, "DataPLANT", "ArcCommander")
-        printfn "destDir: %s" destDirPath
+        let configFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify)
+        let destDirPath = Path.Combine(configFolder, "DataPLANT", "ArcCommander")
         Directory.CreateDirectory(destDirPath) |> ignore
         let destFilepath = Path.Combine(destDirPath, "config")
         File.Copy(srcFilepath, destFilepath)
@@ -88,7 +85,7 @@ module IniData =
         | x when x inDesktop        -> inDesktop
         | x when x inDesktop2       -> inDesktop2
         | x when x inCache2         -> inCache2
-        | _                         -> createDefault (); inConfigFolder
+        | _                         -> createDefault (); getFolderPath Environment.SpecialFolder.ApplicationData false true
         //| _ -> failwith "ERROR: No global config file found. Initiation of default config file not possible.\nPlease add the specific config file for your OS to your config folder."
         //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
         //Path.Combine(System.Environment.SpecialFolder.ApplicationData |> System.Environment.GetFolderPath, "arcCommanderConfig")
