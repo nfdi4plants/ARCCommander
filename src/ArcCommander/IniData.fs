@@ -38,6 +38,7 @@ module IniData =
     let createDefault () =
         let srcFilepath = 
             let appDir = Threading.Thread.GetDomain().BaseDirectory
+            printfn "appDir: %s" appDir
             let os = getOs ()
             let osConfFolder = 
                 match os with
@@ -45,8 +46,9 @@ module IniData =
                 | Unix      -> "config_unix"
             Path.Combine(appDir, osConfFolder, "config")
         let destDirPath = 
-            let configFolder = Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath
+            let configFolder = Environment.SpecialFolder.ApplicationData |> Environment.GetFolderPath
             Path.Combine(configFolder, "DataPLANT", "ArcCommander")
+        printfn "destDir: %s" destDirPath
         Directory.CreateDirectory(destDirPath) |> ignore
         let destFilepath = Path.Combine(destDirPath, "config")
         File.Copy(srcFilepath, destFilepath)
@@ -63,15 +65,15 @@ module IniData =
                     Path.Combine(x, "DataPLANT", "ArcCommander", "config")
                 else 
                     Path.Combine(x, "config")
-        let inConfigFolder  = getFolderPath Environment.SpecialFolder.LocalApplicationData  false   true
-        let inConfigFolder2 = getFolderPath Environment.SpecialFolder.LocalApplicationData  true   false
-        let inConfigFolder3 = getFolderPath Environment.SpecialFolder.LocalApplicationData  false  false
+        let inConfigFolder  = getFolderPath Environment.SpecialFolder.ApplicationData       false  true
+        let inConfigFolder2 = getFolderPath Environment.SpecialFolder.ApplicationData       true   false
+        let inConfigFolder3 = getFolderPath Environment.SpecialFolder.ApplicationData       false  false
         let inCache         = getFolderPath Environment.SpecialFolder.InternetCache         false  false
         let inCache2        = getFolderPath Environment.SpecialFolder.InternetCache         true   false
         let inDesktop       = getFolderPath Environment.SpecialFolder.DesktopDirectory      false  false
         let inDesktop2      = getFolderPath Environment.SpecialFolder.DesktopDirectory      true   false
-        let inLocal         = getFolderPath Environment.SpecialFolder.ApplicationData       true   false
-        let inLocal2        = getFolderPath Environment.SpecialFolder.ApplicationData       false  false
+        let inLocal         = getFolderPath Environment.SpecialFolder.LocalApplicationData  true   false
+        let inLocal2        = getFolderPath Environment.SpecialFolder.LocalApplicationData  false  false
         let inUser          = getFolderPath Environment.SpecialFolder.UserProfile           true   false
         let inUser2         = getFolderPath Environment.SpecialFolder.UserProfile           false  false
         match File.Exists with
