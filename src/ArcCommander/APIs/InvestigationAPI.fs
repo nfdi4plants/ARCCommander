@@ -86,8 +86,8 @@ module InvestigationAPI =
         let investigation = Investigation.fromFile investigationFilePath
                
         let editedInvestigation =
-            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Investigation.InvestigationInfo.WriteInvestigationInfo 
-                (Investigation.InvestigationInfo.ReadInvestigationInfo 1 >> fun (_,_,_,item) -> Investigation.fromParts item [] [] [] [] []) 
+            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Investigation.InvestigationInfo.toRows 
+                (Investigation.InvestigationInfo.fromRows 1 >> fun (_,_,_,item) -> Investigation.fromParts item [] [] [] [] []) 
                 investigation
                
         API.Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
@@ -197,8 +197,8 @@ module InvestigationAPI =
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person -> 
                     ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Contacts.writePersons None) 
-                        (Contacts.readPersons None 1 >> fun (_,_,_,items) -> items.Head) 
+                        (List.singleton >> Contacts.toRows None) 
+                        (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         person
                     |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                     |> API.Investigation.setContacts investigation
@@ -305,7 +305,7 @@ module InvestigationAPI =
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person ->
                     [person]
-                    |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons None)
+                    |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                     |> printfn "%s"
                 | None -> printfn "Person with the name %s %s %s  does not exist in the investigation" firstName midInitials lastName
             | None -> 
@@ -413,8 +413,8 @@ module InvestigationAPI =
                 match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->                    
                     ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                        (List.singleton >> Publications.writePublications None) 
-                        (Publications.readPublications None 1 >> fun (_,_,_,items) -> items.Head) 
+                        (List.singleton >> Publications.toRows None) 
+                        (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         publication
                     |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
                     |> API.Investigation.setPublications investigation
@@ -507,7 +507,7 @@ module InvestigationAPI =
                 match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->
                     [publication]
-                    |> Prompt.serializeXSLXWriterOutput (Publications.writePublications None)
+                    |> Prompt.serializeXSLXWriterOutput (Publications.toRows None)
                     |> printfn "%s"
 
                 | None -> 

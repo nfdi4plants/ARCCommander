@@ -254,19 +254,19 @@ module ArgumentProcessing =
                 | None -> Some (k,Field ""))
             |> Map.ofArray
 
-        let serializeXSLXWriterOutput (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>) (inp : 'A) = 
+        let serializeXSLXWriterOutput (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>) (inp : 'A) = 
             writeF inp
             |> Seq.map (fun r -> 
                 sprintf "%s:%s"
-                    (FSharpSpreadsheetML.Row.tryGetValueAt None 1u r |> Option.get |> fun s -> s.TrimStart())
-                    (FSharpSpreadsheetML.Row.tryGetValueAt None 2u r |> Option.get)
+                    (ISADotNet.XLSX.SparseRow.tryGetValueAt 0 r |> Option.get |> fun s -> s.TrimStart())
+                    (ISADotNet.XLSX.SparseRow.tryGetValueAt 1 r |> Option.get)
             )
             |> Seq.reduce (fun a b -> a + "\n" + b)
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
         let createIsaItemQuery editorPath arcPath 
-            (writeF : 'A -> seq<DocumentFormat.OpenXml.Spreadsheet.Row>)
-            (readF : System.Collections.Generic.IEnumerator<DocumentFormat.OpenXml.Spreadsheet.Row> -> 'A)
+            (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>)
+            (readF : System.Collections.Generic.IEnumerator<ISADotNet.XLSX.SparseRow> -> 'A)
             (isaItem : 'A) = 
 
             let header = 
@@ -281,7 +281,7 @@ module ArgumentProcessing =
                 |> Seq.map (fun x ->                 
                     match splitAtFirst ':' x with
                     | k, Field v ->
-                        FSharpSpreadsheetML.Row.ofValues None 1u [k;v]
+                        ISADotNet.XLSX.SparseRow.fromValues [k;v]
                     | _ -> failwith "ERROR: File was corrupted in Editor"
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 

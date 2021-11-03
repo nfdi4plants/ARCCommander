@@ -42,8 +42,8 @@ let testAssayTestFunction =
     testList "AssayTestFunctionTests" [
         testCase "MatchesAssayValues" (fun () -> 
             let testAssay = ISADotNet.XLSX.Assays.fromString
-                                "protein expression profiling" "http://purl.obolibrary.org/obo/OBI_0000615" "OBI"
-                                "mass spectrometry" "" "OBI" "iTRAQ" "a_proteome.txt" []
+                                "protein expression profiling" "OBI" "http://purl.obolibrary.org/obo/OBI_0000615"
+                                "mass spectrometry" "OBI" "" "iTRAQ" "a_proteome.txt" []
             let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
             // Positive control
             Expect.equal investigation.Studies.Value.Head.Assays.Value.Head testAssay "The assay in the file should match the one created per hand but did not"
