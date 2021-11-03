@@ -3,12 +3,26 @@ open Argu
 
 /// CLI arguments for empty assay initialization
 type AssayInitArgs =
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of assay_identifier : string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of string
+    | [<Unique>] MeasurementType of measurement_type : string
+    | [<Unique>] MeasurementTypeTermAccessionNumber of measurement_type_accession : string
+    | [<Unique>] MeasurementTypeTermSourceREF of measurement_type_term_source : string
+    | [<Unique>] TechnologyType of technology_type : string
+    | [<Unique>] TechnologyTypeTermAccessionNumber of technology_type_accession : string
+    | [<Unique>] TechnologyTypeTermSourceREF of technology_type_term_source : string
+    | [<Unique>] TechnologyPlatform of technology_platform : string
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
             | AssayIdentifier   _ -> "Identifier of the assay, will be used as name of the root folder of the new assay folder structure"
+            | MeasurementType _                     -> "A term to qualify the endpoint, or what is being measured (e.g. gene expression profiling or protein identification). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
+            | MeasurementTypeTermAccessionNumber _  -> "The accession number from the Term Source associated with the selected term"
+            | MeasurementTypeTermSourceREF _        -> "The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
+            | TechnologyType _                      -> "Term to identify the technology used to perform the measurement, e.g. DNA microarray, mass spectrometry. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
+            | TechnologyTypeTermAccessionNumber _   -> "The accession number from the Term Source associated with the selected term"
+            | TechnologyTypeTermSourceREF _         -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
+            | TechnologyPlatform _                  -> "Manufacturer and platform name, e.g. Bruker AVANCE"
 
 /// CLI arguments for deleting assay file structure
 type AssayDeleteArgs = AssayInitArgs
