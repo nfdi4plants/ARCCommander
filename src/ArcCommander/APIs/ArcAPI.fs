@@ -93,7 +93,7 @@ module ArcAPI =
             | a :: t ->
                 let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
                 let assayFileName = IsaModelConfiguration.getAssayFileName a arcConfiguration
-                let factors,protocols,persons,assay = AssayFile.AssayFile.fromFile assayFilePath
+                let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
                 let studies = investigation.Studies
 
                 match studies with
@@ -145,7 +145,7 @@ module ArcAPI =
                 | a :: t ->
                     let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
                     let assayFileName = IsaModelConfiguration.getAssayFileName a arcConfiguration
-                    let factors,protocols,persons,assay = AssayFile.AssayFile.fromFile assayFilePath
+                    let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
                     let studies = investigation.Studies
     
                     match studies with

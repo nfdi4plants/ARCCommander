@@ -13,155 +13,6 @@ open FSharpSpreadsheetML
 open DocumentFormat.OpenXml.Packaging
 open DocumentFormat.OpenXml.Spreadsheet
 
-module Worksheet =
-
-    let setSheetData (sheetData : SheetData) (worksheet : Worksheet) =
-        if Worksheet.hasSheetData worksheet then
-            worksheet.RemoveChild(Worksheet.getSheetData worksheet)
-            |> ignore
-        Worksheet.addSheetData sheetData worksheet
-
-
-//
-// ISADotNet lacks some functionality missing here. 
-// Unfortunately it cannot be updated right now without breaking the version continuity, 
-// as some breaking changes depend on the new Swate version being updated. 
-// Until then these helper functions are parked here
-//
-
-///let doc = Spreadsheet.fromFile path true  
-///  
-///MetadataSheet.overwriteWithAssayInfo "Investigation" testAssay2 doc
-///
-///MetadataSheet.overwriteWithPersons "Investigation" [person] doc
-/// 
-///MetadataSheet.getPersons "Investigation" doc
-///
-///MetadataSheet.tryGetAssay "Investigation" doc
-///  
-///doc.Close()
-
-module MetadataSheet = 
-
-    /// Append an assay metadata sheet with the given sheetname to an existing assay file excel spreadsheet
-    let init sheetName assay (doc : SpreadsheetDocument) = 
-
-        let sheet = SheetData.empty()
-
-        let worksheetComment = Comment.create None (Some "Worksheet") None
-        let personWithComment = Person.create None None None None None None None None None None (Some [worksheetComment])
-        
-        toRows assay [personWithComment]
-        |> Seq.fold (fun s r -> 
-            SheetData.appendRow r s
-        ) sheet
-        |> ignore
-
-        doc
-        |> Spreadsheet.getWorkbookPart
-        |> WorkbookPart.appendSheet sheetName sheet
-        |> ignore 
-
-        doc
-
-    /// Replace the sheetdata of the sheet with the given sheetname
-    let private replaceSheetData (sheetName : string) (data : SheetData) (workbookPart : WorkbookPart) =
-
-        let workbook = Workbook.getOrInit  workbookPart
-    
-        let sheets = Sheet.Sheets.getOrInit workbook
-        let id = 
-            sheets |> Sheet.Sheets.getSheets
-            |> Seq.find (fun sheet -> Sheet.getName sheet = sheetName)
-            |> Sheet.getID
-
-        WorkbookPart.getWorksheetPartById id workbookPart
-        |> Worksheet.getOrInit
-        |> Worksheet.setSheetData data
-        |> ignore 
-
-        workbookPart
-
-    /// Try get assay from metadatasheet with given sheetName
-    let tryGetAssay sheetName (doc : SpreadsheetDocument) = 
-        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
-        | Some sheet -> 
-            sheet
-            |> SheetData.getRows
-            |> fromRows
-            |> fun (a,p) ->
-                a
-        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
-
-    /// Try get persons from metadatasheet with given sheetName
-    let getPersons sheetName (doc : SpreadsheetDocument) = 
-        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
-        | Some sheet -> 
-            sheet
-            |> SheetData.getRows
-            |> fromRows
-            |> fun (a,p) ->
-                p
-        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
-
-    /// Replaces assay metadata from metadatasheet with given sheetName
-    let overwriteWithAssayInfo sheetName assay (doc : SpreadsheetDocument) = 
-
-        let workBookPart = Spreadsheet.getWorkbookPart doc
-        let newSheet = SheetData.empty()
-        
-        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
-        | Some sheet -> 
-            sheet
-            |> SheetData.getRows
-            |> fromRows
-            |> fun (_,p) ->
-            
-                toRows assay p
-                |> Seq.fold (fun s r -> 
-                    SheetData.appendRow r s
-                ) newSheet
-                |> fun s -> replaceSheetData sheetName s workBookPart
-        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
-        |> ignore
-
-        doc.Save() 
-
-    /// Replaces persons from metadatasheet with given sheetName
-    let overwriteWithPersons sheetName persons (doc : SpreadsheetDocument) = 
-
-        let workBookPart = Spreadsheet.getWorkbookPart doc
-        let newSheet = SheetData.empty()
-        
-        match Spreadsheet.tryGetSheetBySheetName sheetName doc with
-        | Some sheet -> 
-            sheet
-            |> SheetData.getRows
-            |> fromRows
-            |> fun (a,_) ->            
-                toRows (Option.defaultValue Assay.empty a) persons
-                |> Seq.fold (fun s r -> 
-                    SheetData.appendRow r s
-                ) newSheet
-                |> fun s -> replaceSheetData sheetName s workBookPart
-        | None -> failwithf "Metadata sheetname %s could not be found" sheetName
-        |> ignore
-
-        doc.Save() 
-
-module AssayFile =
-
-    /// AssayFile.initToPath "Investigation" "lel" testAssay path
-    let initToPath metadataSheetName assayIdentifier assay path =
-        Spreadsheet.initWithSST assayIdentifier path
-        |> MetadataSheet.init metadataSheetName assay
-        |> Spreadsheet.close
-
-
-
-
-
-
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
 module AssayAPI =        
 
@@ -178,9 +29,9 @@ module AssayAPI =
             IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
             |> System.IO.File.Exists
         
-        let create (arcConfiguration : ArcConfiguration) (identifier : string) =
+        let create (arcConfiguration : ArcConfiguration) (assay) (identifier : string) =
             IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
-            |> ISADotNet.XLSX.AssayFile.AssayFile.init "Investigation" identifier
+            |> ISADotNet.XLSX.AssayFile.Assay.init "Investigation" (Some assay) None identifier
 
     /// Initializes a new empty assay file and associated folder structure in the arc.
     let init (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
@@ -191,13 +42,31 @@ module AssayAPI =
 
         let name = getFieldValueByName "AssayIdentifier" assayArgs
 
+        let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+        
+        let assayFileName = 
+            IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration
+            |> Option.get
+
+        let assay = 
+            Assays.fromString
+                (getFieldValueByName  "MeasurementType" assayArgs)
+                (getFieldValueByName  "MeasurementTypeTermAccessionNumber" assayArgs)
+                (getFieldValueByName  "MeasurementTypeTermSourceREF" assayArgs)
+                (getFieldValueByName  "TechnologyType" assayArgs)
+                (getFieldValueByName  "TechnologyTypeTermAccessionNumber" assayArgs)
+                (getFieldValueByName  "TechnologyTypeTermSourceREF" assayArgs)
+                (getFieldValueByName  "TechnologyPlatform" assayArgs)
+                assayFileName
+                []
+
         if AssayFolder.exists arcConfiguration name then
             if verbosity >= 1 then printfn "Assay folder with identifier %s already exists" name
         else
             AssayConfiguration.getSubFolderPaths name arcConfiguration
             |> Array.iter (Directory.CreateDirectory >> ignore)
 
-            AssayFile.create arcConfiguration name 
+            AssayFile.create arcConfiguration assay name 
 
             AssayConfiguration.getFilePaths name arcConfiguration
             |> Array.iter (File.Create >> ignore)
@@ -318,8 +187,8 @@ module AssayAPI =
                     | Some assay ->
                 
                         ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                            (List.singleton >> Assays.writeAssays None) 
-                            (Assays.readAssays None 1 >> fun (_,_,_,items) -> items.Head) 
+                            (List.singleton >> Assays.toRows None) 
+                            (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                             assay
                         |> fun a -> API.Assay.updateBy ((=) assay) API.Update.UpdateAll a assays
                         |> API.Study.setAssays study
@@ -573,7 +442,7 @@ module AssayAPI =
                     match API.Assay.tryGetByFileName assayFileName assays with
                     | Some assay ->
                         [assay]
-                        |> Prompt.serializeXSLXWriterOutput (Assays.writeAssays None)
+                        |> Prompt.serializeXSLXWriterOutput (Assays.toRows None)
                         |> printfn "%s"
                     | None -> 
                         if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
@@ -666,7 +535,7 @@ module AssayAPI =
 
             if System.IO.File.Exists assayFilePath then
                 try
-                    let _,_,p,a = AssayFile.AssayFile.fromFile assayFilePath
+                    let _,_,p,a = AssayFile.Assay.fromFile assayFilePath
                     p, Some a
                 with
                 | err -> 
@@ -696,7 +565,7 @@ module AssayAPI =
 
         else 
 
-            let output = Study.create None None None None None None None None (API.Option.fromValueWithDefault [] persons) None None None None (Some [mergedAssay]) None None None None
+            let output = Study.create(Contacts = persons,Assays = [mergedAssay])
      
             match tryGetFieldValueByName "Path" assayArgs with
             | Some p -> ISADotNet.Json.Study.toFile p output
@@ -762,7 +631,7 @@ module AssayAPI =
 
                     if System.IO.File.Exists assayFilePath then
                         try
-                            let _,_,p,a = AssayFile.AssayFile.fromFile assayFilePath
+                            let _,_,p,a = AssayFile.Assay.fromFile assayFilePath
                             p, Some a
                         with
                         | err -> 
@@ -779,7 +648,7 @@ module AssayAPI =
                     | Some ai, None -> ai
                     | None, None -> failwith "No assay could be retrieved"     
             
-                Study.create None None None None None None None None (API.Option.fromValueWithDefault [] persons) None None None None (Some [mergedAssay]) None None None None
+                Study.create(Contacts = persons, Assays = [mergedAssay])
             )
         
           

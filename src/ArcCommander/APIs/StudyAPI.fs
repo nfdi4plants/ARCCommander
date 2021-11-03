@@ -19,7 +19,7 @@ module StudyAPI =
     
         let create (arcConfiguration:ArcConfiguration) (identifier : string) =
             IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
-            |> FSharpSpreadsheetML.Spreadsheet.initWithSST identifier
+            |> FSharpSpreadsheetML.Spreadsheet.initWithSst identifier
             |> FSharpSpreadsheetML.Spreadsheet.close
 
     /// Initializes a new empty study file in the arc.
@@ -113,8 +113,8 @@ module StudyAPI =
             match API.Study.tryGetByIdentifier identifier studies with
             | Some study -> 
                 let editedStudy =
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.WriteStudyInfo 
-                        (Study.StudyInfo.ReadStudyInfo 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.toRows 
+                        (Study.StudyInfo.fromRows 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
                         study                   
                 API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
                 |> API.Investigation.setStudies investigation
@@ -235,7 +235,7 @@ module StudyAPI =
             match API.Study.tryGetByIdentifier identifier studies with
             | Some study ->
                 study
-                |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.WriteStudyInfo
+                |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.toRows
                 |> printfn "%s"
             | None -> 
                 if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
@@ -378,8 +378,8 @@ module StudyAPI =
                         match API.Person.tryGetByFullName firstName midInitials lastName persons with
                         | Some person -> 
                             ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                                (List.singleton >> Contacts.writePersons None) 
-                                (Contacts.readPersons None 1 >> fun (_,_,_,items) -> items.Head) 
+                                (List.singleton >> Contacts.toRows None) 
+                                (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 person
                             |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                             |> API.Study.setContacts study
@@ -529,7 +529,7 @@ module StudyAPI =
                         match API.Person.tryGetByFullName firstName midInitials lastName persons with
                         | Some person ->
                             [person]
-                            |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons None)
+                            |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                             |> printfn "%s"
                         | None -> printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
                     | None -> 
@@ -669,8 +669,8 @@ module StudyAPI =
                         match API.Publication.tryGetByDoi doi publications with
                         | Some publication ->                    
                             ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                                (List.singleton >> Publications.writePublications None) 
-                                (Publications.readPublications None 1 >> fun (_,_,_,items) -> items.Head) 
+                                (List.singleton >> Publications.toRows None) 
+                                (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 publication
                             |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
                             |> API.Study.setPublications study
@@ -806,7 +806,7 @@ module StudyAPI =
                         match API.Publication.tryGetByDoi doi publications with
                         | Some publication ->
                             [publication]
-                            |> Prompt.serializeXSLXWriterOutput (Publications.writePublications None)
+                            |> Prompt.serializeXSLXWriterOutput (Publications.toRows None)
                             |> printfn "%s"
                         | None -> 
                             if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
@@ -937,8 +937,8 @@ module StudyAPI =
                         match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
                         | Some design ->                    
                             ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                                (List.singleton >> DesignDescriptors.writeDesigns None) 
-                                (DesignDescriptors.readDesigns None 1 >> fun (_,_,_,items) -> items.Head) 
+                                (List.singleton >> DesignDescriptors.toRows None) 
+                                (DesignDescriptors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 design
                             |> fun d -> API.OntologyAnnotation.updateBy ((=) design) API.Update.UpdateAll d designs
                             |> API.Study.setDescriptors study
@@ -1071,7 +1071,7 @@ module StudyAPI =
                         match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
                         | Some design ->
                             [design]
-                            |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.writeDesigns None)
+                            |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.toRows None)
                             |> printfn "%s"
                         | None -> 
                             if verbosity >= 1 then printfn "Design with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
@@ -1198,8 +1198,8 @@ module StudyAPI =
                         match API.Factor.tryGetByName name factors with
                         | Some factor ->                    
                             ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                                (List.singleton >> Factors.writeFactors None) 
-                                (Factors.readFactors None 1 >> fun (_,_,_,items) -> items.Head) 
+                                (List.singleton >> Factors.toRows None) 
+                                (Factors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 factor
                             |> fun f -> API.Factor.updateBy ((=) factor) API.Update.UpdateAll f factors
                             |> API.Study.setFactors study
@@ -1331,7 +1331,7 @@ module StudyAPI =
                         match API.Factor.tryGetByName name factors with
                         | Some factor ->
                             [factor]
-                            |> Prompt.serializeXSLXWriterOutput (Factors.writeFactors None)
+                            |> Prompt.serializeXSLXWriterOutput (Factors.toRows None)
                             |> printfn "%s"
                         | None -> 
                             if verbosity >= 1 then printfn "Factor with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
@@ -1471,8 +1471,8 @@ module StudyAPI =
                         match API.Protocol.tryGetByName name protocols with
                         | Some protocol ->                    
                             ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                                (List.singleton >> Protocols.writeProtocols None) 
-                                (Protocols.readProtocols None 1 >> fun (_,_,_,items) -> items.Head) 
+                                (List.singleton >> Protocols.toRows None) 
+                                (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 protocol
                             |> fun f -> API.Protocol.updateBy ((=) protocol) API.Update.UpdateAll f protocols
                             |> API.Study.setProtocols study
@@ -1610,8 +1610,8 @@ module StudyAPI =
                     if p.Name.IsNone then
                         if verbosity >= 1 then printfn "Given protocol does not contain a name, please add it in the editor" 
                         ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                            (List.singleton >> Protocols.writeProtocols None) 
-                            (Protocols.readProtocols None 1 >> fun (_,_,_,items) -> items.Head) 
+                            (List.singleton >> Protocols.toRows None) 
+                            (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                             p
                     else p               
                 )
@@ -1683,7 +1683,7 @@ module StudyAPI =
                         match API.Protocol.tryGetByName name protocols with
                         | Some protocol ->
                             [protocol]
-                            |> Prompt.serializeXSLXWriterOutput (Protocols.writeProtocols None)
+                            |> Prompt.serializeXSLXWriterOutput (Protocols.toRows None)
                             |> printfn "%s"
                         | None -> 
                             if verbosity >= 1 then printfn "Protocol with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
