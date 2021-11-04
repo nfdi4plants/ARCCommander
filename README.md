@@ -4,13 +4,12 @@ ArcCommander is a command line tool to create, manage and share your ARCs.
 
 ## Install and start
 
-Head over to [Releases](https://github.com/nfdi4plants/arcCommander/releases). Download the newest release for the OS you use:
-- Download the executable file as well as the config file.
-- Copy the config file to your system's config folder:
-  - Windows: `<YourDriveLetter>:\Users\<Username>\AppData\Roaming\ArcCommander\`
-  - Unix: `~/.config/`
+Head over to [Releases](https://github.com/nfdi4plants/arcCommander/releases). Download the newest release for the OS you use.
 
-Start the arcCommander with the respective OS's command-line shell.
+Start the ArcCommander with the respective OS's command-line shell.  
+A global config file will be created the first time you use the ArcCommander in the following folder:
+- Windows: `<YourDriveLetter>:\Users\<Username>\AppData\Roaming\DataPLANT\ArcCommander\`
+- Unix: `~/.config/DataPLANT/ArcCommander/`
 
 We strongly recommend to read the in-depth guide to the ArcCommander in this repository's [Wiki](https://github.com/nfdi4plants/arcCommander/wiki)!
 
