@@ -16,7 +16,7 @@ module IniData =
 
     /// Splits the name of form "section.key" into section and key.
     let splitName (name : string) = 
-        let m = Text.RegularExpressions.Regex.Match(name,@"(?<!\.\w*)(?<section>\w+)\.(?<key>\w+)(?!\w*\.)")
+        let m = Text.RegularExpressions.Regex.Match(name, @"(?<!\.\w*)(?<section>\w+)\.(?<key>\w+)(?!\w*\.)")
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
@@ -47,36 +47,40 @@ module IniData =
         let configFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify)
         let destDirPath = Path.Combine(configFolder, "DataPLANT", "ArcCommander")
         Directory.CreateDirectory(destDirPath) |> ignore
-        let destFilepath = Path.Combine(destDirPath, "config")
+        let destFilepath = Path.Combine(destDirPath, "ArcCommander.config")
         File.Copy(srcFilepath, destFilepath)
 
     /// Returns the path at which the global iniData file is located. If no global file is found, creates one in the user's config folder (AppData\Local in Windows, ~/config in Unix).
-    let getGlobalConfigPath () =
+    let tryGetGlobalConfigPath () =
         // most of this part only remains for legacy reasons. Config file should not be downloaded and placed by the user (as before) but installed by the ArcCommander itself.
-        let getFolderPath specialFolder inOwnFolder inCompanyFolder = 
+        let getFolderPath specialFolder inOwnFolder inCompanyFolder newName = 
             Environment.GetFolderPath(specialFolder, Environment.SpecialFolderOption.DoNotVerify)
             |> fun x -> 
                 if inOwnFolder then 
                     Path.Combine(x, "ArcCommander", "config") 
-                elif inCompanyFolder then
+                elif inCompanyFolder && (not newName) then
                     Path.Combine(x, "DataPLANT", "ArcCommander", "config")
+                elif inCompanyFolder && newName then
+                    Path.Combine(x, "DataPLANT", "ArcCommander", "ArcCommander.config")
                 else 
                     Path.Combine(x, "config")
-        let inConfigFolder  = getFolderPath Environment.SpecialFolder.ApplicationData       false  true
-        let inConfigFolder2 = getFolderPath Environment.SpecialFolder.ApplicationData       true   false
-        let inConfigFolder3 = getFolderPath Environment.SpecialFolder.ApplicationData       false  false
-        let inCache         = getFolderPath Environment.SpecialFolder.InternetCache         false  false
-        let inCache2        = getFolderPath Environment.SpecialFolder.InternetCache         true   false
-        let inDesktop       = getFolderPath Environment.SpecialFolder.DesktopDirectory      false  false
-        let inDesktop2      = getFolderPath Environment.SpecialFolder.DesktopDirectory      true   false
-        let inLocal         = getFolderPath Environment.SpecialFolder.LocalApplicationData  true   false
-        let inLocal2        = getFolderPath Environment.SpecialFolder.LocalApplicationData  false  false
-        let inUser          = getFolderPath Environment.SpecialFolder.UserProfile           true   false
-        let inUser2         = getFolderPath Environment.SpecialFolder.UserProfile           false  false
+        let inConfigFolder  = getFolderPath Environment.SpecialFolder.ApplicationData       false  true  true
+        let inConfigFolder2 = getFolderPath Environment.SpecialFolder.ApplicationData       false  true  false
+        let inConfigFolder3 = getFolderPath Environment.SpecialFolder.ApplicationData       true   false false
+        let inConfigFolder4 = getFolderPath Environment.SpecialFolder.ApplicationData       false  false false
+        let inCache         = getFolderPath Environment.SpecialFolder.InternetCache         false  false false
+        let inCache2        = getFolderPath Environment.SpecialFolder.InternetCache         true   false false
+        let inDesktop       = getFolderPath Environment.SpecialFolder.DesktopDirectory      false  false false
+        let inDesktop2      = getFolderPath Environment.SpecialFolder.DesktopDirectory      true   false false
+        let inLocal         = getFolderPath Environment.SpecialFolder.LocalApplicationData  true   false false
+        let inLocal2        = getFolderPath Environment.SpecialFolder.LocalApplicationData  false  false false
+        let inUser          = getFolderPath Environment.SpecialFolder.UserProfile           true   false false
+        let inUser2         = getFolderPath Environment.SpecialFolder.UserProfile           false  false false
         match File.Exists with
         | x when x inConfigFolder   -> inConfigFolder
         | x when x inConfigFolder2  -> inConfigFolder2
         | x when x inConfigFolder3  -> inConfigFolder3
+        | x when x inConfigFolder4  -> inConfigFolder4
         | x when x inUser           -> inUser
         | x when x inUser2          -> inUser2
         | x when x inLocal          -> inLocal
@@ -269,7 +273,7 @@ module IniData =
 
     /// Gets the current iniData
     let loadMergedIniData workdir =
-        let globalConfigPath = getGlobalConfigPath ()
+        let globalConfigPath = tryGetGlobalConfigPath ()
         let localConfigPath = getLocalConfigPath workdir
         if File.Exists localConfigPath then
             merge (localConfigPath |> fromFile) (globalConfigPath |> fromFile)
