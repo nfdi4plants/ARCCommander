@@ -64,32 +64,37 @@ module IniData =
                     Path.Combine(x, "DataPLANT", "ArcCommander", "ArcCommander.config")
                 else 
                     Path.Combine(x, "config")
-        let inConfigFolder  = getFolderPath Environment.SpecialFolder.ApplicationData       false  true  true
-        let inConfigFolder2 = getFolderPath Environment.SpecialFolder.ApplicationData       false  true  false
-        let inConfigFolder3 = getFolderPath Environment.SpecialFolder.ApplicationData       true   false false
-        let inConfigFolder4 = getFolderPath Environment.SpecialFolder.ApplicationData       false  false false
-        let inCache         = getFolderPath Environment.SpecialFolder.InternetCache         false  false false
-        let inCache2        = getFolderPath Environment.SpecialFolder.InternetCache         true   false false
-        let inDesktop       = getFolderPath Environment.SpecialFolder.DesktopDirectory      false  false false
-        let inDesktop2      = getFolderPath Environment.SpecialFolder.DesktopDirectory      true   false false
-        let inLocal         = getFolderPath Environment.SpecialFolder.LocalApplicationData  true   false false
-        let inLocal2        = getFolderPath Environment.SpecialFolder.LocalApplicationData  false  false false
-        let inUser          = getFolderPath Environment.SpecialFolder.UserProfile           true   false false
-        let inUser2         = getFolderPath Environment.SpecialFolder.UserProfile           false  false false
-        match File.Exists with
-        | x when x inConfigFolder   -> inConfigFolder
-        | x when x inConfigFolder2  -> inConfigFolder2
-        | x when x inConfigFolder3  -> inConfigFolder3
-        | x when x inConfigFolder4  -> inConfigFolder4
-        | x when x inUser           -> inUser
-        | x when x inUser2          -> inUser2
-        | x when x inLocal          -> inLocal
-        | x when x inLocal2         -> inLocal2
-        | x when x inCache          -> inCache
-        | x when x inDesktop        -> inDesktop
-        | x when x inDesktop2       -> inDesktop2
-        | x when x inCache2         -> inCache2
-        | _                         -> createDefault (); inConfigFolder
+        let inConfigFolder  = getFolderPath Environment.SpecialFolder.ApplicationData       false true  true
+        let inConfigFolder2 = getFolderPath Environment.SpecialFolder.ApplicationData       false true  false
+        let inConfigFolder3 = getFolderPath Environment.SpecialFolder.ApplicationData       true  false false
+        let inConfigFolder4 = getFolderPath Environment.SpecialFolder.ApplicationData       false false false
+        let inCache         = getFolderPath Environment.SpecialFolder.InternetCache         false false false
+        let inCache2        = getFolderPath Environment.SpecialFolder.InternetCache         true  false false
+        let inDesktop       = getFolderPath Environment.SpecialFolder.DesktopDirectory      false false false
+        let inDesktop2      = getFolderPath Environment.SpecialFolder.DesktopDirectory      true  false false
+        let inLocal         = getFolderPath Environment.SpecialFolder.LocalApplicationData  true  false false
+        let inLocal2        = getFolderPath Environment.SpecialFolder.LocalApplicationData  false false false
+        let inUser          = getFolderPath Environment.SpecialFolder.UserProfile           true  false false
+        let inUser2         = getFolderPath Environment.SpecialFolder.UserProfile           false false false
+        try
+            match File.Exists with
+            | x when x inConfigFolder   -> inConfigFolder
+            | x when x inConfigFolder2  -> inConfigFolder2
+            | x when x inConfigFolder3  -> inConfigFolder3
+            | x when x inConfigFolder4  -> inConfigFolder4
+            | x when x inUser           -> inUser
+            | x when x inUser2          -> inUser2
+            | x when x inLocal          -> inLocal
+            | x when x inLocal2         -> inLocal2
+            | x when x inCache          -> inCache
+            | x when x inDesktop        -> inDesktop
+            | x when x inDesktop2       -> inDesktop2
+            | x when x inCache2         -> inCache2
+            | _                         -> createDefault (); inConfigFolder
+            |> Some
+        with e -> 
+            printfn "ERROR: tryGetGlobalConfigPath failed with: %s" e.Message
+            None
         //| _ -> failwith "ERROR: No global config file found. Initiation of default config file not possible.\nPlease add the specific config file for your OS to your config folder."
         //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
         //Path.Combine(System.Environment.SpecialFolder.ApplicationData |> System.Environment.GetFolderPath, "arcCommanderConfig")
@@ -272,13 +277,17 @@ module IniData =
         |> fromNameValuePairs
 
     /// Gets the current iniData
-    let loadMergedIniData workdir =
+    let tryLoadMergedIniData workdir =
         let globalConfigPath = tryGetGlobalConfigPath ()
         let localConfigPath = getLocalConfigPath workdir
         if File.Exists localConfigPath then
-            merge (localConfigPath |> fromFile) (globalConfigPath |> fromFile)
+            match globalConfigPath with 
+            | Some x    -> merge (localConfigPath |> fromFile) (x |> fromFile) |> Some
+            | None      -> localConfigPath |> fromFile |> Some
         else
-            (globalConfigPath |> fromFile) 
+            match globalConfigPath with 
+            | Some x    -> (x |> fromFile) |> Some
+            | None      -> None
 
     /// Set the given value for the key in the ini file, overwriting a possibly existing value
     let setValueInIniPath path name value = 

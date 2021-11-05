@@ -28,11 +28,38 @@ type ArcConfiguration =
 
     //TO:DO, rename and possibly move
     /// 
-    static member getDefault() =
-        let editor = "notepad"////GET DEFAULT EDITOR for linux
+    static member GetDefault() =
+        let os = getOs ()
+        let editor = 
+            match os with
+            | Windows   -> "notepad"
+            | Unix      -> "nano"
         [
-        "general.verbosity", "1"   
-        "general.editor", editor     
+        "general.verbosity"                 , "1"
+        "general.editor"                    , editor
+        "general.rootfolder"                , ".arc"
+        "general.verbosity"                 , "1"
+        "general.gitlfsbytethreshold"       , "150000000"
+        "general.gitlfsrules"               , "**/dataset/**"
+        "general.forceeditor"               , "false"
+        
+        "isamodel.investigationfilename"    , "isa.investigation.xlsx"
+        "isamodel.studiesfilename"          , "isa.studies.xlsx"
+        "isamodel.assay location"           , "folder.assay.rootfolder"
+        "isamodel.assayfilename"            , "isa.assay.xlsx"
+        
+        "assay.rootfolder"                  , "assays"
+        //"assay.rootfolder.<assayIdentifier>.folder"
+        "assay.folders"                     , "dataset;protocols"
+        "assay.files"                       , "README.md"
+        
+        "workflow.rootfolder"               , "workflows"
+        "workflow.dockerfile"               , "Dockerfile"
+        
+        "external.rootfolder"               , "externals"
+        "external.externalsfile"            , "isa.tab"
+        
+        "run.rootfolder"                    , "runs"
         ]
         |> fromNameValuePairs
 
@@ -40,9 +67,15 @@ type ArcConfiguration =
     static member load argumentConfig =
         let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
         let mergedIniData = 
-            ArcConfiguration.getDefault()
-            |> merge (loadMergedIniData workdir)
-            |> merge argumentConfig
+            match tryLoadMergedIniData workdir with
+            | Some fileConfig ->
+                ArcConfiguration.GetDefault()
+                |> merge fileConfig
+                |> merge argumentConfig
+            | None -> 
+                printfn "WARNING: No config file found. Load default config instead."
+                ArcConfiguration.GetDefault()
+                |> merge argumentConfig
         ArcConfiguration.create
             (getSectionMap "general"   mergedIniData)
             (getSectionMap "isamodel"  mergedIniData)
