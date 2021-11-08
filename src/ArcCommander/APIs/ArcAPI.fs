@@ -64,9 +64,9 @@ module ArcAPI =
         with 
         | _ -> 
 
-            if verbosity >= 1 then printfn "Git could not be set up, try installing git cli and run `arc git init`"
+            if verbosity >= 1 then printfn "Git could not be set up, try installing git cli and run `arc git init`."
 
-    /// Update the investigation file with the information from the other files and folders
+    /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
