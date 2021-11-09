@@ -461,7 +461,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
     
 
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the ARC with the text editor set in globalArgs.
+        /// Removes an existing person by fullname (lastName,firstName,MidInitials) from the ARC with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration

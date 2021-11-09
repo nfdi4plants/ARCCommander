@@ -734,131 +734,71 @@ module AssayAPI =
             let doc = Spreadsheet.fromFile assayFilePath true
             
             let persons = MetaData.getPersons "Investigation" doc
-            
-            //let _, _, persons, assay = AssayFile.Assay.fromFile assayFilePath
 
             if API.Person.existsByFullName firstName midInitials lastName persons then
                 API.Person.updateByFullName updateOption person persons
                 |> MetaData.overwriteWithPersons "Investigation" <| doc
             else
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s" firstName midInitials lastName assayIdentifier
+                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
                 if containsFlag "AddIfMissing" personArgs then
-                    if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                    if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set." 
                     API.Person.add persons person
                     |> MetaData.overwriteWithPersons "Investigation" <| doc
-                
 
-            match investigation.Studies with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Contacts with
-                    | Some persons -> 
-                        if API.Person.existsByFullName firstName midInitials lastName persons then
-                            API.Person.updateByFullName updateOption person persons
-                            |> API.Assay.setContacts study
+            Spreadsheet.close doc
 
-                        else
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
-                            if containsFlag "AddIfMissing" personArgs then
-                                if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
-                                API.Person.add persons person
-                                |> API.Assay.setContacts study
-                            else 
-                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
-                                study
-                    | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
-                        if containsFlag "AddIfMissing" personArgs then
-                            if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
-                            [person]
-                            |> API.Assay.setContacts study
-                        else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
-                            study
-                    |> fun s -> API.Assay.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setAssays investigation
-                | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-                    investigation
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-                investigation
-            |> Investigation.toFile investigationFilePath
-        
-        /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the ARC investigation study with the text editor set in globalArgs.
-        let edit (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            printfn "Not implemented yet."
+        /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the assay investigation sheet with the text editor set in globalArgs.
+        let edit (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person Edit"
 
-            let editor = GeneralConfiguration.getEditor arcConfiguration
+            let editor  = GeneralConfiguration.getEditor arcConfiguration
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName "LastName"       personArgs)
+            let firstName   = (getFieldValueByName "FirstName"      personArgs)
+            let midInitials = (getFieldValueByName "MidInitials"    personArgs)
 
-            let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
-            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
-            
-            let investigation = Investigation.fromFile investigationFilePath
-            
-            let studies = investigation.Studies
+            let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
-            // TO DO: Implementation für Assay-Datenstruktur
+            let doc = Spreadsheet.fromFile assayFilePath true
 
-            match investigation.Studies with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Contacts with
-                    | Some persons -> 
-                        match API.Person.tryGetByFullName firstName midInitials lastName persons with
-                        | Some person -> 
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                                (List.singleton >> Contacts.writePersons None) 
-                                (Contacts.readPersons None 1 >> fun (_,_,_,items) -> items.Head) 
-                                person
-                            |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                            |> API.Study.setContacts study
-                            |> fun s -> API.Assay.updateByIdentifier API.Update.UpdateAll s studies
-                            |> API.Investigation.setAssays investigation
-                        | None ->
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
-                            investigation
-                    | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
-                        investigation
-                | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-                    investigation
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-                investigation
-            |> Investigation.toFile investigationFilePath
+            let persons = MetaData.getPersons "Investigation" doc
 
-        /// Registers a person in the ARC investigation study with the given person metadata contained in personArgs.
-        let register (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
+            match API.Person.tryGetByFullName firstName midInitials lastName persons with
+            | Some person ->
+                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir
+                    (List.singleton >> Contacts.toRows None) 
+                    (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
+                    person
+                |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                |> MetaData.overwriteWithPersons "Investigation" <| doc
+            | None ->
+                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
 
-            printfn "Not implemented yet."
+            Spreadsheet.close doc
+
+
+        /// Registers a person in this assay with the given person metadata contained in personArgs.
+        let register (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person Register"
 
-            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let lastName    = getFieldValueByName "LastName"    personArgs
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
             let comments = 
                 match tryGetFieldValueByName "ORCID" personArgs with
-                | Some orcid -> [Comment.fromString "Investigation Person ORCID" orcid]
-                | None -> []
+                | Some orcid    -> [Comment.fromString "Investigation Person ORCID" orcid]
+                | None          -> []
 
             let person = 
                 Contacts.fromString
@@ -875,140 +815,103 @@ module AssayAPI =
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
                     comments
             
-            let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
-
-            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
             
-            let investigation = Investigation.fromFile investigationFilePath
+            let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+            
+            let doc = Spreadsheet.fromFile assayFilePath true
+            
+            let persons = MetaData.getPersons "Investigation" doc
 
-            // TO DO: Implementation für Assay-Datenstruktur
+            API.Person.add persons person
+            |> MetaData.overwriteWithPersons "Investigation" <| doc
 
-            match investigation.Assays with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Contacts with
-                    | Some persons -> 
-                        if API.Person.existsByFullName firstName midInitials lastName persons then               
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
-                            persons
-                        else
-                            API.Person.add persons person                           
-                    | None -> 
-                        [person]
-                    |> API.Assay.setContacts study
-                    |> fun s -> API.Assay.updateByIdentifier API.Update.UpdateAll s studies
-                    |> API.Investigation.setStudies investigation
-                | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-                    investigation
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-                investigation
-            |> Investigation.toFile investigationFilePath
-    
+            Spreadsheet.close doc
 
-        /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the ARC with the text editor set in globalArgs.
-        let unregister (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            printfn "Not implemented yet."
+        /// Removes an existing person by fullname (lastName, firstName, MidInitials) from this assay with the text editor set in globalArgs.
+        let unregister (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person Unregister"
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName  "LastName"      personArgs)
+            let firstName   = (getFieldValueByName  "FirstName"     personArgs)
+            let midInitials = (getFieldValueByName  "MidInitials"   personArgs)
 
-            let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
-            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+
+            let doc = Spreadsheet.fromFile assayFilePath true
+
+            let persons = MetaData.getPersons "Investigation" doc
+
+            if API.Person.existsByFullName firstName midInitials lastName persons then
+                API.Person.removeByFullName firstName midInitials lastName persons
+                |> MetaData.overwriteWithPersons "Investigation" <| doc
+            else
+                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
             
-            let investigation = Investigation.fromFile investigationFilePath
+            Spreadsheet.close doc
 
-            // TO DO: Implementation für Assay-Datenstruktur
-            
-            match investigation.Studies with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Contacts with
-                    | Some persons -> 
-                        if API.Person.existsByFullName firstName midInitials lastName persons then
-                            API.Person.removeByFullName firstName midInitials lastName persons
-                            |> API.Study.setContacts study
-                            |> fun s -> API.Assay.updateByIdentifier API.Update.UpdateAll s studies
-                            |> API.Investigation.setAssays investigation
-                        else
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
-                            investigation
-                    | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
-                        investigation
-                | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-                    investigation
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-                investigation
-            |> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
-        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
-
-            printfn "Not implemented yet."
-          
+        let show (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
+  
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person Get"
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName  "LastName"      personArgs)
+            let firstName   = (getFieldValueByName  "FirstName"     personArgs)
+            let midInitials = (getFieldValueByName  "MidInitials"   personArgs)
 
-            let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
-
-            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
             
-            let investigation = Investigation.fromFile investigationFilePath
+            let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+            
+            let doc = Spreadsheet.fromFile assayFilePath true
+            
+            let persons = MetaData.getPersons "Investigation" doc
 
-            // TO DO: Implementation für Assay-Datenstruktur
+            match API.Person.tryGetByFullName firstName midInitials lastName persons with
+            | Some person ->
+                [person]
+                |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
+                |> printfn "%s"
+            | None ->
+                printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
 
-            match investigation.Studies with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Contacts with
-                    | Some persons -> 
-                        match API.Person.tryGetByFullName firstName midInitials lastName persons with
-                        | Some person ->
-                            [person]
-                            |> Prompt.serializeXSLXWriterOutput (Contacts.writePersons None)
-                            |> printfn "%s"
-                        | None -> printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
-                    | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
-                | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"
+            Spreadsheet.close doc
 
 
-        /// Lists the full names of all persons included in the investigation.
-        let list (arcConfiguration : ArcConfiguration) = 
-
-            printfn "Not implemented yet."
+        /// Lists the full names of all persons included in this assay's investigation sheet.
+        let list (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person List"
 
-            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
-            
-            let investigation = Investigation.fromFile investigationFilePath
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
-            // TO DO: Implementation für Assay-Datenstruktur
+            let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+
+            let doc = Spreadsheet.fromFile assayFilePath true
+
+            let persons = MetaData.getPersons "Investigation" doc
+
+            printfn "Study: %s" (Option.defaultValue "" assayIdentifier)
+            persons 
+            |> Seq.iter (fun person -> 
+                let firstName = Option.defaultValue "" person.FirstName
+                let midInitials = Option.defaultValue "" person.MidInitials
+                let lastName = Option.defaultValue "" person.LastName
+                if midInitials = "" then
+                    printfn "--Person: %s %s" firstName lastName
+                else
+                    printfn "--Person: %s %s %s" firstName midInitials lastName)
 
             match investigation.Studies with
             | Some studies -> 
