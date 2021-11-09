@@ -1,9 +1,7 @@
 ﻿namespace ArcCommander
 
 open Microsoft.FSharp.Reflection
-
 open System.Diagnostics
-
 open Argu
 
 
@@ -309,3 +307,7 @@ module ArgumentProcessing =
     let serializeToFile (p : string) (item : 'A) =
         System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
         |> fun s -> System.IO.File.WriteAllText(p,s)
+
+    /// Prints a message depending on the given level of verbosity compared with the verbosity of an ArcConfiguration.
+    let printVrbstMsg arcConfigurationVerbosity verbosityLevel message =
+        if verbosityLevel >= arcConfigurationVerbosity then printfn "%s" message
