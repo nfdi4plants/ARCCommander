@@ -309,3 +309,46 @@ module ArgumentProcessing =
     let serializeToFile (p : string) (item : 'A) =
         System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
         |> fun s -> System.IO.File.WriteAllText(p,s)
+
+    module ExternalExecutables = 
+
+        let tryGetUnknownArguments (parser : ArgumentParser<'T>) (args : string []) = 
+            let ignR = parser.Parse(args,ignoreUnrecognized=true)
+            Array.init args.Length (fun i ->
+
+                try 
+                    let r = parser.Parse(Array.take i args)
+                    if ignR = r then Some (Array.skip i args)
+                    else None
+                with 
+                | _ -> None
+            )
+            |> Array.tryPick id
+
+        let getAllFilesRec dir = 
+            let rec allFiles dirs =
+                if Seq.isEmpty dirs then Seq.empty else
+                    seq { yield! dirs |> Seq.collect System.IO.Directory.EnumerateFiles
+                          yield! dirs |> Seq.collect System.IO.Directory.EnumerateDirectories |> allFiles }
+            allFiles [dir]
+
+        let tryFindExecutablePath (searchFolder : string) (executableName : string) =
+
+            let os = IniData.getOs ()
+            let name = 
+                match os with
+                | Windows   -> $"{executableName}.exe"
+                | Unix      -> $"{executableName}.appx"
+
+            getAllFilesRec searchFolder
+            |> Seq.tryFind (fun p ->
+                System.IO.FileInfo(p).Name = name                
+            )
+
+        let runExecutable (path : string) (args : string []) =
+            let args
+            let p = 
+                new ProcessStartInfo
+                    (path,(Array.append (fun a b -> a + " " + b) args)) 
+                |> Process.Start
+            p.WaitForExit()

@@ -215,37 +215,58 @@ let handleCommand arcConfiguration command =
 
 [<EntryPoint>]
 let main argv =
-    try
-        let parser = ArgumentParser.Create<ArcCommand>()
-        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
 
-        let workingDir =
-            match results.TryGetResult(WorkingDir) with
-            | Some s    -> s
-            | None      -> System.IO.Directory.GetCurrentDirectory()
+    let parser = ArgumentParser.Create<ArcCommand>()
 
-        let verbosity = results.TryGetResult(Verbosity) |> Option.map string
+    let safeResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true,ignoreUnrecognized = true)
 
+    let workingDir =
+        match safeResults.TryGetResult(WorkingDir) with
+        | Some s    -> s
+        | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let arcConfiguration =
-            [
-                "general.workdir",Some workingDir
-                "general.verbosity",verbosity
-            ]
-            |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
-            |> IniData.fromNameValuePairs
-            |> ArcConfiguration.load
+    let verbosity = safeResults.TryGetResult(Verbosity) |> Option.map string
 
-        //Testing the configuration reading (Delete when configuration functionality is setup)
-        //printfn "load config:"
-        //Configuration.loadConfiguration workingDir
-        //|> Configuration.flatten
-        //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
+    let arcConfiguration =
+        [
+            "general.workdir",Some workingDir
+            "general.verbosity",verbosity
+        ]
+        |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
+        |> IniData.fromNameValuePairs
+        |> ArcConfiguration.load
 
+    let results = 
+        try
+            parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
+            |> Some
+        with
+        | e -> 
+            printfn "could not parse given commands. Try checking if executable with given argument name exists"
+            match ExternalExecutables.tryGetUnknownArguments parser argv with
+            | Some args ->
+                match ExternalExecutables.tryFindExecutablePath args.[0] with
+                | Some executable -> 
+                    ExternalExecutables.runExecutable executable (Array.skip 1 args)
+                    None
+                | None -> 
+                    printfn "%s" e.Message
+                    None
+            | None -> 
+                printfn "%s" e.Message
+                None
 
-        handleCommand arcConfiguration (results.GetSubCommand())
+    //Testing the configuration reading (Delete when configuration functionality is setup)
+    //printfn "load config:"
+    //Configuration.loadConfiguration workingDir
+    //|> Configuration.flatten
+    //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
+    match results with
+    | Some results ->
+        handleCommand arcConfiguration (results.GetSubCommand())          
         1
-    with e ->
-        printfn "%s" e.Message
+    | None -> 
         0
+        printfn "%s" e.Message
+        
