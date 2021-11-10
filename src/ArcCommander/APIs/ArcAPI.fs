@@ -123,7 +123,7 @@ module ArcAPI =
     
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
-            if verbosity >= 1 then printfn "Start Arc Update"
+            if verbosity >= 1 then printfn "Start Arc Export"
     
             let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
     
@@ -144,10 +144,10 @@ module ArcAPI =
                 match assayNames with
                 | a :: t ->
                     let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
-                    let assayFileName = IsaModelConfiguration.getAssayFileName a arcConfiguration
+                    let assayFileName = (IsaModelConfiguration.getAssayFileName a arcConfiguration).Replace("\\","/")
                     let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
                     let studies = investigation.Studies
-    
+
                     match studies with
                     | Some studies ->
                         match studies |> Seq.tryFind (API.Study.getAssays >> Option.defaultValue [] >> API.Assay.existsByFileName assayFileName) with

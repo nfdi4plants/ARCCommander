@@ -23,8 +23,8 @@
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.7" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.2" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.2" />
+    <PackageReference Include="ISADotNet" Version="0.4.0-preview.3" />
+    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.3" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />
