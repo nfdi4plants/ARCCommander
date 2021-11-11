@@ -888,27 +888,31 @@ module AssayAPI =
 
 
         /// Lists the full names of all persons included in this assay's investigation sheet.
-        let list (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) = 
+        let list (arcConfiguration : ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person List"
 
-            //let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
+            let assayIdentifiers = AssayConfiguration.getAssayNames arcConfiguration
 
-            let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+            let assayFilePaths = assayIdentifiers |> Array.map (fun ai -> IsaModelConfiguration.tryGetAssayFilePath ai arcConfiguration |> Option.get)
 
-            let doc = Spreadsheet.fromFile assayFilePath true
+            let docs = assayFilePaths |> Array.map (fun afp -> Spreadsheet.fromFile afp true)
 
-            let persons = MetaData.getPersons "Investigation" doc
+            let allPersons = docs |> Array.map (MetaData.getPersons "Investigation")
 
-            printfn "Assay: %s" assayIdentifier
-            persons 
-            |> Seq.iter (fun person -> 
-                let firstName   = Option.defaultValue "" person.FirstName
-                let midInitials = Option.defaultValue "" person.MidInitials
-                let lastName    = Option.defaultValue "" person.LastName
-                if midInitials = "" then
-                    printfn "--Person: %s %s" firstName lastName
-                else
-                    printfn "--Person: %s %s %s" firstName midInitials lastName)
+            allPersons
+            |> Array.iteri (
+                fun i persons ->
+                    printfn "Assay: %s" assayIdentifiers.[i]
+                    persons
+                    |> Seq.iter (fun person -> 
+                        let firstName   = Option.defaultValue "" person.FirstName
+                        let midInitials = Option.defaultValue "" person.MidInitials
+                        let lastName    = Option.defaultValue "" person.LastName
+                        if midInitials = "" then
+                            printfn "--Person: %s %s" firstName lastName
+                        else
+                            printfn "--Person: %s %s %s" firstName midInitials lastName)
+            )
