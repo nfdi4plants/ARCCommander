@@ -245,9 +245,11 @@ let main argv =
             printfn "could not parse given commands. Try checking if executable with given argument name exists"
             match ExternalExecutables.tryGetUnknownArguments parser argv with
             | Some args ->
-                match ExternalExecutables.tryFindExecutablePath args.[0] with
+                let executablesFolder = workingDir
+                match ExternalExecutables.tryFindExecutablePath executablesFolder args.[0] with
                 | Some executable -> 
-                    ExternalExecutables.runExecutable executable (Array.skip 1 args)
+                    printfn "found executable in path: \n\t\"%s\"" executable
+                    ExternalExecutables.runExecutable executable workingDir (Array.skip 1 args)
                     None
                 | None -> 
                     printfn "%s" e.Message
@@ -267,6 +269,6 @@ let main argv =
         handleCommand arcConfiguration (results.GetSubCommand())          
         1
     | None -> 
+        //printfn "%s" e.Message
         0
-        printfn "%s" e.Message
         

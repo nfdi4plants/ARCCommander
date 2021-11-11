@@ -338,17 +338,20 @@ module ArgumentProcessing =
             let name = 
                 match os with
                 | Windows   -> $"{executableName}.exe"
-                | Unix      -> $"{executableName}.appx"
+                | Unix      -> $"{executableName}"
 
             getAllFilesRec searchFolder
             |> Seq.tryFind (fun p ->
                 System.IO.FileInfo(p).Name = name                
             )
 
-        let runExecutable (path : string) (args : string []) =
-            let args
+        let runExecutable (executablePath : string) (arcPath : string) (args : string []) =
+            let args = 
+                Array.append [|"-p" ; arcPath|] args
+                |> Array.reduce (fun a b -> a + " " + b) 
+            printfn "start process %s %s" executablePath args
             let p = 
                 new ProcessStartInfo
-                    (path,(Array.append (fun a b -> a + " " + b) args)) 
+                    (executablePath, args) 
                 |> Process.Start
             p.WaitForExit()
