@@ -902,35 +902,13 @@ module AssayAPI =
 
             let persons = MetaData.getPersons "Investigation" doc
 
-            printfn "Study: %s" (Option.defaultValue "" assayIdentifier)
+            printfn "Assay: %s" assayIdentifier
             persons 
             |> Seq.iter (fun person -> 
-                let firstName = Option.defaultValue "" person.FirstName
+                let firstName   = Option.defaultValue "" person.FirstName
                 let midInitials = Option.defaultValue "" person.MidInitials
-                let lastName = Option.defaultValue "" person.LastName
+                let lastName    = Option.defaultValue "" person.LastName
                 if midInitials = "" then
                     printfn "--Person: %s %s" firstName lastName
                 else
                     printfn "--Person: %s %s %s" firstName midInitials lastName)
-
-            match investigation.Studies with
-            | Some studies -> 
-                studies
-                |> Seq.iter (fun study ->
-                    match study.Contacts with
-                    | Some persons -> 
-                   
-                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
-                        persons 
-                        |> Seq.iter (fun person -> 
-                            let firstName = Option.defaultValue "" person.FirstName
-                            let midInitials = Option.defaultValue "" person.MidInitials
-                            let lastName = Option.defaultValue "" person.LastName
-                            if midInitials = "" then
-                                printfn "--Person: %s %s" firstName lastName
-                            else
-                                printfn "--Person: %s %s %s" firstName midInitials lastName)
-                    | None -> ()
-                )
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
