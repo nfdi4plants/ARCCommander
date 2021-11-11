@@ -693,7 +693,7 @@ module AssayAPI =
     module Contacts =
 
         /// Updates an existing person in this assay with the given person metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
+        let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             //printfn "Not implemented yet."
 
@@ -727,7 +727,7 @@ module AssayAPI =
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
                     comments
 
-            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
 
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
@@ -749,7 +749,7 @@ module AssayAPI =
 
 
         /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the assay investigation sheet with the text editor set in globalArgs.
-        let edit (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
+        let edit (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -762,7 +762,7 @@ module AssayAPI =
             let firstName   = (getFieldValueByName "FirstName"      personArgs)
             let midInitials = (getFieldValueByName "MidInitials"    personArgs)
 
-            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
 
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
@@ -785,7 +785,7 @@ module AssayAPI =
 
 
         /// Registers a person in this assay with the given person metadata contained in personArgs.
-        let register (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
+        let register (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -815,7 +815,7 @@ module AssayAPI =
                     (getFieldValueByName  "RolesTermSourceREF"          personArgs)
                     comments
             
-            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
             
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
             
@@ -830,7 +830,7 @@ module AssayAPI =
 
 
         /// Removes an existing person by fullname (lastName, firstName, MidInitials) from this assay with the text editor set in globalArgs.
-        let unregister (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
+        let unregister (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -840,7 +840,7 @@ module AssayAPI =
             let firstName   = (getFieldValueByName  "FirstName"     personArgs)
             let midInitials = (getFieldValueByName  "MidInitials"   personArgs)
 
-            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
 
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
@@ -858,7 +858,7 @@ module AssayAPI =
 
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
-        let show (arcConfiguration:ArcConfiguration) (assayArgs : Map<string,Argument>) (personArgs : Map<string,Argument>) =
+        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
   
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -868,7 +868,7 @@ module AssayAPI =
             let firstName   = (getFieldValueByName  "FirstName"     personArgs)
             let midInitials = (getFieldValueByName  "MidInitials"   personArgs)
 
-            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+            let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
             
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
             
@@ -888,13 +888,13 @@ module AssayAPI =
 
 
         /// Lists the full names of all persons included in this assay's investigation sheet.
-        let list (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) = 
+        let list (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Person List"
 
-            let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+            //let assayIdentifier = getFieldValueByName "AssayIdentifier" personArgs
 
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
