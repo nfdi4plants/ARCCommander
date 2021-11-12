@@ -310,8 +310,10 @@ module ArgumentProcessing =
         System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
         |> fun s -> System.IO.File.WriteAllText(p,s)
 
+    /// Functions for trying to run external tools, given the command line arguments can not be parsed
     module ExternalExecutables = 
 
+        ///
         let tryGetUnknownArguments (parser : ArgumentParser<'T>) (args : string []) = 
             let ignR = parser.Parse(args,ignoreUnrecognized=true)
             Array.init args.Length (fun i ->
@@ -325,6 +327,7 @@ module ArgumentProcessing =
             )
             |> Array.tryPick id
 
+        /// Recursively collects all files in a directory
         let getAllFilesRec dir = 
             let rec allFiles dirs =
                 if Seq.isEmpty dirs then Seq.empty else
@@ -332,6 +335,7 @@ module ArgumentProcessing =
                           yield! dirs |> Seq.collect System.IO.Directory.EnumerateDirectories |> allFiles }
             allFiles [dir]
 
+        /// Recursively collects all files in a directory and checks if any of them matches the OS specific executable name
         let tryFindExecutablePath (searchFolder : string) (executableName : string) =
 
             let os = IniData.getOs ()
@@ -345,6 +349,7 @@ module ArgumentProcessing =
                 System.IO.FileInfo(p).Name = name                
             )
 
+        /// Starts an executable with the given args and an additional "-p" argument
         let runExecutable (executablePath : string) (arcPath : string) (args : string []) =
             let args = 
                 Array.append [|"-p" ; arcPath|] args

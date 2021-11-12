@@ -9,25 +9,28 @@ open ArcCommander.Commands
 open ArcCommander.APIs
 open System
 
+/// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
 
+    // Collect information from the configuration
     let editor = GeneralConfiguration.getEditor arcConfiguration
     let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
     let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
 
-
+    // Create a collection of all arguments and flags of 'T, including information about whether they were given by the user or not
     let annotatedArguments = groupArguments (r.GetAllResults())
 
+    // Try to collect additional informations
     let arguments = 
-
+        // Opens a command line prompt asking for addtional information if a mandatory argument is missing. Fails if still not given
         if containsMissingMandatoryAttribute annotatedArguments then
             let stillMissingMandatoryArgs,arguments =
                 Prompt.createMissingArgumentQuery editor workDir annotatedArguments
             if stillMissingMandatoryArgs then
                 failwith "Mandatory arguments were not given either via cli or editor prompt"
             arguments
-
+        // Opens a command line prompt asking for addtional information if the "forceeditor" flag is set.
         elif forceEditor then
             Prompt.createArgumentQuery editor workDir annotatedArguments
 
@@ -52,6 +55,7 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     finally
         if verbosity >= 1 then printfn "Done processing command"
 
+/// Runs the given command with the given configuration
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -218,14 +222,16 @@ let main argv =
 
     let parser = ArgumentParser.Create<ArcCommand>()
 
-    let safeResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true,ignoreUnrecognized = true)
+    // Failsafe parsing of all correct argument information
+    let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true,ignoreUnrecognized = true)
 
+    // Load configuration ---->
     let workingDir =
-        match safeResults.TryGetResult(WorkingDir) with
+        match safeParseResults.TryGetResult(WorkingDir) with
         | Some s    -> s
         | None      -> System.IO.Directory.GetCurrentDirectory()
 
-    let verbosity = safeResults.TryGetResult(Verbosity) |> Option.map string
+    let verbosity = safeParseResults.TryGetResult(Verbosity) |> Option.map string
 
     let arcConfiguration =
         [
@@ -235,13 +241,19 @@ let main argv =
         |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
         |> IniData.fromNameValuePairs
         |> ArcConfiguration.load
+    // <-----
 
-    let results = 
+    // Try parse the command line arguments
+    let parseResults = 
         try
+            // Correctly parsed arguments will be threaded into the command handler below
             parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
             |> Some
         with
         | e -> 
+            // Incorrectly parsed arguments will be threaded into external executable tool handler
+            // Here for the first unknown argument in the argument chain, an executable of the same name will be searched
+            // If this tool exists, try executing it will all the following arguments
             printfn "could not parse given commands. Try checking if executable with given argument name exists"
             match ExternalExecutables.tryGetUnknownArguments parser argv with
             | Some args ->
@@ -254,21 +266,16 @@ let main argv =
                 | None -> 
                     printfn "%s" e.Message
                     None
+            // If neither parsing, nor external executable tool search led to success, just return the error message
             | None -> 
                 printfn "%s" e.Message
                 None
 
-    //Testing the configuration reading (Delete when configuration functionality is setup)
-    //printfn "load config:"
-    //Configuration.loadConfiguration workingDir
-    //|> Configuration.flatten
-    //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
-
-    match results with
+    // Run the according command if command line args can be parsed
+    match parseResults with
     | Some results ->
         handleCommand arcConfiguration (results.GetSubCommand())          
         1
     | None -> 
-        //printfn "%s" e.Message
         0
         
