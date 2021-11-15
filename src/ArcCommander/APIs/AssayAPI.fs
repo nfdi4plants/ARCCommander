@@ -695,8 +695,6 @@ module AssayAPI =
         /// Updates an existing person in this assay with the given person metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            //printfn "Not implemented yet."
-
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
             if verbosity >= 1 then printfn "Start Person Update"
@@ -896,23 +894,29 @@ module AssayAPI =
 
             let assayIdentifiers = AssayConfiguration.getAssayNames arcConfiguration
 
-            let assayFilePaths = assayIdentifiers |> Array.map (fun ai -> IsaModelConfiguration.tryGetAssayFilePath ai arcConfiguration |> Option.get)
+            if Array.isEmpty assayIdentifiers 
+            
+            then printfn "No assays found."
 
-            let docs = assayFilePaths |> Array.map (fun afp -> Spreadsheet.fromFile afp true)
+            else
+                let assayFilePaths = assayIdentifiers |> Array.map (fun ai -> IsaModelConfiguration.tryGetAssayFilePath ai arcConfiguration |> Option.get)
 
-            let allPersons = docs |> Array.map (MetaData.getPersons "Investigation")
+                let docs = assayFilePaths |> Array.map (fun afp -> Spreadsheet.fromFile afp true)
 
-            allPersons
-            |> Array.iteri (
-                fun i persons ->
-                    printfn "Assay: %s" assayIdentifiers.[i]
-                    persons
-                    |> Seq.iter (fun person -> 
-                        let firstName   = Option.defaultValue "" person.FirstName
-                        let midInitials = Option.defaultValue "" person.MidInitials
-                        let lastName    = Option.defaultValue "" person.LastName
-                        if midInitials = "" then
-                            printfn "--Person: %s %s" firstName lastName
-                        else
-                            printfn "--Person: %s %s %s" firstName midInitials lastName)
-            )
+                let allPersons = docs |> Array.map (MetaData.getPersons "Investigation")
+
+                (allPersons, assayIdentifiers)
+                ||> Array.iteri2 (
+                    fun i persons aid ->
+                        printfn "Assay: %s" aid
+                        persons
+                        |> Seq.iter (
+                            fun person -> 
+                                let firstName   = Option.defaultValue "" person.FirstName
+                                let midInitials = Option.defaultValue "" person.MidInitials
+                                let lastName    = Option.defaultValue "" person.LastName
+                                if midInitials = "" 
+                                then printfn "--Person: %s %s" firstName lastName
+                                else printfn "--Person: %s %s %s" firstName midInitials lastName
+                        )
+                )
