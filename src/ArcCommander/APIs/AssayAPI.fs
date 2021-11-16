@@ -927,8 +927,8 @@ module AssayAPI =
                 let allPersons = docs |> Array.map (MetaData.getPersons "Investigation")
 
                 (allPersons, assayIdentifiers)
-                ||> Array.iteri2 (
-                    fun i persons aid ->
+                ||> Array.iter2 (
+                    fun persons aid ->
                         printfn "Assay: %s" aid
                         persons
                         |> Seq.iter (
