@@ -731,19 +731,23 @@ module AssayAPI =
 
             let doc = Spreadsheet.fromFile assayFilePath true
             
-            let persons = MetaData.getPersons "Investigation" doc
+            try 
+                let persons = MetaData.getPersons "Investigation" doc
 
-            if API.Person.existsByFullName firstName midInitials lastName persons then
-                let newPersons = API.Person.updateByFullName updateOption person persons
-                MetaData.overwriteWithPersons "Investigation" newPersons doc
-            else
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
-                if containsFlag "AddIfMissing" personArgs then
-                    if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set." 
-                    let newPersons = API.Person.add persons person
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+                    let newPersons = API.Person.updateByFullName updateOption person persons
                     MetaData.overwriteWithPersons "Investigation" newPersons doc
+                else
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                    if containsFlag "AddIfMissing" personArgs then
+                        if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set." 
+                        let newPersons = API.Person.add persons person
+                        MetaData.overwriteWithPersons "Investigation" newPersons doc
 
-            Spreadsheet.close doc
+                Spreadsheet.close doc
+
+            finally
+                Spreadsheet.close doc
 
 
         /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the assay investigation sheet with the text editor set in globalArgs.
@@ -766,21 +770,25 @@ module AssayAPI =
 
             let doc = Spreadsheet.fromFile assayFilePath true
 
-            let persons = MetaData.getPersons "Investigation" doc
+            try
+                let persons = MetaData.getPersons "Investigation" doc
 
-            match API.Person.tryGetByFullName firstName midInitials lastName persons with
-            | Some person ->
-                ArgumentProcessing.Prompt.createIsaItemQuery editor workDir
-                    (List.singleton >> Contacts.toRows None) 
-                    (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
-                    person
-                |> fun p -> 
-                    let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                    MetaData.overwriteWithPersons "Investigation" newPersons doc
-            | None ->
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                | Some person ->
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir
+                        (List.singleton >> Contacts.toRows None) 
+                        (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
+                        person
+                    |> fun p -> 
+                        let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                        MetaData.overwriteWithPersons "Investigation" newPersons doc
+                | None ->
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
 
-            Spreadsheet.close doc
+                Spreadsheet.close doc
+
+            finally
+                Spreadsheet.close doc
 
 
         /// Registers a person in this assay with the given person metadata contained in personArgs.
@@ -819,13 +827,17 @@ module AssayAPI =
             let assayFilePath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
             
             let doc = Spreadsheet.fromFile assayFilePath true
-            
-            let persons = MetaData.getPersons "Investigation" doc
 
-            let newPersons = API.Person.add persons person
-            MetaData.overwriteWithPersons "Investigation" newPersons doc
+            try
+                let persons = MetaData.getPersons "Investigation" doc
 
-            Spreadsheet.close doc
+                let newPersons = API.Person.add persons person
+                MetaData.overwriteWithPersons "Investigation" newPersons doc
+
+                Spreadsheet.close doc
+
+            finally
+                Spreadsheet.close doc
 
 
         /// Removes an existing person by fullname (lastName, firstName, MidInitials) from this assay with the text editor set in globalArgs.
@@ -845,15 +857,19 @@ module AssayAPI =
 
             let doc = Spreadsheet.fromFile assayFilePath true
 
-            let persons = MetaData.getPersons "Investigation" doc
+            try 
+                let persons = MetaData.getPersons "Investigation" doc
 
-            if API.Person.existsByFullName firstName midInitials lastName persons then
-                let newPersons = API.Person.removeByFullName firstName midInitials lastName persons
-                MetaData.overwriteWithPersons "Investigation" newPersons doc
-            else
-                if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+                    let newPersons = API.Person.removeByFullName firstName midInitials lastName persons
+                    MetaData.overwriteWithPersons "Investigation" newPersons doc
+                else
+                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
             
-            Spreadsheet.close doc
+                Spreadsheet.close doc
+
+            finally
+                Spreadsheet.close doc
 
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
@@ -873,17 +889,21 @@ module AssayAPI =
             
             let doc = Spreadsheet.fromFile assayFilePath true
             
-            let persons = MetaData.getPersons "Investigation" doc
+            try
+                let persons = MetaData.getPersons "Investigation" doc
 
-            match API.Person.tryGetByFullName firstName midInitials lastName persons with
-            | Some person ->
-                [person]
-                |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
-                |> printfn "%s"
-            | None ->
-                printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                | Some person ->
+                    [person]
+                    |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
+                    |> printfn "%s"
+                | None ->
+                    printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
 
-            Spreadsheet.close doc
+                Spreadsheet.close doc
+
+            finally
+                Spreadsheet.close doc
 
 
         /// Lists the full names of all persons included in this assay's investigation sheet.
