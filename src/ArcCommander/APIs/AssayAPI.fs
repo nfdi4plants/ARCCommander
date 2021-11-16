@@ -734,14 +734,14 @@ module AssayAPI =
             let persons = MetaData.getPersons "Investigation" doc
 
             if API.Person.existsByFullName firstName midInitials lastName persons then
-                API.Person.updateByFullName updateOption person persons
-                |> MetaData.overwriteWithPersons "Investigation" <| doc
+                let newPersons = API.Person.updateByFullName updateOption person persons
+                MetaData.overwriteWithPersons "Investigation" newPersons doc
             else
                 if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
                 if containsFlag "AddIfMissing" personArgs then
                     if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set." 
-                    API.Person.add persons person
-                    |> MetaData.overwriteWithPersons "Investigation" <| doc
+                    let newPersons = API.Person.add persons person
+                    MetaData.overwriteWithPersons "Investigation" newPersons doc
 
             Spreadsheet.close doc
 
@@ -774,8 +774,9 @@ module AssayAPI =
                     (List.singleton >> Contacts.toRows None) 
                     (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
                     person
-                |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                |> MetaData.overwriteWithPersons "Investigation" <| doc
+                |> fun p -> 
+                    let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                    MetaData.overwriteWithPersons "Investigation" newPersons doc
             | None ->
                 if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
 
@@ -821,8 +822,8 @@ module AssayAPI =
             
             let persons = MetaData.getPersons "Investigation" doc
 
-            API.Person.add persons person
-            |> MetaData.overwriteWithPersons "Investigation" <| doc
+            let newPersons = API.Person.add persons person
+            MetaData.overwriteWithPersons "Investigation" newPersons doc
 
             Spreadsheet.close doc
 
@@ -847,8 +848,8 @@ module AssayAPI =
             let persons = MetaData.getPersons "Investigation" doc
 
             if API.Person.existsByFullName firstName midInitials lastName persons then
-                API.Person.removeByFullName firstName midInitials lastName persons
-                |> MetaData.overwriteWithPersons "Investigation" <| doc
+                let newPersons = API.Person.removeByFullName firstName midInitials lastName persons
+                MetaData.overwriteWithPersons "Investigation" newPersons doc
             else
                 if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
             
