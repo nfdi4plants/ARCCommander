@@ -317,15 +317,19 @@ module ArgumentProcessing =
         let tryGetUnknownArguments (parser : ArgumentParser<'T>) (args : string []) = 
             let ignR = parser.Parse(args,ignoreUnrecognized=true)
             Array.init args.Length (fun i ->
-
+        
                 try 
                     let r = parser.Parse(Array.take i args)
-                    if ignR = r then Some (Array.skip i args)
+                    if ignR = r then Some (Array.take (i+1) args,Array.skip (i+1) args)
                     else None
                 with 
                 | _ -> None
             )
             |> Array.tryPick id
+
+        let makeExecutableName (args : string []) =
+            Array.append [|"arc"|] args
+            |> Array.reduce (fun a b -> a + "-" + b)
 
         /// Recursively collects all files in a directory
         let getAllFilesRec dir = 

@@ -254,14 +254,16 @@ let main argv =
             // Incorrectly parsed arguments will be threaded into external executable tool handler
             // Here for the first unknown argument in the argument chain, an executable of the same name will be searched
             // If this tool exists, try executing it will all the following arguments
-            printfn "could not parse given commands. Try checking if executable with given argument name exists"
+            printfn "Could not parse given commands."
             match ExternalExecutables.tryGetUnknownArguments parser argv with
-            | Some args ->
+            | Some (executableNameArgs,args) ->
                 let executablesFolder = workingDir
-                match ExternalExecutables.tryFindExecutablePath executablesFolder args.[0] with
+                let executableName = (ExternalExecutables.makeExecutableName executableNameArgs)
+                printfn $"Try checking if executable with given argument name \"{executableName}\"exists"
+                match ExternalExecutables.tryFindExecutablePath executablesFolder executableName with
                 | Some executable -> 
                     printfn "found executable in path: \n\t\"%s\"" executable
-                    ExternalExecutables.runExecutable executable workingDir (Array.skip 1 args)
+                    ExternalExecutables.runExecutable executable workingDir args
                     None
                 | None -> 
                     printfn "%s" e.Message
