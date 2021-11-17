@@ -1,9 +1,10 @@
 ﻿namespace ArcCommander
 
 open Microsoft.FSharp.Reflection
-
+open System.IO
 open System.Diagnostics
-
+open System.Text
+open System.Text.Json
 open Argu
 
 
@@ -34,7 +35,7 @@ module ArgumentProcessing =
     /// Returns true, if the argument flag of name k was given by the user
     let containsFlag k (arguments : Map<string,Argument>)=
         match Map.tryFind k arguments with
-        | Some (Field _ )   -> failwithf "Argument %s is not a flag, but a field" k
+        | Some (Field _ )   -> failwithf "ERROR: Argument %s is not a flag, but a field." k
         | Some (Flag)       -> true
         | None              -> false
 
@@ -50,7 +51,7 @@ module ArgumentProcessing =
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.find k arguments with
         | Field v -> v
-        | Flag -> failwithf "Argument %s is not a field, but a flag" k
+        | Flag -> failwithf "ERROR: Argument %s is not a field, but a flag." k
 
     /// For a given discriminated union value, returns the field name and the value
     let private splitUnion (x:'a) = 
@@ -102,7 +103,7 @@ module ArgumentProcessing =
                     | None -> None,false                   
                 unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
             | _ ->
-                failwithf "Cannot parse argument %s because its parsing rules were not yet implemented" unionCase.Name
+                failwithf "ERROR: Cannot parse argument %s because its parsing rules were not yet implemented." unionCase.Name
         )
 
     ///// Creates an isa item used in the investigation file
@@ -125,7 +126,7 @@ module ArgumentProcessing =
         let private MD5Hash (input : string) =
             use md5 = System.Security.Cryptography.MD5.Create()
             input
-            |> System.Text.Encoding.ASCII.GetBytes
+            |> Encoding.ASCII.GetBytes
             |> md5.ComputeHash
             |> Seq.map (fun c -> c.ToString("X2"))
             |> Seq.reduce (+)
@@ -140,24 +141,27 @@ module ArgumentProcessing =
 
         /// Deletes the file
         let private delete (path:string) = 
-            System.IO.File.Delete(path) 
+            File.Delete(path) 
 
         /// Writes a text string to a path
         let private write (path : string) (text : string) = 
-            use w = new System.IO.StreamWriter(path)
-            w.Write(text)
+            let splitText = text.Split([|'\n'|]) // new try: textSplit and then continously write the text via iteration
+            //use w = new StreamWriter(path) // old version
+            use w = new StreamWriter(path, true, Encoding.UTF8) // `append` set to `true`
+            splitText
+            |> Array.iter w.Write
             w.Flush()
             w.Close()
         
         /// Writes a text string to a path, Creates the directory if it doens't yet exist
         let private writeForce (path : string) (text : string) = 
             delete path
-            System.IO.FileInfo(path).Directory.Create()
+            FileInfo(path).Directory.Create()
             write path text
 
         /// Reads the content of a file
         let private read (path : string) = 
-            use r = new System.IO.StreamReader(path)
+            use r = new StreamReader(path)
             r.ReadToEnd()
 
         /// Serializes annotated argument in yaml format (key:value)
@@ -210,7 +214,7 @@ module ArgumentProcessing =
             let yamlString = serializeF inp
             let hash = MD5Hash yamlString
             let filename = sprintf "%s.yml" hash
-            let filePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(),filename)
+            let filePath = Path.Combine(Path.GetTempPath(), filename)
 
     
             writeForce filePath yamlString
@@ -287,7 +291,7 @@ module ArgumentProcessing =
                 |> fun rs -> readF (rs.GetEnumerator()) 
             createQuery editorPath arcPath serializeF deserializeF isaItem
 
-        /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input
+        /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input.
         let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =
             let serializeF inp = 
                 IniData.flatten inp
@@ -304,8 +308,8 @@ module ArgumentProcessing =
             createQuery editorPath arcPath serializeF deserializeF iniData 
 
     let serializeToString (item : 'A) =
-        System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
+        JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
 
     let serializeToFile (p : string) (item : 'A) =
-        System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
-        |> fun s -> System.IO.File.WriteAllText(p,s)
+        JsonSerializer.Serialize(item, ISADotNet.JsonExtensions.options)
+        |> fun s -> File.WriteAllText(p, s)
