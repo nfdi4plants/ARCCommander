@@ -22,7 +22,7 @@ module StudyAPI =
             |> FSharpSpreadsheetML.Spreadsheet.initWithSst identifier
             |> FSharpSpreadsheetML.Spreadsheet.close
 
-    /// Initializes a new empty study file in the arc.
+    /// Initializes a new empty study file in the ARC.
     let init (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
             
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -36,7 +36,7 @@ module StudyAPI =
         else 
             StudyFile.create arcConfiguration identifier
 
-    /// Updates an existing study info in the arc with the given study metadata contained in cliArgs.
+    /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
     let update (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = // NotImplementedException()
     
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -90,8 +90,8 @@ module StudyAPI =
         |> Investigation.toFile investigationFilePath
         
 
-    // /// Opens an existing study file in the arc with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
-    /// Opens the existing study info in the arc with the text editor set in globalArgs.
+    // /// Opens an existing study file in the ARC with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
+    /// Opens the existing study info in the ARC with the text editor set in globalArgs.
     let edit (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -126,7 +126,7 @@ module StudyAPI =
             investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Registers an existing study in the arc's investigation file with the given study metadata contained in cliArgs.
+    /// Registers an existing study in the ARC's investigation file with the given study metadata contained in cliArgs.
     let register (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -164,7 +164,7 @@ module StudyAPI =
         |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Creates a new study file in the arc and registers it in the arc's investigation file with the given study metadata contained in cliArgs.
+    /// Creates a new study file in the ARC and registers it in the arc's investigation file with the given study metadata contained in cliArgs.
     let add (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
         init arcConfiguration studyArgs
         register arcConfiguration studyArgs
@@ -184,7 +184,7 @@ module StudyAPI =
         | err -> 
             if verbosity >= 1 then printfn "Error: Couldn't delete study file: \n %s" err.Message
 
-    /// Unregisters an existing study from the arc's investigation file.
+    /// Unregisters an existing study from the ARC's investigation file.
     let unregister (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -212,12 +212,12 @@ module StudyAPI =
             investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Removes a study file from the arc and unregisters it from the investigation file
+    /// Removes a study file from the ARC and unregisters it from the investigation file
     let remove (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
         delete arcConfiguration studyArgs
         unregister arcConfiguration studyArgs
 
-    /// Lists all study identifiers registered in this arc's investigation file
+    /// Lists all study identifiers registered in this ARC's investigation file
     let show (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -244,7 +244,7 @@ module StudyAPI =
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             
 
-    /// Lists all study identifiers registered in this arc's investigation file
+    /// Lists all study identifiers registered in this ARC's investigation file
     let list (arcConfiguration:ArcConfiguration) =
         
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -270,7 +270,7 @@ module StudyAPI =
     /// Functions for altering investigation contacts
     module Contacts =
 
-        /// Updates an existing person in the arc investigation study with the given person metadata contained in cliArgs.
+        /// Updates an existing person in the ARC investigation study with the given person metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -347,7 +347,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the ARC investigation study with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -399,7 +399,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Registers a person in the arc investigation study with the given person metadata contained in personArgs.
+        /// Registers a person in the ARC investigation study with the given person metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -461,7 +461,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
     
 
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
+        /// Removes an existing person by fullname (lastName,firstName,MidInitials) from the ARC with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -540,7 +540,7 @@ module StudyAPI =
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"
 
 
-        /// Lists the full names of all persons included in the investigation
+        /// Lists the full names of all persons included in the investigation.
         let list (arcConfiguration:ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -573,10 +573,10 @@ module StudyAPI =
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
-    /// Functions for altering investigation Publications
+    /// Functions for altering investigation Publications.
     module Publications =
 
-        /// Updates an existing publication in the arc investigation study with the given publication metadata contained in cliArgs.
+        /// Updates an existing publication in the ARC investigation study with the given publication metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -641,7 +641,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing publication by doi in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing publication by DOI in the ARC investigation study with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -692,7 +692,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a publication in the arc investigation study with the given publication metadata contained in personArgs.
+        /// Registers a publication in the ARC investigation study with the given publication metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -742,7 +742,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing publication by doi in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing publication by DOI in the ARC investigation study with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -782,7 +782,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing publication by doi from the arc investigation study and prints its metadata.
+        /// Gets an existing publication by DOI from the ARC investigation study and prints its metadata.
         let show (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -818,7 +818,7 @@ module StudyAPI =
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
 
-        /// Lists the dois of all publications included in the investigation study
+        /// Lists the DOIs of all publications included in the investigation study.
         let list (arcConfiguration:ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -844,10 +844,10 @@ module StudyAPI =
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
 
-    /// Functions for altering investigation Designs
+    /// Functions for altering investigation Designs.
     module Designs =
 
-        /// Updates an existing design in the arc investigation study with the given design metadata contained in cliArgs.
+        /// Updates an existing design in the ARC investigation study with the given design metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -910,7 +910,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing design by design type in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing design by design type in the ARC investigation study with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -960,7 +960,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a design in the arc investigation study with the given publication metadata contained in personArgs.
+        /// Registers a design in the ARC investigation study with the given publication metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1007,7 +1007,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing design by design type in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing design by design type in the ARC investigation study with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
             
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1047,7 +1047,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing design by design type from the arc investigation study and prints its metadata.
+        /// Gets an existing design by design type from the ARC investigation study and prints its metadata.
         let show (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1081,7 +1081,8 @@ module StudyAPI =
                     if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-        /// Lists the designs included in the investigation study
+        
+        /// Lists the designs included in the investigation study.
         let list (arcConfiguration:ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1109,7 +1110,7 @@ module StudyAPI =
     /// Functions for altering investigation factors
     module Factors =
 
-        /// Updates an existing factor in the arc investigation study with the given factor metadata contained in cliArgs.
+        /// Updates an existing factor in the ARC investigation study with the given factor metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1171,7 +1172,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing factor by name in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing factor by name in the ARC investigation study with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
             
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1221,7 +1222,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a factor in the arc investigation study with the given factor metadata contained in personArgs.
+        /// Registers a factor in the ARC investigation study with the given factor metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1267,7 +1268,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing factor by name in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing factor by name in the ARC investigation study with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1307,7 +1308,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing factor by name from the arc investigation study and prints its metadata.
+        /// Gets an existing factor by name from the ARC investigation study and prints its metadata.
         let show (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1342,7 +1343,7 @@ module StudyAPI =
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
-        /// Lists the factors included in the investigation study
+        /// Lists the factors included in the investigation study.
         let list (arcConfiguration:ArcConfiguration) = 
             
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1367,10 +1368,10 @@ module StudyAPI =
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
-    /// Functions for altering investigation protocols
+    /// Functions for altering investigation protocols.
     module Protocols =
 
-        /// Updates an existing protocol in the arc investigation study with the given protocol metadata contained in cliArgs.
+        /// Updates an existing protocol in the ARC investigation study with the given protocol metadata contained in cliArgs.
         let update (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1444,7 +1445,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing protocol by name in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing protocol by name in the ARC investigation study with the text editor set in globalArgs.
         let edit (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1493,7 +1494,7 @@ module StudyAPI =
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a protocol in the arc investigation study with the given protocol metadata contained in personArgs.
+        /// Registers a protocol in the ARC investigation study with the given protocol metadata contained in personArgs.
         let register (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
            
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1549,7 +1550,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing protocol by name in the arc investigation study with the text editor set in globalArgs.
+        /// Opens an existing protocol by name in the ARC investigation study with the text editor set in globalArgs.
         let unregister (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1659,7 +1660,7 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing protocol by name from the arc investigation study and prints its metadata.
+        /// Gets an existing protocol by name from the ARC investigation study and prints its metadata.
         let show (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
          
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -1695,7 +1696,7 @@ module StudyAPI =
                 if verbosity >= 1 then printfn "The investigation does not contain any studies"  
                 
 
-        /// Lists the protocols included in the investigation study
+        /// Lists the protocols included in the investigation study.
         let list (arcConfiguration:ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
