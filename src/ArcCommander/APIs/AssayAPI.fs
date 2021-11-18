@@ -111,7 +111,7 @@ module AssayAPI =
         
         let investigation = Investigation.fromFile investigationFilePath
 
-
+        // part that writes assay metadata into the investigation file
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -149,6 +149,45 @@ module AssayAPI =
             investigation
         |> Investigation.toFile investigationFilePath
         
+        let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+        
+        printfn "DEBUG: got assayFilepath: %s" assayFilepath
+
+        let doc = Spreadsheet.fromFile assayFilepath true
+
+        printfn "DEBUG: got doc"
+
+        // part that writes assay metadata into the assay file
+        try 
+            //let persons = MetaData.getPersons "Investigation" doc
+            
+            //match API.Person.tryGetByFullName firstName midInitials lastName persons with
+            //| Some person ->
+            //    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir
+            //        (List.singleton >> Contacts.toRows None) 
+            //        (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
+            //        person
+            //    |> fun p -> 
+            //        let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+            //        MetaData.overwriteWithPersons "Investigation" newPersons doc
+            //| None ->
+            //    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+
+            // takes persons from before => persons don't get touched by `arc a update`, use `arc a person update` instead
+            //let persons = MetaData.getPersons "Investigation" doc
+
+            printfn "AssayData is %A" assay
+
+            MetaData.overwriteWithAssayInfo "Investigation" assay doc
+
+            printfn "DEBUG: overwroteWithAssayInfo"
+            //printfn "DEBUG: did nothing"
+
+            // check if persons get deleted. if yes -> uncomment
+            //MetaData.overwriteWithPersons "Investigation" persons doc
+            
+        finally
+            Spreadsheet.close doc
 
     /// Opens an existing assay file in the ARC with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
     let edit (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
@@ -157,7 +196,7 @@ module AssayAPI =
 
         if verbosity >= 1 then printfn "Start Assay Edit"
 
-        let editor = GeneralConfiguration.getEditor arcConfiguration
+        let editor  = GeneralConfiguration.getEditor        arcConfiguration
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
@@ -286,7 +325,7 @@ module AssayAPI =
         init arcConfiguration assayArgs
         register arcConfiguration assayArgs
 
-    /// Unregisters an assay file from the ARC's investigation file assay register.
+    /// Unregisters an assay file from the ARC's investigation file.
     let unregister (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -484,7 +523,7 @@ module AssayAPI =
         | None -> 
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
 
-    /// Export an assay to json.
+    /// Exports an assay to JSON.
     let exportSingleAssay (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -575,7 +614,7 @@ module AssayAPI =
             System.Console.Write(ISADotNet.Json.Study.toString output)
 
 
-    /// Export all assays to json.
+    /// Exports all assays to JSON.
     let exportAllAssays (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -677,7 +716,7 @@ module AssayAPI =
 
             System.Console.Write(ArgumentProcessing.serializeToString assays)
 
-    /// Export an assay to json.
+    /// Exports one or several assay(s) to JSON.
     let export (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -743,8 +782,6 @@ module AssayAPI =
                         if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set." 
                         let newPersons = API.Person.add persons person
                         MetaData.overwriteWithPersons "Investigation" newPersons doc
-
-                Spreadsheet.close doc
 
             finally
                 Spreadsheet.close doc
@@ -834,8 +871,6 @@ module AssayAPI =
                 let newPersons = API.Person.add persons person
                 MetaData.overwriteWithPersons "Investigation" newPersons doc
 
-                Spreadsheet.close doc
-
             finally
                 Spreadsheet.close doc
 
@@ -865,8 +900,6 @@ module AssayAPI =
                     MetaData.overwriteWithPersons "Investigation" newPersons doc
                 else
                     if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
-            
-                Spreadsheet.close doc
 
             finally
                 Spreadsheet.close doc
@@ -899,8 +932,6 @@ module AssayAPI =
                     |> printfn "%s"
                 | None ->
                     printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
-
-                Spreadsheet.close doc
 
             finally
                 Spreadsheet.close doc
