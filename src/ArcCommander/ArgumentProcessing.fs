@@ -122,7 +122,7 @@ module ArgumentProcessing =
     /// Functions for asking the user to input values via an editor prompt
     module Prompt = 
 
-        /// Create a MD5 hash from an input string
+        /// Creates a MD5 hash from an input string.
         let private MD5Hash (input : string) =
             use md5 = System.Security.Cryptography.MD5.Create()
             input
@@ -131,7 +131,7 @@ module ArgumentProcessing =
             |> Seq.map (fun c -> c.ToString("X2"))
             |> Seq.reduce (+)
     
-        /// Starts a program at the given path with the given arguments
+        /// Starts a program at the given path with the given arguments.
         let private runProcess rootPath arg =           
             let p = 
                 new ProcessStartInfo
@@ -143,30 +143,28 @@ module ArgumentProcessing =
         let private delete (path:string) = 
             File.Delete(path) 
 
-        /// Writes a text string to a path
+        /// Writes a text string to a path.
         let private write (path : string) (text : string) = 
-            let splitText = text.Split([|'\n'|]) // new try: textSplit and then continously write the text via iteration
-            //use w = new StreamWriter(path) // old version
-            use w = new StreamWriter(path, true, Encoding.UTF8) // `append` set to `true`
-            splitText
-            |> Array.iter w.Write
+            let textWithEnvLineBreaks = text.Replace("\n", System.Environment.NewLine)
+            use w = new StreamWriter(path, false, Encoding.UTF8)
+            w.Write(textWithEnvLineBreaks)
             w.Flush()
             w.Close()
         
-        /// Writes a text string to a path, Creates the directory if it doens't yet exist
+        /// Writes a text string to a path, Creates the directory if it doesn't exist yet.
         let private writeForce (path : string) (text : string) = 
             delete path
             FileInfo(path).Directory.Create()
             write path text
 
-        /// Reads the content of a file
+        /// Reads the content of a file.
         let private read (path : string) = 
             use r = new StreamReader(path)
             r.ReadToEnd()
 
-        /// Serializes annotated argument in yaml format (key:value)
+        /// Serializes annotated argument in yaml format (key:value).
         ///
-        /// For each value, a comment is created and put above the line using the given commentF function
+        /// For each value, a comment is created and put above the line using the given commentF function.
         let private serializeAnnotatedArguments (arguments : (string * AnnotatedArgument) []) =
             let header = 
                 """# Not all mandatory input arguments were given
@@ -192,14 +190,14 @@ module ArgumentProcessing =
             |> Array.reduce (fun a b -> a + "\n\n" + b)
             |> sprintf "%s\n\n%s" header
     
-        /// Splits the string at the first occurence of the char 
+        /// Splits the string at the first occurence of the char.
         let private splitAtFirst (c : char) (s : string) =
             match s.Split c with
             | [|k|]     -> k.Trim(), Flag 
             | [|k ; v|] -> k.Trim(), v.Trim() |> Field 
             | a         -> a.[0].Trim(), Array.skip 1 a |> Array.reduce (fun a b ->sprintf "%s%c%s" a c b) |> fun v -> v.Trim() |> Field
 
-        /// Deserializes yaml format (key:value) arguments
+        /// Deserializes yaml format (key:value) arguments.
         let private deserializeArguments (s:string) =
             s.Split '\n'
             |> Array.choose (fun x -> 
@@ -209,7 +207,7 @@ module ArgumentProcessing =
                     splitAtFirst ':' x |> Some
             )
 
-        /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input
+        /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input.
         let createQuery editorPath arcPath serializeF deserializeF inp =
             let yamlString = serializeF inp
             let hash = MD5Hash yamlString
@@ -229,13 +227,13 @@ module ArgumentProcessing =
                 delete filePath
                 failwithf "could not parse query: %s" err.Message
 
-        /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
+        /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
         let createArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
             arguments
             |> createQuery editorPath arcPath serializeAnnotatedArguments deserializeArguments 
             |> Map.ofArray
 
-        /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input
+        /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
         let createMissingArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
             let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
             let queryResults = createArgumentQuery editorPath arcPath arguments
@@ -248,7 +246,7 @@ module ArgumentProcessing =
                 |> Array.reduce ((||))
             stillMissingMandatoryArgs,queryResults
             
-        /// Removes additional annotation (isMandatory and tooltip) from argument
+        /// Removes additional annotation (isMandatory and tooltip) from argument.
         let deannotateArguments (arguments : (string * AnnotatedArgument) []) =
             arguments
             |> Array.choose (fun (k,v) -> 
@@ -267,7 +265,7 @@ module ArgumentProcessing =
             )
             |> Seq.reduce (fun a b -> a + "\n" + b)
 
-        /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input
+        /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input.
         let createIsaItemQuery editorPath arcPath 
             (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>)
             (readF : System.Collections.Generic.IEnumerator<ISADotNet.XLSX.SparseRow> -> 'A)
