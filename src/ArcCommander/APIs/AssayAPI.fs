@@ -150,41 +150,12 @@ module AssayAPI =
         |> Investigation.toFile investigationFilePath
         
         let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
-        
-        printfn "DEBUG: got assayFilepath: %s" assayFilepath
 
         let doc = Spreadsheet.fromFile assayFilepath true
 
-        printfn "DEBUG: got doc"
-
         // part that writes assay metadata into the assay file
         try 
-            //let persons = MetaData.getPersons "Investigation" doc
-            
-            //match API.Person.tryGetByFullName firstName midInitials lastName persons with
-            //| Some person ->
-            //    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir
-            //        (List.singleton >> Contacts.toRows None) 
-            //        (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
-            //        person
-            //    |> fun p -> 
-            //        let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-            //        MetaData.overwriteWithPersons "Investigation" newPersons doc
-            //| None ->
-            //    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
-
-            // takes persons from before => persons don't get touched by `arc a update`, use `arc a person update` instead
-            //let persons = MetaData.getPersons "Investigation" doc
-
-            printfn "AssayData is %A" assay
-
             MetaData.overwriteWithAssayInfo "Investigation" assay doc
-
-            printfn "DEBUG: overwroteWithAssayInfo"
-            //printfn "DEBUG: did nothing"
-
-            // check if persons get deleted. if yes -> uncomment
-            //MetaData.overwriteWithPersons "Investigation" persons doc
             
         finally
             Spreadsheet.close doc
@@ -216,6 +187,11 @@ module AssayAPI =
         
         let investigation = Investigation.fromFile investigationFilePath
 
+        let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+
+        let _, _, _, assay = AssayFile.Assay.fromFile assayFilepath
+
+        // TO DO: compare investigation metadata from investigation file and from assay file
         
         match investigation.Studies with
         | Some studies -> 
@@ -248,6 +224,15 @@ module AssayAPI =
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
+        
+        let doc = Spreadsheet.fromFile assayFilepath true
+        
+        // part that writes assay metadata into the assay file
+        try 
+            MetaData.overwriteWithAssayInfo "Investigation" assay doc
+                    
+        finally
+            Spreadsheet.close doc
 
 
     /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in assayArgs.
