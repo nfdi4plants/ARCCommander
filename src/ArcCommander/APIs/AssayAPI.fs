@@ -110,6 +110,17 @@ module AssayAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let investigation = Investigation.fromFile investigationFilePath
+        
+        let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
+
+        let doc = Spreadsheet.fromFile assayFilepath true
+
+        // part that writes assay metadata into the assay file
+        try 
+            MetaData.overwriteWithAssayInfo "Investigation" assay doc
+            
+        finally
+            Spreadsheet.close doc
 
         // part that writes assay metadata into the investigation file
         match investigation.Studies with
@@ -148,17 +159,6 @@ module AssayAPI =
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
-        
-        let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
-
-        let doc = Spreadsheet.fromFile assayFilepath true
-
-        // part that writes assay metadata into the assay file
-        try 
-            MetaData.overwriteWithAssayInfo "Investigation" assay doc
-            
-        finally
-            Spreadsheet.close doc
 
     /// Opens an existing assay file in the ARC with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
     let edit (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
@@ -189,10 +189,26 @@ module AssayAPI =
 
         let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
-        let _, _, _, assay = AssayFile.Assay.fromFile assayFilepath
+        let _, _, _, oldAssay = AssayFile.Assay.fromFile assayFilepath
 
-        // TO DO: compare investigation metadata from investigation file and from assay file
+        let newAssay =
+            ArgumentProcessing.Prompt.createIsaItemQuery 
+                editor 
+                workDir 
+                (List.singleton >> Assays.toRows None) 
+                (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
+                oldAssay
+
+        // part that writes assay metadata into the assay file
+        let doc = Spreadsheet.fromFile assayFilepath true
         
+        try 
+            MetaData.overwriteWithAssayInfo "Investigation" newAssay doc
+                    
+        finally
+            Spreadsheet.close doc
+
+        // part that writes assay metadata into the investigation file
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -201,11 +217,7 @@ module AssayAPI =
                 | Some assays -> 
                     match API.Assay.tryGetByFileName assayFileName assays with
                     | Some assay ->
-                
-                        ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
-                            (List.singleton >> Assays.toRows None) 
-                            (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
-                            assay
+                        newAssay
                         |> fun a -> API.Assay.updateBy ((=) assay) API.Update.UpdateAll a assays
                         |> API.Study.setAssays study
                         |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
@@ -224,15 +236,6 @@ module AssayAPI =
             if verbosity >= 1 then printfn "The investigation does not contain any studies"  
             investigation
         |> Investigation.toFile investigationFilePath
-        
-        let doc = Spreadsheet.fromFile assayFilepath true
-        
-        // part that writes assay metadata into the assay file
-        try 
-            MetaData.overwriteWithAssayInfo "Investigation" assay doc
-                    
-        finally
-            Spreadsheet.close doc
 
 
     /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in assayArgs.
