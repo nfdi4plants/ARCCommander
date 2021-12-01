@@ -225,7 +225,7 @@ module ArgumentProcessing =
             with
             | err -> 
                 delete filePath
-                failwithf "could not parse query: %s" err.Message
+                failwithf "Could not parse query: %s" err.Message
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
         let createArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
@@ -279,12 +279,18 @@ module ArgumentProcessing =
             let serializeF = serializeXSLXWriterOutput writeF >> sprintf "%s\n\n%s" header
 
             let deserializeF (s : string) : 'A =
-                s.Replace(sprintf "%s\n\n" header, "").Split '\n'
-                |> Seq.map (fun x ->                 
-                    match splitAtFirst ':' x with
-                    | k, Field v ->
-                        ISADotNet.XLSX.SparseRow.fromValues [k;v]
-                    | _ -> failwith "ERROR: File was corrupted in Editor"
+                s.Split('\n')
+                |> Seq.choose (fun x ->
+                    x.Replace("\013", "")
+                    |> fun x ->
+                        if x.Length = 0 || x.[0] = '#' then None
+                        else
+                            Some (
+                                match splitAtFirst ':' x with
+                                | k, Field v ->
+                                    ISADotNet.XLSX.SparseRow.fromValues [k;v]
+                                | _ -> failwith "ERROR: File was corrupted in Editor."
+                            )
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 
             createQuery editorPath arcPath serializeF deserializeF isaItem
@@ -300,8 +306,8 @@ module ArgumentProcessing =
                 |> Array.map (fun x ->      
                     match splitAtFirst '=' x with
                     | k, Field v -> k,v
-                    | _ -> failwith "ERROR: File was corrupted in Editor"
-                )              
+                    | _ -> failwith "ERROR: File was corrupted in Editor."
+                )
                 |> IniData.fromNameValuePairs
             createQuery editorPath arcPath serializeF deserializeF iniData 
 
