@@ -238,7 +238,7 @@ module AssayAPI =
         |> Investigation.toFile investigationFilePath
 
 
-    /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in assayArgs.
+    /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in the assay file's investigation sheet.
     let register (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
@@ -247,31 +247,21 @@ module AssayAPI =
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         
-        let assayFileName = 
-            IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration
-            |> Option.get
+        let assayFileName = IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration |> Option.get
         
-        let assay = 
-            Assays.fromString
-                (getFieldValueByName  "MeasurementType" assayArgs)
-                (getFieldValueByName  "MeasurementTypeTermAccessionNumber" assayArgs)
-                (getFieldValueByName  "MeasurementTypeTermSourceREF" assayArgs)
-                (getFieldValueByName  "TechnologyType" assayArgs)
-                (getFieldValueByName  "TechnologyTypeTermAccessionNumber" assayArgs)
-                (getFieldValueByName  "TechnologyTypeTermSourceREF" assayArgs)
-                (getFieldValueByName  "TechnologyPlatform" assayArgs)
-                assayFileName
-                []
-               
+        let assayFilePath = IsaModelConfiguration.getAssayFilePath assayIdentifier arcConfiguration
+
+        let _, _, _, assay = Assay.fromFile assayFilePath
+
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> 
-                if verbosity >= 1 then printfn "No Study Identifier given, use assayIdentifier instead"
+                if verbosity >= 1 then printfn "No Study Identifier given, use assayIdentifier instead."
                 assayIdentifier
             | s -> s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
-        
+
         let investigation = Investigation.fromFile investigationFilePath
                 
         match investigation.Studies with
@@ -307,7 +297,7 @@ module AssayAPI =
         |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
     
-    /// Creates a new assay file and associated folder structure in the arc and registers it in the ARC's investigation file with the given assay metadata contained in assayArgs.
+    /// Creates a new assay file and associated folder structure in the ARC and registers it in the ARC's investigation file with the given assay metadata contained in assayArgs.
     let add (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         init arcConfiguration assayArgs
@@ -322,9 +312,7 @@ module AssayAPI =
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
-        let assayFileName = 
-            IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration
-            |> Option.get
+        let assayFileName = IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration |> Option.get
 
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
