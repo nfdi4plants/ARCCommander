@@ -37,7 +37,7 @@ let testAssayTestFunction =
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"
     let investigationFileName = "isa.investigation.xlsx"
-    let investigationFilePath = System.IO.Path.Combine(testDirectory,investigationFileName)
+    let investigationFilePath = System.IO.Path.Combine(testDirectory, investigationFileName)
 
     testList "AssayTestFunctionTests" [
         testCase "MatchesAssayValues" (fun () -> 
@@ -77,7 +77,7 @@ let testAssayRegister =
 
     let configuration = 
         ArcConfiguration.create 
-            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+            (Map.ofList ["workdir", testDirectory; "verbosity", "2"]) 
             (standardISAArgs)
             Map.empty Map.empty Map.empty Map.empty
 
@@ -91,15 +91,19 @@ let testAssayRegister =
             let studyIdentifier = "TestStudy"
             
             let studyArgs : StudyRegisterArgs list = [StudyRegisterArgs.Identifier studyIdentifier]
-            let assayArgs : AssayAddArgs list = [
-                    AssayAddArgs.StudyIdentifier studyIdentifier
-                    AssayAddArgs.AssayIdentifier assayIdentifier
-                    MeasurementType measurementType
-                ]
+            let assayArgs : AssayRegisterArgs list = [
+                AssayRegisterArgs.StudyIdentifier studyIdentifier
+                AssayRegisterArgs.AssayIdentifier assayIdentifier
+            ]
+            let assayArgs2 : AssayInitArgs list = [
+                AssayInitArgs.AssayIdentifier assayIdentifier
+                AssayInitArgs.MeasurementType measurementType
+            ]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
             setupArc configuration
             processCommand configuration StudyAPI.register studyArgs
+            processCommand configuration AssayAPI.init     assayArgs2
             processCommand configuration AssayAPI.register assayArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
@@ -117,7 +121,10 @@ let testAssayRegister =
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
             
-            let assayArgs : AssayRegisterArgs list = [AssayRegisterArgs.StudyIdentifier studyIdentifier;AssayRegisterArgs.AssayIdentifier assayIdentifier]
+            let assayArgs : AssayRegisterArgs list = [
+                AssayRegisterArgs.StudyIdentifier studyIdentifier
+                AssayRegisterArgs.AssayIdentifier assayIdentifier
+            ]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
             processCommand configuration AssayAPI.register assayArgs
