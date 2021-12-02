@@ -168,7 +168,6 @@ module AssayAPI =
         if verbosity >= 1 then printfn "Start Assay Edit"
 
         let editor  = GeneralConfiguration.getEditor        arcConfiguration
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         
@@ -194,7 +193,6 @@ module AssayAPI =
         let newAssay =
             ArgumentProcessing.Prompt.createIsaItemQuery 
                 editor 
-                workDir 
                 (List.singleton >> Assays.toRows None) 
                 (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                 oldAssay
@@ -771,7 +769,6 @@ module AssayAPI =
             if verbosity >= 1 then printfn "Start Person Edit"
 
             let editor  = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let lastName    = (getFieldValueByName "LastName"       personArgs)
             let firstName   = (getFieldValueByName "FirstName"      personArgs)
@@ -788,7 +785,7 @@ module AssayAPI =
 
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person ->
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor
                         (List.singleton >> Contacts.toRows None) 
                         (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
                         person

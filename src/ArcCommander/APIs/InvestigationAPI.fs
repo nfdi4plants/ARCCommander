@@ -79,14 +79,13 @@ module InvestigationAPI =
         if verbosity >= 1 then printfn "Start Investigation Edit"
 
         let editor = GeneralConfiguration.getEditor arcConfiguration
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
         let investigation = Investigation.fromFile investigationFilePath
                
         let editedInvestigation =
-            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Investigation.InvestigationInfo.toRows 
+            ArgumentProcessing.Prompt.createIsaItemQuery editor Investigation.InvestigationInfo.toRows
                 (Investigation.InvestigationInfo.fromRows 1 >> fun (_,_,_,item) -> Investigation.fromParts item [] [] [] [] []) 
                 investigation
                
@@ -182,7 +181,6 @@ module InvestigationAPI =
             if verbosity >= 1 then printfn "Start Person Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let lastName = (getFieldValueByName  "LastName"   personArgs)
             let firstName = (getFieldValueByName  "FirstName"     personArgs)
@@ -196,7 +194,7 @@ module InvestigationAPI =
             | Some persons ->
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person -> 
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor
                         (List.singleton >> Contacts.toRows None) 
                         (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         person
@@ -400,7 +398,7 @@ module InvestigationAPI =
             if verbosity >= 1 then printfn "Start Publication Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+            //let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let doi = getFieldValueByName "DOI" publicationArgs
 
@@ -412,7 +410,8 @@ module InvestigationAPI =
             | Some publications ->
                 match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->                    
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor
+                    //ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
                         (List.singleton >> Publications.toRows None) 
                         (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         publication

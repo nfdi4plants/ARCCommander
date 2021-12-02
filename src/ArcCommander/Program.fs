@@ -7,7 +7,6 @@ open ArcCommander
 open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
-open System
 
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
 
@@ -22,14 +21,14 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
     let arguments = 
 
         if containsMissingMandatoryAttribute annotatedArguments then
-            let stillMissingMandatoryArgs,arguments =
-                Prompt.createMissingArgumentQuery editor workDir annotatedArguments
+            let stillMissingMandatoryArgs, arguments =
+                Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                failwith "Mandatory arguments were not given either via cli or editor prompt"
+                failwith "ERROR: Mandatory arguments were not given either via cli or editor prompt."
             arguments
 
         elif forceEditor then
-            Prompt.createArgumentQuery editor workDir annotatedArguments
+            Prompt.createArgumentQuery editor annotatedArguments
 
         else 
             Prompt.deannotateArguments annotatedArguments
@@ -50,7 +49,7 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
 
     try commandF arcConfiguration arguments
     finally
-        if verbosity >= 1 then printfn "Done processing command"
+        if verbosity >= 1 then printfn "Done processing command."
 
 let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
@@ -70,7 +69,7 @@ let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
 
     try commandF arcConfiguration
     finally
-        if verbosity >= 1 then printfn "Done processing command"
+        if verbosity >= 1 then printfn "Done processing command."
 
 let handleStudyContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with

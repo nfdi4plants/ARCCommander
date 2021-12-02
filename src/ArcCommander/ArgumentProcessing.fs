@@ -208,7 +208,7 @@ module ArgumentProcessing =
             )
 
         /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input.
-        let createQuery editorPath arcPath serializeF deserializeF inp =
+        let createQuery editorPath serializeF deserializeF inp =
             let yamlString = serializeF inp
             let hash = MD5Hash yamlString
             let filename = sprintf "%s.yml" hash
@@ -228,15 +228,15 @@ module ArgumentProcessing =
                 failwithf "Could not parse query: %s" err.Message
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
-        let createArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
+        let createArgumentQuery editorPath (arguments : (string * AnnotatedArgument) []) = 
             arguments
-            |> createQuery editorPath arcPath serializeAnnotatedArguments deserializeArguments 
+            |> createQuery editorPath serializeAnnotatedArguments deserializeArguments 
             |> Map.ofArray
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
-        let createMissingArgumentQuery editorPath arcPath (arguments : (string * AnnotatedArgument) []) = 
+        let createMissingArgumentQuery editorPath (arguments : (string * AnnotatedArgument) []) = 
             let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
-            let queryResults = createArgumentQuery editorPath arcPath arguments
+            let queryResults = createArgumentQuery editorPath arguments
             let stillMissingMandatoryArgs =  
                 mandatoryArgs
                 |> Array.map (fun k -> 
@@ -266,7 +266,7 @@ module ArgumentProcessing =
             |> Seq.reduce (fun a b -> a + "\n" + b)
 
         /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input.
-        let createIsaItemQuery editorPath arcPath 
+        let createIsaItemQuery editorPath
             (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>)
             (readF : System.Collections.Generic.IEnumerator<ISADotNet.XLSX.SparseRow> -> 'A)
             (isaItem : 'A) = 
@@ -293,10 +293,10 @@ module ArgumentProcessing =
                             )
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 
-            createQuery editorPath arcPath serializeF deserializeF isaItem
+            createQuery editorPath serializeF deserializeF isaItem
 
         /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input.
-        let createIniDataQuery editorPath arcPath (iniData : IniParser.Model.IniData) =
+        let createIniDataQuery editorPath (iniData : IniParser.Model.IniData) =
             let serializeF inp = 
                 IniData.flatten inp
                 |> Seq.map (fun (n,v) -> n + "=" + v)
@@ -309,7 +309,7 @@ module ArgumentProcessing =
                     | _ -> failwith "ERROR: File was corrupted in Editor."
                 )
                 |> IniData.fromNameValuePairs
-            createQuery editorPath arcPath serializeF deserializeF iniData 
+            createQuery editorPath serializeF deserializeF iniData
 
     let serializeToString (item : 'A) =
         JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
