@@ -91,7 +91,11 @@ let testAssayRegister =
             let studyIdentifier = "TestStudy"
             
             let studyArgs : StudyRegisterArgs list = [StudyRegisterArgs.Identifier studyIdentifier]
-            let assayArgs : AssayRegisterArgs list = [AssayRegisterArgs.StudyIdentifier studyIdentifier;AssayRegisterArgs.AssayIdentifier assayIdentifier;MeasurementType measurementType]
+            let assayArgs : AssayAddArgs list = [
+                    AssayAddArgs.StudyIdentifier studyIdentifier
+                    AssayAddArgs.AssayIdentifier assayIdentifier
+                    MeasurementType measurementType
+                ]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
             setupArc configuration
@@ -139,7 +143,11 @@ let testAssayRegister =
             let newAssayFileName = IsaModelConfiguration.getAssayFileName newAssayIdentifier configuration
             let newmeasurementType = "OtherMeasurementType"
 
-            let assayArgs = [AssayRegisterArgs.StudyIdentifier studyIdentifier;AssayRegisterArgs.AssayIdentifier newAssayIdentifier;MeasurementType newmeasurementType]
+            let assayArgs = [
+                    AssayAddArgs.StudyIdentifier studyIdentifier
+                    AssayAddArgs.AssayIdentifier newAssayIdentifier
+                    MeasurementType newmeasurementType
+                ]
             let testAssay = ISADotNet.XLSX.Assays.fromString newmeasurementType "" "" "" "" "" "" newAssayFileName []
             
             processCommand configuration AssayAPI.register assayArgs
@@ -161,7 +169,11 @@ let testAssayRegister =
             let measurementType = "MeasurementTypeOfStudyCreatedByAssayRegister"
             let studyIdentifier = "StudyCreatedByAssayRegister"
             
-            let assayArgs : AssayRegisterArgs list = [AssayRegisterArgs.StudyIdentifier studyIdentifier;AssayRegisterArgs.AssayIdentifier assayIdentifier;MeasurementType "MeasurementTypeOfStudyCreatedByAssayRegister"]
+            let assayArgs : AssayAddArgs list = [
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                MeasurementType "MeasurementTypeOfStudyCreatedByAssayRegister"
+            ]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
             processCommand configuration AssayAPI.register assayArgs
@@ -179,7 +191,10 @@ let testAssayRegister =
             let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let technologyType = "InferName"
             
-            let assayArgs = [AssayRegisterArgs.AssayIdentifier assayIdentifier;TechnologyType technologyType]
+            let assayArgs = [
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                TechnologyType technologyType
+            ]
             let testAssay = ISADotNet.XLSX.Assays.fromString "" "" "" technologyType "" "" "" assayFileName []
             
             processCommand configuration AssayAPI.register assayArgs
@@ -253,9 +268,22 @@ let testAssayUpdate =
 
         testCase "UpdateStandard" (fun () -> 
 
-            let assay1Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay1";AssayRegisterArgs.MeasurementType "Assay1Method"]
-            let assay2Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay2";AssayRegisterArgs.MeasurementType "Assay2Method";AssayRegisterArgs.TechnologyType "Assay2Tech"]
-            let assay3Args = [AssayRegisterArgs.StudyIdentifier "Study2"; AssayRegisterArgs.AssayIdentifier "Assay3";AssayRegisterArgs.TechnologyType "Assay3Tech"]
+            let assay1Args = [
+                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.AssayIdentifier "Assay1"
+                AssayAddArgs.MeasurementType "Assay1Method"
+            ]
+            let assay2Args = [
+                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.AssayIdentifier "Assay2"
+                AssayAddArgs.MeasurementType "Assay2Method"
+                AssayAddArgs.TechnologyType "Assay2Tech"
+            ]
+            let assay3Args = [
+                AssayAddArgs.StudyIdentifier "Study2"
+                AssayAddArgs.AssayIdentifier "Assay3"
+                AssayAddArgs.TechnologyType "Assay3Tech"
+            ]
 
             let studyIdentifier = "Study1"
             let assayIdentifier = "Assay2"
@@ -333,9 +361,22 @@ let testAssayUnregister =
 
         testCase "AssayExists" (fun () -> 
 
-            let assay1Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay1";AssayRegisterArgs.MeasurementType "Assay1Method"]
-            let assay2Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay2";AssayRegisterArgs.MeasurementType "Assay2Method";AssayRegisterArgs.TechnologyType "Assay2Tech"]
-            let assay3Args = [AssayRegisterArgs.StudyIdentifier "Study2"; AssayRegisterArgs.AssayIdentifier "Assay3";AssayRegisterArgs.TechnologyType "Assay3Tech"]
+            let assay1Args = [
+                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.AssayIdentifier "Assay1"
+                AssayAddArgs.MeasurementType "Assay1Method"
+            ]
+            let assay2Args = [
+                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.AssayIdentifier "Assay2"
+                AssayAddArgs.MeasurementType "Assay2Method"
+                AssayAddArgs.TechnologyType "Assay2Tech"
+            ]
+            let assay3Args = [
+                AssayAddArgs.StudyIdentifier "Study2"
+                AssayAddArgs.AssayIdentifier "Assay3"
+                AssayAddArgs.TechnologyType "Assay3Tech"
+            ]
 
             let studyIdentifier = "Study1"
             let assayIdentifier = "Assay2"
@@ -411,9 +452,22 @@ let testAssayMove =
 
         testCase "ToExistingStudy" (fun () -> 
 
-            let assay1Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay1";AssayRegisterArgs.MeasurementType "Assay1Method"]
-            let assay2Args = [AssayRegisterArgs.StudyIdentifier "Study1"; AssayRegisterArgs.AssayIdentifier "Assay2";AssayRegisterArgs.MeasurementType "Assay2Method";AssayRegisterArgs.TechnologyType "Assay2Tech"]
-            let assay3Args = [AssayRegisterArgs.StudyIdentifier "Study2"; AssayRegisterArgs.AssayIdentifier "Assay3";AssayRegisterArgs.TechnologyType "Assay3Tech"]
+            let assay1Args = [
+                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.AssayIdentifier "Assay1"
+                AssayAddArgs.MeasurementType "Assay1Method"
+            ]
+            let assay2Args = [
+                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.AssayIdentifier "Assay2"
+                AssayAddArgs.MeasurementType "Assay2Method"
+                AssayAddArgs.TechnologyType "Assay2Tech"
+            ]
+            let assay3Args = [
+                AssayAddArgs.StudyIdentifier "Study2"
+                AssayAddArgs.AssayIdentifier "Assay3"
+                AssayAddArgs.TechnologyType "Assay3Tech"
+            ]
 
             let studyIdentifier = "Study1"
             let targetStudyIdentfier = "Study2"
