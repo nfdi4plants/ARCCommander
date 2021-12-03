@@ -63,6 +63,17 @@ type ArcConfiguration =
         ]
         |> fromNameValuePairs
 
+
+    /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments
+    static member ofIniData argumentConfig =
+        ArcConfiguration.create
+            (getSectionMap "general"   argumentConfig)
+            (getSectionMap "isamodel"  argumentConfig)
+            (getSectionMap "assay"     argumentConfig)
+            (getSectionMap "workflow"  argumentConfig)
+            (getSectionMap "external"  argumentConfig)
+            (getSectionMap "run"       argumentConfig)
+
     /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments
     static member load argumentConfig =
         let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
@@ -76,13 +87,7 @@ type ArcConfiguration =
                 printfn "WARNING: No config file found. Load default config instead."
                 ArcConfiguration.GetDefault()
                 |> merge argumentConfig
-        ArcConfiguration.create
-            (getSectionMap "general"   mergedIniData)
-            (getSectionMap "isamodel"  mergedIniData)
-            (getSectionMap "assay"     mergedIniData)
-            (getSectionMap "workflow"  mergedIniData)
-            (getSectionMap "external"  mergedIniData)
-            (getSectionMap "run"       mergedIniData)
+        ArcConfiguration.ofIniData mergedIniData
 
     // TODO TO-DO TO DO: open all record fields using reflection
     /// Returns the full paths of the rootfolders
