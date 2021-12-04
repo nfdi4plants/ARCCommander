@@ -249,30 +249,21 @@ let testAssayRegister =
             Expect.isSome assayOption "Assay was not added to newly created study"
             Expect.equal assayOption.Value testAssay "Assay is missing values"
         )
+        // This case checks if no duplicate study gets created when the user adds an assay with an identifier (and no given study identifier) that equals a previously added study's identifier.
         testCase "StudyNameNotGivenUseAssayNameNoDuplicateStudy" (fun () -> 
 
             let configuration = createConfigFromDir "AssayRegisterTests" "StudyNameNotGivenUseAssayNameNoDuplicateStudy"
             setupArc configuration
 
-            let assayIdentifier = "TestAssayWithoutStudyName"
-            let technologyType = "InferName"
+            let studyIdentifier = "TestAssayWithoutStudyName"
+            processCommand configuration StudyAPI.add [StudyAddArgs.Identifier studyIdentifier]
 
-            let assayArgs1 = [
-                AssayAddArgs.AssayIdentifier assayIdentifier
-                //TechnologyType technologyType
-            ]
-
-            processCommand configuration AssayAPI.add assayArgs1
+            let assayIdentifier = studyIdentifier
+            processCommand configuration AssayAPI.add [AssayAddArgs.AssayIdentifier assayIdentifier]
             
             let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
 
-            let assayArgs2 = [
-                AssayAddArgs.AssayIdentifier assayIdentifier
-                TechnologyType technologyType
-            ]
             let testAssay = ISADotNet.XLSX.Assays.fromString "" "" "" "" "" "" "" assayFileName []
-            
-            processCommand configuration AssayAPI.add assayArgs2
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             
@@ -285,7 +276,7 @@ let testAssayRegister =
             let assayOption = API.Assay.tryGetByFileName assayFileName study.Assays.Value
             Expect.isSome assayOption "New Assay was not added to study"
             Expect.equal assayOption.Value testAssay "New Assay is missing values"
-            Expect.equal study.Assays.Value.Length 2 "Assay missing"
+            Expect.equal study.Assays.Value.Length 1 "Assay missing"
         )
         testCase "StudyNameNotGivenUseAssayNameNoDuplicateAssay" (fun () ->
 
@@ -295,7 +286,7 @@ let testAssayRegister =
             let assayIdentifier = "StudyCreatedByAssayRegister"
             let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
 
-            let assayArgs = [AssayAddArgs.AssayIdentifier assayIdentifier]            
+            let assayArgs = [AssayAddArgs.AssayIdentifier assayIdentifier]
             
             processCommand configuration AssayAPI.add assayArgs
             
@@ -309,7 +300,7 @@ let testAssayRegister =
 
             let assayOption = API.Assay.tryGetByFileName assayFileName study.Assays.Value
             Expect.isSome assayOption "Assay was removed"
-            Expect.equal study.Assays.Value.Length 2 "Duplicate Assay added"
+            Expect.equal study.Assays.Value.Length 1 "Duplicate Assay added"
         )
     ]
     |> testSequenced
@@ -324,14 +315,17 @@ let testAssayUpdate =
             let configuration = createConfigFromDir "AssayUpdateTests" "UpdateStandard"
             setupArc configuration
 
+            let studyIdentifier = "Study1"
+            let assayIdentifier = "Assay2"
+
             let assay1Args = [
-                AssayAddArgs.StudyIdentifier "Study1"
+                AssayAddArgs.StudyIdentifier studyIdentifier
                 AssayAddArgs.AssayIdentifier "Assay1"
                 AssayAddArgs.MeasurementType "Assay1Method"
             ]
             let assay2Args = [
-                AssayAddArgs.StudyIdentifier "Study1"
-                AssayAddArgs.AssayIdentifier "Assay2"
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.AssayIdentifier assayIdentifier
                 AssayAddArgs.MeasurementType "Assay2Method"
                 AssayAddArgs.TechnologyType "Assay2Tech"
             ]
@@ -340,26 +334,26 @@ let testAssayUpdate =
                 AssayAddArgs.AssayIdentifier "Assay3"
                 AssayAddArgs.TechnologyType "Assay3Tech"
             ]
-
-            let studyIdentifier = "Study1"
-            let assayIdentifier = "Assay2"
             let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "NewMeasurementType"
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "Assay2Tech" "" "" "" assayFileName []
 
-            let assayArgs : AssayUpdateArgs list = [AssayUpdateArgs.StudyIdentifier studyIdentifier;AssayUpdateArgs.AssayIdentifier assayIdentifier;AssayUpdateArgs.MeasurementType measurementType]
+            let assayUpdateArgs : AssayUpdateArgs list = [
+                AssayUpdateArgs.StudyIdentifier studyIdentifier
+                AssayUpdateArgs.AssayIdentifier assayIdentifier
+                AssayUpdateArgs.MeasurementType measurementType
+            ]
             
             setupArc configuration
-            processCommand configuration AssayAPI.register assay1Args
-            processCommand configuration AssayAPI.register assay2Args
-            processCommand configuration AssayAPI.register assay3Args
+            processCommand configuration AssayAPI.add assay1Args
+            processCommand configuration AssayAPI.add assay2Args
+            processCommand configuration AssayAPI.add assay3Args
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            processCommand configuration AssayAPI.update assayArgs
+            processCommand configuration AssayAPI.update assayUpdateArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             
-
             Expect.equal investigation.Studies.Value.[1] investigationBeforeUpdate.Studies.Value.[1] "Only assay in first study was supposed to be updated, but study 2 is also different"
             
             let study = investigation.Studies.Value.[0]
