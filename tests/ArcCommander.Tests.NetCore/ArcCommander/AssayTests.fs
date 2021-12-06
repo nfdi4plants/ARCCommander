@@ -382,26 +382,38 @@ let testAssayUpdate =
 
             let configuration = createConfigFromDir "AssayUpdateTests" "UpdateReplaceWithEmpty"
             setupArc configuration
-           
-            let studyIdentifier = "Study2"
-            let assayIdentifier = "Assay3"
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
-            let measurementType = "NewMeasurementType"
-            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
 
-            let assayAddArgs : AssayAddArgs list = [
-                AssayAddArgs.AssayIdentifier assayIdentifier
-                AssayAddArgs.StudyIdentifier studyIdentifier
-                AssayAddArgs.MeasurementType "OldMeasurementType"
+            let studyIdentifier1 = "Study1"
+            let assayIdentifier1 = "Assay1"
+
+            let assay1AddArgs = [
+                AssayAddArgs.StudyIdentifier studyIdentifier1
+                AssayAddArgs.AssayIdentifier assayIdentifier1
             ]
 
-            processCommand configuration AssayAPI.add assayAddArgs
+            processCommand configuration AssayAPI.add assay1AddArgs // add first assay with study that shall not be touched by anything next
+           
+            let studyIdentifier2 = "Study2"
+            let assayIdentifier2 = "Assay2"
+            let oldMeasurementType = "OldMeasurementType"
+
+            let assay2AddArgs = [
+                AssayAddArgs.StudyIdentifier studyIdentifier2
+                AssayAddArgs.AssayIdentifier assayIdentifier2
+                AssayAddArgs.MeasurementType oldMeasurementType
+            ]
+
+            processCommand configuration AssayAPI.add assay2AddArgs
+
+            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier2 configuration
+            let newMeasurementType = "NewMeasurementType"
+            let testAssay = ISADotNet.XLSX.Assays.fromString newMeasurementType "" "" "" "" "" "" assayFileName []
 
             let assayUpdateArgs : AssayUpdateArgs list = [
                 AssayUpdateArgs.ReplaceWithEmptyValues
-                AssayUpdateArgs.StudyIdentifier studyIdentifier
-                AssayUpdateArgs.AssayIdentifier assayIdentifier
-                AssayUpdateArgs.MeasurementType measurementType
+                AssayUpdateArgs.StudyIdentifier studyIdentifier2
+                AssayUpdateArgs.AssayIdentifier assayIdentifier2
+                AssayUpdateArgs.MeasurementType newMeasurementType
             ]           
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
@@ -409,9 +421,9 @@ let testAssayUpdate =
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
 
-            //Expect.equal investigation.Studies.Value.[0] investigationBeforeUpdate.Studies.Value.[0] "Only assay in second study was supposed to be updated, but study 1 is also different" // doesn't apply anymore
+            Expect.equal investigation.Studies.Value.[0] investigationBeforeUpdate.Studies.Value.[0] "Only assay in second study was supposed to be updated, but study 1 is also different"
             
-            let study = investigation.Studies.Value.[0]
+            let study = investigation.Studies.Value.[1]
 
             let assay = study.Assays.Value.[0]
 
