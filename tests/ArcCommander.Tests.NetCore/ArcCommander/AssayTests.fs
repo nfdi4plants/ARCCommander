@@ -131,14 +131,20 @@ let testAssayRegister =
 
             processCommand configuration StudyAPI.register studyArgs
             
-            let assayArgs : AssayAddArgs list = [
+            let assay1Args : AssayAddArgs list = [
                 AssayAddArgs.StudyIdentifier studyIdentifier
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 AssayAddArgs.MeasurementType measurementType
             ]
+            let assay2Args : AssayAddArgs list = [
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType "failedTestMeasurementType"
+            ]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
-            processCommand configuration AssayAPI.add assayArgs
+            processCommand configuration AssayAPI.add assay1Args
+            processCommand configuration AssayAPI.add assay2Args // <- trying to create a second, nearly identical assay which shall NOT work
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies.Value with
@@ -147,6 +153,8 @@ let testAssayRegister =
                 Expect.isSome assayOption "Assay is no longer part of study"
                 Expect.equal assayOption.Value testAssay "Assay values were removed"
                 Expect.equal study.Assays.Value.Length 1 "Assay was added even though it should't have been as an assay with the same identifier was already present"
+                let testMT = OntologyAnnotation.fromString measurementType "" ""
+                Expect.equal study.Assays.Value.Head.MeasurementType.Value testMT "Assay was overwritten with second assay."
             | None ->
                 failwith "Study was removed from the investigation"
         )
