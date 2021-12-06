@@ -297,6 +297,7 @@ let testAssayRegister =
             let assayArgs = [AssayAddArgs.AssayIdentifier assayIdentifier]
             
             processCommand configuration AssayAPI.add assayArgs
+            processCommand configuration AssayAPI.add assayArgs // <- trying to create a second, nearly identical assay which shall NOT work
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             
