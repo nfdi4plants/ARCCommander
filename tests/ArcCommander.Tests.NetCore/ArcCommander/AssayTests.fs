@@ -334,6 +334,12 @@ let testAssayUpdate =
                 AssayAddArgs.AssayIdentifier "Assay3"
                 AssayAddArgs.TechnologyType "Assay3Tech"
             ]
+            
+            setupArc configuration
+            processCommand configuration AssayAPI.add assay1Args
+            processCommand configuration AssayAPI.add assay2Args
+            processCommand configuration AssayAPI.add assay3Args
+
             let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "NewMeasurementType"
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "Assay2Tech" "" "" "" assayFileName []
@@ -343,11 +349,6 @@ let testAssayUpdate =
                 AssayUpdateArgs.AssayIdentifier assayIdentifier
                 AssayUpdateArgs.MeasurementType measurementType
             ]
-            
-            setupArc configuration
-            processCommand configuration AssayAPI.add assay1Args
-            processCommand configuration AssayAPI.add assay2Args
-            processCommand configuration AssayAPI.add assay3Args
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             processCommand configuration AssayAPI.update assayUpdateArgs
@@ -379,16 +380,29 @@ let testAssayUpdate =
             let measurementType = "NewMeasurementType"
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
 
-            let assayArgs : AssayUpdateArgs list = [AssayUpdateArgs.ReplaceWithEmptyValues; AssayUpdateArgs.StudyIdentifier studyIdentifier;AssayUpdateArgs.AssayIdentifier assayIdentifier;AssayUpdateArgs.MeasurementType measurementType]           
+            let assayAddArgs : AssayAddArgs list = [
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.MeasurementType "OldMeasurementType"
+            ]
+
+            processCommand configuration AssayAPI.add assayAddArgs
+
+            let assayUpdateArgs : AssayUpdateArgs list = [
+                AssayUpdateArgs.ReplaceWithEmptyValues
+                AssayUpdateArgs.StudyIdentifier studyIdentifier
+                AssayUpdateArgs.AssayIdentifier assayIdentifier
+                AssayUpdateArgs.MeasurementType measurementType
+            ]           
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            processCommand configuration AssayAPI.update assayArgs
+            processCommand configuration AssayAPI.update assayUpdateArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
 
-            Expect.equal investigation.Studies.Value.[0] investigationBeforeUpdate.Studies.Value.[0] "Only assay in second study was supposed to be updated, but study 1 is also different"
+            //Expect.equal investigation.Studies.Value.[0] investigationBeforeUpdate.Studies.Value.[0] "Only assay in second study was supposed to be updated, but study 1 is also different" // doesn't apply anymore
             
-            let study = investigation.Studies.Value.[1]
+            let study = investigation.Studies.Value.[0]
 
             let assay = study.Assays.Value.[0]
 
@@ -429,12 +443,15 @@ let testAssayUnregister =
             let studyIdentifier = "Study1"
             let assayIdentifier = "Assay2"
 
-            let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
+            let assayArgs : AssayUnregisterArgs list = [
+                AssayUnregisterArgs.StudyIdentifier studyIdentifier
+                AssayUnregisterArgs.AssayIdentifier assayIdentifier
+            ]
             
             setupArc configuration
-            processCommand configuration AssayAPI.register assay1Args
-            processCommand configuration AssayAPI.register assay2Args
-            processCommand configuration AssayAPI.register assay3Args
+            processCommand configuration AssayAPI.add assay1Args
+            processCommand configuration AssayAPI.add assay2Args
+            processCommand configuration AssayAPI.add assay3Args
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             processCommand configuration AssayAPI.unregister assayArgs
@@ -473,14 +490,18 @@ let testAssayUnregister =
         testCase "StudyDoesNotExist" (fun () -> 
 
             let configuration = createConfigFromDir "AssayUnregisterTests" "StudyDoesNotExist"
-           
+            setupArc configuration
+
             let studyIdentifier = "FakeStudyName"
             let assayIdentifier = "Assay2"
 
-            let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
+            let assayUnrArgs : AssayUnregisterArgs list = [
+                AssayUnregisterArgs.StudyIdentifier studyIdentifier
+                AssayUnregisterArgs.AssayIdentifier assayIdentifier
+            ]
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            processCommand configuration AssayAPI.unregister assayArgs
+            processCommand configuration AssayAPI.unregister assayUnrArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
 
@@ -500,39 +521,43 @@ let testAssayMove =
             let configuration = createConfigFromDir "AssayMoveTests" "ToExistingStudy"
             setupArc configuration
 
-            let assay1Args = [
-                AssayAddArgs.StudyIdentifier "Study1"
-                AssayAddArgs.AssayIdentifier "Assay1"
-                AssayAddArgs.MeasurementType "Assay1Method"
-            ]
-            let assay2Args = [
-                AssayAddArgs.StudyIdentifier "Study1"
-                AssayAddArgs.AssayIdentifier "Assay2"
-                AssayAddArgs.MeasurementType "Assay2Method"
-                AssayAddArgs.TechnologyType "Assay2Tech"
-            ]
-            let assay3Args = [
-                AssayAddArgs.StudyIdentifier "Study2"
-                AssayAddArgs.AssayIdentifier "Assay3"
-                AssayAddArgs.TechnologyType "Assay3Tech"
-            ]
-
             let studyIdentifier = "Study1"
             let targetStudyIdentfier = "Study2"
             let assayIdentifier = "Assay2"
 
-            let assayArgs : AssayMoveArgs list = [AssayMoveArgs.StudyIdentifier studyIdentifier;AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier;AssayMoveArgs.AssayIdentifier assayIdentifier]
+            let assay1Args = [
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.AssayIdentifier "Assay1"
+                AssayAddArgs.MeasurementType "Assay1Method"
+            ]
+            let assay2Args = [
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType "Assay2Method"
+                AssayAddArgs.TechnologyType "Assay2Tech"
+            ]
+            let assay3Args = [
+                AssayAddArgs.StudyIdentifier targetStudyIdentfier
+                AssayAddArgs.AssayIdentifier "Assay3"
+                AssayAddArgs.TechnologyType "Assay3Tech"
+            ]
+
+            let assayMovArgs : AssayMoveArgs list = [
+                AssayMoveArgs.AssayIdentifier assayIdentifier
+                AssayMoveArgs.StudyIdentifier studyIdentifier
+                AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier
+            ]
             
             setupArc configuration
-            processCommand configuration AssayAPI.register assay1Args
-            processCommand configuration AssayAPI.register assay2Args
-            processCommand configuration AssayAPI.register assay3Args
+            processCommand configuration AssayAPI.add assay1Args
+            processCommand configuration AssayAPI.add assay2Args
+            processCommand configuration AssayAPI.add assay3Args
 
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             let testAssay = investigationBeforeUpdate.Studies.Value.[0].Assays.Value.[1]
             let fileName = testAssay.FileName.Value
 
-            processCommand configuration AssayAPI.move assayArgs
+            processCommand configuration AssayAPI.move assayMovArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             
@@ -556,13 +581,25 @@ let testAssayMove =
             let targetStudyIdentfier = "NewStudy"
             let assayIdentifier = "Assay1"
 
-            let assayArgs : AssayMoveArgs list = [AssayMoveArgs.StudyIdentifier studyIdentifier;AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier;AssayMoveArgs.AssayIdentifier assayIdentifier]
+            let assayAddArgs = [
+                AssayAddArgs.StudyIdentifier studyIdentifier
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType "Assay1Method"
+            ]
+
+            processCommand configuration AssayAPI.add assayAddArgs
+
+            let assayMovArgs : AssayMoveArgs list = [
+                AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier
+                AssayMoveArgs.StudyIdentifier studyIdentifier
+                AssayMoveArgs.AssayIdentifier assayIdentifier
+            ]
  
             let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             let testAssay = investigationBeforeUpdate.Studies.Value.[0].Assays.Value.[0]
             let fileName = testAssay.FileName.Value
 
-            processCommand configuration AssayAPI.move assayArgs
+            processCommand configuration AssayAPI.move assayMovArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
             
