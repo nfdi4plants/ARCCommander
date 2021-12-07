@@ -189,7 +189,6 @@ module AssayAPI =
         let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
         let compareAssayMetadata (assay1 : Assay) (assay2 : Assay) =
-            assay1.ID                   = assay2.ID                 &&
             assay1.FileName             = assay2.FileName           &&
             assay1.MeasurementType      = assay2.MeasurementType    &&
             assay1.TechnologyType       = assay2.TechnologyType     &&
