@@ -188,33 +188,6 @@ module AssayAPI =
 
         let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
-        // read assay metadata information from assay file
-        let _, _, _, oldAssayAssayFile = AssayFile.Assay.fromFile assayFilepath
-        
-        // read assay metadata information from investigation file
-        let noAssayFound, oldAssayInvestigationFile = 
-            let emptyAssay = Assays.fromString "" "" "" "" "" "" "" "" []
-            match investigation.Studies with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Assays with
-                    | Some assays -> 
-                        match API.Assay.tryGetByFileName assayFileName assays with
-                        | Some assay -> false, assay
-                        | None -> 
-                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s." assayIdentifier studyIdentifier
-                            true, emptyAssay
-                    | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays." studyIdentifier
-                        true, emptyAssay
-                | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file." studyIdentifier
-                    true, emptyAssay
-            | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies."
-                true, emptyAssay
-
         let compareAssayMetadata (assay1 : Assay) (assay2 : Assay) =
             assay1.ID                   = assay2.ID                 &&
             assay1.FileName             = assay2.FileName           &&
@@ -223,18 +196,51 @@ module AssayAPI =
             assay1.TechnologyPlatform   = assay2.TechnologyPlatform &&
             assay1.Comments             = assay2.Comments
 
-        // check if assay metadata from assay file and investigation file differ
-        match noAssayFound, (compareAssayMetadata oldAssayInvestigationFile oldAssayAssayFile) with
-        | true , _
-        | false, true   -> ()
-        | false, false  -> printfn "WARNING: The assay metadata in the investigation file differs from that in the assay file."
+        // read assay metadata information from assay file
+        let _, _, _, oldAssayAssayFile = AssayFile.Assay.fromFile assayFilepath
 
-        let newAssay =
+        let getNewAssay oldAssay =
             ArgumentProcessing.Prompt.createIsaItemQuery 
                 editor 
                 (List.singleton >> Assays.toRows None) 
                 (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
-                oldAssayAssayFile
+                oldAssay
+        
+        // read assay metadata information from investigation file, check with assay metadata from assay file, 
+        // update assay metadata in investigation file and return new assay
+        let newAssay = 
+            match investigation.Studies with
+            | Some studies -> 
+                match API.Study.tryGetByIdentifier studyIdentifier studies with
+                | Some study -> 
+                    match study.Assays with
+                    | Some assays -> 
+                        match API.Assay.tryGetByFileName assayFileName assays with
+                        | Some oldAssayInvestigationFile -> 
+                            // check if assay metadata from assay file and investigation file differ
+                            if compareAssayMetadata oldAssayInvestigationFile oldAssayAssayFile |> not then 
+                                printfn "WARNING: The assay metadata in the investigation file differs from that in the assay file."
+                            getNewAssay oldAssayAssayFile
+                            // update assay metadata in investigation file
+                            |> fun a -> 
+                                API.Assay.updateBy ((=) oldAssayInvestigationFile) API.Update.UpdateAll a assays
+                                |> API.Study.setAssays study
+                                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                                |> API.Investigation.setStudies investigation
+                                |> Investigation.toFile investigationFilePath
+                                a
+                        | None -> 
+                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s." assayIdentifier studyIdentifier
+                            getNewAssay oldAssayAssayFile
+                    | None -> 
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays." studyIdentifier
+                        getNewAssay oldAssayAssayFile
+                | None -> 
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file." studyIdentifier
+                    getNewAssay oldAssayAssayFile
+            | None -> 
+                if verbosity >= 1 then printfn "The investigation does not contain any studies."
+                getNewAssay oldAssayAssayFile
 
         // part that writes assay metadata into the assay file
         let doc = Spreadsheet.fromFile assayFilepath true
