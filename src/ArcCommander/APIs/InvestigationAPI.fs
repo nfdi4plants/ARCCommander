@@ -109,7 +109,7 @@ module InvestigationAPI =
             System.IO.File.Delete investigationFilePath
 
     /// Lists the data of the investigation in this ARC.
-    let show (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
+    let show (arcConfiguration : ArcConfiguration) = 
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
