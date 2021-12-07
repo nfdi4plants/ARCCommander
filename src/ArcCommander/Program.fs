@@ -11,7 +11,6 @@ open ArcCommander.APIs
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
 
     let editor = GeneralConfiguration.getEditor arcConfiguration
-    let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
     let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
     let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
 
@@ -152,6 +151,7 @@ let handleInvestigationSubCommands arcConfiguration investigationVerb =
     | InvestigationCommand.Delete r                 -> processCommand arcConfiguration InvestigationAPI.delete   r
     | InvestigationCommand.Person subCommand        -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
     | InvestigationCommand.Publication subCommand   -> handleInvestigationPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
+    | InvestigationCommand.Show                     -> processCommandWithoutArgs arcConfiguration InvestigationAPI.show
 
 let handleStudySubCommands arcConfiguration studyVerb =
     match studyVerb with
