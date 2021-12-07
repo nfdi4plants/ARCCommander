@@ -34,7 +34,7 @@ module ConfigurationAPI =
             match path with
             | Some p ->
                 iniData
-                |> Prompt.createIniDataQuery editorPath workdir 
+                |> Prompt.createIniDataQuery editorPath
                 |> fun newIni -> IniData.difference newIni iniData
                 |> fun differences -> updateWithDifferences differences iniData
                 |> IniData.toFile p
@@ -45,7 +45,7 @@ module ConfigurationAPI =
             let path = IniData.getLocalConfigPath workdir
             let iniData = path |> IniData.fromFile           
             iniData
-            |> Prompt.createIniDataQuery editorPath workdir 
+            |> Prompt.createIniDataQuery editorPath
             |> fun newIni -> IniData.difference newIni iniData
             |> fun differences -> updateWithDifferences differences iniData
             |> IniData.toFile path
@@ -57,7 +57,7 @@ module ConfigurationAPI =
             match iniData with
             | Some inidat ->
                 inidat
-                |> Prompt.createIniDataQuery editorPath workdir 
+                |> Prompt.createIniDataQuery editorPath
                 |> fun newIni -> IniData.difference newIni inidat
                 |> fun differences -> updateWithDifferences differences localIni
                 |> IniData.toFile path
@@ -76,7 +76,7 @@ module ConfigurationAPI =
             match iniData with
             | Some inidat ->
                 inidat
-                |> Prompt.createIniDataQuery editorPath workdir 
+                |> Prompt.createIniDataQuery editorPath
                 //|> fun newIni -> IniData.difference newIni iniData // If this line is uncommented, only the changes from the user input are applied to the local and global files
                 |> fun differences -> 
                     updateWithDifferences differences globalIni

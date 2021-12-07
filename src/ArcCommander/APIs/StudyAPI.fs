@@ -102,7 +102,6 @@ module StudyAPI =
         let identifier = getFieldValueByName "Identifier" studyArgs
 
         let editor = GeneralConfiguration.getEditor arcConfiguration
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
@@ -113,7 +112,7 @@ module StudyAPI =
             match API.Study.tryGetByIdentifier identifier studies with
             | Some study -> 
                 let editedStudy =
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.toRows 
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor Study.StudyInfo.toRows 
                         (Study.StudyInfo.fromRows 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
                         study                   
                 API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
@@ -355,7 +354,6 @@ module StudyAPI =
             if verbosity >= 1 then printfn "Start Person Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let lastName = (getFieldValueByName  "LastName"   personArgs)
             let firstName = (getFieldValueByName  "FirstName"     personArgs)
@@ -377,7 +375,7 @@ module StudyAPI =
                     | Some persons -> 
                         match API.Person.tryGetByFullName firstName midInitials lastName persons with
                         | Some person -> 
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Contacts.toRows None) 
                                 (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 person
@@ -649,7 +647,6 @@ module StudyAPI =
             if verbosity >= 1 then printfn "Start Publication Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let doi = (getFieldValueByName  "DOI"   publicationArgs)
 
@@ -668,7 +665,7 @@ module StudyAPI =
                         // TODO : Remove the "Some" when the
                         match API.Publication.tryGetByDoi doi publications with
                         | Some publication ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Publications.toRows None) 
                                 (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 publication
@@ -918,7 +915,6 @@ module StudyAPI =
             if verbosity >= 1 then printfn "Start Design Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let name = (getFieldValueByName  "DesignType"   designArgs)
 
@@ -936,7 +932,7 @@ module StudyAPI =
                     | Some designs -> 
                         match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
                         | Some design ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> DesignDescriptors.toRows None) 
                                 (DesignDescriptors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 design
@@ -1180,7 +1176,6 @@ module StudyAPI =
             if verbosity >= 1 then printfn "Start Factor Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let name = getFieldValueByName  "Name" factorArgs
 
@@ -1198,7 +1193,7 @@ module StudyAPI =
                     | Some factors -> 
                         match API.Factor.tryGetByName name factors with
                         | Some factor ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Factors.toRows None) 
                                 (Factors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 factor
@@ -1453,7 +1448,6 @@ module StudyAPI =
             if verbosity >= 1 then printfn "Start Protocol Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let name = (getFieldValueByName  "Name" protocolArgs)
 
@@ -1471,7 +1465,7 @@ module StudyAPI =
                     | Some protocols -> 
                         match API.Protocol.tryGetByName name protocols with
                         | Some protocol ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Protocols.toRows None) 
                                 (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 protocol
@@ -1597,7 +1591,6 @@ module StudyAPI =
             if verbosity >= 1 then printfn "Start Protocol Load"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let path = getFieldValueByName "InputPath" protocolArgs
 
@@ -1610,11 +1603,11 @@ module StudyAPI =
                 |> Option.map (fun p -> 
                     if p.Name.IsNone then
                         if verbosity >= 1 then printfn "Given protocol does not contain a name, please add it in the editor" 
-                        ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                        ArgumentProcessing.Prompt.createIsaItemQuery editor
                             (List.singleton >> Protocols.toRows None) 
                             (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                             p
-                    else p               
+                    else p
                 )
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
