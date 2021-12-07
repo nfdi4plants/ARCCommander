@@ -14,6 +14,7 @@ type InvestigationCommand =
     | [<CliPrefix(CliPrefix.None)>]                     Delete      of delete_args          : ParseResults<InvestigationDeleteArgs>
     | [<CliPrefix(CliPrefix.None)>]                     Person      of person_verbs         : ParseResults<InvestigationPersonCommand>
     | [<CliPrefix(CliPrefix.None)>]                     Publication of publication_verbs    : ParseResults<InvestigationPublicationCommand>
+    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>]    Show
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -24,6 +25,7 @@ type InvestigationCommand =
             | Delete        _ -> "Delete the ARC's investigation file (DANGER ZONE!)"
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
+            | Show          _ -> "Get the values of the ARC's investigation"
 
 and InvestigationPersonCommand =
 
