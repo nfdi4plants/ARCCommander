@@ -9,17 +9,17 @@ open ISADotNet
 open ISADotNet.XLSX
 
 
-/// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs
+/// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs.
 module InvestigationAPI =
 
     module InvestigationFile =
 
-        let exists (arcConfiguration:ArcConfiguration) =
+        let exists (arcConfiguration : ArcConfiguration) =
             IsaModelConfiguration.getInvestigationFilePath arcConfiguration
             |> System.IO.File.Exists
 
     /// Creates an investigation file in the arc from the given investigation metadata contained in cliArgs that contains no studies or assays.
-    let create (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) =
+    let create (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) =
            
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -45,7 +45,7 @@ module InvestigationAPI =
             Investigation.toFile investigationFilePath investigation
 
     /// Updates the existing investigation file in the arc with the given investigation metadata contained in cliArgs.
-    let update (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
+    let update (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -72,7 +72,7 @@ module InvestigationAPI =
         |> Investigation.toFile investigationFilePath
 
     /// Opens the existing investigation info in the arc with the text editor set in globalArgs.
-    let edit (arcConfiguration:ArcConfiguration) =
+    let edit (arcConfiguration : ArcConfiguration) =
        
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -92,8 +92,8 @@ module InvestigationAPI =
         API.Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
         |> Investigation.toFile investigationFilePath
 
-    /// Deletes the existing investigation file in the arc if the given identifier matches the identifier set in the investigation file
-    let delete (arcConfiguration:ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
+    /// Deletes the existing investigation file in the arc if the given identifier matches the identifier set in the investigation file.
+    let delete (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
@@ -122,11 +122,11 @@ module InvestigationAPI =
         Prompt.serializeXSLXWriterOutput Investigation.InvestigationInfo.toRows investigation
         |> printfn "%s" 
 
-    /// Functions for altering investigation contacts
+    /// Functions for altering investigation contacts.
     module Contacts =
 
         /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let update (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -188,7 +188,7 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let edit (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -224,7 +224,7 @@ module InvestigationAPI =
 
 
         /// Registers a person in the arc's investigation file with the given person metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let register (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -270,7 +270,7 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let unregister (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -298,7 +298,7 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
-        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let show (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
            
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -324,8 +324,8 @@ module InvestigationAPI =
                 if verbosity >= 1 then printfn "The investigation does not contain any persons"
                
 
-        /// Lists the full names of all persons included in the investigation
-        let list (arcConfiguration:ArcConfiguration) = 
+        /// Lists the full names of all persons included in the investigation.
+        let list (arcConfiguration : ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
@@ -350,11 +350,11 @@ module InvestigationAPI =
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any persons"
 
-    /// Functions for altering investigation publications
+    /// Functions for altering investigation publications.
     module Publications =
 
         /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let update (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -405,14 +405,13 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
         
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let edit (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
             if verbosity >= 1 then printfn "Start Publication Edit"
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            //let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let doi = getFieldValueByName "DOI" publicationArgs
 
@@ -425,7 +424,6 @@ module InvestigationAPI =
                 match API.Publication.tryGetByDoi doi publications with
                 | Some publication ->                    
                     ArgumentProcessing.Prompt.createIsaItemQuery editor
-                    //ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
                         (List.singleton >> Publications.toRows None) 
                         (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         publication
@@ -442,7 +440,7 @@ module InvestigationAPI =
 
 
         /// Registers a person in the arc's investigation file with the given person metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let register (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -477,7 +475,7 @@ module InvestigationAPI =
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        let unregister (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -502,8 +500,8 @@ module InvestigationAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing publication by its doi and prints its metadata
-        let show (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        /// Gets an existing publication by its doi and prints its metadata.
+        let show (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
@@ -528,8 +526,8 @@ module InvestigationAPI =
             | None -> 
                 if verbosity >= 1 then printfn "The investigation does not contain any publications"
 
-        /// Lists the full names of all persons included in the investigation
-        let list (arcConfiguration:ArcConfiguration) = 
+        /// Lists the full names of all persons included in the investigation.
+        let list (arcConfiguration : ArcConfiguration) = 
 
             let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
             
