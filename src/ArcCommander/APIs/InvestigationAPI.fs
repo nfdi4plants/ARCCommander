@@ -108,6 +108,20 @@ module InvestigationAPI =
         if Some identifier = investigation.Identifier then
             System.IO.File.Delete investigationFilePath
 
+    /// Lists the data of the investigation in this ARC.
+    let show (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
+
+        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        
+        if verbosity >= 1 then printfn "Start Investigation Show"
+
+        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
+
+        let investigation = Investigation.fromFile investigationFilePath
+        
+        Prompt.serializeXSLXWriterOutput Investigation.InvestigationInfo.toRows investigation
+        |> printfn "%s" 
+
     /// Functions for altering investigation contacts
     module Contacts =
 
