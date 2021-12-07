@@ -250,27 +250,6 @@ module AssayAPI =
         finally
             Spreadsheet.close doc
 
-        // part that writes assay metadata into the investigation file
-        match investigation.Studies with
-        | Some studies -> 
-            match API.Study.tryGetByIdentifier studyIdentifier studies with
-            | Some study -> 
-                match study.Assays with
-                | Some assays -> 
-                    match API.Assay.tryGetByFileName assayFileName assays with
-                    | Some assay ->
-                        newAssay
-                        |> fun a -> API.Assay.updateBy ((=) assay) API.Update.UpdateAll a assays
-                        |> API.Study.setAssays study
-                        |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                        |> API.Investigation.setStudies investigation
-
-                    | None -> investigation
-                | None -> investigation
-            | None -> investigation
-        | None -> investigation
-        |> Investigation.toFile investigationFilePath
-
 
     /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in the assay file's investigation sheet.
     let register (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
