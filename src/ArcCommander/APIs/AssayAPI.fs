@@ -229,16 +229,16 @@ module AssayAPI =
                                 |> Investigation.toFile investigationFilePath
                                 a
                         | None -> 
-                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s." assayIdentifier studyIdentifier
+                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s. It is advised to register the assay in the investigation file via \"arc a register\"." assayIdentifier studyIdentifier
                             getNewAssay oldAssayAssayFile
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays." studyIdentifier
+                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays. It is advised to register the assay with the identifier %s in the investigation file via \"arc a register\"." assayIdentifier studyIdentifier
                         getNewAssay oldAssayAssayFile
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file." studyIdentifier
+                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file. It is advised to register the assay with the identifier %s in the investigation file via \"arc a register\"." assayIdentifier studyIdentifier
                     getNewAssay oldAssayAssayFile
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies."
+                if verbosity >= 1 then printfn "The investigation does not contain any studies. It is advised to register the assay with the identifier %s in the investigation file via \"arc a register\"." assayIdentifier
                 getNewAssay oldAssayAssayFile
 
         // part that writes assay metadata into the assay file
