@@ -215,3 +215,46 @@ let testInvestigationContacts =
 
     ]
     |> testSequenced
+
+[<Tests>]
+let testInvestigationShow =
+    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationShowTest"
+    let investigationFileName = "isa.investigation.xlsx"
+    let source = __SOURCE_DIRECTORY__
+    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles"; investigationFileName|])
+
+    let configuration = 
+        ArcConfiguration.create 
+            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
+            (standardISAArgs)
+            Map.empty Map.empty Map.empty Map.empty
+
+    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
+    
+    let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
+    setupArc configuration
+    //Copy testInvestigation
+    System.IO.File.Copy(investigationToCopy,investigationFilePath)
+
+    testList "InvestigationShowTests" [
+        testCase "ShowsCorrectly" (fun () -> 
+
+            let investigationName = "TestInvestigation"
+            let submissionDate = "FirstOctillember"
+            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName; InvestigationCreateArgs.SubmissionDate submissionDate]
+
+            let testInvestigation = 
+                ISADotNet.XLSX.Investigation.fromParts 
+                    (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
+                    [] [] [] [] []
+   
+            setupArc configuration
+            processCommand configuration InvestigationAPI.create investigationArgs
+
+            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            Expect.equal investigation testInvestigation "The assay in the file should match the one created per hand but did not"
+
+        )
+
+    ]
+    |> testSequenced
