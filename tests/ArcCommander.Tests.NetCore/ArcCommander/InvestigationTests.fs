@@ -7,6 +7,8 @@ open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
+open System
+open System.IO
 
 let standardISAArgs = 
     Map.ofList 
@@ -16,13 +18,14 @@ let standardISAArgs =
             "assayfilename","isa.assay.xlsx"
         ]
 
-let processCommand (arcConfiguration:ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
-
+let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
     let g = groupArguments r
     Prompt.deannotateArguments g 
     |> commandF arcConfiguration
 
-let setupArc (arcConfiguration:ArcConfiguration) =
+let processCommandWoArguments (arcConfiguration : ArcConfiguration) commandF = commandF arcConfiguration
+
+let setupArc (arcConfiguration : ArcConfiguration) =
 
     let arcArgs : ArcInitArgs list =  [] 
 
@@ -34,7 +37,7 @@ let testInvestigationReading =
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"
     let investigationFileName = "isa.investigation.xlsx"
-    let investigationFilePath = System.IO.Path.Combine(testDirectory,investigationFileName)
+    let investigationFilePath = Path.Combine(testDirectory,investigationFileName)
 
     testCase "MatchesInvestigation" (fun () -> 
         let testInvestigation = 
@@ -103,7 +106,7 @@ let testInvestigationUpdate =
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationUpdateTest"
     let investigationFileName = "isa.investigation.xlsx"
     let source = __SOURCE_DIRECTORY__
-    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+    let investigationToCopy = Path.Combine([|source;"TestFiles";investigationFileName|])
 
     let configuration = 
         ArcConfiguration.create 
@@ -120,7 +123,7 @@ let testInvestigationUpdate =
             let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
             setupArc configuration
             //Copy testInvestigation
-            System.IO.File.Copy(investigationToCopy,investigationFilePath)
+            File.Copy(investigationToCopy,investigationFilePath)
             processCommand configuration InvestigationAPI.update investigationArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
@@ -160,7 +163,7 @@ let testInvestigationContacts =
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationContactTest"
     let investigationFileName = "isa.investigation.xlsx"
     let source = __SOURCE_DIRECTORY__
-    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+    let investigationToCopy = Path.Combine([|source;"TestFiles";investigationFileName|])
 
     let configuration = 
         ArcConfiguration.create 
@@ -173,7 +176,7 @@ let testInvestigationContacts =
     let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
     setupArc configuration
     //Copy testInvestigation
-    System.IO.File.Copy(investigationToCopy,investigationFilePath)
+    File.Copy(investigationToCopy,investigationFilePath)
 
     testList "InvestigationContactTests" [
         testCase "Update" (fun () -> 
@@ -218,41 +221,57 @@ let testInvestigationContacts =
 
 [<Tests>]
 let testInvestigationShow =
-    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationShowTest"
-    let investigationFileName = "isa.investigation.xlsx"
-    let source = __SOURCE_DIRECTORY__
-    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles"; investigationFileName|])
-
-    let configuration = 
-        ArcConfiguration.create 
-            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-            (standardISAArgs)
-            Map.empty Map.empty Map.empty Map.empty
-
-    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
     
-    let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
-    setupArc configuration
-    //Copy testInvestigation
-    System.IO.File.Copy(investigationToCopy,investigationFilePath)
+    let setupArc (arcConfiguration:ArcConfiguration) =
+        let investigationArgs = [InvestigationCreateArgs.Identifier "TestInvestigation"]
+        let arcArgs : ArcInitArgs list = [] 
+    
+        processCommand arcConfiguration ArcAPI.init             arcArgs
+        processCommand arcConfiguration InvestigationAPI.create investigationArgs
+    
+    let createConfigFromDir testListName testCaseName =
+        let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
+        ArcConfiguration.GetDefault()
+        |> ArcConfiguration.ofIniData
+        |> fun c -> {c with General = (Map.ofList ["workdir", dir; "verbosity", "2"]) }
 
     testList "InvestigationShowTests" [
         testCase "ShowsCorrectly" (fun () -> 
+   
+            let configuration = createConfigFromDir "InvestigationShowTests" "ShowsCorrectly"
+            setupArc configuration
 
             let investigationName = "TestInvestigation"
             let submissionDate = "FirstOctillember"
             let investigationArgs = [InvestigationCreateArgs.Identifier investigationName; InvestigationCreateArgs.SubmissionDate submissionDate]
-
-            let testInvestigation = 
-                ISADotNet.XLSX.Investigation.fromParts 
-                    (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
-                    [] [] [] [] []
-   
-            setupArc configuration
             processCommand configuration InvestigationAPI.create investigationArgs
 
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            Expect.equal investigation testInvestigation "The assay in the file should match the one created per hand but did not"
+            //let testInvestigation = 
+            //    ISADotNet.XLSX.Investigation.fromParts 
+            //        (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
+            //        [] [] [] [] []
+
+            let writer = new StringWriter()
+            let stdout = Console.Out // standard Console output
+            Console.SetOut(writer) // reads everything that the console prints
+
+            processCommandWoArguments configuration InvestigationAPI.show
+
+            let consoleOutput = writer.ToString()
+
+            Console.SetOut(stdout) // reset Console output to stdout
+
+            let expectedOutput = """Start processing parameterless command
+            Start Investigation Show
+            Investigation Identifier:TestInvestigation
+            Investigation Title:
+            Investigation Description:
+            Investigation Submission Date:FirstOctillember
+            Investigation Public Release Date:
+            Done processing command.
+            """
+
+            Expect.equal consoleOutput expectedOutput "The assay in the file should match the one created per hand but did not"
 
         )
 
