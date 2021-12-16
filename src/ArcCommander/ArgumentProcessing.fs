@@ -1,9 +1,7 @@
 ﻿namespace ArcCommander
 
-open Microsoft.FSharp.Reflection
-
 open System.Diagnostics
-
+open Microsoft.FSharp.Reflection
 open Argu
 
 
@@ -309,58 +307,3 @@ module ArgumentProcessing =
     let serializeToFile (p : string) (item : 'A) =
         System.Text.Json.JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
         |> fun s -> System.IO.File.WriteAllText(p,s)
-
-    /// Functions for trying to run external tools, given the command line arguments can not be parsed
-    module ExternalExecutables = 
-
-        ///
-        let tryGetUnknownArguments (parser : ArgumentParser<'T>) (args : string []) = 
-            let ignR = parser.Parse(args,ignoreUnrecognized=true)
-            Array.init args.Length (fun i ->
-        
-                try 
-                    let r = parser.Parse(Array.take i args)
-                    if ignR = r then Some (Array.take (i+1) args,Array.skip (i+1) args)
-                    else None
-                with 
-                | _ -> None
-            )
-            |> Array.tryPick id
-
-        let makeExecutableName (args : string []) =
-            Array.append [|"arc"|] args
-            |> Array.reduce (fun a b -> a + "-" + b)
-
-        /// Recursively collects all files in a directory
-        let getAllFilesRec dir = 
-            let rec allFiles dirs =
-                if Seq.isEmpty dirs then Seq.empty else
-                    seq { yield! dirs |> Seq.collect System.IO.Directory.EnumerateFiles
-                          yield! dirs |> Seq.collect System.IO.Directory.EnumerateDirectories |> allFiles }
-            allFiles [dir]
-
-        /// Recursively collects all files in a directory and checks if any of them matches the OS specific executable name
-        let tryFindExecutablePath (searchFolder : string) (executableName : string) =
-
-            let os = IniData.getOs ()
-            let name = 
-                match os with
-                | Windows   -> $"{executableName}.exe"
-                | Unix      -> $"{executableName}"
-
-            getAllFilesRec searchFolder
-            |> Seq.tryFind (fun p ->
-                System.IO.FileInfo(p).Name = name                
-            )
-
-        /// Starts an executable with the given args and an additional "-p" argument
-        let runExecutable (executablePath : string) (arcPath : string) (args : string []) =
-            let args = 
-                Array.append [|"-p" ; arcPath|] args
-                |> Array.reduce (fun a b -> a + " " + b) 
-            printfn "start process %s %s" executablePath args
-            let p = 
-                new ProcessStartInfo
-                    (executablePath, args) 
-                |> Process.Start
-            p.WaitForExit()
