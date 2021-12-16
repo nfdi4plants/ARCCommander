@@ -1,13 +1,12 @@
 ﻿module ArcCommander.Program
 
-// Learn more about F# at http://fsharp.org
-open Argu
-
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
-open System
+open ArcCommander.ExternalExecutables
+open System.Diagnostics
+open Argu
 
 /// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input
 let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
@@ -235,8 +234,8 @@ let main argv =
 
     let arcConfiguration =
         [
-            "general.workdir",Some workingDir
-            "general.verbosity",verbosity
+            "general.workdir", Some workingDir
+            "general.verbosity", verbosity
         ]
         |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
         |> IniData.fromNameValuePairs
@@ -252,22 +251,21 @@ let main argv =
         with
         | e -> 
             // Incorrectly parsed arguments will be threaded into external executable tool handler
-            // Here for the first unknown argument in the argument chain, an executable of the same name will be searched
-            // If this tool exists, try executing it will all the following arguments
+            // Here for the first unknown argument in the argument chain, an executable of the same name will be called
+            // If this tool exists, try executing it with all the following arguments
             printfn "Could not parse given commands."
-            match ExternalExecutables.tryGetUnknownArguments parser argv with
-            | Some (executableNameArgs,args) ->
-                let executablesFolder = workingDir
-                let executableName = (ExternalExecutables.makeExecutableName executableNameArgs)
-                printfn $"Try checking if executable with given argument name \"{executableName}\"exists"
-                match ExternalExecutables.tryFindExecutablePath executablesFolder executableName with
-                | Some executable -> 
-                    printfn "found executable in path: \n\t\"%s\"" executable
-                    ExternalExecutables.runExecutable executable workingDir args
-                    None
-                | None -> 
-                    printfn "%s" e.Message
-                    None
+            match tryGetUnknownArguments parser argv with
+            | Some (executableNameArgs, args) ->
+                let executableName = (makeExecutableName executableNameArgs)
+                printfn $"Try checking if executable with given argument name \"{executableName}\" exists."
+                // temporarily add extra directories to PATH
+                let folderToAddToPath = getArcFoldersForExtExe workingDir
+                let os = IniData.getOs ()
+                List.iter (addExtraDirToPath os) folderToAddToPath
+                // call external tool
+                let pi = ProcessStartInfo(executableName, workingDir)
+                try Process.Start(pi).WaitForExit(); None
+                with e -> printfn "%s" e.Message; None
             // If neither parsing, nor external executable tool search led to success, just return the error message
             | None -> 
                 printfn "%s" e.Message
@@ -280,4 +278,3 @@ let main argv =
         1
     | None -> 
         0
-        
