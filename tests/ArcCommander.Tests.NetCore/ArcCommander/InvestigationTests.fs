@@ -7,6 +7,8 @@ open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
+open System
+open System.IO
 
 let standardISAArgs = 
     Map.ofList 
@@ -16,13 +18,14 @@ let standardISAArgs =
             "assayfilename","isa.assay.xlsx"
         ]
 
-let processCommand (arcConfiguration:ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
-
+let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
     let g = groupArguments r
     Prompt.deannotateArguments g 
     |> commandF arcConfiguration
 
-let setupArc (arcConfiguration:ArcConfiguration) =
+let processCommandWoArgs (arcConfiguration : ArcConfiguration) commandF = commandF arcConfiguration
+
+let setupArc (arcConfiguration : ArcConfiguration) =
 
     let arcArgs : ArcInitArgs list =  [] 
 
@@ -34,7 +37,7 @@ let testInvestigationReading =
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"
     let investigationFileName = "isa.investigation.xlsx"
-    let investigationFilePath = System.IO.Path.Combine(testDirectory,investigationFileName)
+    let investigationFilePath = Path.Combine(testDirectory,investigationFileName)
 
     testCase "MatchesInvestigation" (fun () -> 
         let testInvestigation = 
@@ -103,7 +106,7 @@ let testInvestigationUpdate =
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationUpdateTest"
     let investigationFileName = "isa.investigation.xlsx"
     let source = __SOURCE_DIRECTORY__
-    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+    let investigationToCopy = Path.Combine([|source;"TestFiles";investigationFileName|])
 
     let configuration = 
         ArcConfiguration.create 
@@ -120,7 +123,7 @@ let testInvestigationUpdate =
             let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
             setupArc configuration
             //Copy testInvestigation
-            System.IO.File.Copy(investigationToCopy,investigationFilePath)
+            File.Copy(investigationToCopy,investigationFilePath)
             processCommand configuration InvestigationAPI.update investigationArgs
             
             let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
@@ -160,7 +163,7 @@ let testInvestigationContacts =
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationContactTest"
     let investigationFileName = "isa.investigation.xlsx"
     let source = __SOURCE_DIRECTORY__
-    let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
+    let investigationToCopy = Path.Combine([|source;"TestFiles";investigationFileName|])
 
     let configuration = 
         ArcConfiguration.create 
@@ -173,7 +176,7 @@ let testInvestigationContacts =
     let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
     setupArc configuration
     //Copy testInvestigation
-    System.IO.File.Copy(investigationToCopy,investigationFilePath)
+    File.Copy(investigationToCopy,investigationFilePath)
 
     testList "InvestigationContactTests" [
         testCase "Update" (fun () -> 
@@ -210,6 +213,48 @@ let testInvestigationContacts =
             Expect.isSome adress "Adress missing after updating person"
             Expect.equal adress.Value newAddress "Adress was not updated with new value"
             Expect.equal person.Value {personBeforeUpdating with Address = Some newAddress} "Other values of person were changed even though only the Address should have been updated"
+
+        )
+
+    ]
+    |> testSequenced
+
+[<Tests>]
+let testInvestigationShow =
+    
+    let setupArc (arcConfiguration : ArcConfiguration) = processCommandWoArgs arcConfiguration ArcAPI.init (Map [])
+    
+    let createConfigFromDir testListName testCaseName =
+        let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
+        ArcConfiguration.GetDefault()
+        |> ArcConfiguration.ofIniData
+        |> fun c -> {c with General = (Map.ofList ["workdir", dir; "verbosity", "2"]) }
+
+    testList "InvestigationShowTests" [
+        testCase "ShowsCorrectly" (fun () -> 
+   
+            let configuration = createConfigFromDir "InvestigationShowTests" "ShowsCorrectly"
+            setupArc configuration
+
+            let investigationName = "TestInvestigation"
+            let submissionDate = "FirstOctillember"
+            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName; InvestigationCreateArgs.SubmissionDate submissionDate]
+            processCommand configuration InvestigationAPI.create investigationArgs
+
+            let writer = new StringWriter()
+            let stdout = Console.Out // standard Console output
+            Console.SetOut(writer) // reads everything that the console prints
+
+            processCommandWoArgs configuration InvestigationAPI.show
+
+            let consoleOutput = writer.ToString().Replace("\013","") // get rid of stupid carriage return char
+
+            Console.SetOut(stdout) // reset Console output to stdout
+
+            let expectedOutput = 
+                "Start Investigation Show\nInvestigation Identifier:TestInvestigation\nInvestigation Title:\nInvestigation Description:\nInvestigation Submission Date:FirstOctillember\nInvestigation Public Release Date:\n"
+
+            Expect.equal consoleOutput expectedOutput "The showed output differed from the expected output"
 
         )
 
