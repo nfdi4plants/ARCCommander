@@ -23,7 +23,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list w
     Prompt.deannotateArguments g 
     |> commandF arcConfiguration
 
-let processCommandWoArguments (arcConfiguration : ArcConfiguration) commandF = commandF arcConfiguration
+let processCommandWoArgs (arcConfiguration : ArcConfiguration) commandF = commandF arcConfiguration
 
 let setupArc (arcConfiguration : ArcConfiguration) =
 
@@ -222,12 +222,7 @@ let testInvestigationContacts =
 [<Tests>]
 let testInvestigationShow =
     
-    let setupArc (arcConfiguration:ArcConfiguration) =
-        let investigationArgs = [InvestigationCreateArgs.Identifier "TestInvestigation"]
-        let arcArgs : ArcInitArgs list = [] 
-    
-        processCommand arcConfiguration ArcAPI.init             arcArgs
-        processCommand arcConfiguration InvestigationAPI.create investigationArgs
+    let setupArc (arcConfiguration : ArcConfiguration) = processCommandWoArgs arcConfiguration ArcAPI.init (Map [])
     
     let createConfigFromDir testListName testCaseName =
         let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
@@ -246,32 +241,20 @@ let testInvestigationShow =
             let investigationArgs = [InvestigationCreateArgs.Identifier investigationName; InvestigationCreateArgs.SubmissionDate submissionDate]
             processCommand configuration InvestigationAPI.create investigationArgs
 
-            //let testInvestigation = 
-            //    ISADotNet.XLSX.Investigation.fromParts 
-            //        (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
-            //        [] [] [] [] []
-
             let writer = new StringWriter()
             let stdout = Console.Out // standard Console output
             Console.SetOut(writer) // reads everything that the console prints
 
-            processCommandWoArguments configuration InvestigationAPI.show
+            processCommandWoArgs configuration InvestigationAPI.show
 
-            let consoleOutput = writer.ToString()
+            let consoleOutput = writer.ToString().Replace("\013","") // get rid of stupid carriage return char
 
             Console.SetOut(stdout) // reset Console output to stdout
 
-            let expectedOutput = """Start processing parameterless command
-            Start Investigation Show
-            Investigation Identifier:TestInvestigation
-            Investigation Title:
-            Investigation Description:
-            Investigation Submission Date:FirstOctillember
-            Investigation Public Release Date:
-            Done processing command.
-            """
+            let expectedOutput = 
+                "Start Investigation Show\nInvestigation Identifier:TestInvestigation\nInvestigation Title:\nInvestigation Description:\nInvestigation Submission Date:FirstOctillember\nInvestigation Public Release Date:\n"
 
-            Expect.equal consoleOutput expectedOutput "The assay in the file should match the one created per hand but did not"
+            Expect.equal consoleOutput expectedOutput "The showed output differed from the expected output"
 
         )
 
