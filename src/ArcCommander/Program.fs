@@ -214,6 +214,7 @@ let handleCommand arcConfiguration command =
 
 [<EntryPoint>]
 let main argv =
+
     try
         let parser = ArgumentParser.Create<ArcCommand>()
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
@@ -223,8 +224,9 @@ let main argv =
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let verbosity = results.TryGetResult(Verbosity) |> Option.map string
+        let arcFolder = System.IO.Path.Combine()
 
+        let verbosity = results.TryGetResult(Verbosity) |> Option.map string
 
         let arcConfiguration =
             [
@@ -234,6 +236,8 @@ let main argv =
             |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
+
+        Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"
