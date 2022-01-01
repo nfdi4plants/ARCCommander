@@ -16,7 +16,7 @@ module Logging =
         // initialise base console target, can be modified
         let consoleTarget = new ColoredConsoleTarget("console")
         // new parameters for console target
-        let layoutConsole = new Layouts.SimpleLayout (@"${date:format=HH\:mm\:ss} ${level} ${message} ${exception}")
+        let layoutConsole = new Layouts.SimpleLayout (@"${message} ${exception}")
         consoleTarget.Layout <- layoutConsole
 
         // initialise base file target, can be modified
@@ -49,9 +49,9 @@ module Logging =
 
         // declare which results in a log in which target
         if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Info, consoleTarget) // info results shall be used for verbosity 1
-        config.AddRuleForOneLevel(LogLevel.Info, fileTarget)
+        config.AddRuleForOneLevel(LogLevel.Info, fileTarget) // info results shall be written to log file, regardless of verbosity
         if verbosity = 2 then config.AddRuleForOneLevel(LogLevel.Trace, consoleTarget) // trace results shall be used for verbosity 2
-        config.AddRuleForOneLevel(LogLevel.Trace, fileTarget)
+        config.AddRuleForOneLevel(LogLevel.Trace, fileTarget) // trace results shall be written to log file, regardless of verbosity
         config.AddRuleForOneLevel(LogLevel.Debug, consoleTarget) // shall be used only for debugging purposes
         config.AddRuleForOneLevel(LogLevel.Debug, fileTarget)
         config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget) // warnings shall be used for non-critical events

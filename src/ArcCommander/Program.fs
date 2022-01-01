@@ -224,7 +224,7 @@ let main argv =
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let arcFolder = System.IO.Path.Combine()
+        let arcFolder = System.IO.Path.Combine(workingDir, ".arc")
 
         let verbosity = results.TryGetResult(Verbosity) |> Option.map string
 
