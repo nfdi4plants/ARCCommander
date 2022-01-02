@@ -52,7 +52,7 @@ module Logging =
         config.AddRuleForOneLevel(LogLevel.Info, fileTarget) // info results shall be written to log file, regardless of verbosity
         if verbosity = 2 then config.AddRuleForOneLevel(LogLevel.Trace, consoleTarget) // trace results shall be used for verbosity 2
         config.AddRuleForOneLevel(LogLevel.Trace, fileTarget) // trace results shall be written to log file, regardless of verbosity
-        config.AddRuleForOneLevel(LogLevel.Debug, consoleTarget) // shall be used only for debugging purposes
+        config.AddRuleForOneLevel(LogLevel.Debug, consoleTarget) // shall be used for results that shall always be printed, regardless of verbosity
         config.AddRuleForOneLevel(LogLevel.Debug, fileTarget)
         config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget) // warnings shall be used for non-critical events
         config.AddRuleForOneLevel(LogLevel.Warn, fileTarget)
