@@ -1,6 +1,7 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
+open System
 open Argu
 
 open ArcCommander
@@ -8,12 +9,12 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
 
-let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
+let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =
+
+    let log = Logging.createLogger "ProcessCommandLog"
 
     let editor = GeneralConfiguration.getEditor arcConfiguration
-    let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
     let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
-
 
     let annotatedArguments = groupArguments (r.GetAllResults())
 
@@ -32,43 +33,35 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
         else 
             Prompt.deannotateArguments annotatedArguments
 
-    if verbosity >= 1 then
+    log.Info("Start processing command with the arguments")
+    arguments |> Map.iter (fun k t -> log.Info($"\t{k}:{t}"))
+    Console.WriteLine()
 
-        printfn "Start processing command with the arguments"
-        arguments |> Map.iter (printfn "\t%s:%O")
-        printfn "" 
-
-    if verbosity >= 2 then
-
-        printfn "and the config:"
-        arcConfiguration
-        |> ArcConfiguration.flatten
-        |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
-        printfn "" 
+    log.Trace("and the config:")
+    arcConfiguration
+    |> ArcConfiguration.flatten
+    |> Seq.iter (fun (a,b) -> log.Trace($"\t{a}:{b}"))
+    Console.WriteLine()
 
     try commandF arcConfiguration arguments
     finally
-        if verbosity >= 1 then printfn "Done processing command."
+        log.Info("Done processing command.")
 
-let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
+let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
-    let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+    let log = Logging.createLogger "ProcessCommandWithoutArgsLog"
 
-    if verbosity >= 1 then
+    log.Info(printf "Start processing parameterless command")
 
-        printf "Start processing parameterless command"
-
-    if verbosity >= 2 then
-        printfn "with the config"
-        arcConfiguration
-        |> ArcConfiguration.flatten
-        |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
-
-    else printfn ""
+    log.Trace("with the config")
+    arcConfiguration
+    |> ArcConfiguration.flatten
+    |> Seq.iter (fun (a,b) -> log.Trace($"\t{a}:{b}"))
+    Console.WriteLine()
 
     try commandF arcConfiguration
     finally
-        if verbosity >= 1 then printfn "Done processing command."
+        log.Info("Done processing command.")
 
 let handleStudyContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with

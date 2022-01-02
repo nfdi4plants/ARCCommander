@@ -1,7 +1,5 @@
 ﻿namespace ArcCommander.APIs
 
-open System
-
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 
@@ -18,15 +16,15 @@ module InvestigationAPI =
             IsaModelConfiguration.getInvestigationFilePath arcConfiguration
             |> System.IO.File.Exists
 
-    /// Creates an investigation file in the arc from the given investigation metadata contained in cliArgs that contains no studies or assays.
+    /// Creates an investigation file in the ARC from the given investigation metadata contained in cliArgs that contains no studies or assays.
     let create (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) =
            
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "InvestigationCreateLog"
         
-        if verbosity >= 1 then printfn "Start Investigation Create"
+        log.Info("Start Investigation Create")
 
         if InvestigationFile.exists arcConfiguration then
-            if verbosity >= 1 then printfn "Investigation file does already exist"
+            log.Info("Investigation file does already exist")
 
         else 
             let investigation = 
@@ -44,14 +42,14 @@ module InvestigationAPI =
                           
             Investigation.toFile investigationFilePath investigation
 
-    /// Updates the existing investigation file in the arc with the given investigation metadata contained in cliArgs.
+    /// Updates the existing investigation file in the ARC with the given investigation metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "InvestigationUpdateLog"
         
-        if verbosity >= 1 then printfn "Start Investigation Update"
+        log.Info("Start Investigation Update")
 
-        let updateOption = if containsFlag "ReplaceWithEmptyValues" investigationArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting            
+        let updateOption = if containsFlag "ReplaceWithEmptyValues" investigationArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting
 
         let investigation = 
             let info =
@@ -71,12 +69,12 @@ module InvestigationAPI =
         API.Investigation.update updateOption originalInvestigation investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Opens the existing investigation info in the arc with the text editor set in globalArgs.
+    /// Opens the existing investigation info in the ARC with the text editor set in globalArgs.
     let edit (arcConfiguration : ArcConfiguration) =
        
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "InvestigationEditLog"
         
-        if verbosity >= 1 then printfn "Start Investigation Edit"
+        log.Info("Start Investigation Edit")
 
         let editor = GeneralConfiguration.getEditor arcConfiguration
 
@@ -92,12 +90,12 @@ module InvestigationAPI =
         API.Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
         |> Investigation.toFile investigationFilePath
 
-    /// Deletes the existing investigation file in the arc if the given identifier matches the identifier set in the investigation file.
+    /// Deletes the existing investigation file in the ARC if the given identifier matches the identifier set in the investigation file.
     let delete (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) = 
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "InvestigationDeleteLog"
         
-        if verbosity >= 1 then printfn "Start Investigation Delete"      
+        log.Info("Start Investigation Delete")
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
@@ -111,9 +109,9 @@ module InvestigationAPI =
     /// Lists the data of the investigation in this ARC.
     let show (arcConfiguration : ArcConfiguration) = 
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "InvestigationShowLog"
         
-        if verbosity >= 1 then printfn "Start Investigation Show"
+        log.Info("Start Investigation Show")
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
 
@@ -125,14 +123,14 @@ module InvestigationAPI =
     /// Functions for altering investigation contacts.
     module Contacts =
 
-        /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
+        /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
         let update (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationContactsUpdateLog"
 
-            if verbosity >= 1 then printfn "Start Person Update"
+            log.Info("Start Person Update")
 
-            let updateOption = if containsFlag "ReplaceWithEmptyValues" personArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
+            let updateOption = if containsFlag "ReplaceWithEmptyValues" personArgs then API.Update.UpdateAll else API.Update.UpdateByExisting
 
             let lastName    = getFieldValueByName "LastName"    personArgs                   
             let firstName   = getFieldValueByName "FirstName"   personArgs
@@ -168,31 +166,31 @@ module InvestigationAPI =
                     API.Person.updateByFullName updateOption person persons
                     |> API.Investigation.setContacts investigation
                 else
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+                    log.Warn($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation")
                     if containsFlag "AddIfMissing" personArgs then
-                        if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                        log.Info("Registering person as AddIfMissing Flag was set")
                         API.Person.add persons person
                         |> API.Investigation.setContacts investigation
                     else 
-                        if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                        log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing")
                         investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+                log.Info("The investigation does not contain any persons")
                 if containsFlag "AddIfMissing" personArgs then
-                    if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                    log.Info("Registering person as AddIfMissing Flag was set")
                     [person]
                     |> API.Investigation.setContacts investigation
                 else 
-                    if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                    log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing")
                     investigation
             |> Investigation.toFile investigationFilePath
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
         let edit (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationContactsEditLog"
 
-            if verbosity >= 1 then printfn "Start Person Edit"
+            log.Info("Start Person Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
 
@@ -215,20 +213,20 @@ module InvestigationAPI =
                     |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                     |> API.Investigation.setContacts investigation
                 | None ->
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation" firstName midInitials lastName
+                    log.Warn($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation") 
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+                log.Warn("The investigation does not contain any persons")
                 investigation
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a person in the arc's investigation file with the given person metadata contained in personArgs.
+        /// Registers a person in the ARC's investigation file with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationContactsRegisterLog"
 
-            if verbosity >= 1 then printfn "Start Person Register"
+            log.Info("Start Person Register")
 
             let lastName    = getFieldValueByName "LastName"    personArgs                   
             let firstName   = getFieldValueByName "FirstName"   personArgs
@@ -260,8 +258,8 @@ module InvestigationAPI =
 
             match investigation.Contacts with
             | Some persons ->
-                if API.Person.existsByFullName firstName midInitials lastName persons then               
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+                    log.Info($"Person with the name {firstName} {midInitials} {lastName} already exists in the investigation file")
                     persons
                 else
                     API.Person.add persons person            
@@ -269,12 +267,12 @@ module InvestigationAPI =
             |> API.Investigation.setContacts investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
+        /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
         let unregister (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationContactsUnregisterLog"
 
-            if verbosity >= 1 then printfn "Start Person Unregister"
+            log.Info("Start Person Unregister")
 
             let lastName    = getFieldValueByName "LastName"    personArgs                   
             let firstName   = getFieldValueByName "FirstName"   personArgs
@@ -290,19 +288,19 @@ module InvestigationAPI =
                     API.Person.removeByFullName firstName midInitials lastName persons   
                     |> API.Investigation.setContacts investigation
                 else
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the investigation file" firstName midInitials lastName
+                    log.Info($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation file")
                     investigation    
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+                log.Warn("The investigation does not contain any persons")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
+        /// Gets an existing person by fullname (LastName, FirstName, MidInitials) and prints their metadata.
         let show (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
            
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationContactsShowLog"
 
-            if verbosity >= 1 then printfn "Start Person Get"
+            log.Info("Start Person Show")
 
             let lastName    = getFieldValueByName "LastName"    personArgs                   
             let firstName   = getFieldValueByName "FirstName"   personArgs
@@ -319,17 +317,17 @@ module InvestigationAPI =
                     [person]
                     |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                     |> printfn "%s"
-                | None -> printfn "Person with the name %s %s %s  does not exist in the investigation" firstName midInitials lastName
+                | None -> log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+                log.Warn("The investigation does not contain any persons")
                
 
         /// Lists the full names of all persons included in the investigation.
         let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationContactsListLog"
 
-            if verbosity >= 1 then printfn "Start Person Get"
+            log.Info("Start Person List")
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -343,22 +341,22 @@ module InvestigationAPI =
                     let midInitials = Option.defaultValue "" person.MidInitials
                     let lastName = Option.defaultValue "" person.LastName
                     if midInitials = "" then
-                        printfn "--Person: %s %s" firstName lastName
+                        log.Debug($"--Person: {firstName} {lastName}")
                     else
-                        printfn "--Person: %s %s %s" firstName midInitials lastName
+                        log.Debug($"--Person: {firstName} {midInitials} {lastName}")
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any persons"
+                log.Warn(printfn "The investigation does not contain any persons")
 
     /// Functions for altering investigation publications.
     module Publications =
 
-        /// Updates an existing assay file in the arc with the given assay metadata contained in cliArgs.
+        /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
         let update (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationPublicationsUpdateLog"
             
-            if verbosity >= 1 then printfn "Start Publication Update"
+            log.Info("Start Publication Update")
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -385,31 +383,31 @@ module InvestigationAPI =
                     API.Publication.updateByDOI updateOption publication publications
                     |> API.Investigation.setPublications investigation
                 else
-                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
+                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
                     if containsFlag "AddIfMissing" publicationArgs then
-                        if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                        log.Info("Registering publication as AddIfMissing Flag was set")
                         API.Publication.add publications publication
                         |> API.Investigation.setPublications investigation
                     else 
-                        if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                        log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing")
                         investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any publications"
+                log.Warn("The investigation does not contain any publications")
                 if containsFlag "AddIfMissing" publicationArgs then
-                    if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                    log.Info("Registering publication as AddIfMissing Flag was set")
                     [publication]
                     |> API.Investigation.setPublications investigation
                 else 
-                    if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                    log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing")
                     investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
+        /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
         let edit (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationPublicationsEditLog"
             
-            if verbosity >= 1 then printfn "Start Publication Edit"
+            log.Info("Start Publication Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
 
@@ -431,20 +429,20 @@ module InvestigationAPI =
                     |> API.Investigation.setPublications investigation
 
                 | None ->
-                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
+                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any publications"
+                log.Warn("The investigation does not contain any publications")
                 investigation  
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a person in the arc's investigation file with the given person metadata contained in personArgs.
+        /// Registers a person in the ARC's investigation file with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationPublicationsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Publication Register"
+            log.Info("Start Publication Register")
 
             let doi = getFieldValueByName  "DOI"                        publicationArgs
 
@@ -466,7 +464,7 @@ module InvestigationAPI =
             match investigation.Publications with
             | Some publications ->
                 if API.Publication.existsByDoi doi publications then           
-                    if verbosity >= 1 then printfn "Publication with the DOI %s already exists in the investigation" doi
+                    log.Warn($"Publication with the DOI {doi} already exists in the investigation")
                     publications
                 else
                     API.Publication.add publications publication
@@ -474,12 +472,12 @@ module InvestigationAPI =
             |> API.Investigation.setPublications investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
+        /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
         let unregister (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationPublicationsUnregisterLog"
             
-            if verbosity >= 1 then printfn "Start Publication Unregister"
+            log.Info("Start Publication Unregister")
 
             let doi = getFieldValueByName  "DOI" publicationArgs
 
@@ -493,19 +491,19 @@ module InvestigationAPI =
                     API.Publication.removeByDoi doi publications
                     |> API.Investigation.setPublications investigation
                 else
-                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
+                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any publications"
+                log.Warn("The investigation does not contain any publications")
                 investigation
             |> Investigation.toFile investigationFilePath
 
         /// Gets an existing publication by its doi and prints its metadata.
         let show (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationPublicationsShowLog"
             
-            if verbosity >= 1 then printfn "Start Publication Get"
+            log.Info("Start Publication Show")
 
             let doi = getFieldValueByName  "DOI" publicationArgs
 
@@ -519,19 +517,19 @@ module InvestigationAPI =
                 | Some publication ->
                     [publication]
                     |> Prompt.serializeXSLXWriterOutput (Publications.toRows None)
-                    |> printfn "%s"
+                    |> log.Debug
 
                 | None -> 
-                    if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the investigation" doi
+                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any publications"
+                log.Warn("The investigation does not contain any publications")
 
         /// Lists the full names of all persons included in the investigation.
         let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "InvestigationPublicationsListLog"
             
-            if verbosity >= 1 then printfn "Start Publication List"
+            log.Info("Start Publication List")
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -541,7 +539,7 @@ module InvestigationAPI =
             | Some publications ->
                 publications
                 |> Seq.iter (fun publication ->
-                    printfn "Publication (DOI): %s" (Option.defaultValue "" publication.DOI)
+                    log.Debug(sprintf "Publication (DOI): %s" (Option.defaultValue "" publication.DOI))
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any publications"
+                log.Warn("The investigation does not contain any publications")
