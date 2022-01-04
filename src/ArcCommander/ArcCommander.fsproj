@@ -24,10 +24,10 @@
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="Logging.fs" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
-    <Compile Include="Logging.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
     <Compile Include="CLIArguments\InvestigationArgs.fs" />

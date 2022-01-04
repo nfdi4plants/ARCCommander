@@ -18,13 +18,16 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
 
     let annotatedArguments = groupArguments (r.GetAllResults())
 
+    log.Debug("Debug: ProcessCommandLog")
+    log.Error("Debug: Error log test")
+
     let arguments = 
 
         if containsMissingMandatoryAttribute annotatedArguments then
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                failwith "ERROR: Mandatory arguments were not given either via cli or editor prompt."
+                log.Error(failwith "ERROR: Mandatory arguments were not given either via cli or editor prompt." :> System.Exception, "") // CARE: just a try...
             arguments
 
         elif forceEditor then
@@ -51,7 +54,7 @@ let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
     let log = Logging.createLogger "ProcessCommandWithoutArgsLog"
 
-    log.Info(printf "Start processing parameterless command")
+    log.Info("Start processing parameterless command")
 
     log.Trace("with the config")
     arcConfiguration

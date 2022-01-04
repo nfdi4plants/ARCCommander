@@ -16,14 +16,15 @@ module IniData =
 
     /// Splits the name of form "section.key" into section and key.
     let splitName (name : string) = 
+        let log = Logging.createLogger "IniDataSplitNameLog"
         let m = Text.RegularExpressions.Regex.Match(name, @"(?<!\.\w*)(?<section>\w+)\.(?<key>\w+)(?!\w*\.)")
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
-            failwithf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name
+            let msg = sprintf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name
+            log.Error((failwith msg) :> System.Exception, ""); "",""
 
-    let splitValues (value:string) =
-        value.Split(';')
+    let splitValues (value : string) = value.Split(';')
 
     /// Returns the operating system.
     let getOs () =
@@ -151,7 +152,7 @@ module IniData =
         match tryGetSection sectionName iniData with
         | Some kvs -> 
             kvs
-            |> Seq.map (fun kv -> kv.KeyName,kv.Value)
+            |> Seq.map (fun kv -> kv.KeyName, kv.Value)
             |> Map.ofSeq
         | None -> Map.empty
 
