@@ -1,6 +1,7 @@
 ﻿namespace ArcCommander
 
 open Microsoft.FSharp.Reflection
+open System
 open System.IO
 open System.Diagnostics
 open System.Text
@@ -8,14 +9,15 @@ open System.Text.Json
 open Argu
 
 
+/// Functions for processing arguments.
 module ArgumentProcessing = 
 
-    /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValuByName' to access the value
+    /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValuByName' to access the value.
     type Argument =
         | Field of string
         | Flag
 
-    /// Argument with additional information
+    /// Argument with additional information.
     type AnnotatedArgument = 
         {
             Arg         : Argument Option
@@ -32,14 +34,17 @@ module ArgumentProcessing =
             IsFlag = isFlag
         }
 
-    /// Returns true, if the argument flag of name k was given by the user
-    let containsFlag k (arguments : Map<string,Argument>)=
+    /// Returns true if the argument flag of name k was given by the user.
+    let containsFlag k (arguments : Map<string,Argument>) =
+        let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
         match Map.tryFind k arguments with
-        | Some (Field _ )   -> failwithf "ERROR: Argument %s is not a flag, but a field." k
+        | Some (Field _ )   -> 
+            log.Error($"ERROR: Argument {k} is not a flag, but a field.")
+            raise (Exception(""))
         | Some (Flag)       -> true
         | None              -> false
 
-    /// Returns the value given by the user for name k
+    /// Returns the value given by the user for name k.
     let tryGetFieldValueByName k (arguments : Map<string,Argument>) = 
         match Map.tryFind k arguments with
         | Some (Field "") -> None
@@ -47,38 +52,42 @@ module ArgumentProcessing =
         | Some Flag -> None
         | None -> None
 
-    /// Returns the value given by the user for name k
+    /// Returns the value given by the user for name k.
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
+        let log = Logging.createLogger "ArgumentProcessingGetFieldByValueLog"
         match Map.find k arguments with
         | Field v -> v
-        | Flag -> failwithf "ERROR: Argument %s is not a field, but a flag." k
+        | Flag -> 
+            log.Error($"ERROR: Argument {k} is not a field, but a flag.")
+            raise (Exception(""))
 
-    /// For a given discriminated union value, returns the field name and the value
-    let private splitUnion (x:'a) = 
+    /// For a given discriminated union value, returns the field name and the value.
+    let private splitUnion (x : 'a) = 
         match FSharpValue.GetUnionFields(x, typeof<'a>) with
         | case, v -> case.Name,v
 
-    /// For a given discriminated union value, returns the field name and the value string
-    let private unionToString (x:'a) = 
+    /// For a given discriminated union value, returns the field name and the value string.
+    let private unionToString (x : 'a) = 
         match splitUnion x with
         | (field,value) -> field, string value.[0]
 
-    /// Returns given attribute from property info as optional 
+    /// Returns given attribute from property info as optional.
     let private containsCustomAttribute<'a> (case : UnionCaseInfo) =   
         let attributeType = typeof<'a>
         match case.GetCustomAttributes (attributeType) with
         | [||] -> false
         | _ -> true
    
-    /// Returns true, if a value in the array contains the Mandatory attribute, but is empty
-    let containsMissingMandatoryAttribute (arguments:(string*AnnotatedArgument) []) =
+    /// Returns true if a value in the array contains the Mandatory attribute but is empty.
+    let containsMissingMandatoryAttribute (arguments : (string * AnnotatedArgument) []) =
         arguments
         |> Seq.exists (fun (k,v) ->
             v.Arg.IsNone && v.IsMandatory
         )
 
-    /// Adds all union cases of 'T which are missing to the list
+    /// Adds all union cases of 'T which are missing to the list.
     let groupArguments (args : 'T list when 'T :> IArgParserTemplate) =
+        let log = Logging.createLogger "ArgumentProcessingGroupArgumentsLog"
         let m = 
             args 
             |> List.map splitUnion
@@ -89,21 +98,22 @@ module ArgumentProcessing =
             let fields = unionCase.GetFields()
             match fields with 
             | [||] -> 
-                let toolTip = (FSharpValue.MakeUnion (unionCase,[||]) :?> 'T).Usage
+                let toolTip = (FSharpValue.MakeUnion (unionCase, [||]) :?> 'T).Usage
                 let value,isFlag = if Map.containsKey unionCase.Name m then Some Flag,true else None,true             
                 unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
             | [|c|] when c.PropertyType.Name = "String" -> 
-                let toolTip = (FSharpValue.MakeUnion (unionCase,[|box ""|]) :?> 'T).Usage
-                let value,isFlag = 
+                let toolTip = (FSharpValue.MakeUnion (unionCase, [|box ""|]) :?> 'T).Usage
+                let value, isFlag = 
                     match Map.tryFind unionCase.Name m with
                     | Some value -> 
                         Field (string value.[0])
                         |> Some,
                         false
-                    | None -> None,false                   
-                unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
+                    | None -> None, false
+                unionCase.Name, createAnnotatedArgument value toolTip isMandatory isFlag
             | _ ->
-                failwithf "ERROR: Cannot parse argument %s because its parsing rules were not yet implemented." unionCase.Name
+                log.Error($"ERROR: Cannot parse argument {unionCase.Name} because its parsing rules were not yet implemented.")
+                raise (Exception(""))
         )
 
     ///// Creates an isa item used in the investigation file
@@ -119,7 +129,7 @@ module ArgumentProcessing =
     //    )
     //    item
 
-    /// Functions for asking the user to input values via an editor prompt
+    /// Functions for asking the user to input values via an editor prompt.
     module Prompt = 
 
         /// Creates a MD5 hash from an input string.
@@ -132,14 +142,14 @@ module ArgumentProcessing =
             |> Seq.reduce (+)
     
         /// Starts a program at the given path with the given arguments.
-        let private runProcess rootPath arg =           
+        let private runProcess rootPath arg =
             let p = 
                 new ProcessStartInfo
                     (rootPath,arg) 
                 |> Process.Start
             p.WaitForExit()
 
-        /// Deletes the file
+        /// Deletes the file.
         let private delete (path:string) = 
             File.Delete(path) 
 
@@ -209,6 +219,8 @@ module ArgumentProcessing =
 
         /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input.
         let createQuery editorPath serializeF deserializeF inp =
+            let log = Logging.createLogger "ArgumentProcessingPromptCreateQueryLog"
+            
             let yamlString = serializeF inp
             let hash = MD5Hash yamlString
             let filename = sprintf "%s.yml" hash
@@ -225,7 +237,8 @@ module ArgumentProcessing =
             with
             | err -> 
                 delete filePath
-                failwithf "Could not parse query: %s" err.Message
+                log.Error(err, "ERROR: Could not parse query: {err.Message}")
+                raise (Exception(""))
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
         let createArgumentQuery editorPath (arguments : (string * AnnotatedArgument) []) = 
@@ -241,7 +254,7 @@ module ArgumentProcessing =
                 mandatoryArgs
                 |> Array.map (fun k -> 
                     let field = tryGetFieldValueByName k queryResults
-                    field = None || field = Some ""                    
+                    field = None || field = Some ""
                 )
                 |> Array.reduce ((||))
             stillMissingMandatoryArgs,queryResults
@@ -256,6 +269,7 @@ module ArgumentProcessing =
                 | None -> Some (k,Field ""))
             |> Map.ofArray
 
+        /// Serializes the output of a writer and converts it into a string.
         let serializeXSLXWriterOutput (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>) (inp : 'A) = 
             writeF inp
             |> Seq.map (fun r -> 
@@ -265,11 +279,13 @@ module ArgumentProcessing =
             )
             |> Seq.reduce (fun a b -> a + "\n" + b)
 
-        /// Open a textprompt containing the serialized input item. Returns item updated with the deserialized user input.
+        /// Opens a textprompt containing the serialized input item. Returns item updated with the deserialized user input.
         let createIsaItemQuery editorPath
             (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>)
             (readF : System.Collections.Generic.IEnumerator<ISADotNet.XLSX.SparseRow> -> 'A)
             (isaItem : 'A) = 
+
+            let log = Logging.createLogger "ArgumentProessingPromptCreateIsaItemQueryLog"
 
             let header = 
                 """# For editing the selected item, just provide the desired values for the keys below or change preexisting values
@@ -289,14 +305,15 @@ module ArgumentProcessing =
                                 match splitAtFirst ':' x with
                                 | k, Field v ->
                                     ISADotNet.XLSX.SparseRow.fromValues [k;v]
-                                | _ -> failwith "ERROR: File was corrupted in Editor."
+                                | _ -> log.Error("ERROR: File was corrupted in Editor."); raise (Exception(""))
                             )
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 
             createQuery editorPath serializeF deserializeF isaItem
 
-        /// Open a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input.
+        /// Opens a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input.
         let createIniDataQuery editorPath (iniData : IniParser.Model.IniData) =
+            let log = Logging.createLogger "ArgumentProessingPromptCreateIniDataQueryLog"
             let serializeF inp = 
                 IniData.flatten inp
                 |> Seq.map (fun (n,v) -> n + "=" + v)
@@ -306,14 +323,16 @@ module ArgumentProcessing =
                 |> Array.map (fun x ->      
                     match splitAtFirst '=' x with
                     | k, Field v -> k,v
-                    | _ -> failwith "ERROR: File was corrupted in Editor."
+                    | _ -> log.Error("ERROR: File was corrupted in Editor."); raise (Exception(""))
                 )
                 |> IniData.fromNameValuePairs
             createQuery editorPath serializeF deserializeF iniData
 
+    /// Serializes a JSON item into a string.
     let serializeToString (item : 'A) =
-        JsonSerializer.Serialize(item,ISADotNet.JsonExtensions.options)
+        JsonSerializer.Serialize(item, ISADotNet.JsonExtensions.options)
 
+    /// Serializes a JSON item into a file.
     let serializeToFile (p : string) (item : 'A) =
         JsonSerializer.Serialize(item, ISADotNet.JsonExtensions.options)
         |> fun s -> File.WriteAllText(p, s)

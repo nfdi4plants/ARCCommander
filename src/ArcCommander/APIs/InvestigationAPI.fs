@@ -175,8 +175,11 @@ module InvestigationAPI =
                         log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing")
                         investigation
             | None -> 
-                log.Info("The investigation does not contain any persons")
-                if containsFlag "AddIfMissing" personArgs then
+                let doesContainFlag = containsFlag "AddIfMissing" personArgs
+                if doesContainFlag then 
+                    log.Warn("WARNING: The investigation does not contain any persons")
+                else log.Error("ERROR: The investigation does not contain any persons")
+                if doesContainFlag then
                     log.Info("Registering person as AddIfMissing Flag was set")
                     [person]
                     |> API.Investigation.setContacts investigation
@@ -194,9 +197,9 @@ module InvestigationAPI =
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName  "LastName"      personArgs)
+            let firstName   = (getFieldValueByName  "FirstName"     personArgs)
+            let midInitials = (getFieldValueByName  "MidInitials"   personArgs)
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -213,10 +216,10 @@ module InvestigationAPI =
                     |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                     |> API.Investigation.setContacts investigation
                 | None ->
-                    log.Warn($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation") 
+                    log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation") 
                     investigation
             | None -> 
-                log.Warn("The investigation does not contain any persons")
+                log.Error("The investigation does not contain any persons")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -259,11 +262,11 @@ module InvestigationAPI =
             match investigation.Contacts with
             | Some persons ->
                 if API.Person.existsByFullName firstName midInitials lastName persons then
-                    log.Info($"Person with the name {firstName} {midInitials} {lastName} already exists in the investigation file")
+                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} already exists in the investigation file")
                     persons
                 else
-                    API.Person.add persons person            
-            | None -> [person]   
+                    API.Person.add persons person
+            | None -> [person]
             |> API.Investigation.setContacts investigation
             |> Investigation.toFile investigationFilePath
 
@@ -274,7 +277,7 @@ module InvestigationAPI =
 
             log.Info("Start Person Unregister")
 
-            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let lastName    = getFieldValueByName "LastName"    personArgs
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
@@ -284,14 +287,14 @@ module InvestigationAPI =
             
             match investigation.Contacts with
             | Some persons ->
-                if API.Person.existsByFullName firstName midInitials lastName persons then               
-                    API.Person.removeByFullName firstName midInitials lastName persons   
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+                    API.Person.removeByFullName firstName midInitials lastName persons
                     |> API.Investigation.setContacts investigation
                 else
-                    log.Info($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation file")
-                    investigation    
+                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation file")
+                    investigation
             | None -> 
-                log.Warn("The investigation does not contain any persons")
+                log.Error("ERROR: The investigation does not contain any persons")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -316,10 +319,10 @@ module InvestigationAPI =
                 | Some person ->
                     [person]
                     |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
-                    |> printfn "%s"
-                | None -> log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation")
+                    |> log.Debug
+                | None -> log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation")
             | None -> 
-                log.Warn("The investigation does not contain any persons")
+                log.Error("ERROR: The investigation does not contain any persons")
                
 
         /// Lists the full names of all persons included in the investigation.
@@ -346,7 +349,7 @@ module InvestigationAPI =
                         log.Debug($"--Person: {firstName} {midInitials} {lastName}")
                 )
             | None -> 
-                log.Warn(printfn "The investigation does not contain any persons")
+                log.Error("ERROR: The investigation does not contain any persons")
 
     /// Functions for altering investigation publications.
     module Publications =
@@ -358,7 +361,7 @@ module InvestigationAPI =
             
             log.Info("Start Publication Update")
 
-            let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
+            let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting
 
             let doi = getFieldValueByName  "DOI"                        publicationArgs
 
@@ -383,8 +386,11 @@ module InvestigationAPI =
                     API.Publication.updateByDOI updateOption publication publications
                     |> API.Investigation.setPublications investigation
                 else
-                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
-                    if containsFlag "AddIfMissing" publicationArgs then
+                    let doesContainFlag = containsFlag "AddIfMissing" publicationArgs
+                    if doesContainFlag then
+                        log.Warn($"WARNING: Publication with the DOI {doi} does not exist in the investigation")
+                    else log.Error($"ERROR: Publication with the DOI {doi} does not exist in the investigation")
+                    if doesContainFlag then
                         log.Info("Registering publication as AddIfMissing Flag was set")
                         API.Publication.add publications publication
                         |> API.Investigation.setPublications investigation
@@ -392,8 +398,11 @@ module InvestigationAPI =
                         log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing")
                         investigation
             | None -> 
-                log.Warn("The investigation does not contain any publications")
-                if containsFlag "AddIfMissing" publicationArgs then
+                let doesContainFlag = containsFlag "AddIfMissing" publicationArgs
+                if doesContainFlag then
+                    log.Warn("WARNING: The investigation does not contain any publications")
+                else log.Error("ERROR: The investigation does not contain any publications")
+                if doesContainFlag then
                     log.Info("Registering publication as AddIfMissing Flag was set")
                     [publication]
                     |> API.Investigation.setPublications investigation
@@ -420,19 +429,18 @@ module InvestigationAPI =
             match investigation.Publications with
             | Some publications ->
                 match API.Publication.tryGetByDoi doi publications with
-                | Some publication ->                    
+                | Some publication ->
                     ArgumentProcessing.Prompt.createIsaItemQuery editor
                         (List.singleton >> Publications.toRows None) 
                         (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         publication
                     |> fun p -> API.Publication.updateBy ((=) publication) API.Update.UpdateAll p publications
                     |> API.Investigation.setPublications investigation
-
                 | None ->
-                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
+                    log.Error($"ERROR: Publication with the DOI {doi} does not exist in the investigation")
                     investigation
             | None -> 
-                log.Warn("The investigation does not contain any publications")
+                log.Error("ERROR: The investigation does not contain any publications")
                 investigation  
             |> Investigation.toFile investigationFilePath
 
@@ -463,8 +471,8 @@ module InvestigationAPI =
 
             match investigation.Publications with
             | Some publications ->
-                if API.Publication.existsByDoi doi publications then           
-                    log.Warn($"Publication with the DOI {doi} already exists in the investigation")
+                if API.Publication.existsByDoi doi publications then
+                    log.Error($"ERROR: Publication with the DOI {doi} already exists in the investigation")
                     publications
                 else
                     API.Publication.add publications publication
@@ -487,14 +495,14 @@ module InvestigationAPI =
 
             match investigation.Publications with
             | Some publications ->
-                if API.Publication.existsByDoi doi publications then           
+                if API.Publication.existsByDoi doi publications then
                     API.Publication.removeByDoi doi publications
                     |> API.Investigation.setPublications investigation
                 else
-                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
+                    log.Error($"ERROR: Publication with the DOI {doi} does not exist in the investigation")
                     investigation
             | None -> 
-                log.Warn("The investigation does not contain any publications")
+                log.Error("ERROR: The investigation does not contain any publications")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -519,10 +527,8 @@ module InvestigationAPI =
                     |> Prompt.serializeXSLXWriterOutput (Publications.toRows None)
                     |> log.Debug
 
-                | None -> 
-                    log.Warn($"Publication with the DOI {doi} does not exist in the investigation")
-            | None -> 
-                log.Warn("The investigation does not contain any publications")
+                | None -> log.Error($"ERROR: Publication with the DOI {doi} does not exist in the investigation")
+            | None -> log.Error("ERROR: The investigation does not contain any publications")
 
         /// Lists the full names of all persons included in the investigation.
         let list (arcConfiguration : ArcConfiguration) = 
@@ -542,4 +548,4 @@ module InvestigationAPI =
                     log.Debug(sprintf "Publication (DOI): %s" (Option.defaultValue "" publication.DOI))
                 )
             | None -> 
-                log.Warn("The investigation does not contain any publications")
+                log.Error("ERROR: The investigation does not contain any publications")

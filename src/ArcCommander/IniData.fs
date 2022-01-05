@@ -21,19 +21,23 @@ module IniData =
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
-            let msg = sprintf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name
-            log.Error((failwith msg) :> System.Exception, ""); "",""
+            log.Error(sprintf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name)
+            raise (Exception(""))
 
     let splitValues (value : string) = value.Split(';')
 
     /// Returns the operating system.
     let getOs () =
+        let log = Logging.createLogger "IniDataGetOsLog"
+
         match RuntimeInformation.IsOSPlatform with
         | _ when RuntimeInformation.IsOSPlatform(OSPlatform.Windows)    -> Windows
         | _ when 
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX)             -> Unix
-        | _                                                             -> failwith "ERROR: OS not supported. Only Windows, MacOS and Linux are supported."
+        | _                                                             -> 
+            log.Error($"ERROR: OS not supported. Only Windows, MacOS and Linux are supported.")
+            raise (Exception(""))
 
     /// Creates a default config file in the user's config folder (AppData\Local in Windows, ~/config in Unix).
     let createDefault () =
@@ -53,6 +57,7 @@ module IniData =
 
     /// Returns the path at which the global iniData file is located. If no global file is found, creates one in the user's config folder (AppData\Local in Windows, ~/config in Unix).
     let tryGetGlobalConfigPath () =
+        let log = Logging.createLogger "IniDataTryGetGlobalConfigPathLog"
         // most of this part only remains for legacy reasons. Config file should not be downloaded and placed by the user (as before) but installed by the ArcCommander itself.
         let getFolderPath specialFolder inOwnFolder inCompanyFolder newName = 
             Environment.GetFolderPath(specialFolder, Environment.SpecialFolderOption.DoNotVerify)
@@ -94,7 +99,7 @@ module IniData =
             | _                         -> createDefault (); inConfigFolder
             |> Some
         with e -> 
-            printfn "ERROR: tryGetGlobalConfigPath failed with: %s" e.Message
+            log.Error($"ERROR: tryGetGlobalConfigPath failed with: {e.Message}")
             None
         //| _ -> failwith "ERROR: No global config file found. Initiation of default config file not possible.\nPlease add the specific config file for your OS to your config folder."
         //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
@@ -165,7 +170,7 @@ module IniData =
     /// Any given key can be placed once per section
     ///
     /// Returns the values assigned to a given key across all sections
-    let getAllValuesOfKey key (iniData:IniData) =
+    let getAllValuesOfKey key (iniData : IniData) =
         iniData.Sections
         |> Seq.choose (fun s ->
             if s.Keys.ContainsKey key then
@@ -177,13 +182,14 @@ module IniData =
     ///
     /// The name is given as string in form "section.key"
     let tryGetValueByName (name : string) (iniData : IniData) =
+        let log = Logging.createLogger "IniDataTryGetValueByNameLog"
         try
             let section,key =  splitName name 
             tryGetSection section iniData
             |> Option.bind (tryGetValue key)
         with 
         | err -> 
-            printfn "ERROR: Could not retrieve value with given name\n %s" err.Message
+            log.Error($"ERROR: Could not retrieve value with given name\n {err.Message}")
             None
 
     /// Returns true if the name (section+key) is set in the iniData
@@ -199,12 +205,13 @@ module IniData =
     ///
     /// The name is given as string in form "section.key"
     let trySetValue (name : string) (value : string) (iniData : IniData) =
+        let log = Logging.createLogger "IniDataTrySetValueLog"
         if nameExists (name : string) (iniData : IniData) then
             let section,key = splitName name 
             iniData.[section].[key] <- value
             Some iniData
         else
-            printfn "Name %s does not exist in the config" name
+            log.Error($"Name {name} does not exist in the config")
             None
 
     /// If the name is already set in the config, assigns a new value to it
@@ -219,12 +226,13 @@ module IniData =
     ///
     /// The name is given as string in form "section.key"
     let tryRemoveValue (name : string) (iniData : IniData) =
+        let log = Logging.createLogger "IniDataTryRemoveValueLog"
         if nameExists (name : string) (iniData : IniData) then
             let section,key = splitName name 
             iniData.[section].RemoveKey key |> ignore
             Some iniData
         else
-            printfn "Name %s does not exist in the config" name
+            log.Error($"Name {name} does not exist in the config")
             None
 
     /// If the name is set in the config, remove it
@@ -239,8 +247,9 @@ module IniData =
     ///
     /// The name is given as string in form "section.key"
     let tryAddValue (name : string) (value : string) (iniData : IniData) =
+        let log = Logging.createLogger "IniDataTryAddValueLog"
         if nameExists (name : string) (iniData : IniData) then
-            printfn "Name %s already exists in the config" name
+            log.Error($"Name {name} already exists in the config")
             Some iniData
         else
             let section,key = splitName name 

@@ -2,6 +2,7 @@
 
 // Learn more about F# at http://fsharp.org
 open System
+open System.IO
 open Argu
 
 open ArcCommander
@@ -18,16 +19,14 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
 
     let annotatedArguments = groupArguments (r.GetAllResults())
 
-    log.Debug("Debug: ProcessCommandLog")
-    log.Error("Debug: Error log test")
-
     let arguments = 
 
         if containsMissingMandatoryAttribute annotatedArguments then
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                log.Error(failwith "ERROR: Mandatory arguments were not given either via cli or editor prompt." :> System.Exception, "") // CARE: just a try...
+                log.Error("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
+                raise (Exception(""))
             arguments
 
         elif forceEditor then
@@ -233,7 +232,9 @@ let main argv =
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
 
-        Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        if Directory.Exists(arcFolder) then 
+            Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        else Logging.generateConfig workingDir (GeneralConfiguration.getVerbosity arcConfiguration)
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"
@@ -241,10 +242,12 @@ let main argv =
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
-
         handleCommand arcConfiguration (results.GetSubCommand())
 
         1
     with e ->
-        printfn "%s" e.Message
+        let currDir = Directory.GetCurrentDirectory()
+        Logging.generateConfig currDir 0
+        let log = Logging.createLogger "ArcCommanderMainLog"
+        log.Error(e, e.Message)
         0

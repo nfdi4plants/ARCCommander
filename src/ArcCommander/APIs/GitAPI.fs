@@ -17,7 +17,7 @@ module GitAPI =
         log.Trace(sprintf "git %s" command)
         let success = Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir command
         if not success
-        then log.Warn("[ERROR]")
+        then log.Error("ERROR: Git command could not be run.")
         success
 
     /// Returns repository directory path.
@@ -48,8 +48,7 @@ module GitAPI =
             log.Trace("Downloading into current folder")
             executeGitCommand repoDir $"clone {remoteAddress}{branch} ." |> ignore
         else 
-            log.Trace($"Specified folder \"{repoDir}\" is not empty. ")
-            log.Trace("Downloading into subfolder")
+            log.Trace($"Specified folder \"{repoDir}\" is not empty. Downloading into subfolder")
             executeGitCommand repoDir $"clone {remoteAddress}{branch}" |> ignore
 
 
@@ -154,7 +153,7 @@ module GitAPI =
                 executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
         if hasRemote() then log.Trace("Start syncing with remote" )
-        else                log.Trace("Can not sync with remote as no remote repository adress was specified")
+        else                log.Error("ERROR: Can not sync with remote as no remote repository adress was specified")
 
         // pull if remote exists
         if hasRemote() then

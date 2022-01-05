@@ -66,12 +66,10 @@ module ArcAPI =
         with 
         | _ -> 
 
-            log.Warn("Git could not be set up, try installing git cli and run `arc git init`.")
+            log.Error("ERROR: Git could not be set up. Please try installing git cli and run `arc git init`.")
 
     /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =
-
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
 
         let log = Logging.createLogger "ArcUpdateLog"
         

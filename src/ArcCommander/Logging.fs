@@ -22,7 +22,7 @@ module Logging =
         // initialise base file target, can be modified
         let fileTarget = new FileTarget("file")
         // new parameters for file target
-        let fileName = new Layouts.SimpleLayout (System.IO.Path.Combine (folderPath, @"${logger}_log.txt"))
+        let fileName = new Layouts.SimpleLayout (System.IO.Path.Combine (folderPath, @"ArcCommander.log"))
         let layoutFile = new Layouts.SimpleLayout ("${longdate} ${logger} ${level:uppercase=true} ${message} ${exception}")
         fileTarget.FileName <- fileName
         fileTarget.Layout <- layoutFile
