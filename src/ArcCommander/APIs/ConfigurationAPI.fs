@@ -111,7 +111,7 @@ module ConfigurationAPI =
             | Some inidat   -> inidat
             | None          -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
         |> IniData.flatten
-        |> Seq.iter (fun (n,v) -> printfn "%s:%s" n v)
+        |> Seq.iter (fun (n,v) -> log.Debug($"{n}:{v}"))
 
     /// Set the given name-value pair for the called config.
     let set (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =

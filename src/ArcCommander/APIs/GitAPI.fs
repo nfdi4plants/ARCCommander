@@ -45,10 +45,10 @@ module GitAPI =
             | None -> ""
 
         if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
-            log.Trace("Downloading into current folder")
+            log.Trace("Downloading into current folder.")
             executeGitCommand repoDir $"clone {remoteAddress}{branch} ." |> ignore
         else 
-            log.Trace($"Specified folder \"{repoDir}\" is not empty. Downloading into subfolder")
+            log.Trace($"Specified folder \"{repoDir}\" is not empty. Downloading into subfolder.")
             executeGitCommand repoDir $"clone {remoteAddress}{branch}" |> ignore
 
 
@@ -153,7 +153,7 @@ module GitAPI =
                 executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
         if hasRemote() then log.Trace("Start syncing with remote" )
-        else                log.Error("ERROR: Can not sync with remote as no remote repository adress was specified")
+        else                log.Error("ERROR: Can not sync with remote as no remote repository adress was specified.")
 
         // pull if remote exists
         if hasRemote() then

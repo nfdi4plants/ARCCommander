@@ -219,44 +219,45 @@ let testInvestigationContacts =
     ]
     |> testSequenced
 
-[<Tests>]
-let testInvestigationShow =
+// currently not valid anymore since Expecto does not trigger NLog's console loggings. Did not find any workarounds
+//[<Tests>]
+//let testInvestigationShow =
     
-    let setupArc (arcConfiguration : ArcConfiguration) = processCommandWoArgs arcConfiguration ArcAPI.init (Map [])
+//    let setupArc (arcConfiguration : ArcConfiguration) = processCommandWoArgs arcConfiguration ArcAPI.init (Map [])
     
-    let createConfigFromDir testListName testCaseName =
-        let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
-        ArcConfiguration.GetDefault()
-        |> ArcConfiguration.ofIniData
-        |> fun c -> {c with General = (Map.ofList ["workdir", dir; "verbosity", "2"]) }
+//    let createConfigFromDir testListName testCaseName =
+//        let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
+//        ArcConfiguration.GetDefault()
+//        |> ArcConfiguration.ofIniData
+//        |> fun c -> {c with General = (Map.ofList ["workdir", dir; "verbosity", "2"]) }
 
-    testList "InvestigationShowTests" [
-        testCase "ShowsCorrectly" (fun () -> 
+//    testList "InvestigationShowTests" [
+//        testCase "ShowsCorrectly" (fun () -> 
    
-            let configuration = createConfigFromDir "InvestigationShowTests" "ShowsCorrectly"
-            setupArc configuration
+//            let configuration = createConfigFromDir "InvestigationShowTests" "ShowsCorrectly"
+//            setupArc configuration
 
-            let investigationName = "TestInvestigation"
-            let submissionDate = "FirstOctillember"
-            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName; InvestigationCreateArgs.SubmissionDate submissionDate]
-            processCommand configuration InvestigationAPI.create investigationArgs
+//            let investigationName = "TestInvestigation"
+//            let submissionDate = "FirstOctillember"
+//            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName; InvestigationCreateArgs.SubmissionDate submissionDate]
+//            processCommand configuration InvestigationAPI.create investigationArgs
 
-            let writer = new StringWriter()
-            let stdout = Console.Out // standard Console output
-            Console.SetOut(writer) // reads everything that the console prints
+//            let writer = new StringWriter()
+//            let stdout = Console.Out // standard Console output
+//            Console.SetOut(writer) // reads everything that the console prints
 
-            processCommandWoArgs configuration InvestigationAPI.show
+//            processCommandWoArgs configuration InvestigationAPI.show
 
-            let consoleOutput = writer.ToString().Replace("\013","") // get rid of stupid carriage return char
+//            let consoleOutput = writer.ToString().Replace("\013","") // get rid of stupid carriage return char
 
-            Console.SetOut(stdout) // reset Console output to stdout
+//            Console.SetOut(stdout) // reset Console output to stdout
 
-            let expectedOutput = 
-                "Start Investigation Show\nInvestigation Identifier:TestInvestigation\nInvestigation Title:\nInvestigation Description:\nInvestigation Submission Date:FirstOctillember\nInvestigation Public Release Date:\n"
+//            let expectedOutput = 
+//                "Start Investigation Show\nInvestigation Identifier:TestInvestigation\nInvestigation Title:\nInvestigation Description:\nInvestigation Submission Date:FirstOctillember\nInvestigation Public Release Date:\n"
 
-            Expect.equal consoleOutput expectedOutput "The showed output differed from the expected output"
+//            Expect.equal consoleOutput expectedOutput "The showed output differed from the expected output"
 
-        )
+//        )
 
-    ]
-    |> testSequenced
+//    ]
+//    |> testSequenced

@@ -52,7 +52,7 @@ module ArcAPI =
             IniData.setValueInIniPath path "general.gitlfsbytethreshold" gitLFSThresholdValue
         | None -> ()
 
-        log.Trace("Init git repository")
+        log.Trace("Init Git repository")
 
         try
 
@@ -66,7 +66,7 @@ module ArcAPI =
         with 
         | _ -> 
 
-            log.Error("ERROR: Git could not be set up. Please try installing git cli and run `arc git init`.")
+            log.Error("ERROR: Git could not be set up. Please try installing Git cli and run `arc git init`.")
 
     /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =
@@ -194,7 +194,8 @@ module ArcAPI =
             | Some p -> ISADotNet.Json.Investigation.toFile p output
             | None -> ()
 
-            log.Debug(ISADotNet.Json.Investigation.toString output)
+            //System.Console.Write(ISADotNet.Json.Investigation.toString output)
+            log.Debug(ISADotNet.Json.Investigation.toString output) // check if converter is fine with this...
 
     /// Returns true if called anywhere in an ARC.
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())

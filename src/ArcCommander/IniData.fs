@@ -21,7 +21,7 @@ module IniData =
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
-            log.Error(sprintf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"" name)
+            log.Error(sprintf "ERROR: Name \"%s\" could not be split into section and key, it must be of form \"section.key\"." name)
             raise (Exception(""))
 
     let splitValues (value : string) = value.Split(';')
@@ -99,7 +99,7 @@ module IniData =
             | _                         -> createDefault (); inConfigFolder
             |> Some
         with e -> 
-            log.Error($"ERROR: tryGetGlobalConfigPath failed with: {e.Message}")
+            log.Error($"ERROR: tryGetGlobalConfigPath failed with:\n {e.ToString()}")
             None
         //| _ -> failwith "ERROR: No global config file found. Initiation of default config file not possible.\nPlease add the specific config file for your OS to your config folder."
         //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
@@ -189,7 +189,7 @@ module IniData =
             |> Option.bind (tryGetValue key)
         with 
         | err -> 
-            log.Error($"ERROR: Could not retrieve value with given name\n {err.Message}")
+            log.Error($"ERROR: Could not retrieve value with given name.\n {err.ToString()}")
             None
 
     /// Returns true if the name (section+key) is set in the iniData
@@ -211,7 +211,7 @@ module IniData =
             iniData.[section].[key] <- value
             Some iniData
         else
-            log.Error($"Name {name} does not exist in the config")
+            log.Error($"ERROR: Name {name} does not exist in the config.")
             None
 
     /// If the name is already set in the config, assigns a new value to it
@@ -232,7 +232,7 @@ module IniData =
             iniData.[section].RemoveKey key |> ignore
             Some iniData
         else
-            log.Error($"Name {name} does not exist in the config")
+            log.Error($"ERROR: Name {name} does not exist in the config.")
             None
 
     /// If the name is set in the config, remove it
@@ -249,7 +249,7 @@ module IniData =
     let tryAddValue (name : string) (value : string) (iniData : IniData) =
         let log = Logging.createLogger "IniDataTryAddValueLog"
         if nameExists (name : string) (iniData : IniData) then
-            log.Error($"Name {name} already exists in the config")
+            log.Error($"ERROR: Name {name} already exists in the config.")
             Some iniData
         else
             let section,key = splitName name 

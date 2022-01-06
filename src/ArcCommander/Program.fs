@@ -35,7 +35,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
         else 
             Prompt.deannotateArguments annotatedArguments
 
-    log.Info("Start processing command with the arguments")
+    log.Info("Start processing command with the arguments.")
     arguments |> Map.iter (fun k t -> log.Info($"\t{k}:{t}"))
     Console.WriteLine()
 
@@ -53,7 +53,7 @@ let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
     let log = Logging.createLogger "ProcessCommandWithoutArgsLog"
 
-    log.Info("Start processing parameterless command")
+    log.Info("Start processing parameterless command.")
 
     log.Trace("with the config")
     arcConfiguration
@@ -244,10 +244,27 @@ let main argv =
 
         handleCommand arcConfiguration (results.GetSubCommand())
 
-        1
-    with e ->
-        let currDir = Directory.GetCurrentDirectory()
-        Logging.generateConfig currDir 0
-        let log = Logging.createLogger "ArcCommanderMainLog"
-        log.Error(e, e.Message)
         0
+
+    with e ->
+        
+        let currDir = Directory.GetCurrentDirectory()
+        let arcFolder = Path.Combine(currDir, ".arc")
+        if Directory.Exists(arcFolder) then 
+            Logging.generateConfig arcFolder 0 
+        else Logging.generateConfig currDir 0
+
+        let log = Logging.createLogger "ArcCommanderMainLog"
+        match e.Message.Contains("USAGE"), e.Message.Contains("ERROR") with
+        | true,true ->
+            let eMsg, uMsg = 
+                e.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
+                |> fun arr ->
+                    arr |> Array.find (fun t -> t.Contains("ERROR")),
+                    arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
+            log.Error(eMsg)
+            printfn "%s" uMsg
+        | true,false -> printfn "%s" e.Message
+        | _ -> log.Error(e.Message)
+
+        1

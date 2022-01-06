@@ -230,14 +230,14 @@ module ArgumentProcessing =
             writeForce filePath yamlString
             try
                 runProcess editorPath filePath
-                let p = read filePath |> deserializeF           
+                let p = read filePath |> deserializeF
                 delete filePath
                 p
 
             with
             | err -> 
                 delete filePath
-                log.Error(err, "ERROR: Could not parse query: {err.Message}")
+                log.Error(err, $"ERROR: Could not parse query:\n {err.ToString()}")
                 raise (Exception(""))
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
@@ -250,7 +250,7 @@ module ArgumentProcessing =
         let createMissingArgumentQuery editorPath (arguments : (string * AnnotatedArgument) []) = 
             let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
             let queryResults = createArgumentQuery editorPath arguments
-            let stillMissingMandatoryArgs =  
+            let stillMissingMandatoryArgs =
                 mandatoryArgs
                 |> Array.map (fun k -> 
                     let field = tryGetFieldValueByName k queryResults
@@ -320,7 +320,7 @@ module ArgumentProcessing =
                 |> Seq.reduce (fun a b -> a + "\n" + b)
             let deserializeF (s:string) =
                 s.Split '\n'
-                |> Array.map (fun x ->      
+                |> Array.map (fun x ->
                     match splitAtFirst '=' x with
                     | k, Field v -> k,v
                     | _ -> log.Error("ERROR: File was corrupted in Editor."); raise (Exception(""))
