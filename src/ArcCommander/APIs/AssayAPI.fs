@@ -67,7 +67,7 @@ module AssayAPI =
                 []
 
         if AssayFolder.exists arcConfiguration name then
-            log.Error($"ERROR: Assay folder with identifier {name} already exists")
+            log.Error($"ERROR: Assay folder with identifier {name} already exists.")
         else
             AssayConfiguration.getSubFolderPaths name arcConfiguration
             |> Array.iter (Directory.CreateDirectory >> ignore)
