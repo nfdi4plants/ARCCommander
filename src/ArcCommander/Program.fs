@@ -10,6 +10,7 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
 
+
 let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =
 
     let log = Logging.createLogger "ProcessCommandLog"
@@ -207,6 +208,21 @@ let handleCommand arcConfiguration command =
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
+/// If an .arc folder exists, moves a logfile from root into it and merges it with the logfile there, if present.
+let mergeLogFiles workingDir arcFolder =
+    let wdLogPath = Path.Combine(workingDir, "ArcCommander.log")
+    let afLogPath = Path.Combine(arcFolder, "ArcCommander.log")
+    match File.Exists(wdLogPath), File.Exists(afLogPath) with
+    | true,true -> // merges logfile from root with logfile from .arc folder, deletes root logfile and keeps .arc folder logfile
+        let wdLog = File.ReadAllText(wdLogPath)
+        let afLog = File.ReadAllText(afLogPath)
+        String.concat Environment.NewLine [afLog; wdLog]
+        |> fun s -> File.WriteAllText(afLogPath, s)
+        File.Delete(wdLogPath)
+    | true,false -> File.Move(wdLogPath, afLogPath) // takes logfile from root and moves it to .arc folder
+    | _ -> ()
+
+
 [<EntryPoint>]
 let main argv =
 
@@ -225,8 +241,8 @@ let main argv =
 
         let arcConfiguration =
             [
-                "general.workdir",Some workingDir
-                "general.verbosity",verbosity
+                "general.workdir", Some workingDir
+                "general.verbosity", verbosity
             ]
             |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
@@ -241,6 +257,8 @@ let main argv =
         //Configuration.loadConfiguration workingDir
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
+
+        mergeLogFiles workingDir arcFolder
 
         handleCommand arcConfiguration (results.GetSubCommand())
 
