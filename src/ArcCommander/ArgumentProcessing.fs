@@ -39,7 +39,7 @@ module ArgumentProcessing =
         let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
         match Map.tryFind k arguments with
         | Some (Field _ )   -> 
-            log.Error($"ERROR: Argument {k} is not a flag, but a field.")
+            log.Fatal($"ERROR: Argument {k} is not a flag, but a field.")
             raise (Exception(""))
         | Some (Flag)       -> true
         | None              -> false
@@ -58,7 +58,7 @@ module ArgumentProcessing =
         match Map.find k arguments with
         | Field v -> v
         | Flag -> 
-            log.Error($"ERROR: Argument {k} is not a field, but a flag.")
+            log.Fatal($"ERROR: Argument {k} is not a field, but a flag.")
             raise (Exception(""))
 
     /// For a given discriminated union value, returns the field name and the value.
@@ -112,7 +112,7 @@ module ArgumentProcessing =
                     | None -> None, false
                 unionCase.Name, createAnnotatedArgument value toolTip isMandatory isFlag
             | _ ->
-                log.Error($"ERROR: Cannot parse argument {unionCase.Name} because its parsing rules were not yet implemented.")
+                log.Fatal($"ERROR: Cannot parse argument {unionCase.Name} because its parsing rules were not yet implemented.")
                 raise (Exception(""))
         )
 
@@ -237,7 +237,7 @@ module ArgumentProcessing =
             with
             | err -> 
                 delete filePath
-                log.Error(err, $"ERROR: Could not parse query:\n {err.ToString()}")
+                log.Fatal($"ERROR: Could not parse query:\n {err.ToString()}")
                 raise (Exception(""))
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
@@ -305,7 +305,7 @@ module ArgumentProcessing =
                                 match splitAtFirst ':' x with
                                 | k, Field v ->
                                     ISADotNet.XLSX.SparseRow.fromValues [k;v]
-                                | _ -> log.Error("ERROR: File was corrupted in Editor."); raise (Exception(""))
+                                | _ -> log.Fatal("ERROR: File was corrupted in Editor."); raise (Exception(""))
                             )
                 )
                 |> fun rs -> readF (rs.GetEnumerator()) 
@@ -323,7 +323,7 @@ module ArgumentProcessing =
                 |> Array.map (fun x ->
                     match splitAtFirst '=' x with
                     | k, Field v -> k,v
-                    | _ -> log.Error("ERROR: File was corrupted in Editor."); raise (Exception(""))
+                    | _ -> log.Fatal("ERROR: File was corrupted in Editor."); raise (Exception(""))
                 )
                 |> IniData.fromNameValuePairs
             createQuery editorPath serializeF deserializeF iniData

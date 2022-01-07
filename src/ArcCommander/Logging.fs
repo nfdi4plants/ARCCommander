@@ -56,9 +56,9 @@ module Logging =
         config.AddRuleForOneLevel(LogLevel.Debug, fileTarget)
         config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget) // warnings shall be used for non-critical events
         config.AddRuleForOneLevel(LogLevel.Warn, fileTarget)
-        config.AddRuleForOneLevel(LogLevel.Error, consoleTarget) // errors shall be used for critical events that only cause exceptions for the ArcCommander
+        config.AddRuleForOneLevel(LogLevel.Error, consoleTarget) // errors shall be used for critical events that lead to an abort of the desired task but still led the ArcCommander terminate successfully
         config.AddRuleForOneLevel(LogLevel.Error, fileTarget)
-        config.AddRuleForOneLevel(LogLevel.Fatal, consoleTarget) // fatal errors shall be used for critical events that cause ArcCommander exceptions as well as
+        config.AddRuleForOneLevel(LogLevel.Fatal, consoleTarget) // fatal errors shall be used for critical events that cause ArcCommander exceptions leading to an unsuccessful termination
         config.AddRuleForOneLevel(LogLevel.Fatal, fileTarget) // impairing the ARC structure
    
         // activate config for logger

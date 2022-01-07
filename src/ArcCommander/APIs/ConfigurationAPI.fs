@@ -1,6 +1,5 @@
 ﻿namespace ArcCommander.APIs
 
-open System
 open ArcCommander
 open ArgumentProcessing
 

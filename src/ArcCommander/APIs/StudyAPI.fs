@@ -1,7 +1,5 @@
 ﻿namespace ArcCommander.APIs
 
-open System
-
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 
@@ -37,7 +35,7 @@ module StudyAPI =
             StudyFile.create arcConfiguration identifier
 
     /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
-    let update (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = // NotImplementedException()
+    let update (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
     
         let log = Logging.createLogger "StudyUpdateLog"
         

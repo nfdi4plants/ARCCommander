@@ -1,9 +1,7 @@
 namespace ArcCommander.APIs
 
-open System
 open ArcCommander
 open ArgumentProcessing
-open Fake.Tools.Git
 open Fake.IO
 open System.IO
 

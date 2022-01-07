@@ -26,7 +26,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                log.Error("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
+                log.Fatal("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
                 raise (Exception(""))
             arguments
 
@@ -221,8 +221,6 @@ let main argv =
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let arcFolder = System.IO.Path.Combine(workingDir, ".arc")
-
         let verbosity = results.TryGetResult(Verbosity) |> Option.map string
 
         let arcConfiguration =
@@ -230,10 +228,11 @@ let main argv =
                 "general.workdir", Some workingDir
                 "general.verbosity", verbosity
             ]
-            |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
+            |> List.choose (function | k, Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
 
+        let arcFolder = Path.Combine(arcConfiguration.General.Item "workdir", arcConfiguration.General.Item "rootfolder")
         Directory.CreateDirectory(arcFolder) |> ignore
         Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
 

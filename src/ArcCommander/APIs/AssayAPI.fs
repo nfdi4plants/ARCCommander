@@ -9,11 +9,8 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 open ISADotNet.XLSX.AssayFile
-open ISADotNet.XLSX.AssayFile.MetaData
 
 open FSharpSpreadsheetML
-open DocumentFormat.OpenXml.Packaging
-open DocumentFormat.OpenXml.Spreadsheet
 
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
 module AssayAPI =
@@ -585,7 +582,7 @@ module AssayAPI =
             | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
             | None, Some a -> a
             | Some ai, None -> ai
-            | None, None -> log.Error("ERROR: No assay could be retrieved."); raise (Exception(""))
+            | None, None -> log.Fatal("ERROR: No assay could be retrieved."); raise (Exception(""))
           
           
         if containsFlag "ProcessSequence" assayArgs then
@@ -681,7 +678,7 @@ module AssayAPI =
                     | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
                     | None, Some a -> a
                     | Some ai, None -> ai
-                    | None, None -> log.Error("ERROR: No assay could be retrieved."); raise (Exception(""))
+                    | None, None -> log.Fatal("ERROR: No assay could be retrieved."); raise (Exception(""))
             
                 Study.create(Contacts = persons, Assays = [mergedAssay])
             )

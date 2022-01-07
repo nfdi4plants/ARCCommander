@@ -21,7 +21,7 @@ module IniData =
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
-            log.Error(sprintf "ERROR: Name \"%s\" could not be split into section and key, it must be of form \"section.key\"." name)
+            log.Fatal(sprintf "ERROR: Name \"%s\" could not be split into section and key, it must be of form \"section.key\"." name)
             raise (Exception(""))
 
     let splitValues (value : string) = value.Split(';')
@@ -36,7 +36,7 @@ module IniData =
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX)             -> Unix
         | _                                                             -> 
-            log.Error($"ERROR: OS not supported. Only Windows, MacOS and Linux are supported.")
+            log.Fatal($"ERROR: OS not supported. Only Windows, MacOS and Linux are supported.")
             raise (Exception(""))
 
     /// Creates a default config file in the user's config folder (AppData\Local in Windows, ~/config in Unix).
