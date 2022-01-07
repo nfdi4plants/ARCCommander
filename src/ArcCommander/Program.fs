@@ -208,20 +208,6 @@ let handleCommand arcConfiguration command =
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
-/// If an .arc folder exists, moves a logfile from root into it and merges it with the logfile there, if present.
-let mergeLogFiles workingDir arcFolder =
-    let wdLogPath = Path.Combine(workingDir, "ArcCommander.log")
-    let afLogPath = Path.Combine(arcFolder, "ArcCommander.log")
-    match File.Exists(wdLogPath), File.Exists(afLogPath) with
-    | true,true -> // merges logfile from root with logfile from .arc folder, deletes root logfile and keeps .arc folder logfile
-        let wdLog = File.ReadAllText(wdLogPath)
-        let afLog = File.ReadAllText(afLogPath)
-        String.concat Environment.NewLine [afLog; wdLog]
-        |> fun s -> File.WriteAllText(afLogPath, s)
-        File.Delete(wdLogPath)
-    | true,false -> File.Move(wdLogPath, afLogPath) // takes logfile from root and moves it to .arc folder
-    | _ -> ()
-
 
 [<EntryPoint>]
 let main argv =
@@ -248,17 +234,14 @@ let main argv =
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
 
-        if Directory.Exists(arcFolder) then 
-            Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
-        else Logging.generateConfig workingDir (GeneralConfiguration.getVerbosity arcConfiguration)
+        Directory.CreateDirectory(arcFolder) |> ignore
+        Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"
         //Configuration.loadConfiguration workingDir
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
-
-        mergeLogFiles workingDir arcFolder
 
         handleCommand arcConfiguration (results.GetSubCommand())
 
@@ -268,9 +251,8 @@ let main argv =
         
         let currDir = Directory.GetCurrentDirectory()
         let arcFolder = Path.Combine(currDir, ".arc")
-        if Directory.Exists(arcFolder) then 
-            Logging.generateConfig arcFolder 0 
-        else Logging.generateConfig currDir 0
+        Directory.CreateDirectory(arcFolder) |> ignore
+        Logging.generateConfig arcFolder 0 
 
         let log = Logging.createLogger "ArcCommanderMainLog"
         match e.Message.Contains("USAGE"), e.Message.Contains("ERROR") with
