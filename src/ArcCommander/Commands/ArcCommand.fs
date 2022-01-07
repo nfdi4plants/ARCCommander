@@ -12,6 +12,7 @@ type ArcCommand =
     | [<CliPrefix(CliPrefix.None)>] Sync    of sync_args    : ParseResults<ArcSyncArgs>
     | [<CliPrefix(CliPrefix.None)>] Get     of get_args     : ParseResults<ArcGetArgs>
     | [<CliPrefix(CliPrefix.None)>][<SubCommand()>] Update
+    | [<CliPrefix(CliPrefix.None)>][<SubCommand()>] Delete
          
     | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation        of verb_and_args : ParseResults<InvestigationCommand>
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study                of verb_and_args : ParseResults<StudyCommand>
@@ -25,6 +26,7 @@ type ArcCommand =
             | Verbosity     _   -> "Set the amount of additional printed information: 0 -> No information, 1 (Default) -> Basic Information, 2 -> Additional information"
             | Init          _   -> "Initialize basic folder structure"
             | Update        _   -> "Update items in the arc against each other"
+            | Delete        _   -> "Deletes the whole ARC with all related files and folders (DANGER ZONE!)"
             | Export        _   -> "Exports the full arc to a json object"
             | Sync          _   -> "Syncronize the ARC with its upstream repository. Commits changes made in the ARC. If a remote is set or is given, also pulls from there and pushes all previously made commits."
             | Get           _   -> "Download an ARC from a remote repository (e.g. from gitlab)"

@@ -197,5 +197,37 @@ module ArcAPI =
             //System.Console.Write(ISADotNet.Json.Investigation.toString output)
             log.Debug(ISADotNet.Json.Investigation.toString output) // check if converter is fine with this...
 
+    /// Deletes every ARC-related file and folder that can be found from arcConfigguration.
+    let delete (arcConfiguration : ArcConfiguration) =
+
+        let log = Logging.createLogger "ArcDeleteLog"
+
+        log.Warn("WARNING: Deleting the ARC results in permanent loss of all files and folders related to this ARC. They can only be recovered if you have a copy elsewhere or already committed the ARC to a repository. Do you want to proceed? (y/n)")
+
+        let rec matchInput input =
+            match input with
+            | "y" ->
+                log.Info("Start Arc Delete")
+        
+                let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+               
+                let investigation = Investigation.fromFile investigationFilePath
+        
+                let identifier = getFieldValueByName "Identifier" investigationArgs
+                
+                if Some identifier = investigation.Identifier then
+                    System.IO.File.Delete investigationFilePath
+
+            | "n" -> log.Trace("Arc Delete aborted")
+
+            | _ -> 
+                log.Debug("Inproper input given. Choose between \"y\" (yes) and \"n\" (no).")
+                let newInput = Console.ReadLine()
+                matchInput newInput
+
+        let input = Console.ReadLine()
+
+        matchInput input
+
     /// Returns true if called anywhere in an ARC.
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())
