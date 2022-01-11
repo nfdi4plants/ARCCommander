@@ -23,7 +23,7 @@ module Logging =
         let fileTarget = new FileTarget("file")
         // new parameters for file target
         let fileName = new Layouts.SimpleLayout (System.IO.Path.Combine (folderPath, @"ArcCommander.log"))
-        let layoutFile = new Layouts.SimpleLayout ("${longdate} ${logger} ${level:uppercase=true} ${message} ${exception}")
+        let layoutFile = new Layouts.SimpleLayout ("${longdate} ${logger} ${level:uppercase=true}: ${message} ${exception}")
         fileTarget.FileName <- fileName
         fileTarget.Layout <- layoutFile
 
@@ -54,7 +54,7 @@ module Logging =
         config.AddRuleForOneLevel(LogLevel.Trace, fileTarget) // trace results shall be written to log file, regardless of verbosity
         config.AddRuleForOneLevel(LogLevel.Debug, consoleTarget) // shall be used for results that shall always be printed, regardless of verbosity
         config.AddRuleForOneLevel(LogLevel.Debug, fileTarget)
-        config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget) // warnings shall be used for non-critical events
+        if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget) // warnings shall be used for non-critical events if verbosity is above 0
         config.AddRuleForOneLevel(LogLevel.Warn, fileTarget)
         config.AddRuleForOneLevel(LogLevel.Error, consoleTarget) // errors shall be used for critical events that lead to an abort of the desired task but still led the ArcCommander terminate successfully
         config.AddRuleForOneLevel(LogLevel.Error, fileTarget)
