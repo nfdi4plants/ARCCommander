@@ -9,11 +9,11 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 
-/// ArcCommander API functions that get executed by top level subcommand verbs
+/// ArcCommander API functions that get executed by top level subcommand verbs.
 module ArcAPI = 
 
     // TODO TO-DO TO DO: make use of args
-    /// Initializes the arc specific folder structure
+    /// Initializes the arc specific folder structure.
     let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
         let log = Logging.createLogger "ArcInitLog"
@@ -88,7 +88,9 @@ module ArcAPI =
             with
             | :? FileNotFoundException -> 
                 Investigation.empty
-            | err -> raise err
+            | err -> 
+                log.Fatal($"ERROR: {err.ToString()}")
+                raise (Exception(""))
 
         let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
             match assayNames with
@@ -140,7 +142,9 @@ module ArcAPI =
             with
             | :? FileNotFoundException -> 
                 Investigation.empty
-            | err -> raise err
+            | err -> 
+                log.Fatal($"ERROR: {err.Message}")
+                raise (Exception(""))
     
         let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
             match assayNames with
@@ -195,7 +199,7 @@ module ArcAPI =
             | None -> ()
 
             //System.Console.Write(ISADotNet.Json.Investigation.toString output)
-            log.Debug(ISADotNet.Json.Investigation.toString output) // check if converter is fine with this...
+            log.Debug(ISADotNet.Json.Investigation.toString output)
 
     /// Returns true if called anywhere in an ARC.
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())
