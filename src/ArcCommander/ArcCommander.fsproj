@@ -24,6 +24,7 @@
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="Logging.fs" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
@@ -59,5 +60,6 @@
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     <PackageReference Include="ISADotNet" Version="0.4.0-preview.4" />
     <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.4" />
+    <PackageReference Include="NLog" Version="4.7.13" />
   </ItemGroup>
 </Project>

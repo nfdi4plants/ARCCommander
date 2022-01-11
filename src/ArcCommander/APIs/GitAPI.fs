@@ -1,33 +1,36 @@
 namespace ArcCommander.APIs
 
-open System
 open ArcCommander
 open ArgumentProcessing
-open Fake.Tools.Git
 open Fake.IO
 open System.IO
 
 module GitAPI =
 
-    let executeGitCommand (verbosity : int) (repoDir:string) (command:string) =
-        if verbosity >= 2 then printfn "git %s" command
+    /// Executes Git command.
+    let executeGitCommand (repoDir : string) (command : string) =
+        
+        let log = Logging.createLogger "ExecuteGitCommandLog"
+
+        log.Trace(sprintf "git %s" command)
         let success = Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir command
         if not success
-        then printfn "[ERROR]"
+        then log.Error("ERROR: Git command could not be run.")
         success
 
-    let getRepoDir (arcConfiguration:ArcConfiguration) =
+    /// Returns repository directory path.
+    let getRepoDir (arcConfiguration : ArcConfiguration) =
         let workdir = GeneralConfiguration.getWorkDirectory arcConfiguration
         let gitDir = Fake.Tools.Git.CommandHelper.findGitDir(workdir).FullName
 
         Fake.IO.Path.getDirectory(gitDir)
 
-    /// Clones git repository arc
+    /// Clones Git repository ARC.
     let get (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "GitGetLog"
         
-        if verbosity >= 1 then printfn "Start Arc get"
+        log.Info("Start Arc Get")
 
         // get repository directory
         let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -40,25 +43,24 @@ module GitAPI =
             | None -> ""
 
         if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
-            if verbosity >= 2 then printfn "Downloading into current folder"
-            executeGitCommand verbosity repoDir $"clone {remoteAddress}{branch} ." |> ignore
+            log.Trace("Downloading into current folder.")
+            executeGitCommand repoDir $"clone {remoteAddress}{branch} ." |> ignore
         else 
-            if verbosity >= 2 then printfn "Specified folder \"%s\" is not empty. " repoDir
-            if verbosity >= 2 then printfn "Downloading into subfolder"
-            executeGitCommand verbosity repoDir $"clone {remoteAddress}{branch}" |> ignore
+            log.Trace($"Specified folder \"{repoDir}\" is not empty. Downloading into subfolder.")
+            executeGitCommand repoDir $"clone {remoteAddress}{branch}" |> ignore
 
 
-    /// sync with remote. Commit changes, then pull remote and push to remote
+    /// Syncs with remote. Commit changes, then pull remote and push to remote.
     let sync (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "GitSyncLog"
         
-        if verbosity >= 1 then printfn "Start Arc sync"
+        log.Info("Start Arc Sync")
 
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)
 
-        if verbosity >= 2 then printfn "Delete .gitattributes"
+        log.Trace("Delete .gitattributes")
 
         File.Delete(Path.Combine(repoDir,".gitattributes"))
 
@@ -80,30 +82,30 @@ module GitAPI =
 
         let allFilesPlusSizes = allFiles |> List.map( fun x -> x, System.IO.FileInfo(x).Length )
 
-        let trackWithAdd (file:string) =
+        let trackWithAdd (file : string) =
 
-            executeGitCommand verbosity repoDir $"add \"{file}\"" |> ignore
+            executeGitCommand repoDir $"add \"{file}\"" |> ignore
 
-        let trackWithLFS (file:string) =
+        let trackWithLFS (file : string) =
 
-            let lfsPath = file.Replace(repoDir,"").Replace("\\","/")
+            let lfsPath = file.Replace(repoDir, "").Replace("\\","/")
 
-            executeGitCommand verbosity repoDir $"lfs track \"{lfsPath}\"" |> ignore
+            executeGitCommand repoDir $"lfs track \"{lfsPath}\"" |> ignore
 
             trackWithAdd file
-            trackWithAdd (System.IO.Path.Combine(repoDir,".gitattributes"))
+            trackWithAdd (System.IO.Path.Combine(repoDir, ".gitattributes"))
 
         
         let gitLfsRules = GeneralConfiguration.getGitLfsRules arcConfiguration
 
         gitLfsRules
         |> Array.iter (fun rule ->
-            executeGitCommand verbosity repoDir $"lfs track \"{rule}\"" |> ignore
+            executeGitCommand repoDir $"lfs track \"{rule}\"" |> ignore
         )
 
         let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
 
-        if verbosity >= 2 then printfn "Start tracking files" 
+        log.Trace("Start tracking files")
 
         allFilesPlusSizes 
         |> List.iter (fun (file,size) ->
@@ -115,7 +117,7 @@ module GitAPI =
         )
 
 
-        executeGitCommand verbosity repoDir ("add -u") |> ignore
+        executeGitCommand repoDir ("add -u") |> ignore
         printfn "-----------------------------"
 
         // commit all changes
@@ -127,41 +129,38 @@ module GitAPI =
         // print git status if verbose
         // executeGitCommand repoDir ("status") |> ignore
 
-        if verbosity >= 2 then 
-            printfn "Commit tracked files" 
-            printfn "git commit -m '%s'" commitMessage
+        log.Trace("Commit tracked files" )
+        log.Trace($"git commit -m '{commitMessage}'")
 
         Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
         let branch = tryGetFieldValueByName "BranchName" gitArgs |> Option.defaultValue "main"
 
-        executeGitCommand verbosity repoDir $"branch -M {branch}" |> ignore
+        executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
         // detect existing remote
         let hasRemote () =
-            let ok,msg,error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
-            msg.Length>0
+            let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
+            msg.Length > 0
 
         // add remote if specified
         match tryGetFieldValueByName "RepositoryAdress" gitArgs with
             | None -> ()
             | Some remote ->
-                if hasRemote() then executeGitCommand verbosity repoDir ("remote remove origin") |> ignore
+                if hasRemote () then executeGitCommand repoDir ("remote remove origin") |> ignore
+                executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
-                executeGitCommand verbosity repoDir ("remote add origin " + remote) |> ignore
-
-        if verbosity >= 2 then
-            if hasRemote() then printfn "Start syncing with remote" 
-            else                printfn "Can not sync with remote as no remote repository adress was specified"
+        if hasRemote() then log.Trace("Start syncing with remote" )
+        else                log.Error("ERROR: Can not sync with remote as no remote repository adress was specified.")
 
         // pull if remote exists
         if hasRemote() then
-            if verbosity >= 2 then printfn "Pull" 
-            executeGitCommand verbosity repoDir ("fetch origin") |> ignore
-            executeGitCommand verbosity repoDir ($"pull --rebase origin {branch}") |> ignore
+            log.Trace("Pull")
+            executeGitCommand repoDir ("fetch origin") |> ignore
+            executeGitCommand repoDir ($"pull --rebase origin {branch}") |> ignore
 
         // push if remote exists
-        if hasRemote() then
-            if verbosity >= 2 then printfn "Push"            
-            executeGitCommand verbosity repoDir ($"push -u origin {branch}") |> ignore
+        if hasRemote () then
+            log.Trace("Push")
+            executeGitCommand repoDir ($"push -u origin {branch}") |> ignore
 

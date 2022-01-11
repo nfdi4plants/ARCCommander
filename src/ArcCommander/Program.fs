@@ -1,6 +1,8 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
+open System
+open System.IO
 open Argu
 
 open ArcCommander
@@ -8,12 +10,13 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
 
-let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
+
+let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =
+
+    let log = Logging.createLogger "ProcessCommandLog"
 
     let editor = GeneralConfiguration.getEditor arcConfiguration
-    let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
     let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
-
 
     let annotatedArguments = groupArguments (r.GetAllResults())
 
@@ -23,7 +26,8 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                failwith "ERROR: Mandatory arguments were not given either via cli or editor prompt."
+                log.Fatal("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
+                raise (Exception(""))
             arguments
 
         elif forceEditor then
@@ -32,43 +36,31 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResult
         else 
             Prompt.deannotateArguments annotatedArguments
 
-    if verbosity >= 1 then
+    arguments |> Map.fold (fun acc k t -> acc + $"\t{k}:{t}\n") "Start processing command with the arguments:\n" |> log.Info
 
-        printfn "Start processing command with the arguments"
-        arguments |> Map.iter (printfn "\t%s:%O")
-        printfn "" 
-
-    if verbosity >= 2 then
-
-        printfn "and the config:"
-        arcConfiguration
-        |> ArcConfiguration.flatten
-        |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
-        printfn "" 
+    arcConfiguration
+    |> ArcConfiguration.flatten
+    |> Seq.fold (fun acc (a,b) -> acc + $"\t{a}:{b}\n") "and the config:\n" |> log.Trace
 
     try commandF arcConfiguration arguments
     finally
-        if verbosity >= 1 then printfn "Done processing command."
+        log.Info("Done processing command.")
 
-let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
+let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
-    let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+    let log = Logging.createLogger "ProcessCommandWithoutArgsLog"
 
-    if verbosity >= 1 then
+    log.Info("Start processing parameterless command.")
 
-        printf "Start processing parameterless command"
-
-    if verbosity >= 2 then
-        printfn "with the config"
-        arcConfiguration
-        |> ArcConfiguration.flatten
-        |> Seq.iter (fun (a,b) -> printfn "\t%s:%s" a b)
-
-    else printfn ""
+    log.Trace("with the config")
+    arcConfiguration
+    |> ArcConfiguration.flatten
+    |> Seq.iter (fun (a,b) -> log.Trace($"\t{a}:{b}"))
+    Console.WriteLine()
 
     try commandF arcConfiguration
     finally
-        if verbosity >= 1 then printfn "Done processing command."
+        log.Info("Done processing command.")
 
 let handleStudyContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
@@ -212,8 +204,10 @@ let handleCommand arcConfiguration command =
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
+
 [<EntryPoint>]
 let main argv =
+
     try
         let parser = ArgumentParser.Create<ArcCommand>()
         let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
@@ -225,15 +219,18 @@ let main argv =
 
         let verbosity = results.TryGetResult(Verbosity) |> Option.map string
 
-
         let arcConfiguration =
             [
-                "general.workdir",Some workingDir
-                "general.verbosity",verbosity
+                "general.workdir", Some workingDir
+                "general.verbosity", verbosity
             ]
-            |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
+            |> List.choose (function | k, Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
+
+        let arcFolder = Path.Combine(arcConfiguration.General.Item "workdir", arcConfiguration.General.Item "rootfolder")
+        Directory.CreateDirectory(arcFolder) |> ignore
+        Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"
@@ -241,10 +238,28 @@ let main argv =
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
-
         handleCommand arcConfiguration (results.GetSubCommand())
 
-        1
-    with e ->
-        printfn "%s" e.Message
         0
+
+    with e ->
+        
+        let currDir = Directory.GetCurrentDirectory()
+        let arcFolder = Path.Combine(currDir, ".arc")
+        Directory.CreateDirectory(arcFolder) |> ignore
+        Logging.generateConfig arcFolder 0 
+
+        let log = Logging.createLogger "ArcCommanderMainLog"
+        match e.Message.Contains("USAGE"), e.Message.Contains("ERROR") with
+        | true,true ->
+            let eMsg, uMsg = 
+                e.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
+                |> fun arr ->
+                    arr |> Array.find (fun t -> t.Contains("ERROR")),
+                    arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
+            log.Error(eMsg)
+            printfn "%s" uMsg
+        | true,false -> printfn "%s" e.Message
+        | _ -> log.Error(e.Message)
+
+        1

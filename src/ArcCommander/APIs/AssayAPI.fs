@@ -1,5 +1,6 @@
 ﻿namespace ArcCommander.APIs
 
+open System
 open System.IO
 
 open ArcCommander
@@ -8,38 +9,39 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 open ISADotNet.XLSX.AssayFile
-open ISADotNet.XLSX.AssayFile.MetaData
 
 open FSharpSpreadsheetML
-open DocumentFormat.OpenXml.Packaging
-open DocumentFormat.OpenXml.Spreadsheet
 
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
-module AssayAPI =        
+module AssayAPI =
 
-
+    /// API for working with assay folders.
     module AssayFolder =
         
+        /// Checks if an assay folder exists in the ARC.
         let exists (arcConfiguration : ArcConfiguration) (identifier : string) =
             AssayConfiguration.getFolderPath identifier arcConfiguration
             |> System.IO.Directory.Exists
 
+    /// API for working with assay files.
     module AssayFile =
         
+        /// Checks if an assay file exists in the ARC.
         let exists (arcConfiguration : ArcConfiguration) (identifier : string) =
             IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
             |> System.IO.File.Exists
         
+        /// Creates an assay file from the given assay in the ARC.
         let create (arcConfiguration : ArcConfiguration) (assay) (identifier : string) =
             IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
             |> ISADotNet.XLSX.AssayFile.Assay.init "Investigation" (Some assay) None identifier
 
-    /// Initializes a new empty assay file and associated folder structure in the arc.
+    /// Initializes a new empty assay file and associated folder structure in the ARC.
     let init (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayInitLog"
         
-        if verbosity >= 1 then printfn "Start Assay Init"
+        log.Info("Start Assay Init")
 
         let name = getFieldValueByName "AssayIdentifier" assayArgs
 
@@ -62,7 +64,7 @@ module AssayAPI =
                 []
 
         if AssayFolder.exists arcConfiguration name then
-            if verbosity >= 1 then printfn "Assay folder with identifier %s already exists" name
+            log.Error($"ERROR: Assay folder with identifier {name} already exists.")
         else
             AssayConfiguration.getSubFolderPaths name arcConfiguration
             |> Array.iter (Directory.CreateDirectory >> ignore)
@@ -76,9 +78,9 @@ module AssayAPI =
     /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
         
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayUpdateLog"
 
-        if verbosity >= 1 then printfn "Start Assay Update"
+        log.Info("Start Assay Update")
 
         let updateOption = if containsFlag "ReplaceWithEmptyValues" assayArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -104,7 +106,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                log.Trace("No Study Identifier given, use assayIdentifier instead.")
                 s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -133,41 +135,45 @@ module AssayAPI =
                         API.Assay.updateByFileName updateOption assay assays
                         |> API.Study.setAssays study
                     else
-                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
-                        if containsFlag "AddIfMissing" assayArgs then
-                            if verbosity >= 1 then printfn "Registering assay as AddIfMissing Flag was set" 
+                        let msg = $"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}."
+                        if containsFlag "AddIfMissing" assayArgs then 
+                            log.Warn($"WARNING: {msg}")
+                            log.Info("Registering assay as AddIfMissing Flag was set.")
                             API.Assay.add assays assay
                             |> API.Study.setAssays study
                         else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register assay with the update command if it is missing" 
+                            log.Error($"ERROR: {msg}")
+                            log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
                             study
                 | None -> 
-                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    let msg = $"The study with the identifier {studyIdentifier} does not contain any assays."
                     if containsFlag "AddIfMissing" assayArgs then
-                        if verbosity >= 1 then printfn "Registering assay as AddIfMissing Flag was set" 
+                        log.Warn($"WARNING: {msg}")
+                        log.Info("Registering assay as AddIfMissing Flag was set.")
                         [assay]
                         |> API.Study.setAssays study
                     else 
-                        if verbosity >= 2 then printfn "AddIfMissing argument can be used to register assay with the update command if it is missing" 
+                        log.Error($"ERROR: {msg}")
+                        log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
                         study
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                 |> API.Investigation.setStudies investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier              
+                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error("ERROR: The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
     /// Opens an existing assay file in the ARC with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
     let edit (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
         
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayEditLog"
 
-        if verbosity >= 1 then printfn "Start Assay Edit"
+        log.Info("Start Assay Edit")
 
-        let editor  = GeneralConfiguration.getEditor arcConfiguration
+        let editor = GeneralConfiguration.getEditor arcConfiguration
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         
@@ -179,7 +185,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                log.Trace("No Study Identifier given, use assayIdentifier instead.")
                 s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -218,7 +224,7 @@ module AssayAPI =
                         | Some oldAssayInvestigationFile -> 
                             // check if assay metadata from assay file and investigation file differ
                             if compareAssayMetadata oldAssayInvestigationFile oldAssayAssayFile |> not then 
-                                printfn "WARNING: The assay metadata in the investigation file differs from that in the assay file."
+                                log.Warn("WARNING: The assay metadata in the investigation file differs from that in the assay file.")
                             getNewAssay oldAssayAssayFile
                             // update assay metadata in investigation file
                             |> fun a -> 
@@ -229,16 +235,16 @@ module AssayAPI =
                                 |> Investigation.toFile investigationFilePath
                                 a
                         | None -> 
-                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s. It is advised to register the assay in the investigation file via \"arc a register\"." assayIdentifier studyIdentifier
+                            log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}. It is advised to register the assay in the investigation file via \"arc a register\".")
                             getNewAssay oldAssayAssayFile
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays. It is advised to register the assay with the identifier %s in the investigation file via \"arc a register\"." studyIdentifier assayIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                         getNewAssay oldAssayAssayFile
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file. It is advised to register the assay with the identifier %s in the investigation file via \"arc a register\"." studyIdentifier assayIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                     getNewAssay oldAssayAssayFile
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies. It is advised to register the assay with the identifier %s in the investigation file via \"arc a register\"." assayIdentifier
+                log.Error($"ERROR: The investigation does not contain any studies. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                 getNewAssay oldAssayAssayFile
 
         // part that writes assay metadata into the assay file
@@ -254,9 +260,9 @@ module AssayAPI =
     /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in the assay file's investigation sheet.
     let register (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayRegisterLog"
         
-        if verbosity >= 1 then printfn "Start Assay Register"
+        log.Info("Start Assay Register")
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         
@@ -269,7 +275,7 @@ module AssayAPI =
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> 
-                if verbosity >= 1 then printfn "No Study Identifier given, use assayIdentifier instead."
+                log.Trace("No Study Identifier given, use assayIdentifier instead.")
                 assayIdentifier
             | s -> s
 
@@ -284,25 +290,24 @@ module AssayAPI =
                 match study.Assays with
                 | Some assays -> 
                     match API.Assay.tryGetByFileName assayFileName assays with
-                    | Some assay ->
-                        if verbosity >= 1 then printfn "Assay with the identifier %s already exists in the investigation file" assayIdentifier
+                    | Some _ ->
+                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} already exists in the investigation file.")
                         assays
-                    | None ->                       
-                        API.Assay.add assays assay                     
+                    | None ->
+                        API.Assay.add assays assay
                 | None ->
                     [assay]
                 |> API.Study.setAssays study
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                
             | None ->
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist yet, creating it now" studyIdentifier
+                log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
                 if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                     StudyAPI.StudyFile.create arcConfiguration studyIdentifier
                 let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
-            if verbosity >= 1 then printfn "Study with the identifier %s does not exist yet, creating it now" studyIdentifier
+            log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
             if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                 StudyAPI.StudyFile.create arcConfiguration studyIdentifier
             let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
@@ -319,9 +324,9 @@ module AssayAPI =
     /// Unregisters an assay file from the ARC's investigation file.
     let unregister (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayUnregisterLog"
         
-        if verbosity >= 1 then printfn "Start Assay Unregister"
+        log.Info("Start Assay Unregister")
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
@@ -331,7 +336,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                log.Trace("No Study Identifier given, use assayIdentifier instead.")
                 s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -345,31 +350,31 @@ module AssayAPI =
                 match study.Assays with
                 | Some assays -> 
                     match API.Assay.tryGetByFileName assayFileName assays with
-                    | Some assay ->
+                    | Some _ ->
                         API.Assay.removeByFileName assayFileName assays
                         |> API.Study.setAssays study
                         |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                         |> API.Investigation.setStudies investigation
                     | None ->
-                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error($"ERROR: The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
     
     /// Deletes assay folder and underlying file structure of given assay.
     let delete (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayDeleteLog"
         
-        if verbosity >= 1 then printfn "Start Assay Delete"
+        log.Info("Start Assay Delete")
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
@@ -378,7 +383,7 @@ module AssayAPI =
             |> Option.get
 
         if System.IO.Directory.Exists(assayFolder) then
-            System.IO.Directory.Delete(assayFolder,true)
+            System.IO.Directory.Delete(assayFolder, true)
 
     /// Remove an assay from the ARC by both unregistering it from the investigation file and removing its folder with the underlying file structure.
     let remove (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
@@ -388,9 +393,9 @@ module AssayAPI =
     /// Moves an assay file from one study group to another (provided by assayArgs).
     let move (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayMoveLog"
         
-        if verbosity >= 1 then printfn "Start Assay Move"
+        log.Info("Start Assay Move")
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         let assayFileName = IsaModelConfiguration.tryGetAssayFileName assayIdentifier arcConfiguration |> Option.get
@@ -409,43 +414,41 @@ module AssayAPI =
                 | Some assays -> 
                     match API.Assay.tryGetByFileName assayFileName assays with
                     | Some assay ->
-                
                         let studies = 
                             // Remove Assay from old study
                             API.Study.mapAssays (API.Assay.removeByFileName assayFileName) study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-
                         match API.Study.tryGetByIdentifier targetStudyIdentifer studies with
                         | Some targetStudy -> 
                             API.Study.mapAssays (fun assays -> API.Assay.add assays assay) targetStudy
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None -> 
-                            if verbosity >= 2 then printfn "Target Study with the identifier %s does not exist in the investigation file, creating new study to move assay to" studyIdentifier
+                            log.Trace($"Target Study with the identifier {studyIdentifier} does not exist in the investigation file, creating new study to move assay to.")
                             let info = Study.StudyInfo.create targetStudyIdentifer "" "" "" "" "" []
                             Study.fromParts info [] [] [] [assay] [] []
                             |> API.Study.add studies
                             |> API.Investigation.setStudies investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier
+                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error($"ERROR: The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
     /// Moves an assay file from one study group to another (provided by assayArgs).
     let show (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
      
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayShowLog"
         
-        if verbosity >= 1 then printfn "Start Assay Get"
+        log.Info("Start Assay Get")
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
@@ -455,7 +458,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                log.Trace("No Study Identifier given, use assayIdentifier instead.")
                 s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -472,24 +475,24 @@ module AssayAPI =
                     | Some assay ->
                         [assay]
                         |> Prompt.serializeXSLXWriterOutput (Assays.toRows None)
-                        |> printfn "%s"
+                        |> log.Debug
                     | None -> 
-                        if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                 | None -> 
-                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier                   
+                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"    
+            log.Error("ERROR: The investigation does not contain any studies.")
 
 
 
     /// Lists all assay identifiers registered in this investigation.
     let list (arcConfiguration : ArcConfiguration) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayListLog"
         
-        if verbosity >= 1 then printfn "Start Assay List"
+        log.Info("Start Assay List")
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
@@ -503,21 +506,21 @@ module AssayAPI =
                 match study.Assays with
                 | Some assays -> 
                     if List.isEmpty assays |> not then
-                        printfn "Study: %s" studyIdentifier
+                        log.Debug($"Study: {studyIdentifier}")
                         assays 
-                        |> Seq.iter (fun assay -> printfn "--Assay: %s" (Option.defaultValue "" assay.FileName))
+                        |> Seq.iter (fun assay -> log.Debug(sprintf "--Assay: %s" (Option.defaultValue "" assay.FileName)))
                 | None -> 
-                    if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier   
+                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
             )
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error($"ERROR: The investigation does not contain any studies.")
 
     /// Exports an assay to JSON.
     let exportSingleAssay (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayExportSingleAssayLog"
         
-        if verbosity >= 1 then printfn "Start exporting single assay"
+        log.Info("Start exporting single assay")
         
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
         
@@ -529,7 +532,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                log.Trace("No Study Identifier given, use assayIdentifier instead.")
                 s
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -546,40 +549,40 @@ module AssayAPI =
                     | Some assays -> 
                         match API.Assay.tryGetByFileName assayFileName assays with
                         | Some assay ->
-                            Some assay                           
+                            Some assay
                         | None -> 
-                            if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                            log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                             None
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier                   
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
                         None
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     None
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"     
+                log.Error("ERROR: The investigation does not contain any studies.")
                 None
 
         let persons,assayFromFile =
 
             if System.IO.File.Exists assayFilePath then
                 try
-                    let _,_,p,a = AssayFile.Assay.fromFile assayFilePath
+                    let _, _, p, a = AssayFile.Assay.fromFile assayFilePath
                     p, Some a
                 with
                 | err -> 
-                    if verbosity >= 1 then printfn "Assay file \"%s\" could not be read" assayFilePath    
-                    [],None
+                    log.Error(sprintf "ERROR: Assay file \"%s\" could not be read:\n %s" assayFilePath (err.ToString()))
+                    [], None
             else
-                if verbosity >= 1 then printfn "Assay file \"%s\" does not exist" assayFilePath     
-                [],None
+                log.Error(sprintf "ERROR: Assay file \"%s\" does not exist." assayFilePath)
+                [], None
         
         let mergedAssay = 
             match assayInInvestigation,assayFromFile with
             | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
             | None, Some a -> a
             | Some ai, None -> ai
-            | None, None -> failwith "No assay could be retrieved"     
+            | None, None -> log.Fatal("ERROR: No assay could be retrieved."); raise (Exception(""))
           
           
         if containsFlag "ProcessSequence" assayArgs then
@@ -590,7 +593,7 @@ module AssayAPI =
             | Some p -> ArgumentProcessing.serializeToFile p output
             | None -> ()
 
-            System.Console.Write(ArgumentProcessing.serializeToString output)
+            log.Debug(ArgumentProcessing.serializeToString output)
 
         else 
 
@@ -600,15 +603,15 @@ module AssayAPI =
             | Some p -> ISADotNet.Json.Study.toFile p output
             | None -> ()
 
-            System.Console.Write(ISADotNet.Json.Study.toString output)
+            log.Debug(ISADotNet.Json.Study.toString output)
 
 
     /// Exports all assays to JSON.
     let exportAllAssays (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayExportAllAssaysLog"
         
-        if verbosity >= 1 then printfn "Start exporting all assays"
+        log.Info("Start exporting all assays")
         
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
@@ -629,7 +632,7 @@ module AssayAPI =
                     match getFieldValueByName "StudyIdentifier" assayArgs with
                     | "" -> assayIdentifier
                     | s -> 
-                        if verbosity >= 2 then printfn "No Study Identifier given, use assayIdentifier instead"
+                        log.Trace("No Study Identifier given, use assayIdentifier instead.")
                         s
               
                 // Try retrieve given assay from investigation file
@@ -642,18 +645,18 @@ module AssayAPI =
                             | Some assays -> 
                                 match API.Assay.tryGetByFileName assayFileName assays with
                                 | Some assay ->
-                                    Some assay                           
+                                    Some assay
                                 | None -> 
-                                    if verbosity >= 1 then printfn "Assay with the identifier %s does not exist in the study with the identifier %s" assayIdentifier studyIdentifier
+                                    log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                                     None
                             | None -> 
-                                if verbosity >= 1 then printfn "The study with the identifier %s does not contain any assays" studyIdentifier                   
+                                log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
                                 None
                         | None -> 
-                            if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                            log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                             None
                     | None -> 
-                        if verbosity >= 1 then printfn "The investigation does not contain any studies"     
+                        log.Error("ERROR: The investigation does not contain any studies.")
                         None
 
                 let persons,assayFromFile =
@@ -664,18 +667,18 @@ module AssayAPI =
                             p, Some a
                         with
                         | err -> 
-                            if verbosity >= 1 then printfn "Assay file \"%s\" could not be read" assayFilePath    
-                            [],None
+                            log.Error(sprintf "ERROR: Assay file \"%s\" could not be read:\n %s" assayFilePath (err.ToString()))
+                            [], None
                     else
-                        if verbosity >= 1 then printfn "Assay file \"%s\" does not exist" assayFilePath     
-                        [],None
+                        log.Error(sprintf "ERROR: Assay file \"%s\" does not exist." assayFilePath)
+                        [], None
         
                 let mergedAssay = 
                     match assayInInvestigation,assayFromFile with
                     | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
                     | None, Some a -> a
                     | Some ai, None -> ai
-                    | None, None -> failwith "No assay could be retrieved"     
+                    | None, None -> log.Fatal("ERROR: No assay could be retrieved."); raise (Exception(""))
             
                 Study.create(Contacts = persons, Assays = [mergedAssay])
             )
@@ -708,9 +711,9 @@ module AssayAPI =
     /// Exports one or several assay(s) to JSON.
     let export (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "AssayExportLog"
         
-        if verbosity >= 1 then printfn "Start Assay export"
+        log.Info("Start Assay export")
 
         match tryGetFieldValueByName "AssayIdentifier" assayArgs with
         | Some _ -> exportSingleAssay arcConfiguration assayArgs
@@ -721,11 +724,11 @@ module AssayAPI =
     module Contacts =
 
         /// Updates an existing person in this assay with the given person metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let update (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "AssayContactsUpdateLog"
 
-            if verbosity >= 1 then printfn "Start Person Update"
+            log.Info("Start Person Update")
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" personArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -766,11 +769,13 @@ module AssayAPI =
                     let newPersons = API.Person.updateByFullName updateOption person persons
                     MetaData.overwriteWithPersons "Investigation" newPersons doc
                 else
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                    let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}."
                     if containsFlag "AddIfMissing" personArgs then
-                        if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set." 
+                        log.Warn($"WARNING: {msg}")
+                        log.Info("Registering person as AddIfMissing Flag was set.")
                         let newPersons = API.Person.add persons person
                         MetaData.overwriteWithPersons "Investigation" newPersons doc
+                    else log.Error($"ERROR: {msg}")
 
             finally
                 Spreadsheet.close doc
@@ -779,9 +784,9 @@ module AssayAPI =
         /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the assay investigation sheet with the text editor set in globalArgs.
         let edit (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "AssayContactsEditLog"
             
-            if verbosity >= 1 then printfn "Start Person Edit"
+            log.Info("Start Person Edit")
 
             let editor  = GeneralConfiguration.getEditor arcConfiguration
 
@@ -808,7 +813,7 @@ module AssayAPI =
                         let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                         MetaData.overwriteWithPersons "Investigation" newPersons doc
                 | None ->
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
                 Spreadsheet.close doc
 
@@ -819,9 +824,9 @@ module AssayAPI =
         /// Registers a person in this assay with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "AssayContactsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Person Register"
+            log.Info("Start Person Register")
 
             let lastName    = getFieldValueByName "LastName"    personArgs
             let firstName   = getFieldValueByName "FirstName"   personArgs
@@ -866,9 +871,9 @@ module AssayAPI =
         /// Removes an existing person by fullname (lastName, firstName, MidInitials) from this assay with the text editor set in globalArgs.
         let unregister (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "AssayContactsUnregisterLog"
             
-            if verbosity >= 1 then printfn "Start Person Unregister"
+            log.Info("Start Person Unregister")
 
             let lastName    = (getFieldValueByName  "LastName"      personArgs)
             let firstName   = (getFieldValueByName  "FirstName"     personArgs)
@@ -887,18 +892,18 @@ module AssayAPI =
                     let newPersons = API.Person.removeByFullName firstName midInitials lastName persons
                     MetaData.overwriteWithPersons "Investigation" newPersons doc
                 else
-                    if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
             finally
                 Spreadsheet.close doc
 
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
-        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        let show (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
   
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "AssayContactsShowLog"
             
-            if verbosity >= 1 then printfn "Start Person Get"
+            log.Info("Start Person Get")
 
             let lastName    = (getFieldValueByName  "LastName"      personArgs)
             let firstName   = (getFieldValueByName  "FirstName"     personArgs)
@@ -917,9 +922,9 @@ module AssayAPI =
                 | Some person ->
                     [person]
                     |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
-                    |> printfn "%s"
+                    |> log.Debug
                 | None ->
-                    printfn "Person with the name %s %s %s does not exist in the assay with the identifier %s." firstName midInitials lastName assayIdentifier
+                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
             finally
                 Spreadsheet.close doc
@@ -928,15 +933,15 @@ module AssayAPI =
         /// Lists the full names of all persons included in this assay's investigation sheet.
         let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "AssayContactsListLog"
             
-            if verbosity >= 1 then printfn "Start Person List"
+            log.Info("Start Person List")
 
             let assayIdentifiers = AssayConfiguration.getAssayNames arcConfiguration
 
             if Array.isEmpty assayIdentifiers 
             
-            then printfn "No assays found."
+            then log.Debug("No assays found.")
 
             else
                 let assayFilePaths = assayIdentifiers |> Array.map (fun ai -> IsaModelConfiguration.tryGetAssayFilePath ai arcConfiguration |> Option.get)
@@ -948,7 +953,7 @@ module AssayAPI =
                 (allPersons, assayIdentifiers)
                 ||> Array.iter2 (
                     fun persons aid ->
-                        printfn "Assay: %s" aid
+                        log.Debug($"Assay: {aid}")
                         persons
                         |> Seq.iter (
                             fun person -> 
@@ -956,7 +961,7 @@ module AssayAPI =
                                 let midInitials = Option.defaultValue "" person.MidInitials
                                 let lastName    = Option.defaultValue "" person.LastName
                                 if midInitials = "" 
-                                then printfn "--Person: %s %s" firstName lastName
-                                else printfn "--Person: %s %s %s" firstName midInitials lastName
+                                then log.Debug($"--Person: {firstName} {lastName}")
+                                else log.Debug($"--Person: {firstName} {midInitials} {lastName}")
                         )
                 )

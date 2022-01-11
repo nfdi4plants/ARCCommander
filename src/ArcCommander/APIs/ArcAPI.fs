@@ -9,16 +9,18 @@ open ArcCommander.ArgumentProcessing
 open ISADotNet
 open ISADotNet.XLSX
 
-/// ArcCommander API functions that get executed by top level subcommand verbs
+/// ArcCommander API functions that get executed by top level subcommand verbs.
 module ArcAPI = 
 
     // TODO TO-DO TO DO: make use of args
-    /// Initializes the arc specific folder structure
+    /// Initializes the arc specific folder structure.
     let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
+
+        let log = Logging.createLogger "ArcInitLog"
 
         let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
-        if verbosity >= 1 then printfn "Start Arc Init"
+        log.Info("Start Arc Init")
 
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
@@ -27,16 +29,16 @@ module ArcAPI =
         let repositoryAdress =  tryGetFieldValueByName "RepositoryAdress" arcArgs 
 
 
-        if verbosity >= 2 then printfn "Create Directory"
+        log.Trace("Create Directory")
 
         Directory.CreateDirectory workDir |> ignore
 
-        if verbosity >= 2 then printfn "Initiate folder structure"
+        log.Trace("Initiate folder structure")
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
         |> Array.iter (Directory.CreateDirectory >> ignore)
 
-        if verbosity >= 2 then printfn "Set configuration"
+        log.Trace("Set configuration")
 
         match editor with
         | Some editorValue -> 
@@ -50,7 +52,7 @@ module ArcAPI =
             IniData.setValueInIniPath path "general.gitlfsbytethreshold" gitLFSThresholdValue
         | None -> ()
 
-        if verbosity >= 2 then printfn "Init git repository"
+        log.Trace("Init Git repository")
 
         try
 
@@ -59,19 +61,19 @@ module ArcAPI =
             match repositoryAdress with
             | None -> ()
             | Some remote ->
-                GitAPI.executeGitCommand verbosity workDir ("remote add origin " + remote) |> ignore
+                GitAPI.executeGitCommand workDir ("remote add origin " + remote) |> ignore
 
         with 
         | _ -> 
 
-            if verbosity >= 1 then printfn "Git could not be set up, try installing git cli and run `arc git init`."
+            log.Error("ERROR: Git could not be set up. Please try installing Git cli and run `arc git init`.")
 
     /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "ArcUpdateLog"
         
-        if verbosity >= 1 then printfn "Start Arc Update"
+        log.Info("Start Arc Update")
 
         let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
 
@@ -86,7 +88,9 @@ module ArcAPI =
             with
             | :? FileNotFoundException -> 
                 Investigation.empty
-            | err -> raise err
+            | err -> 
+                log.Fatal($"ERROR: {err.ToString()}")
+                raise (Exception(""))
 
         let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
             match assayNames with
@@ -118,79 +122,84 @@ module ArcAPI =
         updateInvestigationAssays (assayNames |> List.ofArray) investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Export the complete arc as a json object
+    /// Export the complete ARC as a JSON object.
     let export (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
     
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
-            
-            if verbosity >= 1 then printfn "Start Arc Export"
+        let log = Logging.createLogger "ArcExportLog"
+
+        log.Info("Start Arc Export")
     
-            let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
+        let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
     
-            let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
+        let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
     
-            let assayNames = 
-                DirectoryInfo(assayRootFolder).GetDirectories()
-                |> Array.map (fun d -> d.Name)
+        let assayNames = 
+            DirectoryInfo(assayRootFolder).GetDirectories()
+            |> Array.map (fun d -> d.Name)
                 
-            let investigation =
-                try Investigation.fromFile investigationFilePath 
-                with
-                | :? FileNotFoundException -> 
-                    Investigation.empty
-                | err -> raise err
+        let investigation =
+            try Investigation.fromFile investigationFilePath 
+            with
+            | :? FileNotFoundException -> 
+                Investigation.empty
+            | err -> 
+                log.Fatal($"ERROR: {err.Message}")
+                raise (Exception(""))
     
-            let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
-                match assayNames with
-                | a :: t ->
-                    let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
-                    let assayFileName = (IsaModelConfiguration.getAssayFileName a arcConfiguration).Replace("\\","/")
-                    let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
-                    let studies = investigation.Studies
+        let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
+            match assayNames with
+            | a :: t ->
+                let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
+                let assayFileName = (IsaModelConfiguration.getAssayFileName a arcConfiguration).Replace("\\","/")
+                let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
+                let studies = investigation.Studies
 
-                    match studies with
-                    | Some studies ->
-                        match studies |> Seq.tryFind (API.Study.getAssays >> Option.defaultValue [] >> API.Assay.existsByFileName assayFileName) with
-                        | Some study -> 
-                            study
-                            |> API.Study.mapAssays (API.Assay.updateByFileName API.Update.UpdateByExistingAppendLists assay)
-                            |> API.Study.mapFactors (List.append factors >> List.distinctBy (fun f -> f.Name))
-                            |> API.Study.mapProtocols (List.append protocols >> List.distinctBy (fun p -> p.Name))
-                            |> API.Study.mapContacts (List.append persons >> List.distinctBy (fun p -> p.FirstName,p.LastName))
-                            |> fun s -> API.Study.updateBy ((=) study) API.Update.UpdateAll s studies
-                        | None ->
-                            Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
-                            |> API.Study.add studies
-                    | None ->                   
-                        [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
-                    |> API.Investigation.setStudies investigation
-                    |> updateInvestigationAssays t
-                | [] -> investigation
+                match studies with
+                | Some studies ->
+                    match studies |> Seq.tryFind (API.Study.getAssays >> Option.defaultValue [] >> API.Assay.existsByFileName assayFileName) with
+                    | Some study -> 
+                        study
+                        |> API.Study.mapAssays (API.Assay.updateByFileName API.Update.UpdateByExistingAppendLists assay)
+                        |> API.Study.mapFactors (List.append factors >> List.distinctBy (fun f -> f.Name))
+                        |> API.Study.mapProtocols (List.append protocols >> List.distinctBy (fun p -> p.Name))
+                        |> API.Study.mapContacts (List.append persons >> List.distinctBy (fun p -> p.FirstName,p.LastName))
+                        |> fun s -> API.Study.updateBy ((=) study) API.Update.UpdateAll s studies
+                    | None ->
+                        Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
+                        |> API.Study.add studies
+                | None ->                   
+                    [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
+                |> API.Investigation.setStudies investigation
+                |> updateInvestigationAssays t
+            | [] -> investigation
                 
-            let output = updateInvestigationAssays (assayNames |> List.ofArray) investigation
+        let output = updateInvestigationAssays (assayNames |> List.ofArray) investigation
 
-            if containsFlag "ProcessSequence" arcArgs then
+        if containsFlag "ProcessSequence" arcArgs then
 
-                let output = 
-                    output.Studies 
-                    |> Option.defaultValue [] |> List.collect (fun s -> 
-                        s.Assays
-                        |> Option.defaultValue [] |> List.collect (fun a -> 
-                            a.ProcessSequence |> Option.defaultValue []
-                        )
+            let output = 
+                output.Studies 
+                |> Option.defaultValue [] |> List.collect (fun s -> 
+                    s.Assays
+                    |> Option.defaultValue [] |> List.collect (fun a -> 
+                        a.ProcessSequence |> Option.defaultValue []
                     )
+                )
 
-                match tryGetFieldValueByName "Path" arcArgs with
-                | Some p -> ArgumentProcessing.serializeToFile p output
-                | None -> ()
+            match tryGetFieldValueByName "Path" arcArgs with
+            | Some p -> ArgumentProcessing.serializeToFile p output
+            | None -> ()
 
-                System.Console.Write(ArgumentProcessing.serializeToString output)
-            else 
+            //System.Console.Write(ArgumentProcessing.serializeToString output)
+            log.Debug(ArgumentProcessing.serializeToString output)
+        else 
                
-                match tryGetFieldValueByName "Path" arcArgs with
-                | Some p -> ISADotNet.Json.Investigation.toFile p output
-                | None -> ()
+            match tryGetFieldValueByName "Path" arcArgs with
+            | Some p -> ISADotNet.Json.Investigation.toFile p output
+            | None -> ()
 
-                System.Console.Write(ISADotNet.Json.Investigation.toString output)
-    /// Returns true if called anywhere in an arc 
+            //System.Console.Write(ISADotNet.Json.Investigation.toString output)
+            log.Debug(ISADotNet.Json.Investigation.toString output)
+
+    /// Returns true if called anywhere in an ARC.
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())
