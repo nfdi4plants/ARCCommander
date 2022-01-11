@@ -36,15 +36,11 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
         else 
             Prompt.deannotateArguments annotatedArguments
 
-    log.Info("Start processing command with the arguments.")
-    arguments |> Map.iter (fun k t -> log.Info($"\t{k}:{t}"))
-    Console.WriteLine()
+    arguments |> Map.fold (fun acc k t -> acc + $"\t{k}:{t}\n") "Start processing command with the arguments:\n" |> log.Info
 
-    log.Trace("and the config:")
     arcConfiguration
     |> ArcConfiguration.flatten
-    |> Seq.iter (fun (a,b) -> log.Trace($"\t{a}:{b}"))
-    Console.WriteLine()
+    |> Seq.fold (fun acc (a,b) -> acc + $"\t{a}:{b}\n") "and the config:\n" |> log.Trace
 
     try commandF arcConfiguration arguments
     finally
