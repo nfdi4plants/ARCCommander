@@ -5,7 +5,7 @@ open System.IO
 open System.Diagnostics
 open Argu
 
-/// Functions for trying to run external tools, given the command line arguments can not be parsed
+/// Functions for trying to run external tools, given the command line arguments can not be parsed.
 module ExternalExecutables =
 
     /// Checks if there are unknown arguments that Argu cannot resolve.
