@@ -277,8 +277,7 @@ let main argv =
                         try Process.Start(pi).WaitForExit(); true
                         with e -> printfn "%s" e.Message; false
                 )
-                |> ignore
-                printfn "External tool execution did not succeed."
+                |> fun res -> if not res then printfn "External tool execution did not succeed."
                 None
             // If neither parsing, nor external executable tool search led to success, just return the error message
             | None -> 
