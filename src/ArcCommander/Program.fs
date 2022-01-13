@@ -222,7 +222,7 @@ let main argv =
     let parser = ArgumentParser.Create<ArcCommand>()
 
     // Failsafe parsing of all correct argument information
-    let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true,ignoreUnrecognized = true)
+    let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true, ignoreUnrecognized = true)
 
     // Load configuration ---->
     let workingDir =
@@ -237,7 +237,7 @@ let main argv =
             "general.workdir", Some workingDir
             "general.verbosity", verbosity
         ]
-        |> List.choose (function | k,Some v -> Some (k,v) | _ -> None)
+        |> List.choose (function | k, Some v -> Some (k,v) | _ -> None)
         |> IniData.fromNameValuePairs
         |> ArcConfiguration.load
     // <-----
@@ -256,16 +256,30 @@ let main argv =
             printfn "Could not parse given commands."
             match tryGetUnknownArguments parser argv with
             | Some (executableNameArgs, args) ->
-                let executableName = (makeExecutableName executableNameArgs)
-                printfn $"Try checking if executable with given argument name \"{executableName}\" exists."
+                let os = IniData.getOs ()
+                let executableNames = 
+                    (makeExecutableName executableNameArgs)
+                    |> fun name -> 
+                        name :: (
+                            match os with
+                            | Windows -> [$"{name}.cmd"; $"{name}.bat"]
+                            | Unix -> [$"{name}.sh"]
+                        )
+                let pis = executableNames |> List.map (fun en -> ProcessStartInfo(en, workingDir))
+                printfn $"Try checking if executable with given argument name \"{executableNames.[0]}\" exists."
                 // temporarily add extra directories to PATH
                 let folderToAddToPath = getArcFoldersForExtExe workingDir
-                let os = IniData.getOs ()
                 List.iter (addExtraDirToPath os) folderToAddToPath
                 // call external tool
-                let pi = ProcessStartInfo(executableName, workingDir)
-                try Process.Start(pi).WaitForExit(); None
-                with e -> printfn "%s" e.Message; None
+                pis 
+                |> List.exists (
+                    fun pi -> 
+                        try Process.Start(pi).WaitForExit(); true
+                        with e -> printfn "%s" e.Message; false
+                )
+                |> ignore
+                printfn "External tool execution did not succeed."
+                None
             // If neither parsing, nor external executable tool search led to success, just return the error message
             | None -> 
                 printfn "%s" e.Message
@@ -274,7 +288,7 @@ let main argv =
     // Run the according command if command line args can be parsed
     match parseResults with
     | Some results ->
-        handleCommand arcConfiguration (results.GetSubCommand())          
+        handleCommand arcConfiguration (results.GetSubCommand())
         1
     | None -> 
         0
