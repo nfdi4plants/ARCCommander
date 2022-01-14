@@ -256,29 +256,17 @@ let main argv =
             printfn "Could not parse given commands."
             match tryGetUnknownArguments parser argv with
             | Some (executableNameArgs, args) ->
-                let os = IniData.getOs ()
-                let executableNames = 
-                    (makeExecutableName executableNameArgs)
-                    |> fun name -> 
-                        name :: (
-                            match os with
-                            | Windows -> [$"{name}.cmd"; $"{name}.bat"]
-                            | Unix -> [$"{name}.sh"]
-                        )
-                let pis = executableNames |> List.map (fun en -> ProcessStartInfo(en, workingDir))
-                printfn $"Try checking if executable with given argument name \"{executableNames.[0]}\" exists."
+                let executableName = (makeExecutableName executableNameArgs)
+                let pi = ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; workingDir])
+                printfn $"Try checking if executable with given argument name \"{executableName}\" exists."
                 // temporarily add extra directories to PATH
                 let folderToAddToPath = getArcFoldersForExtExe workingDir
+                let os = IniData.getOs ()
                 List.iter (addExtraDirToPath os) folderToAddToPath
                 // call external tool
-                pis 
-                |> List.exists (
-                    fun pi -> 
-                        try Process.Start(pi).WaitForExit(); true
-                        with e -> printfn "%s" e.Message; false
-                )
-                |> fun res -> if not res then printfn "External tool execution did not succeed."
-                None
+                //writer.
+                try Process.Start(pi).WaitForExit(); None
+                with e -> printfn "%s" e.Message; None
             // If neither parsing, nor external executable tool search led to success, just return the error message
             | None -> 
                 printfn "%s" e.Message
