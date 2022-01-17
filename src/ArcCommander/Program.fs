@@ -1,21 +1,19 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
-open System
-open System.IO
-open Argu
-
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
 open ArcCommander.ExternalExecutables
+
+open System
+open System.IO
+open System.Text
 open System.Diagnostics
 open Argu
 
-/// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input
-let processCommand (arcConfiguration:ArcConfiguration) commandF (r : ParseResults<'T>) =
-
+/// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input.
 let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =
 
     let log = Logging.createLogger "ProcessCommandLog"
@@ -53,8 +51,8 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
     finally
         log.Info("Done processing command.")
 
-/// Runs the given command with the given configuration
-let processCommandWithoutArgs (arcConfiguration:ArcConfiguration) commandF =
+/// Runs the given command with the given configuration.
+let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
     let log = Logging.createLogger "ProcessCommandWithoutArgsLog"
 
@@ -212,67 +210,101 @@ let handleCommand arcConfiguration command =
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 
+/// Takes a logger and an exception and separates usage and error messages. Usage messages will be printed into the console while error messages will be logged.
+let handleExceptionMessage (log : NLog.Logger) (exn : Exception) =
+    // separate usage message (Argu) and error messages. Error messages shall be logged, usage messages shall not
+    match exn.Message.Contains("USAGE"), exn.Message.Contains("ERROR") with
+    | true,true -> // exception message contains usage AND error messages
+        let eMsg, uMsg = 
+            exn.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
+            |> fun arr ->
+                arr |> Array.find (fun t -> t.Contains("ERROR")),
+                arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
+        log.Error(eMsg)
+        printfn "%s" uMsg
+    | true,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
+    | _ -> log.Error(exn.Message) // everything else will be an error message
+
+/// Checks if a message (string) is empty and if it is not, applies a logging function to it.
+let private checkNonLog s (logging : string -> unit) = if s <> "" then logging s
+
+/// Deletes unwanted new lines at the end of an output.
+let rec private reviseOutput (output : string) = 
+    if output = null then ""
+    elif output.EndsWith('\n') then reviseOutput (output.[0 .. output.Length - 2])
+    else output
+
 
 [<EntryPoint>]
 let main argv =
 
     try
         let parser = ArgumentParser.Create<ArcCommand>()
-        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
+        
+        // Failsafe parsing of all correct argument information
+        let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true, ignoreUnrecognized = true)
 
-    // Failsafe parsing of all correct argument information
-    let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true, ignoreUnrecognized = true)
+        // Load configuration ---->
+        let workingDir =
+            match safeParseResults.TryGetResult(WorkingDir) with
+            | Some s    -> s
+            | None      -> System.IO.Directory.GetCurrentDirectory()
 
-    // Load configuration ---->
-    let workingDir =
-        match safeParseResults.TryGetResult(WorkingDir) with
-        | Some s    -> s
-        | None      -> System.IO.Directory.GetCurrentDirectory()
+        let verbosity = safeParseResults.TryGetResult(Verbosity) |> Option.map string
 
-    let verbosity = safeParseResults.TryGetResult(Verbosity) |> Option.map string
-
-    let arcConfiguration =
-        [
-            "general.workdir", Some workingDir
-            "general.verbosity", verbosity
-        ]
-        |> List.choose (function | k, Some v -> Some (k,v) | _ -> None)
-        |> IniData.fromNameValuePairs
-        |> ArcConfiguration.load
-    // <-----
-
-    // Try parse the command line arguments
-    let parseResults = 
-        try
-            // Correctly parsed arguments will be threaded into the command handler below
-            parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
-            |> Some
-        with
-        | e -> 
-            // Incorrectly parsed arguments will be threaded into external executable tool handler
-            // Here for the first unknown argument in the argument chain, an executable of the same name will be called
-            // If this tool exists, try executing it with all the following arguments
-            printfn "Could not parse given commands."
-            match tryGetUnknownArguments parser argv with
-            | Some (executableNameArgs, args) ->
-                let executableName = (makeExecutableName executableNameArgs)
-                let pi = ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; workingDir])
-                printfn $"Try checking if executable with given argument name \"{executableName}\" exists."
-                // temporarily add extra directories to PATH
-                let folderToAddToPath = getArcFoldersForExtExe workingDir
-                let os = IniData.getOs ()
-                List.iter (addExtraDirToPath os) folderToAddToPath
-                // call external tool
-                //writer.
-                try Process.Start(pi).WaitForExit(); None
-                with e -> printfn "%s" e.Message; None
-            // If neither parsing, nor external executable tool search led to success, just return the error message
-            | None -> 
-                printfn "%s" e.Message
-                None
+        let arcConfiguration =
+            [
+                "general.workdir", Some workingDir
+                "general.verbosity", verbosity
+            ]
+            |> List.choose (function | k, Some v -> Some (k,v) | _ -> None)
+            |> IniData.fromNameValuePairs
+            |> ArcConfiguration.load
+        // <-----
+        
+        // here the logging config gets created
         let arcFolder = Path.Combine(arcConfiguration.General.Item "workdir", arcConfiguration.General.Item "rootfolder")
         Directory.CreateDirectory(arcFolder) |> ignore
         Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        let log = Logging.createLogger "ArcCommanderMainLog"
+
+        // Try parse the command line arguments
+        let parseResults = 
+            try
+                // Correctly parsed arguments will be threaded into the command handler below
+                parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
+                |> Some
+            with
+            | e -> 
+                // Incorrectly parsed arguments will be threaded into external executable tool handler
+                // Here for the first unknown argument in the argument chain, an executable of the same name will be called
+                // If this tool exists, try executing it with all the following arguments
+                log.Info("Could not parse given commands.")
+                match tryGetUnknownArguments parser argv with
+                | Some (executableNameArgs, args) ->
+                    let executableName = (makeExecutableName executableNameArgs)
+                    let pi = ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; "-p"; workingDir])
+                    pi.RedirectStandardOutput <- true // is needed for logging the tool's console output
+                    pi.RedirectStandardError <- true // dito
+                    log.Info($"Try checking if executable with given argument name \"{executableName}\" exists.")
+                    // temporarily add extra directories to PATH
+                    let folderToAddToPath = getArcFoldersForExtExe workingDir
+                    let os = IniData.getOs ()
+                    List.iter (addExtraDirToPath os) folderToAddToPath
+                    // call external tool
+                    try 
+                        let p = Process.Start(pi)
+                        p.OutputDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool: %s" >> log.Info))
+                        p.ErrorDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool ERROR: %s" >> log.Error))
+                        p.BeginOutputReadLine()
+                        p.BeginErrorReadLine()
+                        p.WaitForExit()
+                    with e -> handleExceptionMessage log e
+                    None
+                // If neither parsing, nor external executable tool search led to success, just return the error message
+                | None -> 
+                    handleExceptionMessage log e
+                    None
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"
@@ -280,35 +312,23 @@ let main argv =
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
-        handleCommand arcConfiguration (results.GetSubCommand())
-
-        0
+        // Run the according command if command line args can be parsed
+        match parseResults with
+        | Some results ->
+            handleCommand arcConfiguration (results.GetSubCommand())
+            0
+        | None -> 
+            1
 
     with e ->
         
+        // create logging config, create .arc folder if not already existing
         let currDir = Directory.GetCurrentDirectory()
         let arcFolder = Path.Combine(currDir, ".arc")
         Directory.CreateDirectory(arcFolder) |> ignore
         Logging.generateConfig arcFolder 0 
-
         let log = Logging.createLogger "ArcCommanderMainLog"
-        match e.Message.Contains("USAGE"), e.Message.Contains("ERROR") with
-        | true,true ->
-            let eMsg, uMsg = 
-                e.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
-                |> fun arr ->
-                    arr |> Array.find (fun t -> t.Contains("ERROR")),
-                    arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
-            log.Error(eMsg)
-            printfn "%s" uMsg
-        | true,false -> printfn "%s" e.Message
-        | _ -> log.Error(e.Message)
+
+        handleExceptionMessage log e
 
         1
-    // Run the according command if command line args can be parsed
-    match parseResults with
-    | Some results ->
-        handleCommand arcConfiguration (results.GetSubCommand())
-        1
-    | None -> 
-        0
