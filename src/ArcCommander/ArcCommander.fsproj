@@ -24,6 +24,7 @@
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="Logging.fs" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
@@ -56,9 +57,10 @@
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
     <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
-    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.7" />
+    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.3" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.3" />
+    <PackageReference Include="ISADotNet" Version="0.4.0-preview.4" />
+    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.4" />
+    <PackageReference Include="NLog" Version="4.7.13" />
   </ItemGroup>
 </Project>

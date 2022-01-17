@@ -12,10 +12,10 @@ type ArcConfiguration =
         Assay       : Map<string,string>
         Workflow    : Map<string,string>
         External    : Map<string,string>
-        Run         : Map<string,string>                     
+        Run         : Map<string,string>
     }
 
-    /// Creates an arcConfiguration from the section settings
+    /// Creates an ArcConfiguration from the section settings.
     static member create general isaModel assay workflow external run =
         {
             General     = general
@@ -23,11 +23,11 @@ type ArcConfiguration =
             Assay       = assay
             Workflow    = workflow
             External    = external 
-            Run         = run                     
+            Run         = run
         }
 
     //TO:DO, rename and possibly move
-    /// 
+    /// Creates a default ArcConfiguration.
     static member GetDefault() =
         let os = getOs ()
         let editor = 
@@ -63,8 +63,20 @@ type ArcConfiguration =
         ]
         |> fromNameValuePairs
 
-    /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments
+
+    /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments.
+    static member ofIniData argumentConfig =
+        ArcConfiguration.create
+            (getSectionMap "general"   argumentConfig)
+            (getSectionMap "isamodel"  argumentConfig)
+            (getSectionMap "assay"     argumentConfig)
+            (getSectionMap "workflow"  argumentConfig)
+            (getSectionMap "external"  argumentConfig)
+            (getSectionMap "run"       argumentConfig)
+
+    /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments. Uses `ofIniData`for this.
     static member load argumentConfig =
+        let log = Logging.createLogger "IniParserModelLoadLog"
         let workdir = tryGetValueByName "general.workdir" argumentConfig |> Option.get
         let mergedIniData = 
             match tryLoadMergedIniData workdir with
@@ -73,20 +85,14 @@ type ArcConfiguration =
                 |> merge fileConfig
                 |> merge argumentConfig
             | None -> 
-                printfn "WARNING: No config file found. Load default config instead."
+                log.Warn("WARNING: No config file found. Load default config instead.")
                 ArcConfiguration.GetDefault()
                 |> merge argumentConfig
-        ArcConfiguration.create
-            (getSectionMap "general"   mergedIniData)
-            (getSectionMap "isamodel"  mergedIniData)
-            (getSectionMap "assay"     mergedIniData)
-            (getSectionMap "workflow"  mergedIniData)
-            (getSectionMap "external"  mergedIniData)
-            (getSectionMap "run"       mergedIniData)
+        ArcConfiguration.ofIniData mergedIniData
 
     // TODO TO-DO TO DO: open all record fields using reflection
-    /// Returns the full paths of the rootfolders
-    static member getRootFolderPaths (configuration:ArcConfiguration) =
+    /// Returns the full paths of the rootfolders.
+    static member getRootFolderPaths (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         [|
             configuration.General.TryFind "rootfolder"
@@ -99,8 +105,8 @@ type ArcConfiguration =
         |> Array.choose (id)
         |> Array.map (fun f -> Path.Combine(workDir,f))
 
-    /// Returns all settings as name value pairs
-    static member flatten (configuration:ArcConfiguration) =
+    /// Returns all settings as name value pairs.
+    static member flatten (configuration : ArcConfiguration) =
         let keyValueToNameValue s k v = sprintf "%s.%s" s k, v
         [|
             configuration.General |> Map.map (keyValueToNameValue "general")
@@ -112,66 +118,66 @@ type ArcConfiguration =
         |]
         |> Seq.collect (Map.toSeq >> Seq.map snd)
 
-/// Functions for retrieving general settings from the configuration
+/// Functions for retrieving general settings from the configuration.
 module GeneralConfiguration =
 
-    /// Returns the path to the text editor used for querying user input
+    /// Returns the path to the text editor used for querying user input.
     let tryGetEditor configuration = 
         Map.tryFind "editor" configuration.General
 
-     /// Returns the path to the text editor used for querying user input
+     /// Returns the path to the text editor used for querying user input.
     let getEditor configuration = 
         Map.find "editor" configuration.General
 
-    /// Returns the path to the arc
+    /// Returns the path to the ARC if it exists. Else returns None.
     let tryGetWorkDirectory configuration = 
         Map.tryFind "workdir" configuration.General
 
-    /// Returns the path to the arc
+    /// Returns the path to the ARC.
     let getWorkDirectory configuration = 
         Map.find "workdir" configuration.General
 
-    /// Returns the verbosity level
+    /// Returns the verbosity level if it exists. Else returns None.
     let tryGetVerbosity configuration = 
         Map.tryFind "verbosity" configuration.General |> Option.map int
 
-    /// Returns the verbosity level
+    /// Returns the verbosity level.
     let getVerbosity configuration = 
         Map.find "verbosity" configuration.General |> int
 
-    /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
+    /// Returns the Git lfs threshold if it exists. Else returns None. Files larger than this amount of bytes will be tracked by Git lfs.
     let tryGetGitLfsByteThreshold configuration = 
         Map.tryFind "gitlfsbytethreshold" configuration.General |> Option.map int64
 
-    /// Returns the git lfs threshold. Files larger than this amount of bytes will be tracked by git lfs
+    /// Returns the Git lfs threshold. Files larger than this amount of bytes will be tracked by Git lfs.
     let getGitLfsByteThreshold configuration = 
         Map.find "gitlfsbytethreshold" configuration.General |> int
 
-    /// Returns the git lfs rules. Files matching these rules will be tracked by git lfs
+    /// Returns the Git lfs rules if they exist. Else returns None. Files matching these rules will be tracked by Git lfs.
     let tryGetGitLfsRules configuration = 
         Map.tryFind "gitlfsrules" configuration.General |> Option.map splitValues
 
-    /// Returns the git lfs threshold. Files matching these rules will be tracked by git lfs
+    /// Returns the Git lfs rules. Files matching these rules will be tracked by Git lfs.
     let getGitLfsRules configuration = 
         Map.find "gitlfsrules" configuration.General |> splitValues
 
-    /// Returns force editor parameter. If set to true, all 
+    /// Returns force editor parameter if it exists. Else returns None.
     let tryGetForceEditor configuration = 
         Map.tryFind "forceeditor" configuration.General |> Option.map (fun s -> s.ToLower() = "true")
 
-    /// Returns force editor parameter. If set to true, all 
+    /// Returns force editor parameter.
     let getForceEditor configuration = 
         Map.find "forceeditor" configuration.General |> (fun s -> s.ToLower() = "true")
 
-/// Functions for retrieving isa file settings from the configuration
+/// Functions for retrieving ISA file settings from the configuration.
 module IsaModelConfiguration =
 
-    /// Returns the assayIdentifier from a filename
+    /// Returns the assayIdentifier from a filename.
     let getAssayIdentifierOfFileName (assayFileName : string) =
         System.IO.Path.GetFileName assayFileName
 
-    /// Returns the relative path of the assay file
-    let tryGetAssayFileName assayIdentifier (configuration:ArcConfiguration) =
+    /// Returns the relative path of the assay file if it exists. Else returns None.
+    let tryGetAssayFileName assayIdentifier (configuration : ArcConfiguration) =
         let assayFileName = Map.tryFind "assayfilename" configuration.IsaModel
         match assayFileName with
         | Some f -> 
@@ -179,13 +185,13 @@ module IsaModelConfiguration =
             |> Some
         | _ -> None
 
-    /// Returns the relative path of the assay file
-    let getAssayFileName assayIdentifier (configuration:ArcConfiguration) =
+    /// Returns the relative path of the assay file.
+    let getAssayFileName assayIdentifier (configuration : ArcConfiguration) =
         tryGetAssayFileName assayIdentifier configuration
         |> Option.get 
 
-    /// Returns the full path of the assay file
-    let tryGetAssayFilePath assayIdentifier (configuration:ArcConfiguration) =
+    /// Returns the full path of the assay file if it exists. Else returns None.
+    let tryGetAssayFilePath assayIdentifier (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         let assayFileName = tryGetAssayFileName assayIdentifier configuration
         let rootFolder = Map.tryFind "rootfolder" configuration.Assay
@@ -195,38 +201,38 @@ module IsaModelConfiguration =
             |> Some
         | _ -> None
 
-    /// Returns the full path of the assay file
-    let getAssayFilePath assayIdentifier (configuration:ArcConfiguration)=
+    /// Returns the full path of the assay file.
+    let getAssayFilePath assayIdentifier (configuration : ArcConfiguration)=
         tryGetAssayFilePath assayIdentifier configuration
         |> Option.get
 
-    /// Returns the name of the studies file
-    let tryGetStudiesFileName identifier (configuration:ArcConfiguration) =
+    /// Returns the name of the study's file if it exists. Else returns None.
+    let tryGetStudiesFileName identifier (configuration : ArcConfiguration) =
         //Map.tryFind "studiesfilename" configuration.IsaModel
         sprintf "%s_isa.study.xlsx" identifier
         |> Some
 
-    /// Returns the name of the studies file
-    let getStudiesFileName identifier (configuration:ArcConfiguration) =
+    /// Returns the name of the study's file.
+    let getStudiesFileName identifier (configuration : ArcConfiguration) =
         tryGetStudiesFileName identifier configuration
         |> Option.get 
 
-    /// Returns the full path of the studies file
-    let tryGetStudiesFilePath identifier (configuration:ArcConfiguration) =
+    /// Returns the full path of the study's file if it exists. Else returns None.
+    let tryGetStudiesFilePath identifier (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         match tryGetStudiesFileName identifier configuration with
         | Some i -> 
-            Path.Combine(workDir,i)
+            Path.Combine(workDir, i)
             |> Some
         | _ -> None
       
-    /// Returns the full path of the studies file
-    let getStudiesFilePath identifier (configuration:ArcConfiguration) =
+    /// Returns the full path of the study's file.
+    let getStudiesFilePath identifier (configuration : ArcConfiguration) =
         tryGetStudiesFilePath identifier configuration
         |> Option.get
 
-    /// Returns the full path of the investigation file
-    let tryGetInvestigationFilePath (configuration:ArcConfiguration) =
+    /// Returns the full path of the investigation file if it exists. Else returns None.
+    let tryGetInvestigationFilePath (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
         match Map.tryFind "investigationfilename" configuration.IsaModel with
         | Some i -> 
@@ -234,36 +240,36 @@ module IsaModelConfiguration =
             |> Some
         | _ -> None
 
-    /// Returns the full path of the investigation file
-    let getInvestigationFilePath (configuration:ArcConfiguration) =
+    /// Returns the full path of the investigation file.
+    let getInvestigationFilePath (configuration : ArcConfiguration) =
         tryGetInvestigationFilePath configuration
         |> Option.get
 
-/// Functions for retrieving Assay related information from the configuration
+/// Functions for retrieving Assay related information from the configuration.
 module AssayConfiguration =
 
-    /// Returns the full path of the assays rootfolder
+    /// Returns the full path of the assays rootfolder if it exists. Else returns None.
     let tryGetRootFolderPath configuration =
         Map.tryFind "rootfolder" configuration.Assay
 
-    /// Returns the full path of the assays rootfolder
+    /// Returns the full path of the assays rootfolder.
     let getRootFolderPath configuration =
         tryGetRootFolderPath configuration
         |> Option.get
 
-    /// Returns the full paths of the assay folders
+    /// Returns the full paths of the assay folders.
     let getAssayPaths configuration =
         getRootFolderPath configuration
         |> System.IO.Directory.GetDirectories
 
-    /// Returns the names of the assay folders
+    /// Returns the names of the assay folders.
     let getAssayNames configuration =
         getRootFolderPath configuration
         |> System.IO.DirectoryInfo
         |> fun di -> di.GetDirectories()
         |> Array.map (fun d -> d.Name)
 
-    /// Returns the full path of the files associated with the assay
+    /// Returns the full path of the files associated with the assay.
     let getFilePaths assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General
         let fileNames = Map.tryFind "files" configuration.Assay
@@ -273,22 +279,22 @@ module AssayConfiguration =
             vs
             |> splitValues
             |> Array.map (fun v ->
-                Path.Combine([|workDir;r;assayIdentifier;v|])
+                Path.Combine([|workDir; r; assayIdentifier; v|])
             )                
         | _ -> [||]
 
-    /// Returns the full path of the assay folder
+    /// Returns the full path of the assay folder if it exists. Else returns None.
     let tryGetFolderPath assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General
         Map.tryFind "rootfolder" configuration.Assay
-        |> Option.map (fun r -> Path.Combine([|workDir;r;assayIdentifier|]))
+        |> Option.map (fun r -> Path.Combine([|workDir; r; assayIdentifier|]))
 
-    /// Returns the full path of the assay folder
+    /// Returns the full path of the assay folder.
     let getFolderPath assayIdentifier configuration =
         tryGetFolderPath assayIdentifier configuration 
         |> Option.get
 
-    /// Returns the full path of the subFolders associated with the assay
+    /// Returns the full path of the subFolders associated with the assay.
     let getSubFolderPaths assayIdentifier configuration =
         let subFolderNames = Map.tryFind "folders" configuration.Assay
         let assayFolder = tryGetFolderPath assayIdentifier configuration
@@ -297,7 +303,7 @@ module AssayConfiguration =
             vs
             |> splitValues
             |> Array.map (fun v ->
-                Path.Combine([|r;v|])
-            )                
+                Path.Combine([|r; v|])
+            )
         | _ -> Array.empty
 

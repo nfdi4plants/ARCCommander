@@ -1,47 +1,45 @@
 ﻿namespace ArcCommander.APIs
 
-open System
-
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 
 open ISADotNet
 open ISADotNet.XLSX
 
-/// ArcCommander Study API functions that get executed by the study focused subcommand verbs
+/// ArcCommander Study API functions that get executed by the study focused subcommand verbs.
 module StudyAPI =
 
     module StudyFile =
     
-        let exists (arcConfiguration:ArcConfiguration) (identifier : string) =
+        let exists (arcConfiguration : ArcConfiguration) (identifier : string) =
             IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
             |> System.IO.File.Exists
     
-        let create (arcConfiguration:ArcConfiguration) (identifier : string) =
+        let create (arcConfiguration : ArcConfiguration) (identifier : string) =
             IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
             |> FSharpSpreadsheetML.Spreadsheet.initWithSst identifier
             |> FSharpSpreadsheetML.Spreadsheet.close
 
-    /// Initializes a new empty study file in the arc.
-    let init (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
+    /// Initializes a new empty study file in the ARC.
+    let init (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
             
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyInitLog"
         
-        if verbosity >= 1 then printfn "Start Study Init"
+        log.Info("Start Study Init")
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
         if StudyFile.exists arcConfiguration identifier then
-            if verbosity >= 1 then printfn "Study file already exists"
+            log.Error("ERROR: Study file already exists.")
         else 
             StudyFile.create arcConfiguration identifier
 
-    /// Updates an existing study info in the arc with the given study metadata contained in cliArgs.
-    let update (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = // NotImplementedException()
+    /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
+    let update (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
     
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyUpdateLog"
         
-        if verbosity >= 1 then printfn "Start Study Update"
+        log.Info("Start Study Update")
 
         // ?TODO? <- Test this : Add updateoption which updates by existing values and appends list
         let updateOption = if containsFlag "ReplaceWithEmptyValues" studyArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting            
@@ -70,39 +68,41 @@ module StudyAPI =
                 API.Study.updateByIdentifier updateOption study studies
                 |> API.Investigation.setStudies investigation
             else 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
-                if containsFlag "AddIfMissing" studyArgs then
-                    if verbosity >= 1 then printfn "Registering study as AddIfMissing Flag was set" 
+                let msg = $"Study with the identifier {identifier} does not exist in the investigation."
+                if containsFlag "AddIfMissing" studyArgs then 
+                    log.Warn($"WARNING: {msg}")
+                    log.Info("Registering study as AddIfMissing Flag was set.")
                     API.Study.add studies study
                     |> API.Investigation.setStudies investigation
                 else 
-                    if verbosity >= 2 then printfn "AddIfMissing argument can be used to register study with the update command if it is missing" 
+                    log.Error($"ERROR: {msg}")
+                    log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
                     investigation
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-            if containsFlag "AddIfMissing" studyArgs then
-                if verbosity >= 1 then printfn "Registering study as AddIfMissing Flag was set" 
+            let msg = "The investigation does not contain any studies."
+            if containsFlag "AddIfMissing" studyArgs then 
+                log.Warn($"WARNING: {msg}")
+                log.Info("Registering study as AddIfMissing Flag was set.")
                 [study]
                 |> API.Investigation.setStudies investigation
             else 
-                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register study with the update command if it is missing" 
+                log.Error($"ERROR: {msg}")
+                log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
                 investigation
         |> Investigation.toFile investigationFilePath
         
 
-    // /// Opens an existing study file in the arc with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
-    /// Opens the existing study info in the arc with the text editor set in globalArgs.
-    let edit (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
+    // /// Opens an existing study file in the ARC with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
+    /// Opens the existing study info in the ARC with the text editor set in globalArgs.
+    let edit (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyEditLog"
         
-        if verbosity >= 1 then printfn "Start Study Edit"
-
+        log.Info("Start Study Edit")
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
         let editor = GeneralConfiguration.getEditor arcConfiguration
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
@@ -113,25 +113,25 @@ module StudyAPI =
             match API.Study.tryGetByIdentifier identifier studies with
             | Some study -> 
                 let editedStudy =
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor workDir Study.StudyInfo.toRows 
+                    ArgumentProcessing.Prompt.createIsaItemQuery editor Study.StudyInfo.toRows 
                         (Study.StudyInfo.fromRows 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
-                        study                   
+                        study
                 API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
                 |> API.Investigation.setStudies investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation" identifier
+                log.Error($"ERROR: Study with the identifier {identifier} does not exist in the investigation.")
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error("ERROR: The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Registers an existing study in the arc's investigation file with the given study metadata contained in cliArgs.
-    let register (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
+    /// Registers an existing study in the ARC's investigation file with the given study metadata contained in cliArgs.
+    let register (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyRegisterLog"
         
-        if verbosity >= 1 then printfn "Start Study Register"
+        log.Info("Start Study Register")
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
@@ -154,42 +154,41 @@ module StudyAPI =
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier identifier studies with
-            | Some study -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s already exists in the investigation file" identifier
+            | Some _ -> 
+                log.Error($"ERROR: Study with the identifier {identifier} already exists in the investigation file.")
                 studies
             | None -> 
-                API.Study.add studies study                
+                API.Study.add studies study
         | None -> 
             [study]
         |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Creates a new study file in the arc and registers it in the arc's investigation file with the given study metadata contained in cliArgs.
-    let add (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
+    /// Creates a new study file in the ARC and registers it in the ARC's investigation file with the given study metadata contained in cliArgs.
+    let add (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
         init arcConfiguration studyArgs
         register arcConfiguration studyArgs
 
-    /// Deletes the study file from the arc.
-    let delete (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
+    /// Deletes the study file from the ARC.
+    let delete (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
     
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyDeleteLog"
         
-        if verbosity >= 1 then printfn "Start Study Delete"
+        log.Info("Start Study Delete")
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
         let studyFilePath = IsaModelConfiguration.getStudiesFileName identifier arcConfiguration
 
         try System.IO.File.Delete studyFilePath with
-        | err -> 
-            if verbosity >= 1 then printfn "Error: Couldn't delete study file: \n %s" err.Message
+        | err -> log.Error($"ERROR: Couldn't delete study file:\n {err.ToString()}")
 
-    /// Unregisters an existing study from the arc's investigation file.
-    let unregister (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
+    /// Unregisters an existing study from the ARC's investigation file.
+    let unregister (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyUnregisterLog"
         
-        if verbosity >= 1 then printfn "Start Study Unregister"
+        log.Info("Start Study Unregister")
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
@@ -202,27 +201,26 @@ module StudyAPI =
             match API.Study.tryGetByIdentifier identifier studies with
             | Some study -> 
                 API.Study.removeByIdentifier identifier studies 
-                |> API.Investigation.setStudies investigation            
+                |> API.Investigation.setStudies investigation
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
-
+                log.Error($"ERROR: Study with the identifier {identifier} does not in the investigation file.")
                 investigation
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error("ERROR: The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
-    /// Removes a study file from the arc and unregisters it from the investigation file
-    let remove (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) = 
+    /// Removes a study file from the ARC and unregisters it from the investigation file.
+    let remove (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
         delete arcConfiguration studyArgs
         unregister arcConfiguration studyArgs
 
-    /// Lists all study identifiers registered in this arc's investigation file
-    let show (arcConfiguration:ArcConfiguration) (studyArgs : Map<string,Argument>) =
+    /// Lists all study identifiers registered in this ARC's investigation file.
+    let show (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
 
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyShowLog"
         
-        if verbosity >= 1 then printfn "Start Study Get"
+        log.Info("Start Study Show")
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
@@ -236,23 +234,23 @@ module StudyAPI =
             | Some study ->
                 study
                 |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.toRows
-                |> printfn "%s"
+                |> log.Debug
             | None -> 
-                if verbosity >= 1 then printfn "Study with the identifier %s does not in the investigation file" identifier
+                log.Error($"ERROR: Study with the identifier {identifier} does not exist in the investigation file.")
                 ()
         | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+            log.Error("ERROR: The investigation does not contain any studies.")
             
 
-    /// Lists all study identifiers registered in this arc's investigation file
-    let list (arcConfiguration:ArcConfiguration) =
+    /// Lists all study identifiers registered in this ARC's investigation file.
+    let list (arcConfiguration : ArcConfiguration) =
         
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+        let log = Logging.createLogger "StudyListLog"
         
-        if verbosity >= 1 then printfn "Start Study List"
+        log.Info("Start Study List")
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
-        printfn "InvestigationFile: %s"  investigationFilePath
+        log.Debug($"InvestigationFile: {investigationFilePath}")
 
         let investigation = Investigation.fromFile investigationFilePath
         
@@ -260,22 +258,20 @@ module StudyAPI =
         | Some studies -> 
             studies
             |> List.iter (fun s ->
-            
-                printfn "Study: %s" (Option.defaultValue "" s.Identifier)
+                log.Debug(sprintf "Study: %s" (Option.defaultValue "" s.Identifier))
             )
-        | None -> 
-            if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+        | None -> log.Error("ERROR: The investigation does not contain any studies.")
            
 
-    /// Functions for altering investigation contacts
+    /// Functions for altering investigation contacts.
     module Contacts =
 
-        /// Updates an existing person in the arc investigation study with the given person metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        /// Updates an existing person in the ARC investigation study with the given person metadata contained in cliArgs.
+        let update (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyContactsUpdateLog"
 
-            if verbosity >= 1 then printfn "Start Person Update"
+            log.Info("Start Person Update")
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" personArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -320,54 +316,55 @@ module StudyAPI =
                             |> API.Study.setContacts study
 
                         else
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" personArgs then
-                                if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                                log.Warn($"WARN: {msg}")
+                                log.Info("Registering person as AddIfMissing Flag was set.")
                                 API.Person.add persons person
                                 |> API.Study.setContacts study
                             else 
-                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                                log.Error($"ERROR: {msg}")
+                                log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
                                 study
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        let msg = $"The study with the identifier {studyIdentifier} does not contain any persons."
                         if containsFlag "AddIfMissing" personArgs then
-                            if verbosity >= 1 then printfn "Registering person as AddIfMissing Flag was set" 
+                            log.Warn($"WARNING: {msg}")
+                            log.Info("Registering person as AddIfMissing Flag was set.")
                             [person]
                             |> API.Study.setContacts study
                         else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register person with the update command if it is missing" 
+                            log.Error($"ERROR: {msg}")
+                            log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc investigation study with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC investigation study with the text editor set in globalArgs.
+        let edit (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyContactsEdit"
             
-            if verbosity >= 1 then printfn "Start Person Edit"
+            log.Info("Start Person Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName "LastName"       personArgs)
+            let firstName   = (getFieldValueByName "FirstName"      personArgs)
+            let midInitials = (getFieldValueByName "MidInitials"    personArgs)
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
             let investigation = Investigation.fromFile investigationFilePath
-            
-            let studies = investigation.Studies
 
             match investigation.Studies with
             | Some studies -> 
@@ -377,7 +374,7 @@ module StudyAPI =
                     | Some persons -> 
                         match API.Person.tryGetByFullName firstName midInitials lastName persons with
                         | Some person -> 
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Contacts.toRows None) 
                                 (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 person
@@ -386,27 +383,27 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any persons.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Registers a person in the arc investigation study with the given person metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        /// Registers a person in the ARC investigation study with the given person metadata contained in personArgs.
+        let register (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyContactsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Person Register"
+            log.Info("Start Person Register")
 
-            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let lastName    = getFieldValueByName "LastName"    personArgs
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 
@@ -442,35 +439,35 @@ module StudyAPI =
                 | Some study -> 
                     match study.Contacts with
                     | Some persons -> 
-                        if API.Person.existsByFullName firstName midInitials lastName persons then               
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s already exists in the investigation file" firstName midInitials lastName
+                        if API.Person.existsByFullName firstName midInitials lastName persons then
+                            log.Info($"Person with the name {firstName} {midInitials} {lastName} already exists in the investigation file.")
                             persons
                         else
-                            API.Person.add persons person                           
+                            API.Person.add persons person
                     | None -> 
                         [person]
                     |> API.Study.setContacts study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
     
 
-        /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        /// Removes an existing person by fullname (LastName, FirstName, MidInitials) from the ARC with the text editor set in globalArgs.
+        let unregister (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyContactsUnregister"
             
-            if verbosity >= 1 then printfn "Start Person Unregister"
+            log.Info("Start Person Unregister")
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName "LastName"       personArgs)
+            let firstName   = (getFieldValueByName "FirstName"      personArgs)
+            let midInitials = (getFieldValueByName "MidInitials"    personArgs)
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
@@ -490,29 +487,29 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            if verbosity >= 1 then printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any persons.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing person by fullname (lastName,firstName,MidInitials) and prints its metadata.
-        let show (arcConfiguration:ArcConfiguration) (personArgs : Map<string,Argument>) =
+        /// Gets an existing person by fullname (LastName, FirstName, MidInitials) and prints its metadata.
+        let show (arcConfiguration : ArcConfiguration) (personArgs : Map<string,Argument>) =
           
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyContactsShowLog"
             
-            if verbosity >= 1 then printfn "Start Person Get"
+            log.Info("Start Person Show")
 
-            let lastName = (getFieldValueByName  "LastName"   personArgs)
-            let firstName = (getFieldValueByName  "FirstName"     personArgs)
-            let midInitials = (getFieldValueByName  "MidInitials"  personArgs)
+            let lastName    = (getFieldValueByName "LastName"       personArgs)
+            let firstName   = (getFieldValueByName "FirstName"      personArgs)
+            let midInitials = (getFieldValueByName "MidInitials"    personArgs)
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
@@ -530,22 +527,22 @@ module StudyAPI =
                         | Some person ->
                             [person]
                             |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
-                            |> printfn "%s"
-                        | None -> printfn "Person with the name %s %s %s  does not exist in the study with the identifier %s" firstName midInitials lastName studyIdentifier
+                            |> log.Debug
+                        | None -> log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any persons" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any persons.")
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"
+                log.Error("ERROR: The investigation does not contain any studies.")
 
 
-        /// Lists the full names of all persons included in the investigation
-        let list (arcConfiguration:ArcConfiguration) = 
+        /// Lists the full names of all persons included in the investigation.
+        let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyContactsListLog"
             
-            if verbosity >= 1 then printfn "Start Person List"
+            log.Info("Start Person List")
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -557,31 +554,31 @@ module StudyAPI =
                 |> Seq.iter (fun study ->
                     match study.Contacts with
                     | Some persons -> 
-                   
-                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        log.Debug(sprintf "Study: %s" (Option.defaultValue "" study.Identifier))
                         persons 
                         |> Seq.iter (fun person -> 
                             let firstName = Option.defaultValue "" person.FirstName
                             let midInitials = Option.defaultValue "" person.MidInitials
                             let lastName = Option.defaultValue "" person.LastName
                             if midInitials = "" then
-                                printfn "--Person: %s %s" firstName lastName
+                                log.Debug($"--Person: {firstName} {lastName}")
                             else
-                                printfn "--Person: %s %s %s" firstName midInitials lastName)
+                                log.Debug($"--Person: {firstName} {midInitials} {lastName}")
+                        )
                     | None -> ()
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
 
-    /// Functions for altering investigation Publications
+    /// Functions for altering investigation Publications.
     module Publications =
 
-        /// Updates an existing publication in the arc investigation study with the given publication metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        /// Updates an existing publication in the ARC investigation study with the given publication metadata contained in cliArgs.
+        let update (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyPublicationsUpdateLog"
             
-            if verbosity >= 1 then printfn "Start Publication update"
+            log.Info("Start Publication update")
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" publicationArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -614,44 +611,47 @@ module StudyAPI =
                             API.Publication.updateByDOI updateOption publication publications
                             |> API.Study.setPublications study
                         else
-                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            let msg = $"Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" publicationArgs then
-                                if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                                log.Warn($"WARNING: {msg}")
+                                log.Info("Registering publication as AddIfMissing Flag was set.")
                                 API.Publication.add publications publication
                                 |> API.Study.setPublications study
                             else 
-                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                                log.Error($"ERROR: {msg}")
+                                log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing.")
                                 study
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        let msg = $"The study with the identifier {studyIdentifier} does not contain any publications."
                         if containsFlag "AddIfMissing" publicationArgs then
-                            if verbosity >= 1 then printfn "Registering publication as AddIfMissing Flag was set" 
+                            log.Warn($"WARNING: {msg}")
+                            log.Info("Registering publication as AddIfMissing Flag was set.")
                             [publication]
                             |> API.Study.setPublications study
                         else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register publication with the update command if it is missing" 
+                            log.Error($"ERROR: {msg}")
+                            log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing publication by doi in the arc investigation study with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        /// Opens an existing publication by DOI in the ARC investigation study with the text editor set in globalArgs.
+        let edit (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyPublicationsEditLog"
             
-            if verbosity >= 1 then printfn "Start Publication Edit"
+            log.Info("Start Publication Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let doi = (getFieldValueByName  "DOI"   publicationArgs)
+            let doi = (getFieldValueByName "DOI" publicationArgs)
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" publicationArgs
 
@@ -668,7 +668,7 @@ module StudyAPI =
                         // TODO : Remove the "Some" when the
                         match API.Publication.tryGetByDoi doi publications with
                         | Some publication ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Publications.toRows None) 
                                 (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 publication
@@ -676,28 +676,27 @@ module StudyAPI =
                             |> API.Study.setPublications study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
-
                         | None ->
-                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            log.Error($"ERROR: Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any publications.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a publication in the arc investigation study with the given publication metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        /// Registers a publication in the ARC investigation study with the given publication metadata contained in personArgs.
+        let register (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyPublicationsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Publication Register"
+            log.Info("Start Publication Register")
 
             let doi = getFieldValueByName  "DOI"                        publicationArgs
 
@@ -724,30 +723,30 @@ module StudyAPI =
                 | Some study -> 
                     match study.Publications with
                     | Some publications -> 
-                        if API.Publication.existsByDoi doi publications then           
-                            if verbosity >= 1 then printfn "Publication with the DOI %s already exists in the study with the identifier %s" doi studyIdentifier
+                        if API.Publication.existsByDoi doi publications then
+                            log.Error($"ERROR: Publication with the DOI {doi} already exists in the study with the identifier {studyIdentifier}.")
                             publications
                         else
-                            API.Publication.add publications publication                           
+                            API.Publication.add publications publication
                     | None ->
                         [publication]
                     |> API.Study.setPublications study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing publication by doi in the arc investigation study with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        /// Opens an existing publication by DOI in the ARC investigation study with the text editor set in globalArgs.
+        let unregister (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyPublicationsUnregisterLog"
             
-            if verbosity >= 1 then printfn "Start Publication Unregister"
+            log.Info("Start Publication Unregister")
 
             let doi = (getFieldValueByName  "DOI"   publicationArgs)
 
@@ -763,33 +762,33 @@ module StudyAPI =
                 | Some study -> 
                     match study.Publications with
                     | Some publications -> 
-                        if API.Publication.existsByDoi doi publications then           
+                        if API.Publication.existsByDoi doi publications then
                             API.Publication.removeByDoi doi publications
                             |> API.Study.setPublications study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
-                            investigation               
+                            log.Error($"ERROR: Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
+                            investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any publications.")
                         investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing publication by doi from the arc investigation study and prints its metadata.
-        let show (arcConfiguration:ArcConfiguration) (publicationArgs : Map<string,Argument>) =
+        /// Gets an existing publication by DOI from the ARC investigation study and prints its metadata.
+        let show (arcConfiguration : ArcConfiguration) (publicationArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyPublicationsShow"
             
-            if verbosity >= 1 then printfn "Start Publication Get"
+            log.Info("Start Publication Show")
 
-            let doi = (getFieldValueByName  "DOI"   publicationArgs)
+            let doi = (getFieldValueByName "DOI" publicationArgs)
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" publicationArgs
 
@@ -807,23 +806,23 @@ module StudyAPI =
                         | Some publication ->
                             [publication]
                             |> Prompt.serializeXSLXWriterOutput (Publications.toRows None)
-                            |> printfn "%s"
+                            |> log.Debug
                         | None -> 
-                            if verbosity >= 1 then printfn "Publication with the DOI %s does not exist in the study with the identifier %s" doi studyIdentifier
+                            log.Error($"ERROR: Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any publications" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any publications.")
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
 
 
-        /// Lists the dois of all publications included in the investigation study
-        let list (arcConfiguration:ArcConfiguration) = 
+        /// Lists the DOIs of all publications included in the investigation study.
+        let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyPublicationsListLog"
             
-            if verbosity >= 1 then printfn "Start Publication List"
+            log.Info("Start Publication List")
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -835,24 +834,24 @@ module StudyAPI =
                 |> Seq.iter (fun study ->
                     match study.Publications with
                     | Some publications -> 
-                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        log.Debug(sprintf "Study: %s" (Option.defaultValue "" study.Identifier))
                         publications
-                        |> Seq.iter (fun publication -> printfn "--Publication DOI: %s" (Option.defaultValue "" publication.DOI))
+                        |> Seq.iter (fun publication -> log.Debug(sprintf "--Publication DOI: %s" (Option.defaultValue "" publication.DOI)))
                     | None -> ()
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
 
 
-    /// Functions for altering investigation Designs
+    /// Functions for altering investigation Designs.
     module Designs =
 
-        /// Updates an existing design in the arc investigation study with the given design metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
+        /// Updates an existing design in the ARC investigation study with the given design metadata contained in cliArgs.
+        let update (arcConfiguration : ArcConfiguration) (designArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyDesugnsUpdateLog"
             
-            if verbosity >= 1 then printfn "Start Design update"
+            log.Info("Start Design Update")
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" designArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
@@ -881,46 +880,48 @@ module StudyAPI =
                         if API.OntologyAnnotation.existsByName design.Name.Value designs then
                             API.OntologyAnnotation.updateByName updateOption design designs
                             |> API.Study.setDescriptors study
-
                         else
-                            if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            let msg = $"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" designArgs then
-                                if verbosity >= 1 then printfn "Registering design as AddIfMissing Flag was set" 
+                                log.Warn($"WARNING: {msg}")
+                                log.Info("Registering design as AddIfMissing Flag was set.")
                                 API.OntologyAnnotation.add designs design
                                 |> API.Study.setDescriptors study
                             else 
-                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register design with the update command if it is missing" 
+                                log.Error($"ERROR: {msg}")
+                                log.Trace("AddIfMissing argument can be used to register design with the update command if it is missing.")
                                 study
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        let msg = $"The study with the identifier {studyIdentifier} does not contain any design descriptors."
                         if containsFlag "AddIfMissing" designArgs then
-                            if verbosity >= 1 then printfn "Registering design as AddIfMissing Flag was set" 
+                            log.Warn($"WARNING: {msg}")
+                            log.Info("Registering design as AddIfMissing Flag was set.")
                             [design]
                             |> API.Study.setDescriptors study
                         else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register design with the update command if it is missing" 
+                            log.Error($"ERROR: {msg}")
+                            log.Trace("AddIfMissing argument can be used to register design with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing design by design type in the arc investigation study with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
+        /// Opens an existing design by design type in the ARC investigation study with the text editor set in globalArgs.
+        let edit (arcConfiguration : ArcConfiguration) (designArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyDesignsEdit"
             
-            if verbosity >= 1 then printfn "Start Design Edit"
+            log.Info("Start Design Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let name = (getFieldValueByName  "DesignType"   designArgs)
+            let name = (getFieldValueByName "DesignType" designArgs)
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
 
@@ -935,8 +936,8 @@ module StudyAPI =
                     match study.StudyDesignDescriptors with
                     | Some designs -> 
                         match API.OntologyAnnotation.tryGetByName (AnnotationValue.fromString name) designs with
-                        | Some design ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                        | Some design ->
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> DesignDescriptors.toRows None) 
                                 (DesignDescriptors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 design
@@ -944,37 +945,35 @@ module StudyAPI =
                             |> API.Study.setDescriptors study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
-
                         | None ->
-                            if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            log.Error($"ERROR: Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any design descriptors.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a design in the arc investigation study with the given publication metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
+        /// Registers a design in the ARC investigation study with the given publication metadata contained in personArgs.
+        let register (arcConfiguration : ArcConfiguration) (designArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyDesignsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Design Register"
+            log.Info("Start Design Register")
 
-            let name = getFieldValueByName  "DesignType"                 designArgs
+            let name = getFieldValueByName "DesignType" designArgs
 
             let design = 
                 DesignDescriptors.fromString
                     name
                     (getFieldValueByName  "TypeTermAccessionNumber"    designArgs)
                     (getFieldValueByName  "TypeTermSourceREF"          designArgs)
-
                     []
             
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
@@ -989,32 +988,32 @@ module StudyAPI =
                 | Some study -> 
                     match study.StudyDesignDescriptors with
                     | Some designs -> 
-                        if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then           
-                            if verbosity >= 1 then printfn "Design with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                        if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then
+                            log.Error($"ERROR: Design with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                             designs
                         else
-                            API.OntologyAnnotation.add designs design                           
+                            API.OntologyAnnotation.add designs design
                     | None -> 
                         [design]
                     |> API.Study.setDescriptors study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing design by design type in the arc investigation study with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
+        /// Opens an existing design by design type in the ARC investigation study with the text editor set in globalArgs.
+        let unregister (arcConfiguration : ArcConfiguration) (designArgs : Map<string,Argument>) =
             
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyDesignsUnregisterLog"
             
-            if verbosity >= 1 then printfn "Start Design Unregister"
+            log.Info("Start Design Unregister")
 
-            let name = getFieldValueByName  "DesignType"   designArgs
+            let name = getFieldValueByName "DesignType" designArgs
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
 
@@ -1034,27 +1033,27 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            if verbosity >= 1 then printfn "Design with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                            investigation    
+                            log.Error($"ERROR: Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any design descriptors.")
                         investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing design by design type from the arc investigation study and prints its metadata.
-        let show (arcConfiguration:ArcConfiguration) (designArgs : Map<string,Argument>) =
+        /// Gets an existing design by design type from the ARC investigation study and prints its metadata.
+        let show (arcConfiguration : ArcConfiguration) (designArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyDesignsShowLog"
             
-            if verbosity >= 1 then printfn "Start Design Get"
+            log.Info("Start Design Show")
 
-            let name = getFieldValueByName  "DesignType"   designArgs
+            let name = getFieldValueByName "DesignType" designArgs
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
 
@@ -1072,21 +1071,22 @@ module StudyAPI =
                         | Some design ->
                             [design]
                             |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.toRows None)
-                            |> printfn "%s"
+                            |> log.Debug
                         | None -> 
-                            if verbosity >= 1 then printfn "Design with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                            log.Error($"ERROR: Design with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any design descriptors" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any design descriptors.")
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
-        /// Lists the designs included in the investigation study
-        let list (arcConfiguration:ArcConfiguration) = 
+                log.Error("ERROR: The investigation does not contain any studies.")
+        
+        /// Lists the designs included in the investigation study.
+        let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyDesignsListLog"
             
-            if verbosity >= 1 then printfn "Start Design List"
+            log.Info("Start Design List")
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -1098,27 +1098,27 @@ module StudyAPI =
                 |> Seq.iter (fun study ->
                     match study.StudyDesignDescriptors with
                     | Some designs -> 
-                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        log.Debug(sprintf "Study: %s" (Option.defaultValue "" study.Identifier))
                         designs
-                        |> Seq.iter (fun design -> printfn "--Design Type: %s" (design.Name |> Option.map AnnotationValue.toString |> Option.defaultValue "" ))
+                        |> Seq.iter (fun design -> log.Debug(sprintf "--Design Type: %s" (design.Name |> Option.map AnnotationValue.toString |> Option.defaultValue "" )))
                     | None -> ()
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
 
-    /// Functions for altering investigation factors
+    /// Functions for altering investigation factors.
     module Factors =
 
-        /// Updates an existing factor in the arc investigation study with the given factor metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
+        /// Updates an existing factor in the ARC investigation study with the given factor metadata contained in cliArgs.
+        let update (arcConfiguration : ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyFactorsUpdateLog"
             
-            if verbosity >= 1 then printfn "Start Factor Update"
+            log.Info("Start Factor Update")
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" factorArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
-            let name = getFieldValueByName  "Name" factorArgs
+            let name = getFieldValueByName "Name" factorArgs
 
             let factor = 
                  Factors.fromString
@@ -1144,44 +1144,47 @@ module StudyAPI =
                             API.Factor.updateByName updateOption factor factors
                             |> API.Study.setFactors study
                         else
-                            if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            let msg = $"Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" factorArgs then
-                                if verbosity >= 1 then printfn "Registering factor as AddIfMissing Flag was set" 
+                                log.Warn($"WARNING: {msg}")
+                                log.Info("Registering factor as AddIfMissing Flag was set.")
                                 API.Factor.add factors factor
                                 |> API.Study.setFactors study
                             else 
-                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register factor with the update command if it is missing" 
+                                log.Error($"ERROR: {msg}")
+                                log.Trace("AddIfMissing argument can be used to register factor with the update command if it is missing.")
                                 study
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        let msg = $"The study with the identifier {studyIdentifier} does not contain any factors."
                         if containsFlag "AddIfMissing" factorArgs then
-                            if verbosity >= 1 then printfn "Registering factor as AddIfMissing Flag was set" 
+                            log.Warn($"WARNING: {msg}")
+                            log.Info("Registering factor as AddIfMissing Flag was set.")
                             [factor]
                             |> API.Study.setFactors study
                         else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register factor with the update command if it is missing" 
+                            log.Error($"ERROR: {msg}")
+                            log.Trace("AddIfMissing argument can be used to register factor with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing factor by name in the arc investigation study with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
+        /// Opens an existing factor by name in the ARC investigation study with the text editor set in globalArgs.
+        let edit (arcConfiguration : ArcConfiguration) (factorArgs : Map<string,Argument>) =
             
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyFactorsEditLog"
             
-            if verbosity >= 1 then printfn "Start Factor Edit"
+            log.Info("Start Factor Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-            let name = getFieldValueByName  "Name" factorArgs
+            let name = getFieldValueByName "Name" factorArgs
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" factorArgs
 
@@ -1197,7 +1200,7 @@ module StudyAPI =
                     | Some factors -> 
                         match API.Factor.tryGetByName name factors with
                         | Some factor ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Factors.toRows None) 
                                 (Factors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 factor
@@ -1205,28 +1208,27 @@ module StudyAPI =
                             |> API.Study.setFactors study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
-
                         | None ->
-                            if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            log.Error($"ERROR: Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any factors.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a factor in the arc investigation study with the given factor metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
+        /// Registers a factor in the ARC investigation study with the given factor metadata contained in personArgs.
+        let register (arcConfiguration : ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyFactorsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Factor Register"
+            log.Info("Start Factor Register")
             
             let name = getFieldValueByName  "Name" factorArgs
 
@@ -1250,8 +1252,8 @@ module StudyAPI =
                 | Some study -> 
                     match study.Factors with
                     | Some factors -> 
-                        if API.Factor.existsByName name factors then           
-                            if verbosity >= 1 then printfn "Factor with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                        if API.Factor.existsByName name factors then
+                            log.Error($"ERROR: Factor with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                             factors
                         else
                             API.Factor.add factors factor
@@ -1260,19 +1262,19 @@ module StudyAPI =
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing factor by name in the arc investigation study with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
+        /// Opens an existing factor by name in the ARC investigation study with the text editor set in globalArgs.
+        let unregister (arcConfiguration : ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyFactorsUnregisterLog"
             
-            if verbosity >= 1 then printfn "Start Factor Unregister"
+            log.Info("Start Factor Unregister")
             
             let name = getFieldValueByName  "Name" factorArgs
 
@@ -1294,25 +1296,25 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            if verbosity >= 1 then printfn "Factor with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                            investigation         
+                            log.Error($"ERROR: Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any factors.")
                         investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing factor by name from the arc investigation study and prints its metadata.
-        let show (arcConfiguration:ArcConfiguration) (factorArgs : Map<string,Argument>) =
+        /// Gets an existing factor by name from the ARC investigation study and prints its metadata.
+        let show (arcConfiguration : ArcConfiguration) (factorArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyFactorsShowLog"
             
-            if verbosity >= 1 then printfn "Start Factor Get"
+            log.Info("Start Factor Show")
 
             let name = getFieldValueByName  "Name" factorArgs
 
@@ -1332,22 +1334,22 @@ module StudyAPI =
                         | Some factor ->
                             [factor]
                             |> Prompt.serializeXSLXWriterOutput (Factors.toRows None)
-                            |> printfn "%s"
+                            |> log.Debug
                         | None -> 
-                            if verbosity >= 1 then printfn "Factor with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                            log.Error($"ERROR: Factor with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any factors" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any factors.")
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
 
-        /// Lists the factors included in the investigation study
-        let list (arcConfiguration:ArcConfiguration) = 
+        /// Lists the factors included in the investigation study.
+        let list (arcConfiguration : ArcConfiguration) = 
             
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyFactorsListLog"
             
-            if verbosity >= 1 then printfn "Start Factor List"
+            log.Warn("Start Factor List")
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -1359,25 +1361,25 @@ module StudyAPI =
                 |> Seq.iter (fun study ->
                     match study.Factors with
                     | Some factors -> 
-                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        log.Debug(sprintf "Study: %s" (Option.defaultValue "" study.Identifier))
                         factors
-                        |> Seq.iter (fun factor -> printfn "--Factor Name: %s" (Option.defaultValue "" factor.Name))
+                        |> Seq.iter (fun factor -> log.Debug(sprintf "--Factor Name: %s" (Option.defaultValue "" factor.Name)))
                     | None -> ()
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
 
-    /// Functions for altering investigation protocols
+    /// Functions for altering investigation protocols.
     module Protocols =
 
-        /// Updates an existing protocol in the arc investigation study with the given protocol metadata contained in cliArgs.
-        let update (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        /// Updates an existing protocol in the ARC investigation study with the given protocol metadata contained in cliArgs.
+        let update (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsUpdateLog"
             
-            if verbosity >= 1 then printfn "Start Protocol Update"
+            log.Info("Start Protocol Update")
 
-            let updateOption = if containsFlag "ReplaceWithEmptyValues" protocolArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
+            let updateOption = if containsFlag "ReplaceWithEmptyValues" protocolArgs then API.Update.UpdateAll else API.Update.UpdateByExisting
 
             let name = getFieldValueByName "Name" protocolArgs
 
@@ -1398,7 +1400,6 @@ module StudyAPI =
                     (getFieldValueByName "ComponentsTypeTermAccessionNumber"    protocolArgs)
                     (getFieldValueByName "ComponentsTypeTermSourceREF"          protocolArgs)
                     []
-
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -1415,44 +1416,46 @@ module StudyAPI =
                         if API.Protocol.existsByName name protocols then
                             API.Protocol.updateByName updateOption protocol protocols
                             |> API.Study.setProtocols study
-
                         else
-                            if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            let msg = $"Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" protocolArgs then
-                                if verbosity >= 1 then printfn "Registering protocol as AddIfMissing Flag was set" 
+                                log.Warn($"WARNING: {msg}")
+                                log.Info("Registering protocol as AddIfMissing Flag was set.")
                                 API.Protocol.add protocols protocol
                                 |> API.Study.setProtocols study
                             else 
-                                if verbosity >= 2 then printfn "AddIfMissing argument can be used to register protocol with the update command if it is missing" 
+                                log.Error($"ERROR: {msg}")
+                                log.Trace("AddIfMissing argument can be used to register protocol with the update command if it is missing.")
                                 study
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        let msg = $"The study with the identifier {studyIdentifier} does not contain any protocols."
                         if containsFlag "AddIfMissing" protocolArgs then
-                            if verbosity >= 1 then printfn "Registering protocol as AddIfMissing Flag was set" 
+                            log.Warn($"WARNING: {msg}")
+                            log.Info("Registering protocol as AddIfMissing Flag was set.")
                             [protocol]
                             |> API.Study.setProtocols study
                         else 
-                            if verbosity >= 2 then printfn "AddIfMissing argument can be used to register protocol with the update command if it is missing" 
+                            log.Error($"ERROR: {msg}")
+                            log.Trace("AddIfMissing argument can be used to register protocol with the update command if it is missin.g")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
-        /// Opens an existing protocol by name in the arc investigation study with the text editor set in globalArgs.
-        let edit (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        /// Opens an existing protocol by name in the ARC investigation study with the text editor set in globalArgs.
+        let edit (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsEditLog"
             
-            if verbosity >= 1 then printfn "Start Protocol Edit"
+            log.Info("Start Protocol Edit")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let name = (getFieldValueByName  "Name" protocolArgs)
 
@@ -1469,8 +1472,8 @@ module StudyAPI =
                     match study.Protocols with
                     | Some protocols -> 
                         match API.Protocol.tryGetByName name protocols with
-                        | Some protocol ->                    
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                        | Some protocol ->
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Protocols.toRows None) 
                                 (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                                 protocol
@@ -1479,26 +1482,26 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            log.Error($"ERROR: Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any protocols.")
                         investigation
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
 
-        /// Registers a protocol in the arc investigation study with the given protocol metadata contained in personArgs.
-        let register (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        /// Registers a protocol in the ARC investigation study with the given protocol metadata contained in personArgs.
+        let register (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
            
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsRegisterLog"
             
-            if verbosity >= 1 then printfn "Start Protocol Register"
+            log.Info("Start Protocol Register")
             
             let name = getFieldValueByName "Name" protocolArgs
 
@@ -1532,31 +1535,31 @@ module StudyAPI =
                 | Some study -> 
                     match study.Protocols with
                     | Some protocols -> 
-                        if API.Protocol.existsByName name protocols then           
-                            if verbosity >= 1 then printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                        if API.Protocol.existsByName name protocols then
+                            log.Error($"ERROR: Protocol with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                             protocols
                         else
-                            API.Protocol.add protocols protocol                          
+                            API.Protocol.add protocols protocol
                     | None -> [protocol]
                     |> API.Study.setProtocols study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error($"ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Opens an existing protocol by name in the arc investigation study with the text editor set in globalArgs.
-        let unregister (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        /// Opens an existing protocol by name in the ARC investigation study with the text editor set in globalArgs.
+        let unregister (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsUnregisterLog"
             
-            if verbosity >= 1 then printfn "Start Protocol Unregister"
+            log.Info("Start Protocol Unregister")
 
-            let name = getFieldValueByName  "Name" protocolArgs
+            let name = getFieldValueByName "Name" protocolArgs
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
 
@@ -1570,33 +1573,33 @@ module StudyAPI =
                 | Some study -> 
                     match study.Protocols with
                     | Some protocols -> 
-                        if API.Protocol.existsByName name protocols then           
+                        if API.Protocol.existsByName name protocols then
                             API.Protocol.removeByName name protocols
                             |> API.Study.setProtocols study
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            if verbosity >= 1 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
-                            investigation             
+                            log.Error($"ERROR: Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            investigation
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any protocols.")
                         investigation
                 | None ->
-                    printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        let load (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        /// Loads a protocol or process file from a given filepath and adds it to the study.
+        let load (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsLoadLog"
             
-            if verbosity >= 1 then printfn "Start Protocol Load"
+            log.Info("Start Protocol Load")
 
             let editor = GeneralConfiguration.getEditor arcConfiguration
-            let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
             let path = getFieldValueByName "InputPath" protocolArgs
 
@@ -1608,12 +1611,12 @@ module StudyAPI =
                     Json.Protocol.fromFile path |> Some
                 |> Option.map (fun p -> 
                     if p.Name.IsNone then
-                        if verbosity >= 1 then printfn "Given protocol does not contain a name, please add it in the editor" 
-                        ArgumentProcessing.Prompt.createIsaItemQuery editor workDir 
+                        log.Error("ERROR: Given protocol does not contain a name, please add it in the editor.")
+                        ArgumentProcessing.Prompt.createIsaItemQuery editor
                             (List.singleton >> Protocols.toRows None) 
                             (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                             p
-                    else p               
+                    else p
                 )
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
@@ -1625,48 +1628,48 @@ module StudyAPI =
             match investigation.Studies with
             | Some studies -> 
                 match protocol with 
-                | Some protocol ->                
+                | Some protocol ->
                     match API.Study.tryGetByIdentifier studyIdentifier studies with
                     | Some study -> 
                         let name = protocol.Name.Value
                         match study.Protocols with
                         | Some protocols ->
-                            if API.Protocol.existsByName name protocols then  
-                                if verbosity >= 1 then 
-                                    printfn "Protocol with the name %s already exists in the study with the identifier %s" name studyIdentifier
+                            if API.Protocol.existsByName name protocols then
+                                let msg = $"Protocol with the name {name} already exists in the study with the identifier {studyIdentifier}."
                                 if containsFlag "UpdateExisting" protocolArgs then
-                                    if verbosity >= 1 then printfn "Updating protocol as \"UpdateExisting\" flag was given" 
+                                    log.Warn($"WARNING: {msg}")
+                                    log.Info("Updating protocol as \"UpdateExisting\" flag was given.")
                                     API.Protocol.updateByName API.Update.UpdateAll protocol protocols
                                 else
-                                    if verbosity >= 1 then printfn "Not updating protocol as \"UpdateExisting\" flag was not given" 
+                                    log.Error($"ERROR: {msg}")
+                                    log.Info("Not updating protocol as \"UpdateExisting\" flag was not given.")
                                     protocols
-                            else                  
-                                if verbosity >= 2 then printfn "Protocol with the name %s does not exist in the study with the identifier %s" name studyIdentifier
+                            else
+                                log.Trace($"Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                                 API.Protocol.add protocols protocol
                         | None -> [protocol]
-                    
                         |> API.Study.setProtocols study
                         |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                         |> API.Investigation.setStudies investigation
                     | None ->
-                        printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
-                        investigation              
+                        log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                        investigation
                 | None ->
-                    if verbosity >= 1 then printfn "The process file did not contain a protocol" 
+                    log.Error("ERROR: The process file did not contain a protocol.")
                     investigation
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        /// Gets an existing protocol by name from the arc investigation study and prints its metadata.
-        let show (arcConfiguration:ArcConfiguration) (protocolArgs : Map<string,Argument>) =
+        /// Gets an existing protocol by name from the ARC investigation study and prints its metadata.
+        let show (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
          
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsShowLog"
             
-            if verbosity >= 1 then printfn "Start Protocol Get"
+            log.Info("Start Protocol Show")
 
-            let name = getFieldValueByName  "Name" protocolArgs
+            let name = getFieldValueByName "Name" protocolArgs
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" protocolArgs
 
@@ -1684,23 +1687,23 @@ module StudyAPI =
                         | Some protocol ->
                             [protocol]
                             |> Prompt.serializeXSLXWriterOutput (Protocols.toRows None)
-                            |> printfn "%s"
+                            |> log.Debug
                         | None -> 
-                            if verbosity >= 1 then printfn "Protocol with the DOI %s does not exist in the study with the identifier %s" name studyIdentifier                    
+                            log.Error($"ERROR: Protocol with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        if verbosity >= 1 then printfn "The study with the identifier %s does not contain any protocols" studyIdentifier
+                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any protocols.")
                 | None -> 
-                    if verbosity >= 1 then printfn "Study with the identifier %s does not exist in the investigation file" studyIdentifier
+                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
                 
 
-        /// Lists the protocols included in the investigation study
-        let list (arcConfiguration:ArcConfiguration) = 
+        /// Lists the protocols included in the investigation study.
+        let list (arcConfiguration : ArcConfiguration) = 
 
-            let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
+            let log = Logging.createLogger "StudyProtocolsListLog"
             
-            if verbosity >= 1 then printfn "Start Protocol List"
+            log.Info"Start Protocol List"
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -1712,10 +1715,10 @@ module StudyAPI =
                 |> Seq.iter (fun study ->
                     match study.Protocols with
                     | Some protocols -> 
-                        printfn "Study: %s" (Option.defaultValue "" study.Identifier)
+                        log.Debug(sprintf "Study: %s" (Option.defaultValue "" study.Identifier))
                         protocols
-                        |> Seq.iter (fun factor -> printfn "--Protocol Name: %s" (Option.defaultValue "" factor.Name))
+                        |> Seq.iter (fun factor -> log.Debug(sprintf "--Protocol Name: %s" (Option.defaultValue "" factor.Name)))
                     | None -> ()
                 )
             | None -> 
-                if verbosity >= 1 then printfn "The investigation does not contain any studies"  
+                log.Error("ERROR: The investigation does not contain any studies.")
