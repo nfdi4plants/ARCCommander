@@ -213,7 +213,7 @@ let handleCommand arcConfiguration command =
 /// Takes a logger and an exception and separates usage and error messages. Usage messages will be printed into the console while error messages will be logged.
 let handleExceptionMessage (log : NLog.Logger) (exn : Exception) =
     // separate usage message (Argu) and error messages. Error messages shall be logged, usage messages shall not
-    match exn.Message.Contains("USAGE"), exn.Message.Contains("ERROR") with
+    match exn.Message.Contains("USAGE") || exn.Message.Contains("SUBCOMMANDS"), exn.Message.Contains("ERROR") with
     | true,true -> // exception message contains usage AND error messages
         let eMsg, uMsg = 
             exn.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
@@ -233,6 +233,12 @@ let rec private reviseOutput (output : string) =
     if output = null then ""
     elif output.EndsWith('\n') then reviseOutput (output.[0 .. output.Length - 2])
     else output
+
+/// Checks if an error message coming from CMD not being able to call a program with the given name.
+let private matchCmdErrMsg (errMsg : string) = errMsg.Contains("is not recognized as an internal or external command")
+
+/// Checks if an error message coming from Bash not being able to call a program with the given name.
+let private matchBashErrMsg (errMsg : string) = errMsg.Contains("bash: ") && errMsg.Contains("command not found") || errMsg.Contains("No such file or directory")
 
 
 [<EntryPoint>]
@@ -275,7 +281,7 @@ let main argv =
                 parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
                 |> Some
             with
-            | e -> 
+            | e2 -> 
                 // Incorrectly parsed arguments will be threaded into external executable tool handler
                 // Here for the first unknown argument in the argument chain, an executable of the same name will be called
                 // If this tool exists, try executing it with all the following arguments
@@ -283,27 +289,38 @@ let main argv =
                 match tryGetUnknownArguments parser argv with
                 | Some (executableNameArgs, args) ->
                     let executableName = (makeExecutableName executableNameArgs)
-                    let pi = ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; "-p"; workingDir])
+                    let os = IniData.getOs ()
+                    let pi = 
+                        match os with
+                        | Windows   -> ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; "-p"; workingDir])
+                        | Unix      -> ProcessStartInfo("bash", String.concat " " ["-c"; "\""; executableName; "-p"; workingDir; "\""])
                     pi.RedirectStandardOutput <- true // is needed for logging the tool's console output
                     pi.RedirectStandardError <- true // dito
                     log.Info($"Try checking if executable with given argument name \"{executableName}\" exists.")
                     // temporarily add extra directories to PATH
                     let folderToAddToPath = getArcFoldersForExtExe workingDir
-                    let os = IniData.getOs ()
                     List.iter (addExtraDirToPath os) folderToAddToPath
                     // call external tool
                     try 
                         let p = Process.Start(pi)
                         p.OutputDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool: %s" >> log.Info))
-                        p.ErrorDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool ERROR: %s" >> log.Error))
+                        p.ErrorDataReceived.Add(
+                            fun ev -> 
+                                let roev = reviseOutput ev.Data
+                                if matchCmdErrMsg roev || matchBashErrMsg roev then 
+                                    log.Error("ERROR: No executable, command or script file with given argument name known.") 
+                                    handleExceptionMessage log e2
+                                    raise (Exception())
+                                else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
+                        )
                         p.BeginOutputReadLine()
                         p.BeginErrorReadLine()
                         p.WaitForExit()
-                    with e -> handleExceptionMessage log e
+                    with e3 -> handleExceptionMessage log e3
                     None
                 // If neither parsing, nor external executable tool search led to success, just return the error message
                 | None -> 
-                    handleExceptionMessage log e
+                    handleExceptionMessage log e2
                     None
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
@@ -320,7 +337,7 @@ let main argv =
         | None -> 
             1
 
-    with e ->
+    with e1 ->
         
         // create logging config, create .arc folder if not already existing
         let currDir = Directory.GetCurrentDirectory()
@@ -329,6 +346,6 @@ let main argv =
         Logging.generateConfig arcFolder 0 
         let log = Logging.createLogger "ArcCommanderMainLog"
 
-        handleExceptionMessage log e
+        handleExceptionMessage log e1
 
         1
