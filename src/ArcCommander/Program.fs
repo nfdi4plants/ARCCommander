@@ -292,8 +292,8 @@ let main argv =
                     let os = IniData.getOs ()
                     let pi = 
                         match os with
-                        | Windows   -> ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; "-p"; workingDir])
-                        | Unix      -> ProcessStartInfo("bash", String.concat " " ["-c"; "\""; executableName; "-p"; workingDir; "\""])
+                        | Windows   -> ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; yield! args; "-p"; workingDir])
+                        | Unix      -> ProcessStartInfo("bash", String.concat " " ["-c"; "\""; executableName; yield! args; "-p"; workingDir; "\""])
                     pi.RedirectStandardOutput <- true // is needed for logging the tool's console output
                     pi.RedirectStandardError <- true // dito
                     log.Info($"Try checking if executable with given argument name \"{executableName}\" exists.")
@@ -301,10 +301,12 @@ let main argv =
                     let folderToAddToPath = getArcFoldersForExtExe workingDir
                     List.iter (addExtraDirToPath os) folderToAddToPath
                     // call external tool
+                    let sbOutput = StringBuilder() // StringBuilder for TRACE output (verbosity 2)
+                    sbOutput.Append("External tool: ") |> ignore
                     try 
                         let p = Process.Start(pi)
-                        p.OutputDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool: %s" >> log.Info))
-                        p.ErrorDataReceived.Add(
+                        //p.OutputDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool: %s" >> log.Info))
+                        p.ErrorDataReceived.Add( // use event listener for error outputs since they should always have line feeds
                             fun ev -> 
                                 let roev = reviseOutput ev.Data
                                 if matchCmdErrMsg roev || matchBashErrMsg roev then 
@@ -313,9 +315,15 @@ let main argv =
                                     raise (Exception())
                                 else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
                         )
-                        p.BeginOutputReadLine()
-                        p.BeginErrorReadLine()
+                        p.BeginErrorReadLine() // starts the event listener
+                        while not p.HasExited do
+                            let charAsInt = p.StandardOutput.Read() // use this method instead because event listeners ONLY get triggered when line feeds occur
+                            if charAsInt >= 0 then // -1 can be an exit character and would get parsed as line feed
+                                printf "%c" (char charAsInt)
+                                sbOutput.Append(char charAsInt) |> ignore
+                        Threading.Thread.Sleep(500) // <- does not seem to work
                         p.WaitForExit()
+                        log.Trace(sbOutput.ToString()) // it is fine that the logging occurs after the external tool has done its job
                     with e3 -> handleExceptionMessage log e3
                     None
                 // If neither parsing, nor external executable tool search led to success, just return the error message
