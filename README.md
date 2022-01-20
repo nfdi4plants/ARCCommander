@@ -45,9 +45,8 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
 2. Open a Terminal (Applications -> Utilities -> Terminal)
 3. Change to directory where you downloaded the arc e.g. `cd ~/Downloads/`
 4. Change permissions to make arcCommander executable: `chmod a+x arc`
-5. Move arc to a place you like e.g. `mv arc ~/Applications/`
-6. Add that place to your bash_profile to make it executable via terminal from everywhere e.g. `echo 'export PATH="$HOME/Applications/:$PATH"' >> ~/.bash_profile`
-7. Move config file to config folder `mkdir ~/.config/arccommander/; mv config ~/.config/arccommander/config`
+5. Move the arcCommander program to a place from where it is executable from the terminal: `mv arc /usr/local/bin/`
+7. (Only until release v0.0.4: Download and move config file to config folder `mkdir ~/.config/arccommander/; mv config ~/.config/arccommander/config`) 
 8. Quit and start a fresh terminal for this to take effect.
 9. Run arcCommander from the terminal by executing `arc`
 10. MacOS security note: On first execution, MacOS will not allow arc to be run. Instead it opens a pop-up: 
