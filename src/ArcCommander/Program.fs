@@ -240,7 +240,6 @@ let private matchCmdErrMsg (errMsg : string) = errMsg.Contains("is not recognize
 /// Checks if an error message coming from Bash not being able to call a program with the given name.
 let private matchBashErrMsg (errMsg : string) = errMsg.Contains("bash: ") && errMsg.Contains("command not found") || errMsg.Contains("No such file or directory")
 
-
 [<EntryPoint>]
 let main argv =
 
@@ -289,6 +288,7 @@ let main argv =
                 match tryGetUnknownArguments parser argv with
                 | Some (executableNameArgs, args) ->
                     let executableName = (makeExecutableName executableNameArgs)
+                    if executableName = "arc-ducklings" then StudyAPI.Protocols.playAllMyLittleDucklings()
                     let os = IniData.getOs ()
                     let pi = 
                         match os with
@@ -301,27 +301,27 @@ let main argv =
                     let folderToAddToPath = getArcFoldersForExtExe workingDir
                     List.iter (addExtraDirToPath os) folderToAddToPath
                     // call external tool
+                    let p = new Process()
+                    p.StartInfo <- pi
+                    p.ErrorDataReceived.Add( // use event listener for error outputs since they should always have line feeds
+                        fun ev -> 
+                            let roev = reviseOutput ev.Data
+                            if matchCmdErrMsg roev || matchBashErrMsg roev then 
+                                log.Error("ERROR: No executable, command or script file with given argument name known.") 
+                                handleExceptionMessage log e2
+                                raise (Exception())
+                            else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
+                    )
                     let sbOutput = StringBuilder() // StringBuilder for TRACE output (verbosity 2)
                     sbOutput.Append("External tool: ") |> ignore
                     try 
-                        let p = Process.Start(pi)
-                        //p.OutputDataReceived.Add(fun ev -> checkNonLog (reviseOutput ev.Data) (sprintf "External Tool: %s" >> log.Info))
-                        p.ErrorDataReceived.Add( // use event listener for error outputs since they should always have line feeds
-                            fun ev -> 
-                                let roev = reviseOutput ev.Data
-                                if matchCmdErrMsg roev || matchBashErrMsg roev then 
-                                    log.Error("ERROR: No executable, command or script file with given argument name known.") 
-                                    handleExceptionMessage log e2
-                                    raise (Exception())
-                                else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
-                        )
+                        p.Start() |> ignore
                         p.BeginErrorReadLine() // starts the event listener
                         while not p.HasExited do
                             let charAsInt = p.StandardOutput.Read() // use this method instead because event listeners ONLY get triggered when line feeds occur
                             if charAsInt >= 0 then // -1 can be an exit character and would get parsed as line feed
                                 printf "%c" (char charAsInt)
                                 sbOutput.Append(char charAsInt) |> ignore
-                        Threading.Thread.Sleep(500) // <- does not seem to work
                         p.WaitForExit()
                         log.Trace(sbOutput.ToString()) // it is fine that the logging occurs after the external tool has done its job
                     with e3 -> handleExceptionMessage log e3
