@@ -225,21 +225,6 @@ let handleExceptionMessage (log : NLog.Logger) (exn : Exception) =
     | true,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
     | _ -> log.Error(exn.Message) // everything else will be an error message
 
-/// Checks if a message (string) is empty and if it is not, applies a logging function to it.
-let private checkNonLog s (logging : string -> unit) = if s <> "" then logging s
-
-/// Deletes unwanted new lines at the end of an output.
-let rec private reviseOutput (output : string) = 
-    if output = null then ""
-    elif output.EndsWith('\n') then reviseOutput (output.[0 .. output.Length - 2])
-    else output
-
-/// Checks if an error message coming from CMD not being able to call a program with the given name.
-let private matchCmdErrMsg (errMsg : string) = errMsg.Contains("is not recognized as an internal or external command")
-
-/// Checks if an error message coming from Bash not being able to call a program with the given name.
-let private matchBashErrMsg (errMsg : string) = errMsg.Contains("bash: ") && errMsg.Contains("command not found") || errMsg.Contains("No such file or directory")
-
 [<EntryPoint>]
 let main argv =
 
@@ -274,62 +259,7 @@ let main argv =
         let log = Logging.createLogger "ArcCommanderMainLog"
 
         // Try parse the command line arguments
-        let parseResults = 
-            try
-                // Correctly parsed arguments will be threaded into the command handler below
-                parser.ParseCommandLine(inputs = argv, raiseOnUsage = true) 
-                |> Some
-            with
-            | e2 -> 
-                // Incorrectly parsed arguments will be threaded into external executable tool handler
-                // Here for the first unknown argument in the argument chain, an executable of the same name will be called
-                // If this tool exists, try executing it with all the following arguments
-                log.Info("Could not parse given commands.")
-                match tryGetUnknownArguments parser argv with
-                | Some (executableNameArgs, args) ->
-                    let executableName = (makeExecutableName executableNameArgs)
-                    if executableName = "arc-ducklings" then StudyAPI.Protocols.playAllMyLittleDucklings()
-                    let os = IniData.getOs ()
-                    let pi = 
-                        match os with
-                        | Windows   -> ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; yield! args; "-p"; workingDir])
-                        | Unix      -> ProcessStartInfo("bash", String.concat " " ["-c"; "\""; executableName; yield! args; "-p"; workingDir; "\""])
-                    pi.RedirectStandardOutput <- true // is needed for logging the tool's console output
-                    pi.RedirectStandardError <- true // dito
-                    log.Info($"Try checking if executable with given argument name \"{executableName}\" exists.")
-                    // temporarily add extra directories to PATH
-                    let folderToAddToPath = getArcFoldersForExtExe workingDir
-                    List.iter (addExtraDirToPath os) folderToAddToPath
-                    // call external tool
-                    let p = new Process()
-                    p.StartInfo <- pi
-                    p.ErrorDataReceived.Add( // use event listener for error outputs since they should always have line feeds
-                        fun ev -> 
-                            let roev = reviseOutput ev.Data
-                            if matchCmdErrMsg roev || matchBashErrMsg roev then 
-                                log.Error("ERROR: No executable, command or script file with given argument name known.") 
-                                handleExceptionMessage log e2
-                                raise (Exception())
-                            else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
-                    )
-                    let sbOutput = StringBuilder() // StringBuilder for TRACE output (verbosity 2)
-                    sbOutput.Append("External tool: ") |> ignore
-                    try 
-                        p.Start() |> ignore
-                        p.BeginErrorReadLine() // starts the event listener
-                        while not p.HasExited do
-                            let charAsInt = p.StandardOutput.Read() // use this method instead because event listeners ONLY get triggered when line feeds occur
-                            if charAsInt >= 0 then // -1 can be an exit character and would get parsed as line feed
-                                printf "%c" (char charAsInt)
-                                sbOutput.Append(char charAsInt) |> ignore
-                        p.WaitForExit()
-                        log.Trace(sbOutput.ToString()) // it is fine that the logging occurs after the external tool has done its job
-                    with e3 -> handleExceptionMessage log e3
-                    None
-                // If neither parsing, nor external executable tool search led to success, just return the error message
-                | None -> 
-                    handleExceptionMessage log e2
-                    None
+        let parseResults = tryExecuteExternalTool log parser argv workingDir
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"

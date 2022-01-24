@@ -1,5 +1,6 @@
 ﻿namespace ArcCommander
 
+open System
 open NLog
 open NLog.Config
 open NLog.Targets
@@ -71,3 +72,33 @@ module Logging =
         let logger = LogManager.GetLogger(loggerName)
 
         logger
+
+    /// Takes a logger and an exception and separates usage and error messages. Usage messages will be printed into the console while error messages will be logged.
+    let handleExceptionMessage (log : NLog.Logger) (exn : Exception) =
+        // separate usage message (Argu) and error messages. Error messages shall be logged, usage messages shall not
+        match exn.Message.Contains("USAGE") || exn.Message.Contains("SUBCOMMANDS"), exn.Message.Contains("ERROR") with
+        | true,true -> // exception message contains usage AND error messages
+            let eMsg, uMsg = 
+                exn.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
+                |> fun arr ->
+                    arr |> Array.find (fun t -> t.Contains("ERROR")),
+                    arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
+            log.Error(eMsg)
+            printfn "%s" uMsg
+        | true,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
+        | _ -> log.Error(exn.Message) // everything else will be an error message
+    
+    /// Checks if a message (string) is empty and if it is not, applies a logging function to it.
+    let checkNonLog s (logging : string -> unit) = if s <> "" then logging s
+    
+    /// Deletes unwanted new lines at the end of an output.
+    let rec reviseOutput (output : string) = 
+        if output = null then ""
+        elif output.EndsWith('\n') then reviseOutput (output.[0 .. output.Length - 2])
+        else output
+    
+    /// Checks if an error message coming from CMD not being able to call a program with the given name.
+    let matchCmdErrMsg (errMsg : string) = errMsg.Contains("is not recognized as an internal or external command")
+    
+    /// Checks if an error message coming from Bash not being able to call a program with the given name.
+    let matchBashErrMsg (errMsg : string) = errMsg.Contains("bash: ") && errMsg.Contains("command not found") || errMsg.Contains("No such file or directory")
