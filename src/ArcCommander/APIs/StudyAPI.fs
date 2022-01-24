@@ -1593,8 +1593,6 @@ module StudyAPI =
                 investigation
             |> Investigation.toFile investigationFilePath
 
-        let playAllMyLittleDucklings () = Console.Beep(262, 500); Console.Beep(294, 500); Console.Beep(330, 500); Console.Beep(349, 500); Console.Beep(392, 1000); Console.Beep(392, 1000); Console.Beep(440, 500); Console.Beep(440, 500); Console.Beep(440, 500); Console.Beep(440, 500); Console.Beep(392, 2000); Console.Beep(440, 500); Console.Beep(440, 500); Console.Beep(440, 500); Console.Beep(440, 500); Console.Beep(392, 2000); Console.Beep(349, 500); Console.Beep(349, 500); Console.Beep(349, 500); Console.Beep(349, 500); Console.Beep(330, 1000); Console.Beep(330, 1000); Console.Beep(294, 500); Console.Beep(294, 500); Console.Beep(294, 500); Console.Beep(294, 500); Console.Beep(262, 2000); 
-
         /// Loads a protocol or process file from a given filepath and adds it to the study.
         let load (arcConfiguration : ArcConfiguration) (protocolArgs : Map<string,Argument>) =
 
