@@ -64,6 +64,7 @@ module ExternalExecutables =
                     match os with
                     | Windows   -> ProcessStartInfo("cmd", String.concat " " ["/c"; executableName; yield! args; "-p"; workingDir])
                     | Unix      -> ProcessStartInfo("bash", String.concat " " ["-c"; "\""; executableName; yield! args; "-p"; workingDir; "\""])
+                // TO DO: parse args "--noredirect". If given, redirections are set to false instead (or not touched, respectively)
                 pi.RedirectStandardOutput <- true // is needed for logging the tool's console output
                 pi.RedirectStandardError <- true // dito
                 log.Info($"Try checking if executable with given argument name \"{executableName}\" exists.")
