@@ -1,16 +1,19 @@
 ﻿module ArcCommander.Program
 
 // Learn more about F# at http://fsharp.org
-open System
-open System.IO
-open Argu
-
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
+open ArcCommander.ExternalExecutables
 
+open System
+open System.IO
+open System.Text
+open System.Diagnostics
+open Argu
 
+/// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input.
 let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =
 
     let log = Logging.createLogger "ProcessCommandLog"
@@ -18,10 +21,12 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
     let editor = GeneralConfiguration.getEditor arcConfiguration
     let forceEditor = GeneralConfiguration.getForceEditor arcConfiguration
 
+    // Create a collection of all arguments and flags of 'T, including information about whether they were given by the user or not
     let annotatedArguments = groupArguments (r.GetAllResults())
 
+    // Try to collect additional informations
     let arguments = 
-
+        // Opens a command line prompt asking for addtional information if a mandatory argument is missing. Fails if still not given
         if containsMissingMandatoryAttribute annotatedArguments then
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
@@ -29,7 +34,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
                 log.Fatal("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
                 raise (Exception(""))
             arguments
-
+        // Opens a command line prompt asking for addtional information if the "forceeditor" flag is set.
         elif forceEditor then
             Prompt.createArgumentQuery editor annotatedArguments
 
@@ -46,6 +51,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
     finally
         log.Info("Done processing command.")
 
+/// Runs the given command with the given configuration.
 let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
     let log = Logging.createLogger "ProcessCommandWithoutArgsLog"
@@ -210,14 +216,17 @@ let main argv =
 
     try
         let parser = ArgumentParser.Create<ArcCommand>()
-        let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
+        
+        // Failsafe parsing of all correct argument information
+        let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true, ignoreUnrecognized = true)
 
+        // Load configuration ---->
         let workingDir =
-            match results.TryGetResult(WorkingDir) with
+            match safeParseResults.TryGetResult(WorkingDir) with
             | Some s    -> s
             | None      -> System.IO.Directory.GetCurrentDirectory()
 
-        let verbosity = results.TryGetResult(Verbosity) |> Option.map string
+        let verbosity = safeParseResults.TryGetResult(Verbosity) |> Option.map string
 
         let arcConfiguration =
             [
@@ -227,10 +236,16 @@ let main argv =
             |> List.choose (function | k, Some v -> Some (k,v) | _ -> None)
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
-
+        // <-----
+        
+        // here the logging config gets created
         let arcFolder = Path.Combine(arcConfiguration.General.Item "workdir", arcConfiguration.General.Item "rootfolder")
         Directory.CreateDirectory(arcFolder) |> ignore
         Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        let log = Logging.createLogger "ArcCommanderMainLog"
+
+        // Try parse the command line arguments
+        let parseResults = tryExecuteExternalTool log parser argv workingDir
 
         //Testing the configuration reading (Delete when configuration functionality is setup)
         //printfn "load config:"
@@ -238,28 +253,23 @@ let main argv =
         //|> Configuration.flatten
         //|> Seq.iter (fun (a,b) -> printfn "%s=%s" a b)
 
-        handleCommand arcConfiguration (results.GetSubCommand())
+        // Run the according command if command line args can be parsed
+        match parseResults with
+        | Some results ->
+            handleCommand arcConfiguration (results.GetSubCommand())
+            0
+        | None -> 
+            1
 
-        0
-
-    with e ->
+    with e1 ->
         
+        // create logging config, create .arc folder if not already existing
         let currDir = Directory.GetCurrentDirectory()
         let arcFolder = Path.Combine(currDir, ".arc")
         Directory.CreateDirectory(arcFolder) |> ignore
         Logging.generateConfig arcFolder 0 
-
         let log = Logging.createLogger "ArcCommanderMainLog"
-        match e.Message.Contains("USAGE"), e.Message.Contains("ERROR") with
-        | true,true ->
-            let eMsg, uMsg = 
-                e.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
-                |> fun arr ->
-                    arr |> Array.find (fun t -> t.Contains("ERROR")),
-                    arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
-            log.Error(eMsg)
-            printfn "%s" uMsg
-        | true,false -> printfn "%s" e.Message
-        | _ -> log.Error(e.Message)
+
+        Logging.handleExceptionMessage log e1
 
         1

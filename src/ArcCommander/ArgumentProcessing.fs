@@ -1,5 +1,6 @@
 ﻿namespace ArcCommander
 
+open System.Diagnostics
 open Microsoft.FSharp.Reflection
 open System
 open System.IO

@@ -3,6 +3,7 @@
 open ArcCommander
 open ArcCommander.ArgumentProcessing
 
+open System
 open ISADotNet
 open ISADotNet.XLSX
 
