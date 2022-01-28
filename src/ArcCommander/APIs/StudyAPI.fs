@@ -204,7 +204,7 @@ module StudyAPI =
                 API.Study.removeByIdentifier identifier studies 
                 |> API.Investigation.setStudies investigation
             | None -> 
-                log.Error($"ERROR: Study with the identifier {identifier} does not in the investigation file.")
+                log.Error($"ERROR: Study with the identifier {identifier} does not exist in the investigation file.")
                 investigation
         | None -> 
             log.Error("ERROR: The investigation does not contain any studies.")
