@@ -128,14 +128,10 @@ module ArcAPI =
         let log = Logging.createLogger "ArcExportLog"
 
         log.Info("Start Arc Export")
-    
-        let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
-    
+       
         let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
     
-        let assayNames = 
-            DirectoryInfo(assayRootFolder).GetDirectories()
-            |> Array.map (fun d -> d.Name)
+        let assayNames = AssayConfiguration.getAssayNames arcConfiguration
                 
         let investigation =
             try Investigation.fromFile investigationFilePath 

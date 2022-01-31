@@ -21,10 +21,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
     <PackageReference Update="FSharp.Core" Version="5.0.2" />
     <PackageReference Include="Argu" Version="6.1.1" />
-    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.7" />
+    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.3" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.3" />
+    <PackageReference Include="ISADotNet" Version="0.4.0-preview.4" />
+    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.4" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />

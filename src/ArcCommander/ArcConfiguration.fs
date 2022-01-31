@@ -236,6 +236,23 @@ module IsaModelConfiguration =
         tryGetStudiesFilePath identifier configuration
         |> Option.get
 
+    /// Returns the full path of the study files located in the arc root folder.
+    let findStudyFilePaths (configuration : ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        Directory.GetFiles(workDir)
+        |> Array.filter (fun s -> s.EndsWith "_isa.study.xlsx")
+
+    /// Returns the study identifiers of the study files located in the arc root folder.
+    let findStudyIdentifiers (configuration : ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        Directory.GetFiles(workDir)
+        |> Array.choose (fun s -> 
+            if s.EndsWith "_isa.study.xlsx" then
+                Some (System.IO.FileInfo(s).Name.Replace("_isa.study.xlsx",""))
+            else 
+                None
+        )
+
     /// Returns the full path of the investigation file if it exists. Else returns None.
     let tryGetInvestigationFilePath (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
@@ -311,4 +328,5 @@ module AssayConfiguration =
                 Path.Combine([|r; v|])
             )
         | _ -> Array.empty
+
 

@@ -269,14 +269,43 @@ module StudyAPI =
 
         let investigation = Investigation.fromFile investigationFilePath
         
-        match investigation.Studies with
-        | Some studies -> 
-            studies
-            |> List.iter (fun s ->
-                log.Debug(sprintf "Study: %s" (Option.defaultValue "" s.Identifier))
-            )
-        | None -> log.Error("ERROR: The investigation does not contain any studies.")
-           
+        let studyFileIdentifiers = set (IsaModelConfiguration.findStudyIdentifiers arcConfiguration)
+
+        let studyIdentifiers = 
+            investigation.Studies
+            |> Option.defaultValue []
+            |> List.choose (fun s -> 
+                match s.Identifier with
+                | None | Some "" -> 
+                    log.Warn("WARN: Study does not have identifier")
+                    None
+                | Some i -> Some i
+            ) 
+            |> set
+            
+        let onlyRegistered = Set.difference studyIdentifiers studyFileIdentifiers
+        let onlyInitialized = Set.difference studyFileIdentifiers studyIdentifiers
+        let combined = Set.union studyIdentifiers studyFileIdentifiers
+
+        if not onlyRegistered.IsEmpty then
+            log.Warn("WARN: Arc contains following registered studies that have no associated file:")
+            onlyRegistered
+            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            log.Info($"You can init the study file using \"arc s init\"")
+
+        if not onlyInitialized.IsEmpty then
+            log.Warn("WARN: Arc contains study files with the following identifiers not registered in the investigation:")
+            onlyInitialized
+            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            log.Info($"You can register the study using \"arc s register\"")
+
+        if combined.IsEmpty then
+            log.Error("ERROR: ARC does not contain any studies.")
+
+        combined
+        |> Seq.iter (fun identifier ->
+            log.Debug(sprintf "Study: %s" identifier)
+        )
 
     /// Functions for altering investigation contacts.
     module Contacts =
