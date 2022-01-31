@@ -173,8 +173,13 @@ module GeneralConfiguration =
 module IsaModelConfiguration =
 
     /// Returns the assayIdentifier from a filename.
-    let getAssayIdentifierOfFileName (assayFileName : string) =
-        System.IO.Path.GetFileName assayFileName
+    let tryGetAssayIdentifierOfFileName (assayFileName : string) (configuration : ArcConfiguration) =      
+        let name = Map.tryFind "assayfilename" configuration.IsaModel |> Option.get
+        match assayFileName.Replace(@"\","/").Split("/") with
+        | [|assayIdentifier; fn |] when fn = name -> Some assayIdentifier
+        | [|assayIdentifier; _ |] -> None
+        | _ -> None
+        
 
     /// Returns the relative path of the assay file if it exists. Else returns None.
     let tryGetAssayFileName assayIdentifier (configuration : ArcConfiguration) =

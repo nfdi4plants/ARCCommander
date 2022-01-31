@@ -201,6 +201,20 @@ module StudyAPI =
         | Some studies -> 
             match API.Study.tryGetByIdentifier identifier studies with
             | Some study -> 
+
+                match study.Assays with
+                | None | Some [] -> ()
+                | Some assays -> 
+                    log.Warn($"WARN: Study with the identifier {identifier} still contained following assays which might remain unregistered when the study is removed: ")
+                    assays 
+                    |> List.iter (fun a -> 
+                        let identifier = 
+                            a.FileName 
+                             |> Option.bind (fun fn -> IsaModelConfiguration.tryGetAssayIdentifierOfFileName fn arcConfiguration)
+                             |> Option.get
+                        log.Warn($"WARN: Assay \"{identifier}\"")
+                    )
+                    log.Info($"You can register the assays to a different study using \"arc a register\"")
                 API.Study.removeByIdentifier identifier studies 
                 |> API.Investigation.setStudies investigation
             | None -> 
