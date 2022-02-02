@@ -498,22 +498,79 @@ module AssayAPI =
 
         let investigation = Investigation.fromFile investigationFilePath
 
-        match investigation.Studies with
-        | Some studies -> 
-            studies
-            |> List.iter (fun study ->
-                let studyIdentifier = Option.defaultValue "" study.Identifier
-                match study.Assays with
-                | Some assays -> 
-                    if List.isEmpty assays |> not then
-                        log.Debug($"Study: {studyIdentifier}")
-                        assays 
-                        |> Seq.iter (fun assay -> log.Debug(sprintf "--Assay: %s" (Option.defaultValue "" assay.FileName)))
-                | None -> 
-                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
+        let assayFolderIdentifiers = AssayConfiguration.getAssayNames arcConfiguration |> set
+
+        let assayIdentifiers,studies = 
+            investigation.Studies
+            |> Option.defaultValue []
+            |> List.choose (fun s ->
+                let studyIdentifier = 
+                    if s.Identifier.IsNone then
+                        log.Warn("WARN: Study does not have identifier.")
+                        ""
+                    else 
+                        s.Identifier.Value
+               
+                match s.Assays with
+                | None | Some [] -> 
+                    log.Warn($"WARN: Study {studyIdentifier} does not contain assays.")
+                    None
+                | Some assays ->
+                    (
+                    studyIdentifier,
+                    assays 
+                    |> List.choose (fun a ->
+                        match a.FileName with
+                        | None | Some "" -> 
+                            log.Warn("WARN: Assay does not have filename.")
+                            None
+                        | Some filename ->
+                            match IsaModelConfiguration.tryGetAssayIdentifierOfFileName filename arcConfiguration with
+                            | Some identifier -> 
+                                Some identifier
+
+                            | None -> 
+                                log.Error($"ERROR: Could not parse assay filename {filename} to obtain identifier. Check formatting.")
+                                None
+                    ))
+                    |> Some
             )
-        | None -> 
-            log.Error($"ERROR: The investigation does not contain any studies.")
+            |> fun studies ->
+                List.collect (fun (s,assays) -> assays) studies |> set,
+                studies
+
+        
+        let onlyRegistered = Set.difference assayIdentifiers assayFolderIdentifiers
+        let onlyInitialized = Set.difference assayFolderIdentifiers assayIdentifiers 
+        let combined = Set.union assayIdentifiers assayFolderIdentifiers
+
+        if not onlyRegistered.IsEmpty then
+            log.Warn("WARN: Arc contains following registered assays that have no associated folders:")
+            onlyRegistered
+            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            log.Info($"You can init the assay folder using \"arc a init\".")
+
+        if not onlyInitialized.IsEmpty then
+            log.Warn("WARN: Arc contains assay folders with the following identifiers not registered in the investigation:")
+            onlyInitialized
+            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            log.Info($"You can register the assay using \"arc a register\".")
+
+        if combined.IsEmpty then
+            log.Error("ERROR: ARC does not contain any assays.")
+
+        studies
+        |> List.iter (fun (studyIdentifier,assays) ->
+
+            log.Debug($"Study: {studyIdentifier}")
+            assays 
+            |> Seq.iter (fun assayIdentifier -> log.Debug(sprintf "--Assay: %s" assayIdentifier))
+        )
+        if not onlyInitialized.IsEmpty then
+            log.Debug($"Unregistered")
+            onlyInitialized 
+            |> Seq.iter (fun assayIdentifier -> log.Debug(sprintf "--Assay: %s" assayIdentifier))
+
 
     /// Exports an assay to JSON.
     let exportSingleAssay (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =

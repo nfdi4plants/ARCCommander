@@ -173,8 +173,13 @@ module GeneralConfiguration =
 module IsaModelConfiguration =
 
     /// Returns the assayIdentifier from a filename.
-    let getAssayIdentifierOfFileName (assayFileName : string) =
-        System.IO.Path.GetFileName assayFileName
+    let tryGetAssayIdentifierOfFileName (assayFileName : string) (configuration : ArcConfiguration) =      
+        let name = Map.tryFind "assayfilename" configuration.IsaModel |> Option.get
+        match assayFileName.Replace(@"\","/").Split("/") with
+        | [|assayIdentifier; fn |] when fn = name -> Some assayIdentifier
+        | [|assayIdentifier; _ |] -> None
+        | _ -> None
+        
 
     /// Returns the relative path of the assay file if it exists. Else returns None.
     let tryGetAssayFileName assayIdentifier (configuration : ArcConfiguration) =
@@ -230,6 +235,23 @@ module IsaModelConfiguration =
     let getStudiesFilePath identifier (configuration : ArcConfiguration) =
         tryGetStudiesFilePath identifier configuration
         |> Option.get
+
+    /// Returns the full path of the study files located in the arc root folder.
+    let findStudyFilePaths (configuration : ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        Directory.GetFiles(workDir)
+        |> Array.filter (fun s -> s.EndsWith "_isa.study.xlsx")
+
+    /// Returns the study identifiers of the study files located in the arc root folder.
+    let findStudyIdentifiers (configuration : ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        Directory.GetFiles(workDir)
+        |> Array.choose (fun s -> 
+            if s.EndsWith "_isa.study.xlsx" then
+                Some (System.IO.FileInfo(s).Name.Replace("_isa.study.xlsx",""))
+            else 
+                None
+        )
 
     /// Returns the full path of the investigation file if it exists. Else returns None.
     let tryGetInvestigationFilePath (configuration : ArcConfiguration) =
@@ -306,4 +328,5 @@ module AssayConfiguration =
                 Path.Combine([|r; v|])
             )
         | _ -> Array.empty
+
 
