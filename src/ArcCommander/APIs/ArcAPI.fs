@@ -12,6 +12,16 @@ open ISADotNet.XLSX
 /// ArcCommander API functions that get executed by top level subcommand verbs.
 module ArcAPI = 
 
+    let version _ =
+        
+        let log = Logging.createLogger "ArcVersionLog"
+
+        log.Info($"Start Arc Version")
+        
+        let ver = Reflection.Assembly.GetExecutingAssembly().GetName().Version
+
+        log.Debug($"v{ver.Major}.{ver.Minor}.{ver.Build}")
+
     // TODO TO-DO TO DO: make use of args
     /// Initializes the arc specific folder structure.
     let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
