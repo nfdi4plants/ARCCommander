@@ -164,8 +164,6 @@ module PackageTasks =
     open BasicTasks
     open TestTasks
 
-    let blabl x = x
-
     let pack = BuildTask.create "Pack" [clean; build; runTests; copyBinaries] {
         if promptYesNo (sprintf "creating stable package with version %s OK?" stableVersionTag ) 
             then
@@ -223,12 +221,13 @@ module PackageTasks =
                 p with
                     Runtime = Some "win-x64"
                     Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some (sprintf "%s/win-x64" publishDir)
+                    OutputPath = Some outputPath
                     MSBuildParams = {
                         standardParams with
                             Properties = [
-                                "Platform","x64"
-                                "PublishSingleFile","true"
+                                "Version", stableVersionTag
+                                "Platform", "x64"
+                                "PublishSingleFile", "true"
                             ]
                     };
             }
@@ -245,12 +244,13 @@ module PackageTasks =
                 p with
                     Runtime = Some "linux-x64"
                     Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some (sprintf "%s/linux-x64" publishDir)
+                    OutputPath = Some outputPath
                     MSBuildParams = {
                         standardParams with
                             Properties = [
-                                "Platform","x64"
-                                "PublishSingleFile","true"
+                                "Version", stableVersionTag
+                                "Platform", "x64"
+                                "PublishSingleFile", "true"
                             ]
                     }
             }
@@ -271,8 +271,9 @@ module PackageTasks =
                     MSBuildParams = {
                         standardParams with
                             Properties = [
-                                "Platform","x64"
-                                "PublishSingleFile","true"
+                                "Version", stableVersionTag
+                                "Platform", "x64"
+                                "PublishSingleFile", "true"
                             ]
                     }
             }
