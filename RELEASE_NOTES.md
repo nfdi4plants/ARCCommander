@@ -1,14 +1,26 @@
-#### 0.1.4-alpha - Wednesday, January 26, 2022
+﻿### 0.1.5+6ad8fb8 (Released 2022-2-4)
+* Additions:
+    * latest commit #6ad8fb8
+    * [[#6ad8fb8](https://github.com/nfdi4plants/arcCommander/commit/6ad8fb88904fbb32d5b56621f7f5e01c3c83433e)] Update build script for release notes extension :heavy_plus_sign:
+    * [[#34be86f](https://github.com/nfdi4plants/arcCommander/commit/34be86f0b788493e69d77f21a09837bb62303a37)] Bump Fake version
+    * [[#38c86be](https://github.com/nfdi4plants/arcCommander/commit/38c86be8a0ea9048993cfe91d5691ec22a498141)] Add version calling commands
+    * [[#b1e87f5](https://github.com/nfdi4plants/arcCommander/commit/b1e87f5454cb7d7c216faa4ea516506ee17007e7)] Add version calling functionality :sparkles:
+    * [[#e11dbcf](https://github.com/nfdi4plants/arcCommander/commit/e11dbcf8a542bf1190fe75f5ecbc2c34191a6d59)] Update build script to include version
+* Deletions:
+    * [[#91a3dee](https://github.com/nfdi4plants/arcCommander/commit/91a3dee82367ed06152c5c7833265579873367f8)] Delete deprecated assembly source file :fire:
 
-- ArcCommander is now able to call external tools.
+#### 0.1.4 - Wednesday, January 26, 2022
+* Additions:
+    * latest commit #8f34df30
+    * ArcCommander is now able to call external tools. :sparkles:
 
-#### 0.1.3-alpha - Tuesday, January 11, 2022
+#### 0.1.3 - Tuesday, January 11, 2022
 
 - Person functions for assay commands now available.
 - `arc i show` now available.
 - ArcCommander now logs every action.
 
-#### 0.1.2-alpha - Tuesday, November 2, 2021
+#### 0.1.2 - Tuesday, November 2, 2021
 
 - Publish tasks now available in build script.
 - CLI scripts for ARC templates.
@@ -17,12 +29,12 @@
 - Now it is possible to convert an ARC to a JSON object via JSON export.
 - Global config file now gets created automatically (with default parameters).
 
-#### 0.1.1-alpha - Thursday, May 20, 2021
+#### 0.1.1 - Thursday, May 20, 2021
 
 - Configurable Git LFS threshold.
 - Issue templates available now.
 
-#### 0.1.0-alpha - Wednesday, April 28, 2021
+#### 0.1.0 - Wednesday, April 28, 2021
 
 - First release! :tada:
 - New synchronize command.
