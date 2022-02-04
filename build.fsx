@@ -13,6 +13,7 @@ nuget Fake.DotNet.Fsi
 nuget Fake.DotNet.NuGet
 nuget Fake.Api.Github
 nuget Fake.DotNet.Testing.Expecto 
+nuget Fake.Extensions.Release
 nuget Fake.Tools.Git //"
 
 #if !FAKE
@@ -413,6 +414,33 @@ module ReleaseTasks =
             Git.Branches.push "temp/gh-pages"
         else failwith "aborted"
     }
+
+module ReleaseNoteTasks =
+
+    open Fake.Extensions.Release
+
+    let createAssemblyVersion = BuildTask.create "createvfs" [] {
+        AssemblyVersion.create ProjectInfo.gitName
+    }
+
+    let updateReleaseNotes = BuildTask.createFn "ReleaseNotes" [] (fun config ->
+        Release.exists()
+
+        Release.update(ProjectInfo.gitOwner, ProjectInfo.gitName, config)
+    )
+
+    let githubDraft = BuildTask.createFn "GithubDraft" [] (fun config ->
+
+        let body = "We are ready to go for the first release!"
+
+        Github.draft(
+            ProjectInfo.gitOwner,
+            ProjectInfo.gitName,
+            (Some body),
+            None,
+            config
+        )
+    )
 
 open BasicTasks
 open TestTasks
