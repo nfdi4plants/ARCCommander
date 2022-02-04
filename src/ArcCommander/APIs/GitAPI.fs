@@ -199,18 +199,16 @@ module GitAPI =
     [<STAThread>]
     let login (arcConfiguration : ArcConfiguration) =
         
-        let optionsFreiburg = 
+        let options = 
             new OidcClientOptions(
-                Authority = "https://keycloak.dev.bwsfs.uni-freiburg.de/auth/realms/sandbox",
-                ClientId = "dataplant-arc-commander",
-                //Scope = "openid email",
-                Scope = "openid email dataplant-gitlab-token",
-                RedirectUri = "http://localhost:7890"//"http://localhost/winforms.client"
-                //Browser = new WinFormsWebView()
+                Authority =     GeneralConfiguration.getKCAuthority arcConfiguration,
+                ClientId =      GeneralConfiguration.getKCClientID arcConfiguration,
+                Scope =         GeneralConfiguration.getKCScope arcConfiguration,
+                RedirectUri =   GeneralConfiguration.getKCRedirectURI arcConfiguration
             )
 
-        let t = Authentication.signInAsync optionsFreiburg
+        let t = Authentication.signInAsync options
         t.Wait()
         match t.Result with 
-        | Some r -> printfn "Workedddd: %s" r.IdentityToken
-        | None -> printfn "reeeeeeee"
+        | Some r -> printfn "Success: %s" r.IdentityToken
+        | None -> printfn "Failure"

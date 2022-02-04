@@ -4,6 +4,10 @@ editor=notepad
 verbosity=1
 gitlfsbytethreshold=150000000
 gitlfsrules=**/dataset/**
+kcauthority = https://keycloak.dev.bwsfs.uni-freiburg.de/auth/realms/sandbox
+kcclientid = dataplant-arc-commander
+kcscope = openid email dataplant-gitlab-token
+kcredirecturi = http://localhost:7890
 forceeditor=false
 
 [isamodel]
