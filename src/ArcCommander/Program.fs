@@ -208,8 +208,6 @@ let handleCommand arcConfiguration command =
     | Version                   -> processCommandWithoutArgs        arcConfiguration ArcAPI.version
     // Git Verbs
     | Sync r                    -> processCommand                   arcConfiguration GitAPI.sync r
-    | StartPhotino              -> processCommandWithoutArgs        arcConfiguration GitAPI.openPhotino
-    | StartLogin                -> processCommandWithoutArgs        arcConfiguration GitAPI.login
     | Get r                     -> processCommand                   arcConfiguration GitAPI.get r
     // Settings
     | WorkingDir _ | Verbosity _-> ()

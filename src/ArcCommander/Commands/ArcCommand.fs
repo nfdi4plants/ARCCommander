@@ -18,8 +18,6 @@ type ArcCommand =
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study                of verb_and_args : ParseResults<StudyCommand>
     | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay                of verb_and_args : ParseResults<AssayCommand>
     | [<AltCommandLine("config")>][<CliPrefix(CliPrefix.None)>] Configuration   of verb_and_args : ParseResults<ConfigurationCommand>
-    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] StartPhotino
-    | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] StartLogin
 
     interface IArgParserTemplate with
         member this.Usage =

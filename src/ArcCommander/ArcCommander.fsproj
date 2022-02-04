@@ -66,6 +66,5 @@
     <PackageReference Include="JWT" Version="8.9.0" />
     <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
     <PackageReference Include="NLog" Version="4.7.13" />
-    <PackageReference Include="Photino.NET" Version="2.1.11" />
   </ItemGroup>
 </Project>

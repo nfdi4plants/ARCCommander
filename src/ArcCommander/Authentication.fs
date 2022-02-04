@@ -92,7 +92,15 @@ module Authentication =
                 return FSharp.Core.Result.Error err
         }
 
-    let signInAsync (options : OidcClientOptions) =
+    let loadOptionsFromConfig (arcConfiguration : ArcConfiguration) =
+        new OidcClientOptions(
+            Authority =     GeneralConfiguration.getKCAuthority arcConfiguration,
+            ClientId =      GeneralConfiguration.getKCClientID arcConfiguration,
+            Scope =         GeneralConfiguration.getKCScope arcConfiguration,
+            RedirectUri =   GeneralConfiguration.getKCRedirectURI arcConfiguration
+        )
+
+    let signInAsync (log : NLog.Logger) (options : OidcClientOptions) =
         task {
             // create a redirect URI using an available port on the loopback address.
 
@@ -123,13 +131,13 @@ module Authentication =
             let! result = tryProcessRequestAsync client state context.Request
 
             match result with
-            | Result.Ok result ->
+            | Result.Ok r ->
                 let! _ = sendResponseAsync (fillHTML "Success") context.Response
-                return Some result
+                return result
             | FSharp.Core.Result.Error err ->
                 let failureString = 
                     sprintf "Could not parse request: \n %s" err.Message
                     |> fillHTML
                 let! _ = sendResponseAsync failureString context.Response
-                return None
+                return result
         }

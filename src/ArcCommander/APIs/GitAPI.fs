@@ -13,12 +13,11 @@ open System.Collections.Generic
 open System.Text
 open System.Diagnostics
 
-open PhotinoNET
 open IdentityModel.OidcClient
 open Microsoft.Net.Http.Server
 open Newtonsoft.Json
 
-module GitAPI =
+module GitHelper =
 
     /// Executes Git command.
     let executeGitCommand (repoDir : string) (command : string) =
@@ -30,6 +29,72 @@ module GitAPI =
         if not success
         then log.Error("Git command could not be run.")
         success
+
+    let formatRepoString username pass (url : string) = 
+        let comb = username + ":" + pass + "@"
+        url.Replace("https://","https://" + comb)
+
+    let formatRepoToken (token : Authentication.IdentityToken) (url : string) = 
+        formatRepoString token.UserName token.GitLabToken url
+
+    let setLocalEmail (dir : string) (email : string) =
+        executeGitCommand dir (sprintf "config user.email \"%s\"" email)
+
+    let setLocalEmailToken (dir : string) (token : Authentication.IdentityToken) =
+        setLocalEmail dir token.Email
+
+    let setGlobalEmail (email : string) =
+        executeGitCommand "" (sprintf "config --global user.email \"%s\"" email)
+
+    let setLocalName (dir : string) (name : string) =
+        executeGitCommand dir (sprintf "config user.name \"%s\"" name)
+
+    let setLocalNameToken (dir : string) (token : Authentication.IdentityToken) =
+        setLocalName dir (token.FirstName + " " + token.LastName)
+
+    let setGlobalName (name : string) =
+        executeGitCommand "" (sprintf "config --global user.name \"%s\"" name)
+
+    let clone dir url =
+        executeGitCommand dir (sprintf "clone %s" url)
+
+    let cloneWithToken dir token url  =
+        let url = formatRepoToken token url
+        clone dir url 
+
+    let add dir = 
+        executeGitCommand dir "add ."
+
+    let commit dir message =
+        executeGitCommand dir (sprintf "commit -m \"%s\"" message)
+
+    let push dir =
+        executeGitCommand dir "push"
+
+    //let pushWithToken dir =
+    //    let url = formatRepoToken token url
+    //    executeGitCommand dir "push"
+
+module GitAPI =
+
+    open GitHelper
+
+    [<STAThread>]
+    let tryLogin (log : NLog.Logger) (arcConfiguration : ArcConfiguration) =
+        
+        let options = Authentication.loadOptionsFromConfig arcConfiguration            
+
+        let t = Authentication.signInAsync log options
+        t.Wait()
+        t.Result
+        |> Result.map (fun result -> Authentication.IdentityToken.ofJwt result.AccessToken)
+        //match t.Result with 
+        //| Ok r -> 
+        //    printfn "Success: %s" r.IdentityToken
+        //    t.Result
+        //| Error err -> 
+        //    printfn "Failure"
+        //    t.Result
 
     /// Returns repository directory path.
     let getRepoDir (arcConfiguration : ArcConfiguration) =
@@ -48,8 +113,20 @@ module GitAPI =
         // get repository directory
         let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
-
+        let remoteAddress = 
+            let preliminaryAddress = getFieldValueByName "RepositoryAddress" gitArgs
+            if preliminaryAddress.Contains "github.com"then
+                preliminaryAddress
+            else 
+                match tryLogin log arcConfiguration with 
+                | Ok token -> 
+                    GitHelper.setLocalNameToken repoDir token  |> ignore
+                    GitHelper.setLocalEmailToken repoDir token |> ignore
+                    GitHelper.formatRepoToken token preliminaryAddress
+                | Error err -> 
+                    printfn "Failure"
+                    preliminaryAddress
+                   
         let branch = 
             match tryGetFieldValueByName "BranchName" gitArgs with 
             | Some branchName -> $" -b {branchName}"
@@ -176,39 +253,3 @@ module GitAPI =
         if hasRemote () then
             log.Trace("Push")
             executeGitCommand repoDir ($"push -u origin {branch}") |> ignore
-
-    
-    let openPhotino (arcConfiguration : ArcConfiguration) =
-
-        let run () =
-
-            let window = 
-                PhotinoWindow()
-                    .SetChromeless(false)
-                    .SetTitle(".NET")
-                    .Load(new Uri("https://www.google.com/"))
-
-        
-            window.WaitForClose()
-
-        Thread(new ThreadStart(run))
-        |> fun thread -> 
-            thread.SetApartmentState(ApartmentState.STA)
-            thread.Start()
-
-    [<STAThread>]
-    let login (arcConfiguration : ArcConfiguration) =
-        
-        let options = 
-            new OidcClientOptions(
-                Authority =     GeneralConfiguration.getKCAuthority arcConfiguration,
-                ClientId =      GeneralConfiguration.getKCClientID arcConfiguration,
-                Scope =         GeneralConfiguration.getKCScope arcConfiguration,
-                RedirectUri =   GeneralConfiguration.getKCRedirectURI arcConfiguration
-            )
-
-        let t = Authentication.signInAsync options
-        t.Wait()
-        match t.Result with 
-        | Some r -> printfn "Success: %s" r.IdentityToken
-        | None -> printfn "Failure"
