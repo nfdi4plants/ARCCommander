@@ -5,6 +5,19 @@ open ArgumentProcessing
 open Fake.IO
 open System.IO
 
+open System
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.InteropServices
+open System.Collections.Generic
+open System.Text
+open System.Diagnostics
+
+open PhotinoNET
+open IdentityModel.OidcClient
+open Microsoft.Net.Http.Server
+open Newtonsoft.Json
+
 module GitAPI =
 
     /// Executes Git command.
@@ -164,3 +177,40 @@ module GitAPI =
             log.Trace("Push")
             executeGitCommand repoDir ($"push -u origin {branch}") |> ignore
 
+    
+    let openPhotino (arcConfiguration : ArcConfiguration) =
+
+        let run () =
+
+            let window = 
+                PhotinoWindow()
+                    .SetChromeless(false)
+                    .SetTitle(".NET")
+                    .Load(new Uri("https://www.google.com/"))
+
+        
+            window.WaitForClose()
+
+        Thread(new ThreadStart(run))
+        |> fun thread -> 
+            thread.SetApartmentState(ApartmentState.STA)
+            thread.Start()
+
+    [<STAThread>]
+    let login (arcConfiguration : ArcConfiguration) =
+        
+        let optionsFreiburg = 
+            new OidcClientOptions(
+                Authority = "https://keycloak.dev.bwsfs.uni-freiburg.de/auth/realms/sandbox",
+                ClientId = "dataplant-arc-commander",
+                //Scope = "openid email",
+                Scope = "openid email dataplant-gitlab-token",
+                RedirectUri = "http://localhost:7890"//"http://localhost/winforms.client"
+                //Browser = new WinFormsWebView()
+            )
+
+        let t = Authentication.signInAsync optionsFreiburg
+        t.Wait()
+        match t.Result with 
+        | Some r -> printfn "Workedddd: %s" r.IdentityToken
+        | None -> printfn "reeeeeeee"

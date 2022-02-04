@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <TargetFramework>net6.0</TargetFramework>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>ArcCommander</ToolCommandName>
@@ -28,6 +28,7 @@
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
+    <Compile Include="Authentication.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
     <Compile Include="CLIArguments\InvestigationArgs.fs" />
@@ -53,14 +54,18 @@
   
   <!--References-->
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="5.*" />
+    <PackageReference Update="FSharp.Core" Version="6.0.3-beta.22076.4" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
     <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
+    <PackageReference Include="IdentityModel.OidcClient" Version="5.0.0" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     <PackageReference Include="ISADotNet" Version="0.4.0-preview.4" />
     <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.4" />
+    <PackageReference Include="JWT" Version="8.9.0" />
+    <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
     <PackageReference Include="NLog" Version="4.7.13" />
+    <PackageReference Include="Photino.NET" Version="2.1.11" />
   </ItemGroup>
 </Project>
