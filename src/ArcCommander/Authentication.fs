@@ -102,15 +102,19 @@ module Authentication =
 
     let signInAsync (log : NLog.Logger) (options : OidcClientOptions) =
         task {
-            // create a redirect URI using an available port on the loopback address.
 
-            // create an HttpListener to listen for requests on that redirect URI.
+            log.Info($"Start login at {options.Authority}")
+
+            log.Trace($"TRACE: Starting local listener for obtaining token service response at {options.RedirectUri}")
+
             let settings = new WebListenerSettings()
             settings.UrlPrefixes.Add(options.RedirectUri)
             let http = new WebListener(settings)
     
             http.Start();
-    
+
+            //log.Trace("TRACE: Local listener was setup")
+
             //let serilog = 
             //    LoggerConfiguration()
             //        .MinimumLevel.Verbose()
@@ -119,16 +123,29 @@ module Authentication =
             //        .CreateLogger()
     
             //options.LoggerFactory.AddSerilog(serilog) |> ignore
-    
+
+            log.Trace($"TRACE: Prepare client for login procedure")
+
             let client = new OidcClient(options)
             let! state = client.PrepareLoginAsync()
     
+            //log.Trace($"TRACE: Client setup")
+
+            log.Trace($"TRACE: Open Browser at {state.StartUrl}")
+
             openBrowser(state.StartUrl) |> ignore
     
-            //let! _ = Task.Delay(1000)
+            //log.Trace($"TRACE: Browser opened")
+
+            log.Info($"Waiting for user login")
+
             let! context = http.AcceptAsync()
     
+            log.Trace($"TRACE: Try processing request")
+
             let! result = tryProcessRequestAsync client state context.Request
+
+            log.Trace($"TRACE: Try sending response to browser")
 
             match result with
             | Result.Ok r ->

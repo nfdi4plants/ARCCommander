@@ -81,13 +81,18 @@ module GitAPI =
 
     [<STAThread>]
     let tryLogin (log : NLog.Logger) (arcConfiguration : ArcConfiguration) =
-        
+
+        log.Info($"Initiate login protocol")
+
+        log.Trace($"Load token service options from config")
+
         let options = Authentication.loadOptionsFromConfig arcConfiguration            
 
         let t = Authentication.signInAsync log options
+
         t.Wait()
         t.Result
-        |> Result.map (fun result -> Authentication.IdentityToken.ofJwt result.AccessToken)
+        |> Result.map (fun result -> Authentication.IdentityToken.ofJwt result.IdentityToken)
         //match t.Result with 
         //| Ok r -> 
         //    printfn "Success: %s" r.IdentityToken
@@ -115,16 +120,22 @@ module GitAPI =
 
         let remoteAddress = 
             let preliminaryAddress = getFieldValueByName "RepositoryAddress" gitArgs
-            if preliminaryAddress.Contains "github.com"then
+            if preliminaryAddress.Contains "github.com" then
+                log.Trace($"TRACE: Given repository is a github repository. Skipping access token acquiration.")
                 preliminaryAddress
             else 
+                log.Trace($"TRACE: Given repository is not a github repository. Start access token acquiration")
                 match tryLogin log arcConfiguration with 
                 | Ok token -> 
+                    log.Info($"Successfully retrieved access token from token service")
+                    log.Trace($"TRACE: Locally set git user information")
                     GitHelper.setLocalNameToken repoDir token  |> ignore
                     GitHelper.setLocalEmailToken repoDir token |> ignore
+                    log.Trace($"TRACE: Enrich repo string with access token")
                     GitHelper.formatRepoToken token preliminaryAddress
                 | Error err -> 
-                    printfn "Failure"
+                    log.Error($"Could not retrieve access token: {err.Message}")
+                    log.Info($"Continue git clone without access token")
                     preliminaryAddress
                    
         let branch = 
