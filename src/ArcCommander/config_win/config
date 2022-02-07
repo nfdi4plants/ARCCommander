@@ -6,7 +6,7 @@ gitlfsbytethreshold=150000000
 gitlfsrules=**/dataset/**
 kcauthority = https://keycloak.dev.bwsfs.uni-freiburg.de/auth/realms/sandbox
 kcclientid = dataplant-arc-commander
-kcscope = openid email dataplant-gitlab-token
+kcscope = openid email git-access-token git-host
 kcredirecturi = http://localhost:7890
 forceeditor=false
 

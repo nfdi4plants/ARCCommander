@@ -4,19 +4,21 @@ open Argu
 open ArcCommander.CLIArguments
 
 type ArcCommand =
-
-    | [<AltCommandLine("-p")>][<Unique>] WorkingDir of working_directory : string
-    | [<AltCommandLine("-v")>][<Unique>] Verbosity of verbosity : int
-    | [<CliPrefix(CliPrefix.None)>] Init    of init_args    : ParseResults<ArcInitArgs>
-    | [<CliPrefix(CliPrefix.None)>] Export  of export_args  : ParseResults<ArcExportArgs>
-    | [<CliPrefix(CliPrefix.None)>] Sync    of sync_args    : ParseResults<ArcSyncArgs>
-    | [<CliPrefix(CliPrefix.None)>] Get     of get_args     : ParseResults<ArcGetArgs>
-    | [<CliPrefix(CliPrefix.None)>][<SubCommand()>] Update
-    | [<CliPrefix(CliPrefix.DoubleDash)>][<SubCommand()>] Version
-         
-    | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation        of verb_and_args : ParseResults<InvestigationCommand>
-    | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study                of verb_and_args : ParseResults<StudyCommand>
-    | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>] Assay                of verb_and_args : ParseResults<AssayCommand>
+    ///Parameters
+    | [<AltCommandLine("-p")>][<Unique>]                        WorkingDir  of working_directory : string
+    | [<AltCommandLine("-v")>][<Unique>]                        Verbosity       of verbosity : int
+    ///Commands
+    | [<CliPrefix(CliPrefix.None)>]                             Init            of init_args    : ParseResults<ArcInitArgs>
+    | [<CliPrefix(CliPrefix.None)>]                             Export          of export_args  : ParseResults<ArcExportArgs>
+    | [<CliPrefix(CliPrefix.None)>]                             Sync            of sync_args    : ParseResults<ArcSyncArgs>
+    | [<CliPrefix(CliPrefix.None)>]                             Get             of get_args     : ParseResults<ArcGetArgs>
+    | [<AltCommandLine("auth")>][<CliPrefix(CliPrefix.None)>]   Authenticate    of get_args     : ParseResults<ArcGetArgs>
+    | [<CliPrefix(CliPrefix.None)>][<SubCommand()>]             Update
+    | [<CliPrefix(CliPrefix.DoubleDash)>][<SubCommand()>]       Version
+    ///Subcommands
+    | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>]      Investigation   of verb_and_args : ParseResults<InvestigationCommand>
+    | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>]      Study           of verb_and_args : ParseResults<StudyCommand>
+    | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>]      Assay           of verb_and_args : ParseResults<AssayCommand>
     | [<AltCommandLine("config")>][<CliPrefix(CliPrefix.None)>] Configuration   of verb_and_args : ParseResults<ConfigurationCommand>
 
     interface IArgParserTemplate with
@@ -29,6 +31,7 @@ type ArcCommand =
             | Export        _   -> "Exports the full arc to a json object"
             | Sync          _   -> "Syncronize the ARC with its upstream repository. Commits changes made in the ARC. If a remote is set or is given, also pulls from there and pushes all previously made commits."
             | Get           _   -> "Download an ARC from a remote repository (e.g. from gitlab)"
+            | Authenticate  _   -> "Authenticate to a token service to receive and store git credentials. Token Service details can be set in the config."
             | Investigation _   -> "Investigation file functions"
             | Study         _   -> "Study functions"
             | Assay         _   -> "Assay functions"

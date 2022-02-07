@@ -209,6 +209,7 @@ let handleCommand arcConfiguration command =
     // Git Verbs
     | Sync r                    -> processCommand                   arcConfiguration GitAPI.sync r
     | Get r                     -> processCommand                   arcConfiguration GitAPI.get r
+    | Authenticate _            -> processCommandWithoutArgs        arcConfiguration GitAPI.authenticate
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 

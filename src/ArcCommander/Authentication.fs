@@ -28,8 +28,10 @@ module Authentication =
         {
             [<JsonPropertyName(@"exp")>]
             Id : int
-            [<JsonPropertyName(@"gitlab-token-attr")>]
-            GitLabToken : string
+            [<JsonPropertyName(@"git-access-token")>]
+            GitAccessToken : string
+            [<JsonPropertyName(@"git-host")>]
+            GitHost : string
             [<JsonPropertyName(@"given_name")>]
             FirstName : string
             [<JsonPropertyName(@"family_name")>]
@@ -158,3 +160,18 @@ module Authentication =
                 let! _ = sendResponseAsync failureString context.Response
                 return result
         }
+
+    [<STAThread>]
+    let tryLogin (log : NLog.Logger) (arcConfiguration : ArcConfiguration) =
+
+        log.Info($"Initiate login protocol")
+
+        log.Trace($"Load token service options from config")
+
+        let options = loadOptionsFromConfig arcConfiguration            
+
+        let t = signInAsync log options
+
+        t.Wait()
+        t.Result
+        |> Result.map (fun result -> IdentityToken.ofJwt result.IdentityToken)

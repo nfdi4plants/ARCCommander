@@ -35,7 +35,7 @@ module GitHelper =
         url.Replace("https://","https://" + comb)
 
     let formatRepoToken (token : Authentication.IdentityToken) (url : string) = 
-        formatRepoString token.UserName token.GitLabToken url
+        formatRepoString token.UserName token.GitAccessToken url
 
     let setLocalEmail (dir : string) (email : string) =
         executeGitCommand dir (sprintf "config user.email \"%s\"" email)
@@ -71,35 +71,74 @@ module GitHelper =
     let push dir =
         executeGitCommand dir "push"
 
-    //let pushWithToken dir =
-    //    let url = formatRepoToken token url
-    //    executeGitCommand dir "push"
+    /// Stores git credentials to a git host using the git credential interface
+    let storeCredentials (log : NLog.Logger) host username password =
+
+        log.Trace($"TRACE: Start git credential storing")
+
+        let protocol = "https"
+        let path = $"git:{protocol}://{host}"
+    
+        let procStartInfo = 
+            ProcessStartInfo(
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                // Redirect standard input, as input is required after the process starts
+                RedirectStandardInput = true,
+                UseShellExecute = false,
+                FileName = "git",
+                Arguments = "credential approve"
+            )
+            
+        let outputs = System.Collections.Generic.List<string>()
+        let errors = System.Collections.Generic.List<string>()
+        let outputHandler (_sender:obj) (args:DataReceivedEventArgs) = 
+            outputs.Add args.Data
+            log.Trace($"TRACE: {args.Data}")
+        
+        let errorHandler (_sender:obj) (args:DataReceivedEventArgs) = 
+            
+            if args.Data.Contains "trace:" then
+                outputs.Add args.Data
+                log.Trace($"TRACE: {args.Data}")
+            else 
+                errors.Add args.Data
+                log.Error($"ERROR: {args.Data}")
+
+        let p = new Process(StartInfo = procStartInfo)
+        
+        p.OutputDataReceived.AddHandler(DataReceivedEventHandler outputHandler)
+        p.ErrorDataReceived.AddHandler(DataReceivedEventHandler errorHandler)
+
+        log.Trace($"TRACE: Start storing git credentials by running \"git credential approve\"")
+
+        p.Start() |> ignore
+        p.BeginOutputReadLine()
+        p.BeginErrorReadLine()
+        
+        log.Trace($"TRACE: Start feeding credentials into git credential interface")
+
+        p.StandardInput.WriteLine $"url={path}"
+        p.StandardInput.WriteLine $"username={username}"
+        p.StandardInput.WriteLine $"host={host}"
+        p.StandardInput.WriteLine $"path={path}"
+        p.StandardInput.WriteLine $"protocol={protocol}"
+        p.StandardInput.WriteLine $"password={password}"
+        p.StandardInput.WriteLine ""
+
+        log.Trace($"TRACE: Exiting git credential storing")
+
+        p.WaitForExit()
+
+        errors.Count = 0
+
+    /// Stores git credentials to a git host using the git credential interface
+    let storeCredentialsToken (log : NLog.Logger) (token : Authentication.IdentityToken) =
+        storeCredentials log token.GitHost token.UserName token.GitAccessToken
 
 module GitAPI =
 
     open GitHelper
-
-    [<STAThread>]
-    let tryLogin (log : NLog.Logger) (arcConfiguration : ArcConfiguration) =
-
-        log.Info($"Initiate login protocol")
-
-        log.Trace($"Load token service options from config")
-
-        let options = Authentication.loadOptionsFromConfig arcConfiguration            
-
-        let t = Authentication.signInAsync log options
-
-        t.Wait()
-        t.Result
-        |> Result.map (fun result -> Authentication.IdentityToken.ofJwt result.IdentityToken)
-        //match t.Result with 
-        //| Ok r -> 
-        //    printfn "Success: %s" r.IdentityToken
-        //    t.Result
-        //| Error err -> 
-        //    printfn "Failure"
-        //    t.Result
 
     /// Returns repository directory path.
     let getRepoDir (arcConfiguration : ArcConfiguration) =
@@ -107,6 +146,38 @@ module GitAPI =
         let gitDir = Fake.Tools.Git.CommandHelper.findGitDir(workdir).FullName
 
         Fake.IO.Path.getDirectory(gitDir)
+
+    /// Authenticates to a token service and stores the token using git credential manager.
+    let authenticate (arcConfiguration : ArcConfiguration) =
+
+        let log = Logging.createLogger "GitAuthenticateLog"
+
+        log.Info("Start Arc Authenticate")
+        
+        let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        
+        log.Trace($"TRACE: Given repository is not a github repository. Start access token acquiration")
+        match Authentication.tryLogin log arcConfiguration with 
+        | Ok token -> 
+            log.Info($"Successfully retrieved access token from token service")
+
+            //log.Trace($"TRACE: Locally set git user information")
+            //GitHelper.setLocalNameToken repoDir token  |> ignore
+            //GitHelper.setLocalEmailToken repoDir token |> ignore
+
+            if storeCredentialsToken log token then
+                log.Info($"Finished Authentication")
+
+            else
+                log.Error($"ERROR: Authentication worked, but credentials could not be stored successfully.")
+                log.Error($"Check if git is installed and if a credential helper is setup:")
+                log.Error($"Run \"git config --global credential.helper cache\" to cache credentials in memory")
+                log.Error($"or Run \"git config --global credential.helper store\" to save credentials to disk")
+                log.Error($"For more info go to: https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage")
+        | Error err -> 
+            log.Error($"Could not retrieve access token: {err.Message}")
+
+
 
     /// Clones Git repository ARC.
     let get (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
@@ -118,25 +189,7 @@ module GitAPI =
         // get repository directory
         let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let remoteAddress = 
-            let preliminaryAddress = getFieldValueByName "RepositoryAddress" gitArgs
-            if preliminaryAddress.Contains "github.com" then
-                log.Trace($"TRACE: Given repository is a github repository. Skipping access token acquiration.")
-                preliminaryAddress
-            else 
-                log.Trace($"TRACE: Given repository is not a github repository. Start access token acquiration")
-                match tryLogin log arcConfiguration with 
-                | Ok token -> 
-                    log.Info($"Successfully retrieved access token from token service")
-                    log.Trace($"TRACE: Locally set git user information")
-                    GitHelper.setLocalNameToken repoDir token  |> ignore
-                    GitHelper.setLocalEmailToken repoDir token |> ignore
-                    log.Trace($"TRACE: Enrich repo string with access token")
-                    GitHelper.formatRepoToken token preliminaryAddress
-                | Error err -> 
-                    log.Error($"Could not retrieve access token: {err.Message}")
-                    log.Info($"Continue git clone without access token")
-                    preliminaryAddress
+        let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
                    
         let branch = 
             match tryGetFieldValueByName "BranchName" gitArgs with 
