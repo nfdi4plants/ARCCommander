@@ -188,11 +188,11 @@ let handleAssaySubCommands arcConfiguration assayVerb =
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =
     match configurationVerb with
-    | ConfigurationCommand.Edit     r -> processCommand arcConfiguration ConfigurationAPI.edit  r
-    | ConfigurationCommand.List     r -> processCommand arcConfiguration ConfigurationAPI.list  r
-    | ConfigurationCommand.Set      r -> processCommand arcConfiguration ConfigurationAPI.set   r
-    | ConfigurationCommand.Unset    r -> processCommand arcConfiguration ConfigurationAPI.unset r
-
+    | ConfigurationCommand.Edit         r -> processCommand arcConfiguration ConfigurationAPI.edit  r
+    | ConfigurationCommand.List         r -> processCommand arcConfiguration ConfigurationAPI.list  r
+    | ConfigurationCommand.Set          r -> processCommand arcConfiguration ConfigurationAPI.set   r
+    | ConfigurationCommand.Unset        r -> processCommand arcConfiguration ConfigurationAPI.unset r
+    | ConfigurationCommand.SetGitUser   r -> processCommand arcConfiguration ConfigurationAPI.setGitUser r
 
 let handleCommand arcConfiguration command =
     match command with

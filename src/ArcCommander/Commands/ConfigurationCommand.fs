@@ -6,11 +6,11 @@ open ArcCommander.CLIArguments
 /// Assay object subcommand verbs
 type ConfigurationCommand = 
 
-    | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:               ParseResults<ConfigurationEditArgs>
-    | [<CliPrefix(CliPrefix.None)>] List        of list_args:               ParseResults<ConfigurationListArgs>
-    | [<CliPrefix(CliPrefix.None)>] Set         of set_args:                ParseResults<ConfigurationSetArgs>
-    | [<CliPrefix(CliPrefix.None)>] Unset       of unset_args:              ParseResults<ConfigurationUnsetArgs>
-    | [<CliPrefix(CliPrefix.None)>] SetGitUser  of setgituser_args:  ParseResults<ConfigurationSetGitCredentialsArgs>
+    | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args:       ParseResults<ConfigurationEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] List        of list_args:       ParseResults<ConfigurationListArgs>
+    | [<CliPrefix(CliPrefix.None)>] Set         of set_args:        ParseResults<ConfigurationSetArgs>
+    | [<CliPrefix(CliPrefix.None)>] Unset       of unset_args:      ParseResults<ConfigurationUnsetArgs>
+    | [<CliPrefix(CliPrefix.None)>] SetGitUser  of setgituser_args: ParseResults<ConfigurationSetGitUserArgs>
 
 
     interface IArgParserTemplate with

@@ -307,6 +307,12 @@ module IniData =
         | None -> addValue name value iniData
         |> toFile path
 
+    /// Sets the given value for the key in the ini file, overwriting a possibly existing value.
+    let tryGetValueInIniPath path name = 
+        let iniData = path |> fromFile
+        tryGetValueByName name iniData
+        |> toFile path
+
     /// Creates a folder for the ArcCommander's data files in `$XDG_CONFIG_DIRS`.
     let createDataFolder () =
         let appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify)

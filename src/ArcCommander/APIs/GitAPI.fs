@@ -28,18 +28,14 @@ module GitAPI =
         | Ok token -> 
             log.Info($"Successfully retrieved access token from token service")
 
-            log.Info($"Try transfer git user metadata to global arcCommander config")
+            log.Tracery transfer git user metadata to global arcCommander config")
             match IniData.tryGetGlobalConfigPath () with
             | Some globalConfigPath ->
-                IniData.setValueInIniPath globalConfigPath "general.gitName"    (token.FirstName + " " + token.LastName)
-                IniData.setValueInIniPath globalConfigPath "general.gitEmail"   token.Email
+                IniData.setValueInIniPath globalConfigPath "general.gitname"    (token.FirstName + " " + token.LastName)
+                IniData.setValueInIniPath globalConfigPath "general.gitemail"   token.Email
                 log.Trace($"Successfully transferred git user metadata to global arcCommander config")
             | None ->
                 log.Error($"Could not transfer git user metadata to global arcCommander config")
-
-            //log.Trace($"TRACE: Locally set git user information")
-            //GitHelper.setLocalNameToken repoDir token  |> ignore
-            //GitHelper.setLocalEmailToken repoDir token |> ignore
 
             if storeCredentialsToken log token then
                 log.Info($"Finished Authentication")
@@ -95,106 +91,111 @@ module GitAPI =
         // get repository directory
         let repoDir = getRepoDir(arcConfiguration)
 
-        log.Trace("Delete .gitattributes")
+        if checkUserMetadataConsistency repoDir log |> not then
 
-        File.Delete(Path.Combine(repoDir,".gitattributes"))
+            log.Error("ERROR: Git user metadata set in the arcCommander config do not match the ones in the git config. This information is needed for git commits. Consider running \"arc config setgituser\" to synchronize the information between configs.")
+        
+        else
+            log.Trace("Delete .gitattributes")
 
-        // track all untracked files
-        printfn "-----------------------------"
-        let rec getAllFiles(cDir:string) =
-            let mutable l = []
+            File.Delete(Path.Combine(repoDir,".gitattributes"))
 
-            let dirs = System.IO.Directory.GetDirectories cDir |> Array.filter (fun x -> not (x.Contains ".git") ) |> List.ofSeq
+            // track all untracked files
+            printfn "-----------------------------"
+            let rec getAllFiles(cDir:string) =
+                let mutable l = []
 
-            l <- List.concat (dirs |> List.map (fun x -> getAllFiles x ))
+                let dirs = System.IO.Directory.GetDirectories cDir |> Array.filter (fun x -> not (x.Contains ".git") ) |> List.ofSeq
 
-            let files = System.IO.Directory.GetFiles cDir |> List.ofSeq
-            l <- l @ files
+                l <- List.concat (dirs |> List.map (fun x -> getAllFiles x ))
 
-            l
+                let files = System.IO.Directory.GetFiles cDir |> List.ofSeq
+                l <- l @ files
 
-        let allFiles = getAllFiles(repoDir)
+                l
 
-        let allFilesPlusSizes = allFiles |> List.map( fun x -> x, System.IO.FileInfo(x).Length )
+            let allFiles = getAllFiles(repoDir)
 
-        let trackWithAdd (file : string) =
+            let allFilesPlusSizes = allFiles |> List.map( fun x -> x, System.IO.FileInfo(x).Length )
 
-            executeGitCommand repoDir $"add \"{file}\"" |> ignore
+            let trackWithAdd (file : string) =
 
-        let trackWithLFS (file : string) =
+                executeGitCommand repoDir $"add \"{file}\"" |> ignore
 
-            let lfsPath = file.Replace(repoDir, "").Replace("\\","/")
+            let trackWithLFS (file : string) =
 
-            executeGitCommand repoDir $"lfs track \"{lfsPath}\"" |> ignore
+                let lfsPath = file.Replace(repoDir, "").Replace("\\","/")
 
-            trackWithAdd file
-            trackWithAdd (System.IO.Path.Combine(repoDir, ".gitattributes"))
+                executeGitCommand repoDir $"lfs track \"{lfsPath}\"" |> ignore
+
+                trackWithAdd file
+                trackWithAdd (System.IO.Path.Combine(repoDir, ".gitattributes"))
 
         
-        let gitLfsRules = GeneralConfiguration.getGitLfsRules arcConfiguration
+            let gitLfsRules = GeneralConfiguration.getGitLfsRules arcConfiguration
 
-        gitLfsRules
-        |> Array.iter (fun rule ->
-            executeGitCommand repoDir $"lfs track \"{rule}\"" |> ignore
-        )
+            gitLfsRules
+            |> Array.iter (fun rule ->
+                executeGitCommand repoDir $"lfs track \"{rule}\"" |> ignore
+            )
 
-        let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
+            let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
 
-        log.Trace("Start tracking files")
+            log.Trace("Start tracking files")
 
-        allFilesPlusSizes 
-        |> List.iter (fun (file,size) ->
+            allFilesPlusSizes 
+            |> List.iter (fun (file,size) ->
 
-                /// Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
-                match gitLfsThreshold with
-                | Some thr when size > thr -> trackWithLFS file
-                | _ -> trackWithAdd file
-        )
+                    /// Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
+                    match gitLfsThreshold with
+                    | Some thr when size > thr -> trackWithLFS file
+                    | _ -> trackWithAdd file
+            )
 
 
-        executeGitCommand repoDir ("add -u") |> ignore
-        printfn "-----------------------------"
+            executeGitCommand repoDir ("add -u") |> ignore
+            printfn "-----------------------------"
 
-        // commit all changes
-        let commitMessage =
-            match tryGetFieldValueByName "CommitMessage" gitArgs with
-            | None -> "Update"
-            | Some s -> s
+            // commit all changes
+            let commitMessage =
+                match tryGetFieldValueByName "CommitMessage" gitArgs with
+                | None -> "Update"
+                | Some s -> s
 
-        // print git status if verbose
-        // executeGitCommand repoDir ("status") |> ignore
+            // print git status if verbose
+            // executeGitCommand repoDir ("status") |> ignore
 
-        log.Trace("Commit tracked files" )
-        log.Trace($"git commit -m '{commitMessage}'")
+            log.Trace("Commit tracked files" )
+            log.Trace($"git commit -m '{commitMessage}'")
 
-        Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
+            Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
-        let branch = tryGetFieldValueByName "BranchName" gitArgs |> Option.defaultValue "main"
+            let branch = tryGetFieldValueByName "BranchName" gitArgs |> Option.defaultValue "main"
 
-        executeGitCommand repoDir $"branch -M {branch}" |> ignore
+            executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
-        // detect existing remote
-        let hasRemote () =
-            let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
-            msg.Length > 0
+            // detect existing remote
+            let hasRemote () =
+                let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
+                msg.Length > 0
 
-        // add remote if specified
-        match tryGetFieldValueByName "RepositoryAdress" gitArgs with
-            | None -> ()
-            | Some remote ->
-                if hasRemote () then executeGitCommand repoDir ("remote remove origin") |> ignore
-                executeGitCommand repoDir ("remote add origin " + remote) |> ignore
+            // add remote if specified
+            match tryGetFieldValueByName "RepositoryAdress" gitArgs with
+                | None -> ()
+                | Some remote ->
+                    if hasRemote () then executeGitCommand repoDir ("remote remove origin") |> ignore
+                    executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
         if hasRemote() then log.Trace("Start syncing with remote" )
         else                log.Error("Can not sync with remote as no remote repository adress was specified.")
 
-        // pull if remote exists
-        if hasRemote() then
-            log.Trace("Pull")
-            executeGitCommand repoDir ("fetch origin") |> ignore
-            executeGitCommand repoDir ($"pull --rebase origin {branch}") |> ignore
+            // pull if remote exists
+            if hasRemote() then
+                log.Trace("Pull")
+                executeGitCommand repoDir ("fetch origin") |> ignore
+                executeGitCommand repoDir ($"pull --rebase origin {branch}") |> ignore
 
-        // push if remote exists
-        if hasRemote () then
-            log.Trace("Push")
-            executeGitCommand repoDir ($"push -u origin {branch}") |> ignore
+            // push if remote exists
+            if hasRemote () then
+                log.Trace("Push")
+                executeGitCommand repoDir ($"push -u origin {branch}") |> ignore

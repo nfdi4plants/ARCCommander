@@ -97,7 +97,7 @@ module ConfigurationAPI =
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
             | Some p    -> IniData.fromFile p
-            | None      -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
+            | None      -> log.Warn("No config file found. Load default config instead."); ArcConfiguration.GetDefault()
         // If only local flag is set, only local settings are listed
         | false,true ->
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -108,7 +108,7 @@ module ConfigurationAPI =
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
             match IniData.tryLoadMergedIniData workDir with
             | Some inidat   -> inidat
-            | None          -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
+            | None          -> log.Warn("No config file found. Load default config instead."); ArcConfiguration.GetDefault()
         |> IniData.flatten
         |> Seq.iter (fun (n,v) -> log.Debug($"{n}:{v}"))
 
@@ -204,30 +204,14 @@ module ConfigurationAPI =
         match nameOption, emailOption with
         | Some name, Some email ->
 
-            let setLocal() =
+            if containsFlag "Global" configurationArgs then 
+                GitHelper.setGlobalName name
+                GitHelper.setGlobalEmail email
+                
+            if (containsFlag "Global" configurationArgs |> not) || containsFlag "Local" configurationArgs then
                 let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
-                if GitHelper.setLocalName workDir name |> not then
-                    log.Error($"User name could not be added to local git config in {workDir}.")
-                if GitHelper.setLocalEmail workDir email |> not then
-                    log.Error($"User email could not be added to local git config in {workDir}.")
-
-            let setGlobal() =
-                if GitHelper.setGlobalName name |> not then
-                    log.Error("User name could not be added to global git config.")
-                if GitHelper.setGlobalEmail email |> not then
-                    log.Error("User email could not be added to global git config.")
-
-            match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
-            // If only global flag is set, the setting is set to global git config
-            | true,false -> 
-                setGlobal()
-            // If both global and local flags are set, the setting is set both in the local and the global git config
-            | true,true ->
-                setGlobal()
-                setLocal()
-            // If only local or no flag is set, the setting is set only in the local git config file
-            | false,false | false,true  -> 
-                setLocal()
+                GitHelper.setLocalName workDir name
+                GitHelper.setLocalEmail workDir email
 
             log.Info("Finished setting git user information.")
 
