@@ -174,3 +174,62 @@ module ConfigurationAPI =
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
             IniData.getLocalConfigPath workDir
             |> unsetValueInIniPath
+
+
+    /// Transfer git user metadata from arc config to git config.
+    let setGitUser (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+
+        let log = Logging.createLogger "ConfigurationSetGitUserLog"
+
+        log.Info("Start Config SetGitUser")
+
+        let nameOption = 
+            match tryGetFieldValueByName "Name" configurationArgs with
+            | Some name -> 
+                log.Trace("Retrieved user name from given argument.")
+                Some name
+            | None -> 
+                log.Trace("Could not retrieve user name from argument. Try to retrieve it from arc config.")
+                GeneralConfiguration.tryGetGitName arcConfiguration
+            
+        let emailOption = 
+            match tryGetFieldValueByName "Email" configurationArgs with
+            | Some name -> 
+                log.Trace("Retrieved user email from given argument.")
+                Some name
+            | None -> 
+                log.Trace("Could not retrieve user email from argument. Try to retrieve it from arc config.")
+                GeneralConfiguration.tryGetGitEmail arcConfiguration  
+
+        match nameOption, emailOption with
+        | Some name, Some email ->
+
+            let setLocal() =
+                let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+                if GitHelper.setLocalName workDir name |> not then
+                    log.Error($"User name could not be added to local git config in {workDir}.")
+                if GitHelper.setLocalEmail workDir email |> not then
+                    log.Error($"User email could not be added to local git config in {workDir}.")
+
+            let setGlobal() =
+                if GitHelper.setGlobalName name |> not then
+                    log.Error("User name could not be added to global git config.")
+                if GitHelper.setGlobalEmail email |> not then
+                    log.Error("User email could not be added to global git config.")
+
+            match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
+            // If only global flag is set, the setting is set to global git config
+            | true,false -> 
+                setGlobal()
+            // If both global and local flags are set, the setting is set both in the local and the global git config
+            | true,true ->
+                setGlobal()
+                setLocal()
+            // If only local or no flag is set, the setting is set only in the local git config file
+            | false,false | false,true  -> 
+                setLocal()
+
+            log.Info("Finished setting git user information.")
+
+        | _, _ -> 
+            log.Error("Git user metadata neither present in the arc config nor given by argument. Consider first running \"arc auth\", setting the user name and email by running \"arc config set\" or rerunning this command and specifying both name and email.")

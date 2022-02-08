@@ -29,6 +29,7 @@
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
     <Compile Include="Authentication.fs" />
+    <Compile Include="GitHelper.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
     <Compile Include="CLIArguments\InvestigationArgs.fs" />

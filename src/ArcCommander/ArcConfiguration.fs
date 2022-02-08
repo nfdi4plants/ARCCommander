@@ -201,6 +201,14 @@ module GeneralConfiguration =
     let getForceEditor configuration = 
         Map.find "forceeditor" configuration.General |> (fun s -> s.ToLower() = "true")
 
+    /// Returns the git user name if it exists. Else returns None.
+    let tryGetGitName configuration = 
+        Map.tryFind "gitname" configuration.General
+
+    /// Returns the git user email if it exists. Else returns None.
+    let tryGetGitEmail configuration = 
+        Map.tryFind "gitemail" configuration.General
+
 /// Functions for retrieving ISA file settings from the configuration.
 module IsaModelConfiguration =
 

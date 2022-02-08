@@ -24,6 +24,7 @@ module Authentication =
         //|> fun b -> b.MustVerifySignature()
         |> fun b -> b.Decode(response)
 
+    /// Fields returned by the token service
     type IdentityToken =    
         {
             [<JsonPropertyName(@"exp")>]
@@ -52,9 +53,10 @@ module Authentication =
             decodeResponse jwtResponse
             |> IdentityToken.ofJson
     
-
+    /// Create a standard html site text with given string as body
     let fillHTML s = $"<html><head></head><body><h1>{s}</h1></body></html>"
         
+    /// Open the the given url in the standard browser of the operating system
     let openBrowser (url : string) =
     
         try
@@ -72,6 +74,7 @@ module Authentication =
         | e ->
                 raise e
    
+    /// Write the response string to the stream of the response context. This function is used to fill the the redirect page after user login.
     let sendResponseAsync (responseString : string) (responseContext : Response) =
         task {
             
@@ -84,6 +87,7 @@ module Authentication =
             responseOutput.Flush();
         }
 
+    /// Try obtaining the token information from the request
     let tryProcessRequestAsync (client : OidcClient) (state : AuthorizeState) (requestContext : Request) =
         task {
             try
@@ -94,6 +98,7 @@ module Authentication =
                 return FSharp.Core.Result.Error err
         }
 
+    /// Get the options needed for an authorization request from the arc configuration
     let loadOptionsFromConfig (arcConfiguration : ArcConfiguration) =
         new OidcClientOptions(
             Authority =     GeneralConfiguration.getKCAuthority arcConfiguration,
@@ -102,6 +107,7 @@ module Authentication =
             RedirectUri =   GeneralConfiguration.getKCRedirectURI arcConfiguration
         )
 
+    /// Get the token information from a token service specified in the options
     let signInAsync (log : NLog.Logger) (options : OidcClientOptions) =
         task {
 
@@ -162,6 +168,7 @@ module Authentication =
         }
 
     [<STAThread>]
+    /// Try to get the token information from a token service specified in the arc configuration
     let tryLogin (log : NLog.Logger) (arcConfiguration : ArcConfiguration) =
 
         log.Info($"Initiate login protocol")
