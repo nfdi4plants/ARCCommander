@@ -13,6 +13,7 @@ nuget Fake.DotNet.Fsi
 nuget Fake.DotNet.NuGet
 nuget Fake.Api.Github
 nuget Fake.DotNet.Testing.Expecto 
+nuget Fake.Extensions.Release
 nuget Fake.Tools.Git //"
 
 #if !FAKE
@@ -164,8 +165,6 @@ module PackageTasks =
     open BasicTasks
     open TestTasks
 
-    let blabl x = x
-
     let pack = BuildTask.create "Pack" [clean; build; runTests; copyBinaries] {
         if promptYesNo (sprintf "creating stable package with version %s OK?" stableVersionTag ) 
             then
@@ -223,12 +222,13 @@ module PackageTasks =
                 p with
                     Runtime = Some "win-x64"
                     Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some (sprintf "%s/win-x64" publishDir)
+                    OutputPath = Some outputPath
                     MSBuildParams = {
                         standardParams with
                             Properties = [
-                                "Platform","x64"
-                                "PublishSingleFile","true"
+                                "Version", stableVersionTag
+                                "Platform", "x64"
+                                "PublishSingleFile", "true"
                             ]
                     };
             }
@@ -245,12 +245,13 @@ module PackageTasks =
                 p with
                     Runtime = Some "linux-x64"
                     Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some (sprintf "%s/linux-x64" publishDir)
+                    OutputPath = Some outputPath
                     MSBuildParams = {
                         standardParams with
                             Properties = [
-                                "Platform","x64"
-                                "PublishSingleFile","true"
+                                "Version", stableVersionTag
+                                "Platform", "x64"
+                                "PublishSingleFile", "true"
                             ]
                     }
             }
@@ -271,8 +272,9 @@ module PackageTasks =
                     MSBuildParams = {
                         standardParams with
                             Properties = [
-                                "Platform","x64"
-                                "PublishSingleFile","true"
+                                "Version", stableVersionTag
+                                "Platform", "x64"
+                                "PublishSingleFile", "true"
                             ]
                     }
             }
@@ -412,6 +414,33 @@ module ReleaseTasks =
             Git.Branches.push "temp/gh-pages"
         else failwith "aborted"
     }
+
+module ReleaseNoteTasks =
+
+    open Fake.Extensions.Release
+
+    let createAssemblyVersion = BuildTask.create "createvfs" [] {
+        AssemblyVersion.create ProjectInfo.gitName
+    }
+
+    let updateReleaseNotes = BuildTask.createFn "ReleaseNotes" [] (fun config ->
+        Release.exists()
+
+        Release.update(ProjectInfo.gitOwner, ProjectInfo.gitName, config)
+    )
+
+    let githubDraft = BuildTask.createFn "GithubDraft" [] (fun config ->
+
+        let body = "We are ready to go for the first release!"
+
+        Github.draft(
+            ProjectInfo.gitOwner,
+            ProjectInfo.gitName,
+            (Some body),
+            None,
+            config
+        )
+    )
 
 open BasicTasks
 open TestTasks

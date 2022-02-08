@@ -12,6 +12,7 @@ type ArcCommand =
     | [<CliPrefix(CliPrefix.None)>] Sync    of sync_args    : ParseResults<ArcSyncArgs>
     | [<CliPrefix(CliPrefix.None)>] Get     of get_args     : ParseResults<ArcGetArgs>
     | [<CliPrefix(CliPrefix.None)>][<SubCommand()>] Update
+    | [<CliPrefix(CliPrefix.DoubleDash)>][<SubCommand()>] Version
          
     | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>] Investigation        of verb_and_args : ParseResults<InvestigationCommand>
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>] Study                of verb_and_args : ParseResults<StudyCommand>
@@ -32,3 +33,4 @@ type ArcCommand =
             | Study         _   -> "Study functions"
             | Assay         _   -> "Assay functions"
             | Configuration _   -> "Configuration editing"
+            | Version       _   -> "Get the ArcCommander's current version"
