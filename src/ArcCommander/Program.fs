@@ -69,6 +69,10 @@ let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
     finally
         log.Info("Done processing command.")
 
+let handleRemoteAccessAccessTokenSubCommands arcConfiguration accessTokenVerb =
+    match accessTokenVerb with
+    | AccessTokenCommand.Get r  -> processCommand arcConfiguration RemoteAccessAPI.AccessToken.get r
+
 let handleStudyContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with
     | StudyPersonCommand.Update r       -> processCommand arcConfiguration StudyAPI.Contacts.update     r
@@ -193,6 +197,10 @@ let handleConfigurationSubCommands arcConfiguration configurationVerb =
     | ConfigurationCommand.Set          r -> processCommand arcConfiguration ConfigurationAPI.set   r
     | ConfigurationCommand.Unset        r -> processCommand arcConfiguration ConfigurationAPI.unset r
     | ConfigurationCommand.SetGitUser   r -> processCommand arcConfiguration ConfigurationAPI.setGitUser r
+    
+let handleRemoteAccessSubCommands arcConfiguration remoteAccessVerb =
+    match remoteAccessVerb with
+    | RemoteAccessCommand.AccessToken subCommand -> handleRemoteAccessAccessTokenSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleCommand arcConfiguration command =
     match command with
@@ -201,6 +209,7 @@ let handleCommand arcConfiguration command =
     | Study subCommand          -> handleStudySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Assay subCommand          -> handleAssaySubCommands           arcConfiguration (subCommand.GetSubCommand())
     | Configuration subcommand  -> handleConfigurationSubCommands   arcConfiguration (subcommand.GetSubCommand())
+    | RemoteAccess subcommand   -> handleRemoteAccessSubCommands    arcConfiguration (subcommand.GetSubCommand())
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
     | Export r                  -> processCommand                   arcConfiguration ArcAPI.export r
@@ -209,7 +218,6 @@ let handleCommand arcConfiguration command =
     // Git Verbs
     | Sync r                    -> processCommand                   arcConfiguration GitAPI.sync r
     | Get r                     -> processCommand                   arcConfiguration GitAPI.get r
-    | Authenticate _            -> processCommandWithoutArgs        arcConfiguration GitAPI.authenticate
     // Settings
     | WorkingDir _ | Verbosity _-> ()
 

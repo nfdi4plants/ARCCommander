@@ -99,86 +99,81 @@ module Authentication =
         }
 
     /// Get the options needed for an authorization request from the arc configuration
-    let loadOptionsFromConfig (arcConfiguration : ArcConfiguration) =
+    let loadOptionsFromConfig authority (arcConfiguration : ArcConfiguration) =
         new OidcClientOptions(
-            Authority =     GeneralConfiguration.getKCAuthority arcConfiguration,
-            ClientId =      GeneralConfiguration.getKCClientID arcConfiguration,
-            Scope =         GeneralConfiguration.getKCScope arcConfiguration,
-            RedirectUri =   GeneralConfiguration.getKCRedirectURI arcConfiguration
+            Authority =     authority,
+            ClientId =      GeneralConfiguration.getAuthClientID arcConfiguration,
+            Scope =         GeneralConfiguration.getAuthScope arcConfiguration,
+            RedirectUri =   GeneralConfiguration.getAuthRedirectURI arcConfiguration
         )
 
-    /// Get the token information from a token service specified in the options
-    let signInAsync (log : NLog.Logger) (options : OidcClientOptions) =
-        task {
+    module Oidc =
 
-            log.Info($"Start login at {options.Authority}")
+        /// Get the token information from a token service specified in the options
+        let signInAsync (log : NLog.Logger) (options : OidcClientOptions) =
+            task {
 
-            log.Trace($"TRACE: Starting local listener for obtaining token service response at {options.RedirectUri}")
+                log.Info($"Start login at {options.Authority}")
 
-            let settings = new WebListenerSettings()
-            settings.UrlPrefixes.Add(options.RedirectUri)
-            let http = new WebListener(settings)
+                log.Trace($"TRACE: Starting local listener for obtaining token service response at {options.RedirectUri}")
+
+                let settings = new WebListenerSettings()
+                settings.UrlPrefixes.Add(options.RedirectUri)
+                let http = new WebListener(settings)
     
-            http.Start();
+                http.Start();
 
-            //log.Trace("TRACE: Local listener was setup")
+                log.Trace($"TRACE: Prepare client for login procedure")
 
-            //let serilog = 
-            //    LoggerConfiguration()
-            //        .MinimumLevel.Verbose()
-            //        .Enrich.FromLogContext()
-            //        .WriteTo.LiterateConsole(outputTemplate = "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message}{NewLine}{Exception}{NewLine}")
-            //        .CreateLogger()
+                let client = new OidcClient(options)
+                let! state = client.PrepareLoginAsync()
     
-            //options.LoggerFactory.AddSerilog(serilog) |> ignore
+                log.Trace($"TRACE: Open Browser at {state.StartUrl}")
 
-            log.Trace($"TRACE: Prepare client for login procedure")
-
-            let client = new OidcClient(options)
-            let! state = client.PrepareLoginAsync()
+                openBrowser(state.StartUrl) |> ignore
     
-            //log.Trace($"TRACE: Client setup")
+                log.Info($"Waiting for user login")
 
-            log.Trace($"TRACE: Open Browser at {state.StartUrl}")
-
-            openBrowser(state.StartUrl) |> ignore
+                let! context = http.AcceptAsync()
     
-            //log.Trace($"TRACE: Browser opened")
+                log.Trace($"TRACE: Try processing request")
 
-            log.Info($"Waiting for user login")
+                let! result = tryProcessRequestAsync client state context.Request
 
-            let! context = http.AcceptAsync()
-    
-            log.Trace($"TRACE: Try processing request")
+                log.Trace($"TRACE: Try sending response to browser")
 
-            let! result = tryProcessRequestAsync client state context.Request
+                match result with
+                | Result.Ok r ->
+                    let! _ = sendResponseAsync (fillHTML "Success") context.Response
+                    return result
+                | FSharp.Core.Result.Error err ->
+                    let failureString = 
+                        sprintf "Could not parse request: \n %s" err.Message
+                        |> fillHTML
+                    let! _ = sendResponseAsync failureString context.Response
+                    return result
+            }
 
-            log.Trace($"TRACE: Try sending response to browser")
+        [<STAThread>]
+        /// Try to get the token information from a token service specified in the arc configuration
+        let tryLogin (log : NLog.Logger) authority (arcConfiguration : ArcConfiguration) =
 
-            match result with
-            | Result.Ok r ->
-                let! _ = sendResponseAsync (fillHTML "Success") context.Response
-                return result
-            | FSharp.Core.Result.Error err ->
-                let failureString = 
-                    sprintf "Could not parse request: \n %s" err.Message
-                    |> fillHTML
-                let! _ = sendResponseAsync failureString context.Response
-                return result
-        }
+            log.Info($"Initiate login protocol")
 
-    [<STAThread>]
-    /// Try to get the token information from a token service specified in the arc configuration
-    let tryLogin (log : NLog.Logger) (arcConfiguration : ArcConfiguration) =
+            log.Trace($"Load token service options from config")
 
-        log.Info($"Initiate login protocol")
+            let options = loadOptionsFromConfig authority arcConfiguration            
 
-        log.Trace($"Load token service options from config")
+            let t = signInAsync log options
 
-        let options = loadOptionsFromConfig arcConfiguration            
+            t.Wait()
+            t.Result
+            |> Result.map (fun result -> IdentityToken.ofJwt result.IdentityToken)
 
-        let t = signInAsync log options
+    module OAuth2 =
 
-        t.Wait()
-        t.Result
-        |> Result.map (fun result -> IdentityToken.ofJwt result.IdentityToken)
+        [<STAThread>]
+        /// Try to get the token information from a token service specified in the arc configuration
+        let tryLogin (log : NLog.Logger) authority (arcConfiguration : ArcConfiguration) =
+
+            raise (NotImplementedException("Login via OAuth2 authorization protocol is not yet implemented"))

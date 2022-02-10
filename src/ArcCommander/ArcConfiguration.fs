@@ -137,37 +137,29 @@ module GeneralConfiguration =
     let getWorkDirectory configuration = 
         Map.find "workdir" configuration.General
 
-    /// Returns the authority address from which the access tokens gets requested if it exists. Else returns None.
-    let tryGetKCAuthority configuration  =
-        Map.tryFind "kcauthority" configuration.General
-
-    /// Returns the authority address from which the access tokens get requested.
-    let getKCAuthority configuration  =
-        Map.find "kcauthority" configuration.General 
-
     /// Returns the client id used for identifying to the token delivery service if it exists. Else returns None.
-    let tryGetKCClientID configuration  =
-        Map.tryFind "kcclientid" configuration.General
+    let tryGetAuthClientID configuration  =
+        Map.tryFind "authclientid" configuration.General
 
     /// Returns the client id used for identifying to the token delivery service.
-    let getKCClientID configuration  =
-        Map.find "kcclientid" configuration.General
+    let getAuthClientID configuration  =
+        Map.find "authclientid" configuration.General
 
     /// Returns the scope used for requesting the gitlab token from the token delivery service if it exists. Else returns None.
-    let tryGetKCScope configuration  =
-        Map.tryFind "kcscope" configuration.General
+    let tryGetAuthScope configuration  =
+        Map.tryFind "authscope" configuration.General
 
     /// Returns the scope used for requesting the gitlab token from the token delivery service.
-    let getKCScope configuration  =
-        Map.find "kcscope" configuration.General
+    let getAuthScope configuration  =
+        Map.find "authscope" configuration.General
 
     /// Returns the uri to which the client redirects after authentication to the token delivery service if it exists. Else returns None.
-    let tryGetKCRedirectURI configuration  =
-        Map.tryFind "kcredirecturi" configuration.General
+    let tryGetAuthRedirectURI configuration  =
+        Map.tryFind "authredirecturi" configuration.General
 
     /// eturns the uri to which the client redirects after authentication to the token delivery service.
-    let getKCRedirectURI configuration  =
-        Map.find "kcredirecturi" configuration.General
+    let getAuthRedirectURI configuration  =
+        Map.find "authredirecturi" configuration.General
 
     /// Returns the verbosity level if it exists. Else returns None.
     let tryGetVerbosity configuration = 

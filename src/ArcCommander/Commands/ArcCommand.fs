@@ -12,7 +12,6 @@ type ArcCommand =
     | [<CliPrefix(CliPrefix.None)>]                             Export          of export_args  : ParseResults<ArcExportArgs>
     | [<CliPrefix(CliPrefix.None)>]                             Sync            of sync_args    : ParseResults<ArcSyncArgs>
     | [<CliPrefix(CliPrefix.None)>]                             Get             of get_args     : ParseResults<ArcGetArgs>
-    | [<AltCommandLine("auth")>][<CliPrefix(CliPrefix.None)>]   Authenticate    of get_args     : ParseResults<ArcGetArgs>
     | [<CliPrefix(CliPrefix.None)>][<SubCommand()>]             Update
     | [<CliPrefix(CliPrefix.DoubleDash)>][<SubCommand()>]       Version
     ///Subcommands
@@ -20,6 +19,7 @@ type ArcCommand =
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>]      Study           of verb_and_args : ParseResults<StudyCommand>
     | [<AltCommandLine("a")>][<CliPrefix(CliPrefix.None)>]      Assay           of verb_and_args : ParseResults<AssayCommand>
     | [<AltCommandLine("config")>][<CliPrefix(CliPrefix.None)>] Configuration   of verb_and_args : ParseResults<ConfigurationCommand>
+    | [<AltCommandLine("remote")>][<CliPrefix(CliPrefix.None)>] RemoteAccess    of verb_and_args : ParseResults<RemoteAccessCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -31,7 +31,7 @@ type ArcCommand =
             | Export        _   -> "Exports the full arc to a json object"
             | Sync          _   -> "Syncronize the ARC with its upstream repository. Commits changes made in the ARC. If a remote is set or is given, also pulls from there and pushes all previously made commits."
             | Get           _   -> "Download an ARC from a remote repository (e.g. from gitlab)"
-            | Authenticate  _   -> "Authenticate to a token service to receive and store git credentials. Token Service details can be set in the config."
+            | RemoteAccess  _   -> "Subcommands for handling access functionality to remote repositories"
             | Investigation _   -> "Investigation file functions"
             | Study         _   -> "Study functions"
             | Assay         _   -> "Assay functions"
