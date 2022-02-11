@@ -15,10 +15,20 @@ module Logging =
         let config = new LoggingConfiguration()
 
         // initialise base console target, can be modified
-        let consoleTarget = new ColoredConsoleTarget("console")
+        let consoleTarget1 = new ColoredConsoleTarget("console")
         // new parameters for console target
-        let layoutConsole = new Layouts.SimpleLayout (@"${message} ${exception}")
-        consoleTarget.Layout <- layoutConsole
+        let layoutConsole1 = new Layouts.SimpleLayout (@"${message} ${exception}")
+        consoleTarget1.Layout <- layoutConsole1
+
+        // second console target for alert messages (error & fatal)
+        let consoleTarget2 = new ColoredConsoleTarget("console")
+        let layoutConsole2 = new Layouts.SimpleLayout (@"${level:uppercase=true}: {message} ${exception}")
+        consoleTarget2.Layout <- layoutConsole2
+
+        // third console target for alert messages (warn)
+        let consoleTarget3 = new ColoredConsoleTarget("console")
+        let layoutConsole3 = new Layouts.SimpleLayout (@"$WARNING: {message} ${exception}")
+        consoleTarget3.Layout <- layoutConsole3
 
         // initialise base file target, can be modified
         let fileTarget = new FileTarget("file")
@@ -28,7 +38,7 @@ module Logging =
         fileTarget.FileName <- fileName
         fileTarget.Layout <- layoutFile
 
-        config.AddTarget(consoleTarget)
+        config.AddTarget(consoleTarget1)
         config.AddTarget(fileTarget)
 
         // define rules for colors that shall differ from the default color theme
@@ -44,22 +54,22 @@ module Logging =
         fatalColorRule.BackgroundColor <- ConsoleOutputColor.DarkYellow
 
         // add the newly defined rules to the console target
-        consoleTarget.RowHighlightingRules.Add(warnColorRule)
-        consoleTarget.RowHighlightingRules.Add(errorColorRule)
-        consoleTarget.RowHighlightingRules.Add(fatalColorRule)
+        consoleTarget2.RowHighlightingRules.Add(errorColorRule)
+        consoleTarget2.RowHighlightingRules.Add(fatalColorRule)
+        consoleTarget3.RowHighlightingRules.Add(warnColorRule)
 
         // declare which results in a log in which target
-        if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Info, consoleTarget) // info results shall be used for verbosity 1
+        if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Info, consoleTarget1) // info results shall be used for verbosity 1
         config.AddRuleForOneLevel(LogLevel.Info, fileTarget) // info results shall be written to log file, regardless of verbosity
-        if verbosity = 2 then config.AddRuleForOneLevel(LogLevel.Trace, consoleTarget) // trace results shall be used for verbosity 2
+        if verbosity = 2 then config.AddRuleForOneLevel(LogLevel.Trace, consoleTarget1) // trace results shall be used for verbosity 2
         config.AddRuleForOneLevel(LogLevel.Trace, fileTarget) // trace results shall be written to log file, regardless of verbosity
-        config.AddRuleForOneLevel(LogLevel.Debug, consoleTarget) // shall be used for results that shall always be printed, regardless of verbosity
+        config.AddRuleForOneLevel(LogLevel.Debug, consoleTarget1) // shall be used for results that shall always be printed, regardless of verbosity
         config.AddRuleForOneLevel(LogLevel.Debug, fileTarget)
-        if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget) // warnings shall be used for non-critical events if verbosity is above 0
+        if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Warn, consoleTarget3) // warnings shall be used for non-critical events if verbosity is above 0
         config.AddRuleForOneLevel(LogLevel.Warn, fileTarget)
-        config.AddRuleForOneLevel(LogLevel.Error, consoleTarget) // errors shall be used for critical events that lead to an abort of the desired task but still led the ArcCommander terminate successfully
+        config.AddRuleForOneLevel(LogLevel.Error, consoleTarget2) // errors shall be used for critical events that lead to an abort of the desired task but still led the ArcCommander terminate successfully
         config.AddRuleForOneLevel(LogLevel.Error, fileTarget)
-        config.AddRuleForOneLevel(LogLevel.Fatal, consoleTarget) // fatal errors shall be used for critical events that cause ArcCommander exceptions leading to an unsuccessful termination
+        config.AddRuleForOneLevel(LogLevel.Fatal, consoleTarget2) // fatal errors shall be used for critical events that cause ArcCommander exceptions leading to an unsuccessful termination
         config.AddRuleForOneLevel(LogLevel.Fatal, fileTarget) // impairing the ARC structure
    
         // activate config for logger
