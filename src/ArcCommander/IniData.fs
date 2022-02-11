@@ -315,7 +315,10 @@ module IniData =
         arcCommanderDataFolder
 
     /// Returns the full path of the data folder for an ARC. If the ArcCommander is used in a non-ARC directory returns None.
-    let tryGetArcDataFolderPath arcName arcCommanderDataFolder =
-        if Directory.Exists(arcCommanderDataFolder) then
-            Some (Path.Combine(arcCommanderDataFolder, arcName))
+    let tryGetArcDataFolderPath arcDir arcCommanderDataFolder =
+        // TO DO: rework when a function to check an ARC's integrity or to verify that a folder is an ARC is available
+        // temporary solution: current folder is an ARC if a .arc folder exists
+        let arcName = DirectoryInfo(arcDir).Name
+        let isArc = Directory.Exists(Path.Combine(arcDir, ".arc"))
+        if isArc then Some (Path.Combine(arcCommanderDataFolder, arcName))
         else None

@@ -6,6 +6,7 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
 open ArcCommander.ExternalExecutables
+open ArcCommander.IniData
 
 open System
 open System.IO
@@ -240,13 +241,9 @@ let main argv =
         // <-----
         
         let arcCommanderDataFolder = IniData.createDataFolder ()
-        // TO DO: rework when a function to check an ARC's integrity or to verify that a folder is an ARC is available
-        // temporary solution: current folder is an ARC if a .arc folder exists
-        let isArc = Directory.Exists(Path.Combine(workingDir, ".arc"))
-        let arcDataFolder =
-            let arcName = DirectoryInfo(workingDir).Name
-            let fullPath = Path.Combine(arcCommanderDataFolder, arcName)
-            if isArc then fullPath
+        let arcDataFolder = 
+            if (tryGetArcDataFolderPath workingDir arcCommanderDataFolder).IsSome then 
+                (tryGetArcDataFolderPath workingDir arcCommanderDataFolder).Value
             else arcCommanderDataFolder
         Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
