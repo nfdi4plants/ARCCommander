@@ -239,10 +239,16 @@ let main argv =
             |> ArcConfiguration.load
         // <-----
         
-        // here the logging config gets created
-        let arcFolder = Path.Combine(arcConfiguration.General.Item "workdir", arcConfiguration.General.Item "rootfolder")
-        Directory.CreateDirectory(arcFolder) |> ignore
-        Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        let arcCommanderDataFolder = IniData.createDataFolder ()
+        // TO DO: rework when a function to check an ARC's integrity or to verify that a folder is an ARC is available
+        // temporary solution: current folder is an ARC if a .arc folder exists
+        let isArc = Directory.Exists(Path.Combine(workingDir, ".arc"))
+        let arcDataFolder =
+            let arcName = DirectoryInfo(workingDir).Name
+            let fullPath = Path.Combine(arcCommanderDataFolder, arcName)
+            if isArc then fullPath
+            else arcCommanderDataFolder
+        Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
 
         // Try parse the command line arguments

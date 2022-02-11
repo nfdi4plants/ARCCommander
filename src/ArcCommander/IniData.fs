@@ -306,3 +306,16 @@ module IniData =
         | Some ini -> ini
         | None -> addValue name value iniData
         |> toFile path
+
+    /// Creates a folder for the ArcCommander's data files in `$XDG_CONFIG_DIRS`.
+    let createDataFolder () =
+        let appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify)
+        let arcCommanderDataFolder = Path.Combine(appDataFolder, "DataPLANT", "ArcCommander")
+        Directory.CreateDirectory(arcCommanderDataFolder) |> ignore
+        arcCommanderDataFolder
+
+    /// Returns the full path of the data folder for an ARC. If the ArcCommander is used in a non-ARC directory returns None.
+    let tryGetArcDataFolderPath arcName arcCommanderDataFolder =
+        if Directory.Exists(arcCommanderDataFolder) then
+            Some (Path.Combine(arcCommanderDataFolder, arcName))
+        else None
