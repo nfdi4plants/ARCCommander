@@ -27,16 +27,14 @@ module ArcAPI =
     let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
         let log = Logging.createLogger "ArcInitLog"
-
-        let verbosity = GeneralConfiguration.getVerbosity arcConfiguration
         
         log.Info("Start Arc Init")
 
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let editor =            tryGetFieldValueByName "EditorPath" arcArgs
-        let gitLFSThreshold =   tryGetFieldValueByName "GitLFSByteThreshold" arcArgs
-        let repositoryAdress =  tryGetFieldValueByName "RepositoryAdress" arcArgs 
+        let editor              = tryGetFieldValueByName "EditorPath"           arcArgs
+        let gitLFSThreshold     = tryGetFieldValueByName "GitLFSByteThreshold"  arcArgs
+        let repositoryAdress    = tryGetFieldValueByName "RepositoryAdress"     arcArgs 
 
 
         log.Trace("Create Directory")
@@ -76,7 +74,7 @@ module ArcAPI =
         with 
         | _ -> 
 
-            log.Error("ERROR: Git could not be set up. Please try installing Git cli and run `arc git init`.")
+            log.Error("Git could not be set up. Please try installing Git cli and run `arc git init`.")
 
     /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =
@@ -99,7 +97,7 @@ module ArcAPI =
             | :? FileNotFoundException -> 
                 Investigation.empty
             | err -> 
-                log.Fatal($"ERROR: {err.ToString()}")
+                log.Fatal($"{err.ToString()}")
                 raise (Exception(""))
 
         let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
@@ -149,7 +147,7 @@ module ArcAPI =
             | :? FileNotFoundException -> 
                 Investigation.empty
             | err -> 
-                log.Fatal($"ERROR: {err.Message}")
+                log.Fatal($"{err.Message}")
                 raise (Exception(""))
     
         let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =

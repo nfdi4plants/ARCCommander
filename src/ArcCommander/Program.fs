@@ -31,7 +31,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                log.Fatal("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
+                log.Fatal("Mandatory arguments were not given either via cli or editor prompt.")
                 raise (Exception(""))
             arguments
         // Opens a command line prompt asking for addtional information if the "forceeditor" flag is set.
