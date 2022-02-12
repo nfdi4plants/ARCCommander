@@ -21,13 +21,23 @@ module GitHelper =
         
         let outputs = System.Collections.Generic.List<string>()
         let outputHandler (_sender:obj) (args:DataReceivedEventArgs) = 
-            if (args.Data = null || args.Data.Contains "trace") |> not then
-                outputs.Add args.Data
-                log.Trace($"TRACE: {args.Data}")
+            if (args.Data = null |> not) then
+                if args.Data.ToLower().Contains ("error") then
+                    log.Error($"GIT ERROR: {args.Data}")    
+                elif args.Data.ToLower().Contains ("trace") then
+                    log.Trace($"GIT TRACE: {args.Data}")   
+                else
+                    log.Info($"GIT: {args.Data}")
         
-        let errorHandler (_sender:obj) (args:DataReceivedEventArgs) =       
-            if (args.Data = null || args.Data.Contains "trace") |> not then                
-                log.Error($"ERROR: {args.Data}")
+        let errorHandler (_sender:obj) (args:DataReceivedEventArgs) =  
+            if (args.Data = null |> not) then
+                let msg = args.Data.ToLower()
+                if msg.Contains ("error") || msg.Contains ("fatal") then
+                    log.Error($"GIT ERROR: {args.Data}")    
+                elif msg.Contains ("trace") then
+                    log.Trace($"GIT TRACE: {args.Data}")   
+                else
+                    log.Info($"GIT: {args.Data}")
         
         let p = new Process(StartInfo = procStartInfo)
 
