@@ -311,7 +311,6 @@ module IniData =
     let tryGetValueInIniPath path name = 
         let iniData = path |> fromFile
         tryGetValueByName name iniData
-        |> toFile path
 
     /// Creates a folder for the ArcCommander's data files in `$XDG_CONFIG_DIRS`.
     let createDataFolder () =

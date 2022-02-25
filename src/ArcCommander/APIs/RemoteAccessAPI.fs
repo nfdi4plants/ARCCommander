@@ -30,16 +30,16 @@ module RemoteAccessAPI =
 
             match tryReceiveToken log hostAddress arcConfiguration with 
             | Ok token -> 
-                log.Info($"Successfully retrieved access token from token service")
+                log.Info("Successfully retrieved access token from token service")
 
-                log.Trace($"Try transfer git user metadata to global arcCommander config")
+                log.Trace("Try transfer git user metadata to global arcCommander config")
                 match IniData.tryGetGlobalConfigPath () with
                 | Some globalConfigPath ->
                     IniData.setValueInIniPath globalConfigPath "general.gitname"    (token.FirstName + " " + token.LastName)
                     IniData.setValueInIniPath globalConfigPath "general.gitemail"   token.Email
-                    log.Trace($"Successfully transferred git user metadata to global arcCommander config")
+                    log.Trace("Successfully transferred git user metadata to global arcCommander config")
                 | None ->
-                    log.Error($"Could not transfer git user metadata to global arcCommander config")
+                    log.Error("Could not transfer git user metadata to global arcCommander config")
 
                 if GitHelper.storeCredentialsToken log token then
                     log.Info($"Finished Authentication")

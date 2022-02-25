@@ -189,7 +189,7 @@ module ConfigurationAPI =
                 log.Trace("Retrieved user name from given argument.")
                 Some name
             | None -> 
-                log.Trace("Could not retrieve user name from argument. Try to retrieve it from arc config.")
+                log.Trace("Could not retrieve user name from argument. Try to retrieve it from ARC config.")
                 GeneralConfiguration.tryGetGitName arcConfiguration
             
         let emailOption = 
@@ -198,7 +198,7 @@ module ConfigurationAPI =
                 log.Trace("Retrieved user email from given argument.")
                 Some name
             | None -> 
-                log.Trace("Could not retrieve user email from argument. Try to retrieve it from arc config.")
+                log.Trace("Could not retrieve user email from argument. Try to retrieve it from ARC config.")
                 GeneralConfiguration.tryGetGitEmail arcConfiguration  
 
         match nameOption, emailOption with
@@ -216,4 +216,4 @@ module ConfigurationAPI =
             log.Info("Finished setting git user information.")
 
         | _, _ -> 
-            log.Error("Git user metadata neither present in the arc config nor given by argument. Consider first running \"arc auth\", setting the user name and email by running \"arc config set\" or rerunning this command and specifying both name and email.")
+            log.Error("Git user metadata neither present in the ARC config nor given by argument. Consider first running \"arc auth\", setting the user name and email by running \"arc config set\" or rerunning this command and specifying both name and email.")

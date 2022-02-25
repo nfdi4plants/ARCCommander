@@ -147,8 +147,8 @@ module GitAPI =
                     if hasRemote () then executeGitCommand repoDir ("remote remove origin") |> ignore
                     executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
-        if hasRemote() then log.Trace("Start syncing with remote" )
-        else                log.Error("Can not sync with remote as no remote repository adress was specified.")
+            if hasRemote() then log.Trace("Start syncing with remote" )
+            else                log.Error("Can not sync with remote as no remote repository adress was specified.")
 
             // pull if remote exists
             if hasRemote() then

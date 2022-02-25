@@ -23,9 +23,9 @@ module GitHelper =
         let outputHandler (_sender:obj) (args:DataReceivedEventArgs) = 
             if (args.Data = null |> not) then
                 if args.Data.ToLower().Contains ("error") then
-                    log.Error($"GIT ERROR: {args.Data}")    
+                    log.Error($"GIT: {args.Data}")    
                 elif args.Data.ToLower().Contains ("trace") then
-                    log.Trace($"GIT TRACE: {args.Data}")   
+                    log.Trace($"GIT: {args.Data}")   
                 else
                     log.Info($"GIT: {args.Data}")
         
@@ -33,9 +33,9 @@ module GitHelper =
             if (args.Data = null |> not) then
                 let msg = args.Data.ToLower()
                 if msg.Contains ("error") || msg.Contains ("fatal") then
-                    log.Error($"GIT ERROR: {args.Data}")    
+                    log.Error($"GIT: {args.Data}")    
                 elif msg.Contains ("trace") then
-                    log.Trace($"GIT TRACE: {args.Data}")   
+                    log.Trace($"GIT: {args.Data}")   
                 else
                     log.Info($"GIT: {args.Data}")
         
@@ -138,29 +138,29 @@ module GitHelper =
         let errors = System.Collections.Generic.List<string>()
         let outputHandler (_sender:obj) (args:DataReceivedEventArgs) = 
             outputs.Add args.Data
-            log.Trace($"TRACE: {args.Data}")
+            log.Trace($"{args.Data}")
         
         let errorHandler (_sender:obj) (args:DataReceivedEventArgs) = 
             
             if args.Data.Contains "trace:" then
                 outputs.Add args.Data
-                log.Trace($"TRACE: {args.Data}")
+                log.Trace($"{args.Data}")
             else 
                 errors.Add args.Data
-                log.Error($"ERROR: {args.Data}")
+                log.Error($"{args.Data}")
 
         let p = new Process(StartInfo = procStartInfo)
         
         p.OutputDataReceived.AddHandler(DataReceivedEventHandler outputHandler)
         p.ErrorDataReceived.AddHandler(DataReceivedEventHandler errorHandler)
 
-        log.Trace($"TRACE: Start storing git credentials by running \"git credential approve\"")
+        log.Trace($"Start storing git credentials by running \"git credential approve\"")
 
         p.Start() |> ignore
         p.BeginOutputReadLine()
         p.BeginErrorReadLine()
         
-        log.Trace($"TRACE: Start feeding credentials into git credential interface")
+        log.Trace($"Start feeding credentials into git credential interface")
 
         p.StandardInput.WriteLine $"url={path}"
         p.StandardInput.WriteLine $"username={username}"
@@ -170,7 +170,7 @@ module GitHelper =
         p.StandardInput.WriteLine $"password={password}"
         p.StandardInput.WriteLine ""
 
-        log.Trace($"TRACE: Exiting git credential storing")
+        log.Trace($"Exiting git credential storing")
 
         p.WaitForExit()
 
@@ -190,16 +190,16 @@ module GitHelper =
                 match localGitGetter workdir with 
                 | Some localGitName when localGitName = arcConfigName -> true
                 | Some localGitName -> 
-                    log.Error($"ERROR: Arc config git {name} {arcConfigName} does not match local git config git {name} {localGitName}.")
+                    log.Error($"Arc config git {name} {arcConfigName} does not match local git config git {name} {localGitName}.")
                     false
                 | None -> 
                     match globalGitGetter() with 
                     | Some globalGitName when globalGitName = arcConfigName -> true
                     | Some globalGitName ->                        
-                        log.Error($"ERROR: Arc config git {name} {arcConfigName} does not match global git config git {name} {globalGitName}.")
+                        log.Error($"Arc config git {name} {arcConfigName} does not match global git config git {name} {globalGitName}.")
                         false
                     | _ -> 
-                        log.Error($"ERROR: git {name} neither set in local nor global git config.")    
+                        log.Error($"git {name} neither set in local nor global git config.")    
                         false
             | None ->
                 match localGitGetter workdir with
@@ -208,7 +208,7 @@ module GitHelper =
                     match globalGitGetter() with 
                     | Some globalGitName -> true
                     | _ -> 
-                        log.Error($"ERROR: git {name} neither set in arc config, local nor global git config.")
+                        log.Error($"git {name} neither set in arc config, local nor global git config.")
                         false
 
         let nameConsistency = checkConsistency "gitname" tryGetLocalName tryGetGlobalName "username"

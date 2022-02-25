@@ -70,9 +70,9 @@ module Authentication =
         | _ when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ->
             Process.Start("xdg-open", url)
         | _ when RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ->         
-                Process.Start("open", url);
+            Process.Start("open", url);
         | e ->
-                raise e
+            raise e
    
     /// Write the response string to the stream of the response context. This function is used to fill the the redirect page after user login.
     let sendResponseAsync (responseString : string) (responseContext : Response) =
@@ -115,7 +115,7 @@ module Authentication =
 
                 log.Info($"Start login at {options.Authority}")
 
-                log.Trace($"TRACE: Starting local listener for obtaining token service response at {options.RedirectUri}")
+                log.Trace($"Starting local listener for obtaining token service response at {options.RedirectUri}")
 
                 let settings = new WebListenerSettings()
                 settings.UrlPrefixes.Add(options.RedirectUri)
@@ -123,24 +123,24 @@ module Authentication =
     
                 http.Start();
 
-                log.Trace($"TRACE: Prepare client for login procedure")
+                log.Trace("Prepare client for login procedure")
 
                 let client = new OidcClient(options)
                 let! state = client.PrepareLoginAsync()
     
-                log.Trace($"TRACE: Open Browser at {state.StartUrl}")
+                log.Trace($"Open Browser at {state.StartUrl}")
 
                 openBrowser(state.StartUrl) |> ignore
     
-                log.Info($"Waiting for user login")
+                log.Info("Waiting for user login")
 
                 let! context = http.AcceptAsync()
     
-                log.Trace($"TRACE: Try processing request")
+                log.Trace("Try processing request")
 
                 let! result = tryProcessRequestAsync client state context.Request
 
-                log.Trace($"TRACE: Try sending response to browser")
+                log.Trace("Try sending response to browser")
 
                 match result with
                 | Result.Ok r ->
@@ -158,9 +158,9 @@ module Authentication =
         /// Try to get the token information from a token service specified in the arc configuration
         let tryLogin (log : NLog.Logger) authority (arcConfiguration : ArcConfiguration) =
 
-            log.Info($"Initiate login protocol")
+            log.Info("Initiate login protocol")
 
-            log.Trace($"Load token service options from config")
+            log.Trace("Load token service options from config")
 
             let options = loadOptionsFromConfig authority arcConfiguration            
 
