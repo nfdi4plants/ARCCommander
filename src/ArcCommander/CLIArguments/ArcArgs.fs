@@ -20,13 +20,13 @@ type ArcInitArgs =
 
 type ArcExportArgs = 
 
-    | [<AltCommandLine("-p")>][<Unique>] Path of path : string
+    | [<AltCommandLine("-o")>][<Unique>] Output of output : string
     | [<AltCommandLine("-ps")>][<Unique>] ProcessSequence
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Path              _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
+            | Output            _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
             | ProcessSequence   _ -> "If this flag is set, the return value of this arc will be its list of all its processes"
 
 

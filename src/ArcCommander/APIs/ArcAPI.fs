@@ -190,7 +190,7 @@ module ArcAPI =
                     )
                 )
 
-            match tryGetFieldValueByName "Path" arcArgs with
+            match tryGetFieldValueByName "Output" arcArgs with
             | Some p -> ArgumentProcessing.serializeToFile p output
             | None -> ()
 
@@ -198,7 +198,7 @@ module ArcAPI =
             log.Debug(ArgumentProcessing.serializeToString output)
         else 
                
-            match tryGetFieldValueByName "Path" arcArgs with
+            match tryGetFieldValueByName "Output" arcArgs with
             | Some p -> ISADotNet.Json.Investigation.toFile p output
             | None -> ()
 
