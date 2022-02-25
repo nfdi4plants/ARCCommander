@@ -4,6 +4,9 @@ editor=notepad
 verbosity=1
 gitlfsbytethreshold=150000000
 gitlfsrules=**/dataset/**
+authclientid = dataplant-arc-commander
+authscope = openid email git-access-token git-host
+authredirecturi = http://localhost:7890
 forceeditor=false
 
 [isamodel]

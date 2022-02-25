@@ -69,7 +69,7 @@ module ArcAPI =
             match repositoryAdress with
             | None -> ()
             | Some remote ->
-                GitAPI.executeGitCommand workDir ("remote add origin " + remote) |> ignore
+                GitHelper.executeGitCommand workDir ("remote add origin " + remote) |> ignore
 
         with 
         | _ -> 

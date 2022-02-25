@@ -137,6 +137,30 @@ module GeneralConfiguration =
     let getWorkDirectory configuration = 
         Map.find "workdir" configuration.General
 
+    /// Returns the client id used for identifying to the token delivery service if it exists. Else returns None.
+    let tryGetAuthClientID configuration  =
+        Map.tryFind "authclientid" configuration.General
+
+    /// Returns the client id used for identifying to the token delivery service.
+    let getAuthClientID configuration  =
+        Map.find "authclientid" configuration.General
+
+    /// Returns the scope used for requesting the gitlab token from the token delivery service if it exists. Else returns None.
+    let tryGetAuthScope configuration  =
+        Map.tryFind "authscope" configuration.General
+
+    /// Returns the scope used for requesting the gitlab token from the token delivery service.
+    let getAuthScope configuration  =
+        Map.find "authscope" configuration.General
+
+    /// Returns the uri to which the client redirects after authentication to the token delivery service if it exists. Else returns None.
+    let tryGetAuthRedirectURI configuration  =
+        Map.tryFind "authredirecturi" configuration.General
+
+    /// eturns the uri to which the client redirects after authentication to the token delivery service.
+    let getAuthRedirectURI configuration  =
+        Map.find "authredirecturi" configuration.General
+
     /// Returns the verbosity level if it exists. Else returns None.
     let tryGetVerbosity configuration = 
         Map.tryFind "verbosity" configuration.General |> Option.map int
@@ -168,6 +192,14 @@ module GeneralConfiguration =
     /// Returns force editor parameter.
     let getForceEditor configuration = 
         Map.find "forceeditor" configuration.General |> (fun s -> s.ToLower() = "true")
+
+    /// Returns the git user name if it exists. Else returns None.
+    let tryGetGitName configuration = 
+        Map.tryFind "gitname" configuration.General
+
+    /// Returns the git user email if it exists. Else returns None.
+    let tryGetGitEmail configuration = 
+        Map.tryFind "gitemail" configuration.General
 
 /// Functions for retrieving ISA file settings from the configuration.
 module IsaModelConfiguration =

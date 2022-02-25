@@ -97,7 +97,7 @@ module ConfigurationAPI =
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
             | Some p    -> IniData.fromFile p
-            | None      -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
+            | None      -> log.Warn("No config file found. Load default config instead."); ArcConfiguration.GetDefault()
         // If only local flag is set, only local settings are listed
         | false,true ->
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -108,7 +108,7 @@ module ConfigurationAPI =
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
             match IniData.tryLoadMergedIniData workDir with
             | Some inidat   -> inidat
-            | None          -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
+            | None          -> log.Warn("No config file found. Load default config instead."); ArcConfiguration.GetDefault()
         |> IniData.flatten
         |> Seq.iter (fun (n,v) -> log.Debug($"{n}:{v}"))
 
@@ -174,3 +174,46 @@ module ConfigurationAPI =
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
             IniData.getLocalConfigPath workDir
             |> unsetValueInIniPath
+
+
+    /// Transfer git user metadata from arc config to git config.
+    let setGitUser (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+
+        let log = Logging.createLogger "ConfigurationSetGitUserLog"
+
+        log.Info("Start Config SetGitUser")
+
+        let nameOption = 
+            match tryGetFieldValueByName "Name" configurationArgs with
+            | Some name -> 
+                log.Trace("Retrieved user name from given argument.")
+                Some name
+            | None -> 
+                log.Trace("Could not retrieve user name from argument. Try to retrieve it from ARC config.")
+                GeneralConfiguration.tryGetGitName arcConfiguration
+            
+        let emailOption = 
+            match tryGetFieldValueByName "Email" configurationArgs with
+            | Some name -> 
+                log.Trace("Retrieved user email from given argument.")
+                Some name
+            | None -> 
+                log.Trace("Could not retrieve user email from argument. Try to retrieve it from ARC config.")
+                GeneralConfiguration.tryGetGitEmail arcConfiguration  
+
+        match nameOption, emailOption with
+        | Some name, Some email ->
+
+            if containsFlag "Global" configurationArgs then 
+                GitHelper.setGlobalName name
+                GitHelper.setGlobalEmail email
+                
+            if (containsFlag "Global" configurationArgs |> not) || containsFlag "Local" configurationArgs then
+                let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+                GitHelper.setLocalName workDir name
+                GitHelper.setLocalEmail workDir email
+
+            log.Info("Finished setting git user information.")
+
+        | _, _ -> 
+            log.Error("Git user metadata neither present in the ARC config nor given by argument. Consider first running \"arc auth\", setting the user name and email by running \"arc config set\" or rerunning this command and specifying both name and email.")
