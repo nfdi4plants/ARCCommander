@@ -461,4 +461,4 @@ let _preRelease =
         [setPrereleaseTag; clean; build; copyBinaries; runTests; packPrerelease; buildDocsPrerelease; createPrereleaseTag; publishNugetPrerelease; prereleaseDocs]
 
 // run copyBinaries by default
-BuildTask.runOrDefault copyBinaries
+BuildTask.runOrDefaultWithArguments copyBinaries
