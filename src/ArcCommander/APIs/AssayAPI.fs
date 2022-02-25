@@ -64,7 +64,7 @@ module AssayAPI =
                 []
 
         if AssayFolder.exists arcConfiguration name then
-            log.Error($"ERROR: Assay folder with identifier {name} already exists.")
+            log.Error($"Assay folder with identifier {name} already exists.")
         else
             AssayConfiguration.getSubFolderPaths name arcConfiguration
             |> Array.iter (Directory.CreateDirectory >> ignore)
@@ -137,32 +137,32 @@ module AssayAPI =
                     else
                         let msg = $"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}."
                         if containsFlag "AddIfMissing" assayArgs then 
-                            log.Warn($"WARNING: {msg}")
+                            log.Warn($"{msg}")
                             log.Info("Registering assay as AddIfMissing Flag was set.")
                             API.Assay.add assays assay
                             |> API.Study.setAssays study
                         else 
-                            log.Error($"ERROR: {msg}")
+                            log.Error($"{msg}")
                             log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
                             study
                 | None -> 
                     let msg = $"The study with the identifier {studyIdentifier} does not contain any assays."
                     if containsFlag "AddIfMissing" assayArgs then
-                        log.Warn($"WARNING: {msg}")
+                        log.Warn($"{msg}")
                         log.Info("Registering assay as AddIfMissing Flag was set.")
                         [assay]
                         |> API.Study.setAssays study
                     else 
-                        log.Error($"ERROR: {msg}")
+                        log.Error($"{msg}")
                         log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
                         study
                 |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                 |> API.Investigation.setStudies investigation
             | None -> 
-                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            log.Error("ERROR: The investigation does not contain any studies.")
+            log.Error("The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -224,7 +224,7 @@ module AssayAPI =
                         | Some oldAssayInvestigationFile -> 
                             // check if assay metadata from assay file and investigation file differ
                             if compareAssayMetadata oldAssayInvestigationFile oldAssayAssayFile |> not then 
-                                log.Warn("WARNING: The assay metadata in the investigation file differs from that in the assay file.")
+                                log.Warn("The assay metadata in the investigation file differs from that in the assay file.")
                             getNewAssay oldAssayAssayFile
                             // update assay metadata in investigation file
                             |> fun a -> 
@@ -235,16 +235,16 @@ module AssayAPI =
                                 |> Investigation.toFile investigationFilePath
                                 a
                         | None -> 
-                            log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}. It is advised to register the assay in the investigation file via \"arc a register\".")
+                            log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}. It is advised to register the assay in the investigation file via \"arc a register\".")
                             getNewAssay oldAssayAssayFile
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any assays. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                         getNewAssay oldAssayAssayFile
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                     getNewAssay oldAssayAssayFile
             | None -> 
-                log.Error($"ERROR: The investigation does not contain any studies. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
+                log.Error($"The investigation does not contain any studies. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                 getNewAssay oldAssayAssayFile
 
         // part that writes assay metadata into the assay file
@@ -291,7 +291,7 @@ module AssayAPI =
                 | Some assays -> 
                     match API.Assay.tryGetByFileName assayFileName assays with
                     | Some _ ->
-                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} already exists in the investigation file.")
+                        log.Error($"Assay with the identifier {assayIdentifier} already exists in the investigation file.")
                         assays
                     | None ->
                         API.Assay.add assays assay
@@ -356,16 +356,16 @@ module AssayAPI =
                         |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                         |> API.Investigation.setStudies investigation
                     | None ->
-                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
+                        log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
+                    log.Error($"The study with the identifier {studyIdentifier} does not contain any assays.")
                     investigation
             | None -> 
-                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            log.Error($"ERROR: The investigation does not contain any studies.")
+            log.Error($"The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
     
@@ -430,16 +430,16 @@ module AssayAPI =
                             |> API.Study.add studies
                             |> API.Investigation.setStudies investigation
                     | None -> 
-                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
+                        log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
+                    log.Error($"The study with the identifier {studyIdentifier} does not contain any assays.")
                     investigation
             | None -> 
-                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            log.Error($"ERROR: The investigation does not contain any studies.")
+            log.Error($"The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -477,13 +477,13 @@ module AssayAPI =
                         |> Prompt.serializeXSLXWriterOutput (Assays.toRows None)
                         |> log.Debug
                     | None -> 
-                        log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
+                        log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                 | None -> 
-                    log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
+                    log.Error($"The study with the identifier {studyIdentifier} does not contain any assays.")
             | None -> 
-                log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
         | None -> 
-            log.Error("ERROR: The investigation does not contain any studies.")
+            log.Error("The investigation does not contain any studies.")
 
 
 
@@ -506,14 +506,14 @@ module AssayAPI =
             |> List.choose (fun s ->
                 let studyIdentifier = 
                     if s.Identifier.IsNone then
-                        log.Warn("WARN: Study does not have identifier.")
+                        log.Warn("Study does not have identifier.")
                         ""
                     else 
                         s.Identifier.Value
                
                 match s.Assays with
                 | None | Some [] -> 
-                    log.Warn($"WARN: Study {studyIdentifier} does not contain assays.")
+                    log.Warn($"Study {studyIdentifier} does not contain assays.")
                     None
                 | Some assays ->
                     (
@@ -522,7 +522,7 @@ module AssayAPI =
                     |> List.choose (fun a ->
                         match a.FileName with
                         | None | Some "" -> 
-                            log.Warn("WARN: Assay does not have filename.")
+                            log.Warn("Assay does not have filename.")
                             None
                         | Some filename ->
                             match IsaModelConfiguration.tryGetAssayIdentifierOfFileName filename arcConfiguration with
@@ -530,7 +530,7 @@ module AssayAPI =
                                 Some identifier
 
                             | None -> 
-                                log.Error($"ERROR: Could not parse assay filename {filename} to obtain identifier. Check formatting.")
+                                log.Error($"Could not parse assay filename {filename} to obtain identifier. Check formatting.")
                                 None
                     ))
                     |> Some
@@ -545,19 +545,19 @@ module AssayAPI =
         let combined = Set.union assayIdentifiers assayFolderIdentifiers
 
         if not onlyRegistered.IsEmpty then
-            log.Warn("WARN: Arc contains following registered assays that have no associated folders:")
+            log.Warn("The ARC contains following registered assays that have no associated folders:")
             onlyRegistered
             |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
             log.Info($"You can init the assay folder using \"arc a init\".")
 
         if not onlyInitialized.IsEmpty then
-            log.Warn("WARN: Arc contains assay folders with the following identifiers not registered in the investigation:")
+            log.Warn("The ARC contains assay folders with the following identifiers not registered in the investigation:")
             onlyInitialized
             |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
             log.Info($"You can register the assay using \"arc a register\".")
 
         if combined.IsEmpty then
-            log.Error("ERROR: ARC does not contain any assays.")
+            log.Error("The ARC does not contain any assays.")
 
         studies
         |> List.iter (fun (studyIdentifier,assays) ->
@@ -608,16 +608,16 @@ module AssayAPI =
                         | Some assay ->
                             Some assay
                         | None -> 
-                            log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                             None
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any assays.")
                         None
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     None
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 None
 
         let persons,assayFromFile =
@@ -628,10 +628,10 @@ module AssayAPI =
                     p, Some a
                 with
                 | err -> 
-                    log.Error(sprintf "ERROR: Assay file \"%s\" could not be read:\n %s" assayFilePath (err.ToString()))
+                    log.Error(sprintf "Assay file \"%s\" could not be read:\n %s" assayFilePath (err.ToString()))
                     [], None
             else
-                log.Error(sprintf "ERROR: Assay file \"%s\" does not exist." assayFilePath)
+                log.Error(sprintf "Assay file \"%s\" does not exist." assayFilePath)
                 [], None
         
         let mergedAssay = 
@@ -639,7 +639,7 @@ module AssayAPI =
             | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
             | None, Some a -> a
             | Some ai, None -> ai
-            | None, None -> log.Fatal("ERROR: No assay could be retrieved."); raise (Exception(""))
+            | None, None -> log.Fatal("No assay could be retrieved."); raise (Exception(""))
           
           
         if containsFlag "ProcessSequence" assayArgs then
@@ -704,16 +704,16 @@ module AssayAPI =
                                 | Some assay ->
                                     Some assay
                                 | None -> 
-                                    log.Error($"ERROR: Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
+                                    log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
                                     None
                             | None -> 
-                                log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any assays.")
+                                log.Error($"The study with the identifier {studyIdentifier} does not contain any assays.")
                                 None
                         | None -> 
-                            log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                            log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                             None
                     | None -> 
-                        log.Error("ERROR: The investigation does not contain any studies.")
+                        log.Error("The investigation does not contain any studies.")
                         None
 
                 let persons,assayFromFile =
@@ -724,10 +724,10 @@ module AssayAPI =
                             p, Some a
                         with
                         | err -> 
-                            log.Error(sprintf "ERROR: Assay file \"%s\" could not be read:\n %s" assayFilePath (err.ToString()))
+                            log.Error(sprintf "Assay file \"%s\" could not be read:\n %s" assayFilePath (err.ToString()))
                             [], None
                     else
-                        log.Error(sprintf "ERROR: Assay file \"%s\" does not exist." assayFilePath)
+                        log.Error(sprintf "Assay file \"%s\" does not exist." assayFilePath)
                         [], None
         
                 let mergedAssay = 
@@ -735,7 +735,7 @@ module AssayAPI =
                     | Some ai, Some a -> API.Update.UpdateByExisting.updateRecordType ai a
                     | None, Some a -> a
                     | Some ai, None -> ai
-                    | None, None -> log.Fatal("ERROR: No assay could be retrieved."); raise (Exception(""))
+                    | None, None -> log.Fatal("No assay could be retrieved."); raise (Exception(""))
             
                 Study.create(Contacts = persons, Assays = [mergedAssay])
             )
@@ -828,11 +828,11 @@ module AssayAPI =
                 else
                     let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}."
                     if containsFlag "AddIfMissing" personArgs then
-                        log.Warn($"WARNING: {msg}")
+                        log.Warn($"{msg}")
                         log.Info("Registering person as AddIfMissing Flag was set.")
                         let newPersons = API.Person.add persons person
                         MetaData.overwriteWithPersons "Investigation" newPersons doc
-                    else log.Error($"ERROR: {msg}")
+                    else log.Error($"{msg}")
 
             finally
                 Spreadsheet.close doc
@@ -870,7 +870,7 @@ module AssayAPI =
                         let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
                         MetaData.overwriteWithPersons "Investigation" newPersons doc
                 | None ->
-                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
+                    log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
                 Spreadsheet.close doc
 
@@ -949,7 +949,7 @@ module AssayAPI =
                     let newPersons = API.Person.removeByFullName firstName midInitials lastName persons
                     MetaData.overwriteWithPersons "Investigation" newPersons doc
                 else
-                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
+                    log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
             finally
                 Spreadsheet.close doc
@@ -981,7 +981,7 @@ module AssayAPI =
                     |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                     |> log.Debug
                 | None ->
-                    log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
+                    log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
             finally
                 Spreadsheet.close doc

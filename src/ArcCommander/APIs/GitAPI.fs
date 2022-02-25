@@ -15,7 +15,7 @@ module GitAPI =
         log.Trace(sprintf "git %s" command)
         let success = Fake.Tools.Git.CommandHelper.directRunGitCommand repoDir command
         if not success
-        then log.Error("ERROR: Git command could not be run.")
+        then log.Error("Git command could not be run.")
         success
 
     /// Returns repository directory path.
@@ -151,7 +151,7 @@ module GitAPI =
                 executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
         if hasRemote() then log.Trace("Start syncing with remote" )
-        else                log.Error("ERROR: Can not sync with remote as no remote repository adress was specified.")
+        else                log.Error("Can not sync with remote as no remote repository adress was specified.")
 
         // pull if remote exists
         if hasRemote() then

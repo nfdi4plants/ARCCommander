@@ -31,7 +31,7 @@ module StudyAPI =
         let identifier = getFieldValueByName "Identifier" studyArgs
 
         if StudyFile.exists arcConfiguration identifier then
-            log.Error("ERROR: Study file already exists.")
+            log.Error("Study file already exists.")
         else 
             StudyFile.create arcConfiguration identifier
 
@@ -43,7 +43,7 @@ module StudyAPI =
         log.Info("Start Study Update")
 
         // ?TODO? <- Test this : Add updateoption which updates by existing values and appends list
-        let updateOption = if containsFlag "ReplaceWithEmptyValues" studyArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting            
+        let updateOption = if containsFlag "ReplaceWithEmptyValues" studyArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
@@ -71,23 +71,23 @@ module StudyAPI =
             else 
                 let msg = $"Study with the identifier {identifier} does not exist in the investigation."
                 if containsFlag "AddIfMissing" studyArgs then 
-                    log.Warn($"WARNING: {msg}")
+                    log.Warn($"{msg}")
                     log.Info("Registering study as AddIfMissing Flag was set.")
                     API.Study.add studies study
                     |> API.Investigation.setStudies investigation
                 else 
-                    log.Error($"ERROR: {msg}")
+                    log.Error($"{msg}")
                     log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
                     investigation
         | None -> 
             let msg = "The investigation does not contain any studies."
             if containsFlag "AddIfMissing" studyArgs then 
-                log.Warn($"WARNING: {msg}")
+                log.Warn($"{msg}")
                 log.Info("Registering study as AddIfMissing Flag was set.")
                 [study]
                 |> API.Investigation.setStudies investigation
             else 
-                log.Error($"ERROR: {msg}")
+                log.Error($"{msg}")
                 log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
                 investigation
         |> Investigation.toFile investigationFilePath
@@ -120,10 +120,10 @@ module StudyAPI =
                 API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
                 |> API.Investigation.setStudies investigation
             | None -> 
-                log.Error($"ERROR: Study with the identifier {identifier} does not exist in the investigation.")
+                log.Error($"Study with the identifier {identifier} does not exist in the investigation.")
                 investigation
         | None -> 
-            log.Error("ERROR: The investigation does not contain any studies.")
+            log.Error("The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -156,7 +156,7 @@ module StudyAPI =
         | Some studies -> 
             match API.Study.tryGetByIdentifier identifier studies with
             | Some _ -> 
-                log.Error($"ERROR: Study with the identifier {identifier} already exists in the investigation file.")
+                log.Error($"Study with the identifier {identifier} already exists in the investigation file.")
                 studies
             | None -> 
                 API.Study.add studies study
@@ -182,7 +182,7 @@ module StudyAPI =
         let studyFilePath = IsaModelConfiguration.getStudiesFileName identifier arcConfiguration
 
         try System.IO.File.Delete studyFilePath with
-        | err -> log.Error($"ERROR: Couldn't delete study file:\n {err.ToString()}")
+        | err -> log.Error($"Couldn't delete study file:\n {err.ToString()}")
 
     /// Unregisters an existing study from the ARC's investigation file.
     let unregister (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
@@ -205,23 +205,23 @@ module StudyAPI =
                 match study.Assays with
                 | None | Some [] -> ()
                 | Some assays -> 
-                    log.Warn($"WARN: Study with the identifier {identifier} still contained following assays which might remain unregistered when the study is removed: ")
+                    log.Warn($"Study with the identifier {identifier} still contained following assays which might remain unregistered when the study is removed: ")
                     assays 
                     |> List.iter (fun a -> 
                         let identifier = 
                             a.FileName 
                              |> Option.bind (fun fn -> IsaModelConfiguration.tryGetAssayIdentifierOfFileName fn arcConfiguration)
                              |> Option.get
-                        log.Warn($"WARN: Assay \"{identifier}\"")
+                        log.Warn($"Assay \"{identifier}\"")
                     )
                     log.Info($"You can register the assays to a different study using \"arc a register\"")
                 API.Study.removeByIdentifier identifier studies 
                 |> API.Investigation.setStudies investigation
             | None -> 
-                log.Error($"ERROR: Study with the identifier {identifier} does not exist in the investigation file.")
+                log.Error($"Study with the identifier {identifier} does not exist in the investigation file.")
                 investigation
         | None -> 
-            log.Error("ERROR: The investigation does not contain any studies.")
+            log.Error("The investigation does not contain any studies.")
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -251,10 +251,10 @@ module StudyAPI =
                 |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.toRows
                 |> log.Debug
             | None -> 
-                log.Error($"ERROR: Study with the identifier {identifier} does not exist in the investigation file.")
+                log.Error($"Study with the identifier {identifier} does not exist in the investigation file.")
                 ()
         | None -> 
-            log.Error("ERROR: The investigation does not contain any studies.")
+            log.Error("The investigation does not contain any studies.")
             
 
     /// Lists all study identifiers registered in this ARC's investigation file.
@@ -277,7 +277,7 @@ module StudyAPI =
             |> List.choose (fun s -> 
                 match s.Identifier with
                 | None | Some "" -> 
-                    log.Warn("WARN: Study does not have identifier")
+                    log.Warn("Study does not have identifier")
                     None
                 | Some i -> Some i
             ) 
@@ -288,19 +288,19 @@ module StudyAPI =
         let combined = Set.union studyIdentifiers studyFileIdentifiers
 
         if not onlyRegistered.IsEmpty then
-            log.Warn("WARN: Arc contains following registered studies that have no associated file:")
+            log.Warn("The ARC contains following registered studies that have no associated file:")
             onlyRegistered
             |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
             log.Info($"You can init the study file using \"arc s init\"")
 
         if not onlyInitialized.IsEmpty then
-            log.Warn("WARN: Arc contains study files with the following identifiers not registered in the investigation:")
+            log.Warn("The ARC contains study files with the following identifiers not registered in the investigation:")
             onlyInitialized
             |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
             log.Info($"You can register the study using \"arc s register\"")
 
         if combined.IsEmpty then
-            log.Error("ERROR: ARC does not contain any studies.")
+            log.Error("The ARC does not contain any studies.")
 
         combined
         |> Seq.iter (fun identifier ->
@@ -362,32 +362,32 @@ module StudyAPI =
                         else
                             let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" personArgs then
-                                log.Warn($"WARN: {msg}")
+                                log.Warn($"{msg}")
                                 log.Info("Registering person as AddIfMissing Flag was set.")
                                 API.Person.add persons person
                                 |> API.Study.setContacts study
                             else 
-                                log.Error($"ERROR: {msg}")
+                                log.Error($"{msg}")
                                 log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
                                 study
                     | None -> 
                         let msg = $"The study with the identifier {studyIdentifier} does not contain any persons."
                         if containsFlag "AddIfMissing" personArgs then
-                            log.Warn($"WARNING: {msg}")
+                            log.Warn($"{msg}")
                             log.Info("Registering person as AddIfMissing Flag was set.")
                             [person]
                             |> API.Study.setContacts study
                         else 
-                            log.Error($"ERROR: {msg}")
+                            log.Error($"{msg}")
                             log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -427,16 +427,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any persons.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any persons.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -494,10 +494,10 @@ module StudyAPI =
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
     
@@ -531,16 +531,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any persons.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any persons.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -572,13 +572,13 @@ module StudyAPI =
                             [person]
                             |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                             |> log.Debug
-                        | None -> log.Error($"ERROR: Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
+                        | None -> log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any persons.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any persons.")
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
 
         /// Lists the full names of all persons included in the investigation.
@@ -612,7 +612,7 @@ module StudyAPI =
                     | None -> ()
                 )
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
     /// Functions for altering investigation Publications.
     module Publications =
@@ -657,32 +657,32 @@ module StudyAPI =
                         else
                             let msg = $"Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" publicationArgs then
-                                log.Warn($"WARNING: {msg}")
+                                log.Warn($"{msg}")
                                 log.Info("Registering publication as AddIfMissing Flag was set.")
                                 API.Publication.add publications publication
                                 |> API.Study.setPublications study
                             else 
-                                log.Error($"ERROR: {msg}")
+                                log.Error($"{msg}")
                                 log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing.")
                                 study
                     | None -> 
                         let msg = $"The study with the identifier {studyIdentifier} does not contain any publications."
                         if containsFlag "AddIfMissing" publicationArgs then
-                            log.Warn($"WARNING: {msg}")
+                            log.Warn($"{msg}")
                             log.Info("Registering publication as AddIfMissing Flag was set.")
                             [publication]
                             |> API.Study.setPublications study
                         else 
-                            log.Error($"ERROR: {msg}")
+                            log.Error($"{msg}")
                             log.Trace("AddIfMissing argument can be used to register publication with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -721,16 +721,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            log.Error($"ERROR: Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any publications.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any publications.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -768,7 +768,7 @@ module StudyAPI =
                     match study.Publications with
                     | Some publications -> 
                         if API.Publication.existsByDoi doi publications then
-                            log.Error($"ERROR: Publication with the DOI {doi} already exists in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Publication with the DOI {doi} already exists in the study with the identifier {studyIdentifier}.")
                             publications
                         else
                             API.Publication.add publications publication
@@ -778,10 +778,10 @@ module StudyAPI =
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -812,16 +812,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            log.Error($"ERROR: Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any publications.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any publications.")
                         investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -852,13 +852,13 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (Publications.toRows None)
                             |> log.Debug
                         | None -> 
-                            log.Error($"ERROR: Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Publication with the DOI {doi} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any publications.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any publications.")
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
 
         /// Lists the DOIs of all publications included in the investigation study.
@@ -884,7 +884,7 @@ module StudyAPI =
                     | None -> ()
                 )
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
 
     /// Functions for altering investigation Designs.
@@ -927,32 +927,32 @@ module StudyAPI =
                         else
                             let msg = $"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" designArgs then
-                                log.Warn($"WARNING: {msg}")
+                                log.Warn($"{msg}")
                                 log.Info("Registering design as AddIfMissing Flag was set.")
                                 API.OntologyAnnotation.add designs design
                                 |> API.Study.setDescriptors study
                             else 
-                                log.Error($"ERROR: {msg}")
+                                log.Error($"{msg}")
                                 log.Trace("AddIfMissing argument can be used to register design with the update command if it is missing.")
                                 study
                     | None -> 
                         let msg = $"The study with the identifier {studyIdentifier} does not contain any design descriptors."
                         if containsFlag "AddIfMissing" designArgs then
-                            log.Warn($"WARNING: {msg}")
+                            log.Warn($"{msg}")
                             log.Info("Registering design as AddIfMissing Flag was set.")
                             [design]
                             |> API.Study.setDescriptors study
                         else 
-                            log.Error($"ERROR: {msg}")
+                            log.Error($"{msg}")
                             log.Trace("AddIfMissing argument can be used to register design with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -990,16 +990,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            log.Error($"ERROR: Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any design descriptors.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any design descriptors.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1033,7 +1033,7 @@ module StudyAPI =
                     match study.StudyDesignDescriptors with
                     | Some designs -> 
                         if API.OntologyAnnotation.existsByName (AnnotationValue.fromString name) designs then
-                            log.Error($"ERROR: Design with the name {name} already exists in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Design with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                             designs
                         else
                             API.OntologyAnnotation.add designs design
@@ -1043,10 +1043,10 @@ module StudyAPI =
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1077,16 +1077,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            log.Error($"ERROR: Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any design descriptors.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any design descriptors.")
                         investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1117,13 +1117,13 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (DesignDescriptors.toRows None)
                             |> log.Debug
                         | None -> 
-                            log.Error($"ERROR: Design with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Design with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any design descriptors.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any design descriptors.")
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
         
         /// Lists the designs included in the investigation study.
         let list (arcConfiguration : ArcConfiguration) = 
@@ -1148,7 +1148,7 @@ module StudyAPI =
                     | None -> ()
                 )
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
     /// Functions for altering investigation factors.
     module Factors =
@@ -1190,32 +1190,32 @@ module StudyAPI =
                         else
                             let msg = $"Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" factorArgs then
-                                log.Warn($"WARNING: {msg}")
+                                log.Warn($"{msg}")
                                 log.Info("Registering factor as AddIfMissing Flag was set.")
                                 API.Factor.add factors factor
                                 |> API.Study.setFactors study
                             else 
-                                log.Error($"ERROR: {msg}")
+                                log.Error($"{msg}")
                                 log.Trace("AddIfMissing argument can be used to register factor with the update command if it is missing.")
                                 study
                     | None -> 
                         let msg = $"The study with the identifier {studyIdentifier} does not contain any factors."
                         if containsFlag "AddIfMissing" factorArgs then
-                            log.Warn($"WARNING: {msg}")
+                            log.Warn($"{msg}")
                             log.Info("Registering factor as AddIfMissing Flag was set.")
                             [factor]
                             |> API.Study.setFactors study
                         else 
-                            log.Error($"ERROR: {msg}")
+                            log.Error($"{msg}")
                             log.Trace("AddIfMissing argument can be used to register factor with the update command if it is missing.")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -1253,16 +1253,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            log.Error($"ERROR: Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any factors.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any factors.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1297,7 +1297,7 @@ module StudyAPI =
                     match study.Factors with
                     | Some factors -> 
                         if API.Factor.existsByName name factors then
-                            log.Error($"ERROR: Factor with the name {name} already exists in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Factor with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                             factors
                         else
                             API.Factor.add factors factor
@@ -1306,10 +1306,10 @@ module StudyAPI =
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1340,16 +1340,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            log.Error($"ERROR: Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Factor with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any factors.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any factors.")
                         investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1380,13 +1380,13 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (Factors.toRows None)
                             |> log.Debug
                         | None -> 
-                            log.Error($"ERROR: Factor with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Factor with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any factors.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any factors.")
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
         /// Lists the factors included in the investigation study.
         let list (arcConfiguration : ArcConfiguration) = 
@@ -1411,7 +1411,7 @@ module StudyAPI =
                     | None -> ()
                 )
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
 
     /// Functions for altering investigation protocols.
     module Protocols =
@@ -1463,32 +1463,32 @@ module StudyAPI =
                         else
                             let msg = $"Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}."
                             if containsFlag "AddIfMissing" protocolArgs then
-                                log.Warn($"WARNING: {msg}")
+                                log.Warn($"{msg}")
                                 log.Info("Registering protocol as AddIfMissing Flag was set.")
                                 API.Protocol.add protocols protocol
                                 |> API.Study.setProtocols study
                             else 
-                                log.Error($"ERROR: {msg}")
+                                log.Error($"{msg}")
                                 log.Trace("AddIfMissing argument can be used to register protocol with the update command if it is missing.")
                                 study
                     | None -> 
                         let msg = $"The study with the identifier {studyIdentifier} does not contain any protocols."
                         if containsFlag "AddIfMissing" protocolArgs then
-                            log.Warn($"WARNING: {msg}")
+                            log.Warn($"{msg}")
                             log.Info("Registering protocol as AddIfMissing Flag was set.")
                             [protocol]
                             |> API.Study.setProtocols study
                         else 
-                            log.Error($"ERROR: {msg}")
+                            log.Error($"{msg}")
                             log.Trace("AddIfMissing argument can be used to register protocol with the update command if it is missin.g")
                             study
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
         
@@ -1526,16 +1526,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         | None ->
-                            log.Error($"ERROR: Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any protocols.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any protocols.")
                         investigation
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1580,7 +1580,7 @@ module StudyAPI =
                     match study.Protocols with
                     | Some protocols -> 
                         if API.Protocol.existsByName name protocols then
-                            log.Error($"ERROR: Protocol with the name {name} already exists in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Protocol with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                             protocols
                         else
                             API.Protocol.add protocols protocol
@@ -1589,10 +1589,10 @@ module StudyAPI =
                     |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                     |> API.Investigation.setStudies investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error($"ERROR: The investigation does not contain any studies.")
+                log.Error($"The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1623,16 +1623,16 @@ module StudyAPI =
                             |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                             |> API.Investigation.setStudies investigation
                         else
-                            log.Error($"ERROR: Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Protocol with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
                             investigation
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any protocols.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any protocols.")
                         investigation
                 | None ->
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1655,7 +1655,7 @@ module StudyAPI =
                     Json.Protocol.fromFile path |> Some
                 |> Option.map (fun p -> 
                     if p.Name.IsNone then
-                        log.Error("ERROR: Given protocol does not contain a name, please add it in the editor.")
+                        log.Error("Given protocol does not contain a name, please add it in the editor.")
                         ArgumentProcessing.Prompt.createIsaItemQuery editor
                             (List.singleton >> Protocols.toRows None) 
                             (Protocols.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
@@ -1681,11 +1681,11 @@ module StudyAPI =
                             if API.Protocol.existsByName name protocols then
                                 let msg = $"Protocol with the name {name} already exists in the study with the identifier {studyIdentifier}."
                                 if containsFlag "UpdateExisting" protocolArgs then
-                                    log.Warn($"WARNING: {msg}")
+                                    log.Warn($"{msg}")
                                     log.Info("Updating protocol as \"UpdateExisting\" flag was given.")
                                     API.Protocol.updateByName API.Update.UpdateAll protocol protocols
                                 else
-                                    log.Error($"ERROR: {msg}")
+                                    log.Error($"{msg}")
                                     log.Info("Not updating protocol as \"UpdateExisting\" flag was not given.")
                                     protocols
                             else
@@ -1696,13 +1696,13 @@ module StudyAPI =
                         |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
                         |> API.Investigation.setStudies investigation
                     | None ->
-                        log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                        log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
                         investigation
                 | None ->
-                    log.Error("ERROR: The process file did not contain a protocol.")
+                    log.Error("The process file did not contain a protocol.")
                     investigation
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 investigation
             |> Investigation.toFile investigationFilePath
 
@@ -1733,13 +1733,13 @@ module StudyAPI =
                             |> Prompt.serializeXSLXWriterOutput (Protocols.toRows None)
                             |> log.Debug
                         | None -> 
-                            log.Error($"ERROR: Protocol with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
+                            log.Error($"Protocol with the DOI {name} does not exist in the study with the identifier {studyIdentifier}.")
                     | None -> 
-                        log.Error($"ERROR: The study with the identifier {studyIdentifier} does not contain any protocols.")
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any protocols.")
                 | None -> 
-                    log.Error($"ERROR: Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")
                 
 
         /// Lists the protocols included in the investigation study.
@@ -1765,4 +1765,4 @@ module StudyAPI =
                     | None -> ()
                 )
             | None -> 
-                log.Error("ERROR: The investigation does not contain any studies.")
+                log.Error("The investigation does not contain any studies.")

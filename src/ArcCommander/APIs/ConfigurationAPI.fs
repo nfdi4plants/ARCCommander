@@ -31,7 +31,7 @@ module ConfigurationAPI =
             let iniData = 
                 match path with
                 | Some p    -> p |> IniData.fromFile
-                | None      -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
+                | None      -> log.Warn("No config file found. Load default config instead."); ArcConfiguration.GetDefault()
             match path with
             | Some p ->
                 iniData
@@ -40,7 +40,7 @@ module ConfigurationAPI =
                 |> fun differences -> updateWithDifferences differences iniData
                 |> IniData.toFile p
             | None ->
-                log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+                log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
         // If only local flag is set, open prompt only with local settings and apply changes on local settings
         | false,true ->
             let path = IniData.getLocalConfigPath workdir
@@ -63,14 +63,14 @@ module ConfigurationAPI =
                 |> fun differences -> updateWithDifferences differences localIni
                 |> IniData.toFile path
             | None -> 
-                log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+                log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
         // If local and global flags are set, open prompt with merged settings and set both local and global settings files to the user input
         | true,true ->
             let globalPath = IniData.tryGetGlobalConfigPath()
             let globalIni = 
                 match globalPath with
                 | Some p    -> IniData.fromFile p
-                | None      -> log.Warn("WARNING: No config file found. Load default config instead."); ArcConfiguration.GetDefault()
+                | None      -> log.Warn("No config file found. Load default config instead."); ArcConfiguration.GetDefault()
             let localPath = IniData.getLocalConfigPath workdir
             let localIni = IniData.fromFile localPath
             let iniData = IniData.tryLoadMergedIniData workdir
@@ -85,7 +85,7 @@ module ConfigurationAPI =
                     updateWithDifferences differences localIni
                     |> IniData.toFile localPath
             | None -> 
-                log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+                log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
 
     /// Lists all current settings specified in the configuration.
     let list (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
@@ -127,7 +127,7 @@ module ConfigurationAPI =
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
             | Some p    -> setValueInIniPath p
-            | None      -> log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+            | None      -> log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
         // If both global and local flags are set, the setting is set both in the local and the global config file
         | true,true ->
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -135,7 +135,7 @@ module ConfigurationAPI =
             |> setValueInIniPath
             match IniData.tryGetGlobalConfigPath () with
             | Some p    -> setValueInIniPath p
-            | None      -> log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+            | None      -> log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
         // If only local or no flag is set, the setting is set only in the local config file
         | false,false | false,true  -> 
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -160,7 +160,7 @@ module ConfigurationAPI =
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
             | Some p    -> unsetValueInIniPath p
-            | None      -> log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+            | None      -> log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
         // If both global and local flags are set, the setting is unset both in the local and the global config file
         | true,true ->
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -168,7 +168,7 @@ module ConfigurationAPI =
             |> unsetValueInIniPath
             match IniData.tryGetGlobalConfigPath () with
             | Some p    -> unsetValueInIniPath p
-            | None      -> log.Error("ERROR: No folder for global config file known for this environment. Config file settings cannot be saved.")
+            | None      -> log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
         // If only local or no flag is set, the setting is set only in the local config file
         | false,false | false,true  -> 
             let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration

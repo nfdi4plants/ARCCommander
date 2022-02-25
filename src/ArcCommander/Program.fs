@@ -6,6 +6,7 @@ open ArcCommander.ArgumentProcessing
 open ArcCommander.Commands
 open ArcCommander.APIs
 open ArcCommander.ExternalExecutables
+open ArcCommander.IniData
 
 open System
 open System.IO
@@ -31,7 +32,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
             let stillMissingMandatoryArgs, arguments =
                 Prompt.createMissingArgumentQuery editor annotatedArguments
             if stillMissingMandatoryArgs then
-                log.Fatal("ERROR: Mandatory arguments were not given either via cli or editor prompt.")
+                log.Fatal("Mandatory arguments were not given either via cli or editor prompt.")
                 raise (Exception(""))
             arguments
         // Opens a command line prompt asking for addtional information if the "forceeditor" flag is set.
@@ -239,10 +240,12 @@ let main argv =
             |> ArcConfiguration.load
         // <-----
         
-        // here the logging config gets created
-        let arcFolder = Path.Combine(arcConfiguration.General.Item "workdir", arcConfiguration.General.Item "rootfolder")
-        Directory.CreateDirectory(arcFolder) |> ignore
-        Logging.generateConfig arcFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        let arcCommanderDataFolder = IniData.createDataFolder ()
+        let arcDataFolder = 
+            if (tryGetArcDataFolderPath workingDir arcCommanderDataFolder).IsSome then 
+                (tryGetArcDataFolderPath workingDir arcCommanderDataFolder).Value
+            else arcCommanderDataFolder
+        Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
 
         // Try parse the command line arguments

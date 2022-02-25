@@ -21,7 +21,7 @@ module IniData =
         if m.Success then
             m.Groups.[1].Value,m.Groups.[2].Value
         else 
-            log.Fatal(sprintf "ERROR: Name \"%s\" could not be split into section and key, it must be of form \"section.key\"." name)
+            log.Fatal(sprintf "Name \"%s\" could not be split into section and key, it must be of form \"section.key\"." name)
             raise (Exception(""))
 
     let splitValues (value : string) = value.Split(';')
@@ -36,7 +36,7 @@ module IniData =
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX)             -> Unix
         | _                                                             -> 
-            log.Fatal($"ERROR: OS not supported. Only Windows, MacOS and Linux are supported.")
+            log.Fatal($"OS not supported. Only Windows, MacOS and Linux are supported.")
             raise (Exception(""))
 
     /// Creates a default config file in the user's config folder (AppData\Local in Windows, ~/config in Unix).
@@ -99,7 +99,7 @@ module IniData =
             | _                         -> createDefault (); inConfigFolder // if nothing found, config gets created
             |> Some
         with e -> 
-            log.Error($"ERROR: tryGetGlobalConfigPath failed with:\n {e.ToString()}")
+            log.Error($"tryGetGlobalConfigPath failed with:\n {e.ToString()}")
             None
         //| _ -> failwith "ERROR: No global config file found. Initiation of default config file not possible.\nPlease add the specific config file for your OS to your config folder."
         //Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"config")
@@ -189,7 +189,7 @@ module IniData =
             |> Option.bind (tryGetValue key)
         with 
         | err -> 
-            log.Error($"ERROR: Could not retrieve value with given name.\n {err.ToString()}")
+            log.Error($"Could not retrieve value with given name.\n {err.ToString()}")
             None
 
     /// Returns true if the name (section+key) is set in the iniData.
@@ -211,7 +211,7 @@ module IniData =
             iniData.[section].[key] <- value
             Some iniData
         else
-            log.Error($"ERROR: Name {name} does not exist in the config.")
+            log.Error($"Name {name} does not exist in the config.")
             None
 
     /// If the name is already set in the config, assigns a new value to it.
@@ -232,7 +232,7 @@ module IniData =
             iniData.[section].RemoveKey key |> ignore
             Some iniData
         else
-            log.Error($"ERROR: Name {name} does not exist in the config.")
+            log.Error($"Name {name} does not exist in the config.")
             None
 
     /// If the name is set in the config, removes it.
@@ -249,7 +249,7 @@ module IniData =
     let tryAddValue (name : string) (value : string) (iniData : IniData) =
         let log = Logging.createLogger "IniDataTryAddValueLog"
         if nameExists (name : string) (iniData : IniData) then
-            log.Error($"ERROR: Name {name} already exists in the config.")
+            log.Error($"Name {name} already exists in the config.")
             Some iniData
         else
             let section,key = splitName name 
@@ -306,3 +306,19 @@ module IniData =
         | Some ini -> ini
         | None -> addValue name value iniData
         |> toFile path
+
+    /// Creates a folder for the ArcCommander's data files in `$XDG_CONFIG_DIRS`.
+    let createDataFolder () =
+        let appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.DoNotVerify)
+        let arcCommanderDataFolder = Path.Combine(appDataFolder, "DataPLANT", "ArcCommander")
+        Directory.CreateDirectory(arcCommanderDataFolder) |> ignore
+        arcCommanderDataFolder
+
+    /// Returns the full path of the data folder for an ARC. If the ArcCommander is used in a non-ARC directory returns None.
+    let tryGetArcDataFolderPath arcDir arcCommanderDataFolder =
+        // TO DO: rework when a function to check an ARC's integrity or to verify that a folder is an ARC is available
+        // temporary solution: current folder is an ARC if a .arc folder exists
+        let arcName = DirectoryInfo(arcDir).Name
+        let isArc = Directory.Exists(Path.Combine(arcDir, ".arc"))
+        if isArc then Some (Path.Combine(arcCommanderDataFolder, arcName))
+        else None

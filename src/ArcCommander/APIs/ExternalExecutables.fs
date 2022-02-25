@@ -78,7 +78,7 @@ module ExternalExecutables =
                     fun ev -> 
                         let roev = reviseOutput ev.Data
                         if matchCmdErrMsg roev || matchBashErrMsg roev then 
-                            log.Error("ERROR: No executable, command or script file with given argument name known.") 
+                            log.Error("No executable, command or script file with given argument name known.") 
                             handleExceptionMessage log e2
                             raise (Exception())
                         else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
