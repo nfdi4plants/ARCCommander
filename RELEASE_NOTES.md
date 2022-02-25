@@ -1,4 +1,20 @@
-﻿### 0.1.5+6ad8fb8 (Released 2022-2-4)
+﻿### 0.1.6+f588270 (Released 2022-2-25)
+* Additions:
+    * latest commit #f588270
+    * [[#f588270](https://github.com/nfdi4plants/arcCommander/commit/f5882706185fa68158ddebae631fdc525e3d60ae)] Merge pull request #108 from nfdi4plants/loggerChanges
+    * [[#941bd5c](https://github.com/nfdi4plants/arcCommander/commit/941bd5ca3cf01492393dc8e277d69ab51809dbca)] Rework folder getting function :hammer::construction:
+    * [[#c51dd01](https://github.com/nfdi4plants/arcCommander/commit/c51dd016517b804bbf0ed0875db22aa8b343b2db)] Move log file to $XDG_CONFIG_DIRS
+    * [[#53f82b3](https://github.com/nfdi4plants/arcCommander/commit/53f82b39000c654bd7e02d811dc978de640dea9e)] Update logging rules
+    * [[#bb7635e](https://github.com/nfdi4plants/arcCommander/commit/bb7635e5170c1a0abf2a360ad6189664a75d41bb)] Merge pull request #101 from nfdi4plants/versionFR
+    * [[#93b60f2](https://github.com/nfdi4plants/arcCommander/commit/93b60f2fb1ac3faacb0d15bf29f5b006ad2bc543)] Update build-and-test.yml
+    * [[#fdf209a](https://github.com/nfdi4plants/arcCommander/commit/fdf209a8b72fd19a5d80cee6f00e20602a207d4a)] Update build-and-test.yml
+    * [[#cf144c6](https://github.com/nfdi4plants/arcCommander/commit/cf144c6012e2fbd8a288598e9236fa9b4cc5a383)] Bump to .NET 6
+* Deletions:
+    * [[#881511e](https://github.com/nfdi4plants/arcCommander/commit/881511e9184ab3340db9facd0500053004f7cef3)] Remove log level prints :zap:
+* Bugfixes:
+    * [[#bd8a317](https://github.com/nfdi4plants/arcCommander/commit/bd8a317b947148ebe487fec96ba8d868aa62908d)] Fix bugs :bug:
+
+### 0.1.5+6ad8fb8 (Released 2022-2-4)
 * Additions:
     * latest commit #6ad8fb8
     * [[#6ad8fb8](https://github.com/nfdi4plants/arcCommander/commit/6ad8fb88904fbb32d5b56621f7f5e01c3c83433e)] Update build script for release notes extension :heavy_plus_sign:
