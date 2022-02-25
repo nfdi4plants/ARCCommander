@@ -1,4 +1,22 @@
-﻿### 0.1.6+f588270 (Released 2022-2-25)
+﻿### 0.2.0+5c6340d (Released 2022-2-25)
+* Additions:
+    * latest commit #5c6340d
+    * [[#762e9be](https://github.com/nfdi4plants/arcCommander/commit/762e9be09a6801d920a870cf7c60638d9fc98587)] homogenize logging in authentication functions
+    * [[#d06a98e](https://github.com/nfdi4plants/arcCommander/commit/d06a98ef22a1094b8590ede3b10b4e64f2c956af)] Update README.md :pencil:
+    * [[#fb88d2f](https://github.com/nfdi4plants/arcCommander/commit/fb88d2f88d00d5ed1c57ab27380a4e1b82dfe96c)] Update build script to work with arguments :construction_worker:
+    * [[#0f441f8](https://github.com/nfdi4plants/arcCommander/commit/0f441f89970c1d24e462002d1eb20a46ee960028)] move authentication functions to distinct subcommand tree
+    * [[#8c18631](https://github.com/nfdi4plants/arcCommander/commit/8c18631aee612a17eacc6bbba2d689e0b9ba6a5e)] make logging ignore all git trace lines
+    * [[#0c4f946](https://github.com/nfdi4plants/arcCommander/commit/0c4f9462660dc2db73d56188a2c3045668ad531b)] add git user metadata check to arc sync
+    * [[#a5df1e3](https://github.com/nfdi4plants/arcCommander/commit/a5df1e30b5f266337349f49d74d70c61951da2e5)] add setgituser command
+    * [[#c9af0ef](https://github.com/nfdi4plants/arcCommander/commit/c9af0ef2932285fe4da86c13b91f6f526d2fbe90)] add authentication command
+    * [[#b895182](https://github.com/nfdi4plants/arcCommander/commit/b8951827a85cf17170a5eb3bf7902aa4edb4673e)] add logging to access token retrieval
+    * [[#bcd5af8](https://github.com/nfdi4plants/arcCommander/commit/bcd5af8d56f6a7e9fba64084cee1b16cda163e55)] add token service authentication to arc get
+    * [[#5caee62](https://github.com/nfdi4plants/arcCommander/commit/5caee62709204fd69cf30e452d8a12843d3cf5a3)] add configuration options for authentication
+    * [[#fc5e2cd](https://github.com/nfdi4plants/arcCommander/commit/fc5e2cd36ca0c233b8141b19a5ce27a25c9afbe4)] add first draft of keycloak login
+* Bugfixes:
+    * [[#59f3758](https://github.com/nfdi4plants/arcCommander/commit/59f37581ac961d7ec0ad6ea8e38148c05c9a7df8)] hotfix git message handling
+
+### 0.1.6+f588270 (Released 2022-2-25)
 * Additions:
     * latest commit #f588270
     * [[#f588270](https://github.com/nfdi4plants/arcCommander/commit/f5882706185fa68158ddebae631fdc525e3d60ae)] Merge pull request #108 from nfdi4plants/loggerChanges
