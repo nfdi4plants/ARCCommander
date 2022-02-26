@@ -44,7 +44,10 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
-        |> Array.iter (Directory.CreateDirectory >> ignore)
+        |> Array.iter (
+            Directory.CreateDirectory 
+            >> fun dir -> File.Create(Path.Combine(dir.FullName, "README.md")) |> ignore 
+        )
 
         log.Trace("Set configuration")
 
