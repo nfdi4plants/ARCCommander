@@ -103,7 +103,6 @@ let testAssayRegister =
             ]
             let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
             
-            setupArc configuration
             processCommand configuration StudyAPI.register studyArgs
             processCommand configuration AssayAPI.init     assayInitArgs
             processCommand configuration AssayAPI.register assayRegisterArgs
@@ -344,7 +343,6 @@ let testAssayUpdate =
                 AssayAddArgs.TechnologyType "Assay3Tech"
             ]
             
-            setupArc configuration
             processCommand configuration AssayAPI.add assay1Args
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args
@@ -469,7 +467,6 @@ let testAssayUnregister =
                 AssayUnregisterArgs.AssayIdentifier assayIdentifier
             ]
             
-            setupArc configuration
             processCommand configuration AssayAPI.add assay1Args
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args
@@ -569,7 +566,6 @@ let testAssayMove =
                 AssayMoveArgs.TargetStudyIdentifier targetStudyIdentfier
             ]
             
-            setupArc configuration
             processCommand configuration AssayAPI.add assay1Args
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args
