@@ -66,15 +66,21 @@ module ArcAPI =
 
             Fake.Tools.Git.Repository.init workDir false true
 
+            let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".gitignore")
+            let gitignoreArcPath = Path.Combine(workDir, ".gitignore")
+            log.Trace($"Copy .gitignore from {gitignoreAppPath} to {gitignoreArcPath}")
+            File.Copy(gitignoreAppPath, gitignoreArcPath)
+
+            log.Trace("Add remote repository")
             match repositoryAdress with
             | None -> ()
             | Some remote ->
                 GitHelper.executeGitCommand workDir ("remote add origin " + remote) |> ignore
 
         with 
-        | _ -> 
+        | e -> 
 
-            log.Error("Git could not be set up. Please try installing Git cli and run `arc git init`.")
+            log.Error($"Git could not be set up. Please try installing Git cli and run `arc git init`.\n\t{e}")
 
     /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =
