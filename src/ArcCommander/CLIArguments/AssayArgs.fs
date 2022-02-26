@@ -131,7 +131,7 @@ type AssayShowArgs = AssayEditArgs
 type AssayExportArgs = 
     | [<AltCommandLine("-s")>][<Unique>]    StudyIdentifier of study_identifier : string
     | [<AltCommandLine("-a")>][<Unique>]    AssayIdentifier of assay_identifier : string
-    | [<AltCommandLine("-p")>][<Unique>]    Path            of path             : string
+    | [<AltCommandLine("-o")>][<Unique>]    Output          of output           : string
     | [<AltCommandLine("-ps")>][<Unique>]   ProcessSequence
 
     interface IArgParserTemplate with
@@ -139,7 +139,7 @@ type AssayExportArgs =
             match this with
             | StudyIdentifier   _ -> "Identifier of the study in which the assay is registered"
             | AssayIdentifier   _ -> "Identifier of the assay of interest"
-            | Path              _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
+            | Output            _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
             | ProcessSequence   _ -> "If this flag is set, the return value of this assay will be its list of processes"
 
 /// CLI arguments for assay contacts

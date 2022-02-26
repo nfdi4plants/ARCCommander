@@ -646,7 +646,7 @@ module AssayAPI =
 
             let output = mergedAssay.ProcessSequence |> Option.defaultValue []
 
-            match tryGetFieldValueByName "Path" assayArgs with
+            match tryGetFieldValueByName "Output" assayArgs with
             | Some p -> ArgumentProcessing.serializeToFile p output
             | None -> ()
 
@@ -656,7 +656,7 @@ module AssayAPI =
 
             let output = Study.create(Contacts = persons,Assays = [mergedAssay])
      
-            match tryGetFieldValueByName "Path" assayArgs with
+            match tryGetFieldValueByName "Output" assayArgs with
             | Some p -> ISADotNet.Json.Study.toFile p output
             | None -> ()
 
@@ -751,7 +751,7 @@ module AssayAPI =
                     |> List.collect (fun a -> a.ProcessSequence |> Option.defaultValue [])
                 )
                                                           
-            match tryGetFieldValueByName "Path" assayArgs with
+            match tryGetFieldValueByName "Output" assayArgs with
             | Some p -> ArgumentProcessing.serializeToFile p output
             | None -> ()
 
@@ -759,7 +759,7 @@ module AssayAPI =
 
         else 
 
-            match tryGetFieldValueByName "Path" assayArgs with
+            match tryGetFieldValueByName "Output" assayArgs with
             | Some p -> ArgumentProcessing.serializeToFile p assays
             | None -> ()
 

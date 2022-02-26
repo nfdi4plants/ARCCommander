@@ -1,4 +1,10 @@
-﻿### 0.2.0+5c6340d (Released 2022-2-25)
+﻿### 0.2.1+bf09a03 (Released 2022-2-25)
+* Additions:
+    * latest commit #bf09a03
+* Bugfixes:
+    * [[#bf09a03](https://github.com/nfdi4plants/arcCommander/commit/bf09a03d642f92f7867ccb386aaa8da80ae0d16a)] fix duplicate argument naming in export functions
+
+### 0.2.0+5c6340d (Released 2022-2-25)
 * Additions:
     * latest commit #5c6340d
     * [[#762e9be](https://github.com/nfdi4plants/arcCommander/commit/762e9be09a6801d920a870cf7c60638d9fc98587)] homogenize logging in authentication functions
