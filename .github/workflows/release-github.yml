@@ -18,12 +18,11 @@ jobs:
         dotnet-version: '6.0.x'
     - name: Restore local tools
       run: dotnet tool restore
-    - name: Build and test
-      run: dotnet fake build -t publishBinariesWin
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: "v0.2.1-win.x64"
         prerelease: true
         title: "Development Build"
         files: |
-            \publish\win-x64\arc.exe
+            src/ArcCommander/Authentication.fs
