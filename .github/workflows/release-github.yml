@@ -1,0 +1,29 @@
+name: Release github
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+
+  release-github-windows:
+    
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
+    - name: Restore local tools
+      run: dotnet tool restore
+    - name: Build and test
+      run: dotnet fake build -t publishBinariesWin
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        automatic_release_tag: "v0.2.1-win.x64"
+        prerelease: true
+        title: "Development Build"
+        files: |
+            \publish\win-x64\arc.exe
