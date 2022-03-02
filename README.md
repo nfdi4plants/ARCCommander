@@ -52,15 +52,30 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
     ```
     
 4. Quit and start a fresh terminal for this to take effect.
-5. Run arcCommander from the terminal by executing `arc`
+5. Run arcCommander from the terminal by executing `arc`. 
 6. MacOS security note: On first execution, MacOS will not allow arc to be run. Instead it opens a pop-up: 
 > "arc" cannot be opened because it is from an unidentified developer
-7. Open the Security Panel in system Preferences via terminal  
-  `open "x-apple.systempreferences:com.apple.preference.security"` or Applications -> System Preferences -> "Security & Privacy". In the "General" tab click the bottom-right button "Allow Anyway" right next to 
+7. Open the Security Panel in system Preferences (Applications -> System Preferences -> "Security & Privacy") or by executing the follwing command in your terminal  :
+
+    ```bash
+    open "x-apple.systempreferences:com.apple.preference.security"
+    ```
+    
+In the "General" tab click the bottom-right button "Allow Anyway" right next to 
 > arc was blocked from use because it is not from an identified developer. 
 8. Head back to the terminal and execute `arc` again. Another pop-up will ask you to confirm by clicking "Open". 
-9. Check that arc is properly installed by executing `arc --version`. 
-  
+9. Check that arc is properly installed by executing
+    ```bash
+    arc --version
+    ```
+
+You should see the following or similar message: 
+
+> Start processing parameterless command. 
+>
+> Start Arc Version  
+> v0.2.1  
+> Done processing command.  
 
 ---
 
