@@ -67,7 +67,7 @@ jobs:
     - name: Restore local tools
       run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesLinux
+      run: dotnet fake build -t publishBinariesMac
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
