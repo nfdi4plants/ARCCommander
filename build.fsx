@@ -14,6 +14,7 @@ nuget Fake.DotNet.NuGet
 nuget Fake.Api.Github
 nuget Fake.DotNet.Testing.Expecto 
 nuget Fake.Extensions.Release
+nuget Fake.IO.Zip
 nuget Fake.Tools.Git //"
 
 #if !FAKE
@@ -419,6 +420,14 @@ module ReleaseNoteTasks =
 
     open Fake.Extensions.Release
 
+    let updateVersionOfReleaseWorkflow (stableVersionTag) = 
+        printfn "Start updating release-github workflow to version %s" stableVersionTag
+        let filePath = Path.Combine(__SOURCE_DIRECTORY__,".github/workflows/release-github.yml")
+        let s = File.readAsString filePath
+        let lastVersion = System.Text.RegularExpressions.Regex.Match(s,@"v\d+.\d+.\d+").Value
+        s.Replace(lastVersion,$"v{stableVersionTag}")
+        |> File.writeString false filePath
+
     let createAssemblyVersion = BuildTask.create "createvfs" [] {
         AssemblyVersion.create ProjectInfo.gitName
     }
@@ -427,6 +436,14 @@ module ReleaseNoteTasks =
         Release.exists()
 
         Release.update(ProjectInfo.gitOwner, ProjectInfo.gitName, config)
+
+        let release = ReleaseNotes.load "RELEASE_NOTES.md"
+
+        let stableVersion = SemVer.parse release.NugetVersion
+
+        let stableVersionTag = (sprintf "%i.%i.%i" stableVersion.Major stableVersion.Minor stableVersion.Patch )
+
+        updateVersionOfReleaseWorkflow (stableVersionTag)
     )
 
     let githubDraft = BuildTask.createFn "GithubDraft" [] (fun config ->
