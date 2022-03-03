@@ -152,6 +152,12 @@ Every developer with writing rights shall update the Release Notes after every P
 - run `dotnet fake build -t releaseNotes` to update the Release Notes with commits not added yet **to the CURRENT version release**
     
 - run `dotnet fake build -t releaseNotes semver:<numberID>` to update the Release Notes with commits not added yet **to a NEW version release**; the new version depends on the `<numberID` used: `major` for an increase of the major number (e.g. 0.0.0 -> 1.0.0), `minor` for an increase of the minor number (e.g. 0.0.0 -> 0.1.0), `patch` for an increase of the patch number (e.g. 0.0.0 -> 0.0.1)
+
+### Release on github
+    
+To release the newest versions of the ArcCommander binaries on github, just `push` the newest version to the `main` branch. You must `update the release notes` as described above prior to this, as otherwise an old release may be overwritten by the new one.
+
+Release workflow is based on https://github.com/marketplace/actions/automatic-releases    
     
 #### testing the binary
 
