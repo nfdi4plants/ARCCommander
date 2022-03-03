@@ -69,10 +69,11 @@ module ArcAPI =
 
             Fake.Tools.Git.Repository.init workDir false true
 
-            let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".gitignore")
-            let gitignoreArcPath = Path.Combine(workDir, ".gitignore")
-            log.Trace($"Copy .gitignore from {gitignoreAppPath} to {gitignoreArcPath}")
-            File.Copy(gitignoreAppPath, gitignoreArcPath)
+            if containsFlag "Gitignore" arcArgs then
+                let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".gitignore")
+                let gitignoreArcPath = Path.Combine(workDir, ".gitignore")
+                log.Trace($"Copy .gitignore from {gitignoreAppPath} to {gitignoreArcPath}")
+                File.Copy(gitignoreAppPath, gitignoreArcPath)
 
             log.Trace("Add remote repository")
             match repositoryAdress with
