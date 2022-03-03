@@ -69,7 +69,7 @@ module AssayAPI =
             AssayConfiguration.getSubFolderPaths name arcConfiguration
             |> Array.iter (
                 Directory.CreateDirectory 
-                >> fun dir -> File.Create(Path.Combine(dir.FullName, "README.md")) |> ignore 
+                >> fun dir -> File.Create(Path.Combine(dir.FullName, ".gitkeep")) |> ignore 
             )
 
             AssayFile.create arcConfiguration assay name 
