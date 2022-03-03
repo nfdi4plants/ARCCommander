@@ -106,7 +106,7 @@ module Logging =
             printfn "%s" uMsg
         | true,false,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
         | false,false,true -> () // empty error message
-        | _ -> log.Error(exn.Message) // everything else will be a non-empty error message
+        | _ -> log.Error(exn) // everything else will be a non-empty error message
     
     /// Checks if a message (string) is empty and if it is not, applies a logging function to it.
     let checkNonLog s (logging : string -> unit) = if s <> "" then logging s

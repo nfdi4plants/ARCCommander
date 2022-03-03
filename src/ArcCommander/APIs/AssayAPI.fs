@@ -67,7 +67,10 @@ module AssayAPI =
             log.Error($"Assay folder with identifier {name} already exists.")
         else
             AssayConfiguration.getSubFolderPaths name arcConfiguration
-            |> Array.iter (Directory.CreateDirectory >> ignore)
+            |> Array.iter (
+                Directory.CreateDirectory 
+                >> fun dir -> File.Create(Path.Combine(dir.FullName, ".gitkeep")) |> ignore 
+            )
 
             AssayFile.create arcConfiguration assay name 
 

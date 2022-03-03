@@ -44,7 +44,10 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         ArcConfiguration.getRootFolderPaths arcConfiguration
-        |> Array.iter (Directory.CreateDirectory >> ignore)
+        |> Array.iter (
+            Directory.CreateDirectory 
+            >> fun dir -> File.Create(Path.Combine(dir.FullName, ".gitkeep")) |> ignore 
+        )
 
         log.Trace("Set configuration")
 
@@ -66,15 +69,22 @@ module ArcAPI =
 
             Fake.Tools.Git.Repository.init workDir false true
 
+            if containsFlag "Gitignore" arcArgs then
+                let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".gitignore")
+                let gitignoreArcPath = Path.Combine(workDir, ".gitignore")
+                log.Trace($"Copy .gitignore from {gitignoreAppPath} to {gitignoreArcPath}")
+                File.Copy(gitignoreAppPath, gitignoreArcPath)
+
+            log.Trace("Add remote repository")
             match repositoryAdress with
             | None -> ()
             | Some remote ->
                 GitHelper.executeGitCommand workDir ("remote add origin " + remote) |> ignore
 
         with 
-        | _ -> 
+        | e -> 
 
-            log.Error("Git could not be set up. Please try installing Git cli and run `arc git init`.")
+            log.Error($"Git could not be set up. Please try installing Git cli and run `arc git init`.\n\t{e}")
 
     /// Update the investigation file with the information from the other files and folders.
     let update (arcConfiguration : ArcConfiguration) =

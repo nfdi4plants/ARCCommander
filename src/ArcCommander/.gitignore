@@ -1,0 +1,27 @@
+# exclude everything..
+*
+#.. except ..
+
+
+#Include ARC folders
+!.arc/
+!.arc/**
+!assays/
+!assays/**
+!externals/
+!externals/**
+!workflows/
+!workflows/**
+!runs/
+!runs/**
+
+
+#Include ARC top level files
+!.gitattributes
+!.gitignore
+!README.md
+
+
+#Include ISA top level files
+!isa.investigation.xlsx
+!*isa.study.xlsx

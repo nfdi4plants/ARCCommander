@@ -9,6 +9,7 @@ type ArcInitArgs =
     | [<Unique>] RepositoryAdress of repository_adress : string
     | [<Unique>] EditorPath of editor_path : string
     | [<Unique>] GitLFSByteThreshold of git_lfs_threshold : string
+    | [<Unique>] Gitignore
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -17,6 +18,7 @@ type ArcInitArgs =
             | RepositoryAdress _    ->  "Github adress"
             | EditorPath _          ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"
             | GitLFSByteThreshold _ ->  "The git LFS file size threshold in bytes. File larger than this threshold will be tracked by git LFS (Default Value is 150000000 Bytes ~ 150 MB)."
+            | Gitignore           _ ->  "Use this flag if you want a default .gitignore to be added to the initialized repo"
 
 type ArcExportArgs = 
 
