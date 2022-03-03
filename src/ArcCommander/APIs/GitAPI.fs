@@ -136,7 +136,7 @@ module GitAPI =
             executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
             // detect existing remote
-            let hasRemote () =
+            let remoteSpecified () =
                 let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
                 msg.Length > 0
 
@@ -144,10 +144,10 @@ module GitAPI =
             match tryGetFieldValueByName "RepositoryAdress" gitArgs with
                 | None -> ()
                 | Some remote ->
-                    if hasRemote () then executeGitCommand repoDir ("remote remove origin") |> ignore
+                    if remoteSpecified () then executeGitCommand repoDir ("remote remove origin") |> ignore
                     executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
-            if hasRemote() then log.Trace("Start syncing with remote" )
+            if remoteSpecified() then log.Trace("Start syncing with remote")
             else                log.Error("Can not sync with remote as no remote repository adress was specified.")
 
             // pull if remote exists
