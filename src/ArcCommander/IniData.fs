@@ -164,7 +164,11 @@ module IniData =
 
     /// If the given key exists in the section (keyData) return its value
     let tryGetValue key (keydData : KeyDataCollection) =
-        try keydData.Item key |> Some with | _ -> None
+        try 
+            let v = keydData.Item key 
+            if v = null then None
+            else Some v
+        with | _ -> None
 
 
     /// Any given key can be placed once per section.

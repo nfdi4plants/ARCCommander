@@ -6,9 +6,9 @@ open Argu
 type ArcInitArgs = 
 
     | [<Unique>] Owner of owner : string
-    | [<Unique>] Branch of branch_name : string
+    | [<AltCommandLine("-b")>][<Unique>] Branch of branch_name : string
     // --repositoryadress is obsolete (previous spelling mistake)
-    | [<AltCommandLine("--repositoryadress")>][<AltCommandLine("--remote")>][<Unique>] RepositoryAddress of repository_address : string
+    | [<AltCommandLine("--repositoryadress")>][<AltCommandLine("-r")>][<Unique>] RepositoryAddress of repository_address : string
     | [<Unique>] EditorPath of editor_path : string
     | [<Unique>] GitLFSByteThreshold of git_lfs_threshold : string
     | [<Unique>] Gitignore
@@ -39,14 +39,17 @@ type ArcExportArgs =
 type ArcSyncArgs =
     | [<Unique>][<AltCommandLine("-r")>] RepositoryAddress  of repository_address:string
     | [<Unique>][<AltCommandLine("-m")>] CommitMessage      of commit_message:string
-    | [<Unique>][<AltCommandLine("-b")>] BranchName         of branch_name:string
+    | [<Unique>][<AltCommandLine("-b")>] Branch             of branch:string
+    | [<Unique>][<AltCommandLine("-f")>] Force
+
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | RepositoryAddress _   -> "Git remote address with which to sync the ARC. If no address is either given here or set previously when initing or getting the ARC, changes are only committed but not synced."
-            | CommitMessage _       -> "Descriptive title for the changes made (e.g. add new assay). If none is given, default commit message is used."
-            | BranchName _          -> "Name of the branch to which the changes should be pushed. If none is given, defaults to \"main\""
+            | RepositoryAddress _ -> "Git remote address with which to sync the ARC. If no address is either given here or set previously when initing or getting the ARC, changes are only committed but not synced."
+            | CommitMessage     _ -> "Descriptive title for the changes made (e.g. add new assay). If none is given, default commit message is used."
+            | Branch            _ -> "Name of the branch to which the changes should be pushed. If none is given, defaults to \"main\""
+            | Force             _ -> "When a remote is set, but does not exist online, tries to create it."
 
 /// TO-DO: Argumente anpassen
 type ArcGetArgs =

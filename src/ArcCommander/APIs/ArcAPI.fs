@@ -35,7 +35,7 @@ module ArcAPI =
         let editor              = tryGetFieldValueByName "EditorPath"           arcArgs
         let gitLFSThreshold     = tryGetFieldValueByName "GitLFSByteThreshold"  arcArgs
         let branch              = tryGetFieldValueByName "Branch"               arcArgs |> Option.defaultValue "main"
-        let repositoryAddress    = tryGetFieldValueByName "RepositoryAddress"     arcArgs 
+        let repositoryAddress   = tryGetFieldValueByName "RepositoryAddress"     arcArgs 
 
 
         log.Trace("Create Directory")
