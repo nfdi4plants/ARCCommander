@@ -1,4 +1,28 @@
-﻿### 0.2.1+bf09a03 (Released 2022-2-25)
+﻿### 0.2.2+1d186e3 (Released 2022-3-9)
+* Additions:
+    * latest commit #1d186e3
+    * [[#16a3a60](https://github.com/nfdi4plants/arcCommander/commit/16a3a60eaa1db000630bf9d3c66199f9616f6af4)] add first draft of arc gitignore
+    * [[#7471b0a](https://github.com/nfdi4plants/arcCommander/commit/7471b0a1f7832a97d8d346bfee63d53d1036ff5a)] Add .gitignore to copy when compiling
+    * [[#7c41cd3](https://github.com/nfdi4plants/arcCommander/commit/7c41cd39ea4601d6108d49e6e3f45d44124c5bbc)] Add .gitignore copying functionality to `arc init` :sparkles:
+    * [[#6b74ff3](https://github.com/nfdi4plants/arcCommander/commit/6b74ff34f8c3656c2334c59bdce424f543676f73)] Add functions to initiate README.mds in each folder
+    * [[#88a0088](https://github.com/nfdi4plants/arcCommander/commit/88a00888a6f98389605e95b10937b5235c0f2276)] Raise error message verbosity
+    * [[#37e38b6](https://github.com/nfdi4plants/arcCommander/commit/37e38b63cc3539ae50c045b9617e99149991afad)] add github release action
+    * [[#62c32cd](https://github.com/nfdi4plants/arcCommander/commit/62c32cd5ecdc512c63ee419abbbc724116c8341d)] further test github release action
+    * [[#2a4504e](https://github.com/nfdi4plants/arcCommander/commit/2a4504ea83daf79bafee90217f50f3df75e01530)] finish up first draft of github-release workflow
+    * [[#4717886](https://github.com/nfdi4plants/arcCommander/commit/471788679934d038a8546025acb1a099267d9b16)] add github-release tag update when using releasenotes updating
+    * [[#eeab473](https://github.com/nfdi4plants/arcCommander/commit/eeab473ce95e9c1d18243d0a82cf2454317ee98d)] update macos installation in readme
+    * [[#5d1df31](https://github.com/nfdi4plants/arcCommander/commit/5d1df31ee8455356982413d6419421f1a112c09c)] Update ReadMe.md by adding github-release information
+    * [[#c536ed5](https://github.com/nfdi4plants/arcCommander/commit/c536ed53ff9d7a63f908565aaef899c6185809e2)] make .gitignore optional in arc init
+    * [[#d249629](https://github.com/nfdi4plants/arcCommander/commit/d249629d52659b24b1e8b441803bd7fbc00b23f4)] replace empty Readme.md with .gitkeep files
+    * [[#d91cb60](https://github.com/nfdi4plants/arcCommander/commit/d91cb60b6d2aededdb539900bdec8d0f150ca823)] start working on automatically pushing arcs to new remotes
+    * [[#f565f8f](https://github.com/nfdi4plants/arcCommander/commit/f565f8f0573b4f4ce48679f480aa1509e1651f23)] add automatic repo creation when pushing arc to gitlab
+    * [[#0d1d657](https://github.com/nfdi4plants/arcCommander/commit/0d1d6573ddf5c0526ea3827a71e21ecb1092d292)] add check whether remote repo is a github repository
+* Bugfixes:
+    * [[#ceeea2e](https://github.com/nfdi4plants/arcCommander/commit/ceeea2e92dafc0ac5ff5d56579044f78456b8ff1)] fix assay tests
+    * [[#bf3ab9e](https://github.com/nfdi4plants/arcCommander/commit/bf3ab9e56fd2bcf11f632cefa25f0f93f76a655c)] fix github-release unix file endings
+    * [[#2853ec0](https://github.com/nfdi4plants/arcCommander/commit/2853ec073b3771088eb7ba5fedc73b2a81334948)] fix github-release workflow for mac
+
+### 0.2.1+bf09a03 (Released 2022-2-25)
 * Additions:
     * latest commit #bf09a03
 * Bugfixes:
