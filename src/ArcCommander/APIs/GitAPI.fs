@@ -50,7 +50,7 @@ module GitAPI =
         log.Info("Start Arc Sync")
 
         // get repository directory
-        let repoDir = getRepoDir(arcConfiguration)
+        let repoDir = getRepoDir(arcConfiguration)     
 
         if checkUserMetadataConsistency repoDir log |> not then
 
@@ -131,32 +131,80 @@ module GitAPI =
 
             Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
-            let branch = tryGetFieldValueByName "BranchName" gitArgs |> Option.defaultValue "main"
+            let branch = tryGetFieldValueByName "Branch" gitArgs |> Option.defaultValue "main"
 
             executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
-            // detect existing remote
-            let hasRemote () =
+            /// check whether a remote is set in git config
+            let remoteSpecified () =
                 let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
                 msg.Length > 0
+                      
+            let remoteIsGitHub () =
+                executeGitCommandWithResponse repoDir "remote get-url origin"
+                |> Seq.exists (fun s -> s.ToLower().Contains("github.com"))
+
+            /// check whether the specified remote exists online
+            let remoteExists () =
+                let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "fetch"
+                error :: msg
+                |> List.exists (fun m -> 
+                    m.Contains "Repository not found"
+                    ||  m.Contains "The project you were looking for could not be found"
+                )
+                |> not
 
             // add remote if specified
-            match tryGetFieldValueByName "RepositoryAdress" gitArgs with
+            match tryGetFieldValueByName "RepositoryAddress" gitArgs with
                 | None -> ()
                 | Some remote ->
-                    if hasRemote () then executeGitCommand repoDir ("remote remove origin") |> ignore
+                    if remoteSpecified () then executeGitCommand repoDir ("remote remove origin") |> ignore
                     executeGitCommand repoDir ("remote add origin " + remote) |> ignore
 
-            if hasRemote() then log.Trace("Start syncing with remote" )
-            else                log.Error("Can not sync with remote as no remote repository adress was specified.")
+            // pull and push if remote exists
+            if remoteSpecified() then
 
-            // pull if remote exists
-            if hasRemote() then
-                log.Trace("Pull")
-                executeGitCommand repoDir ("fetch origin") |> ignore
-                executeGitCommand repoDir ($"pull --rebase origin {branch}") |> ignore
+                log.Trace("Start syncing with remote")
 
-            // push if remote exists
-            if hasRemote () then
-                log.Trace("Push")
-                executeGitCommand repoDir ($"push -u origin {branch}") |> ignore
+                if remoteExists() then
+                    log.Trace("Pull")
+                    executeGitCommand repoDir ("fetch origin") |> ignore
+                    executeGitCommand repoDir ($"pull --rebase origin {branch}") |> ignore
+
+                    log.Trace("Push")
+                    executeGitCommand repoDir ($"push -u origin {branch}") |> ignore
+
+                else
+
+                    if containsFlag "Force" gitArgs then
+
+                        if remoteIsGitHub() then
+                            let m = 
+                                [
+                                    "Remote does not exist and --force flag was set. But force pushing a new repository to GitHub is not supported."
+                                    "First create an empty repository on github and try pushing again"
+                                    "More info: https://docs.github.com/en/get-started/importing-your-projects-to-github/importing-source-code-to-github/adding-an-existing-project-to-github-using-the-command-line"
+                                ]
+                                |> List.reduce (fun a b -> a + "\n" + b)
+
+                            log.Error(m)
+
+                        else 
+
+                            log.Trace("Remote does not exist and --force flag was set. Trying to create upstream repo.")
+
+                            executeGitCommand repoDir ($"push --set-upstream origin {branch}") |> ignore
+
+                    else
+                        let m = 
+                            [
+                                "Remote repo was set, but does not exist."
+                                "Check whether it was spelled correctly. If not, you can run \"arc sync\" again using the --repositoryAddress argument."
+                                "If you want to create a new remote repository instead. You can run \"arc sync -f\" to force push the local repository to a new upstream."
+                            ]
+                            |> List.reduce (fun a b -> a + "\n" + b)
+                        log.Error(m)
+
+            else
+
+                log.Error("Can not sync with remote as no remote repository adress was specified.")

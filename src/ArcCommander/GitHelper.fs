@@ -27,6 +27,7 @@ module GitHelper =
                 elif args.Data.ToLower().Contains ("trace") then
                     log.Trace($"GIT: {args.Data}")   
                 else
+                    outputs.Add(args.Data)
                     log.Info($"GIT: {args.Data}")
         
         let errorHandler (_sender:obj) (args:DataReceivedEventArgs) =  
@@ -37,6 +38,7 @@ module GitHelper =
                 elif msg.Contains ("trace") then
                     log.Trace($"GIT: {args.Data}")   
                 else
+                    outputs.Add(args.Data)
                     log.Info($"GIT: {args.Data}")
         
         let p = new Process(StartInfo = procStartInfo)

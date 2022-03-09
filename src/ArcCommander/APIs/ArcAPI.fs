@@ -34,7 +34,8 @@ module ArcAPI =
 
         let editor              = tryGetFieldValueByName "EditorPath"           arcArgs
         let gitLFSThreshold     = tryGetFieldValueByName "GitLFSByteThreshold"  arcArgs
-        let repositoryAdress    = tryGetFieldValueByName "RepositoryAdress"     arcArgs 
+        let branch              = tryGetFieldValueByName "Branch"               arcArgs |> Option.defaultValue "main"
+        let repositoryAddress   = tryGetFieldValueByName "RepositoryAddress"     arcArgs 
 
 
         log.Trace("Create Directory")
@@ -67,7 +68,9 @@ module ArcAPI =
 
         try
 
-            Fake.Tools.Git.Repository.init workDir false true
+            GitHelper.executeGitCommand workDir $"init -b {branch}"
+            //GitHelper.executeGitCommand workDir $"add ."
+            //GitHelper.executeGitCommand workDir $"commit -m \"Initial commit\""
 
             if containsFlag "Gitignore" arcArgs then
                 let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".gitignore")
@@ -76,10 +79,11 @@ module ArcAPI =
                 File.Copy(gitignoreAppPath, gitignoreArcPath)
 
             log.Trace("Add remote repository")
-            match repositoryAdress with
+            match repositoryAddress with
             | None -> ()
             | Some remote ->
-                GitHelper.executeGitCommand workDir ("remote add origin " + remote) |> ignore
+                GitHelper.executeGitCommand workDir $"remote add origin {remote}"
+                //GitHelper.executeGitCommand workDir $"branch -u origin/{branch} {branch}"
 
         with 
         | e -> 
