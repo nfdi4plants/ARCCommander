@@ -139,7 +139,11 @@ module GitAPI =
             let remoteSpecified () =
                 let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "remote -v"
                 msg.Length > 0
-                            
+                      
+            let remoteIsGitHub () =
+                executeGitCommandWithResponse repoDir "remote get-url origin"
+                |> Seq.exists (fun s -> s.ToLower().Contains("github.com"))
+
             /// check whether the specified remote exists online
             let remoteExists () =
                 let ok, msg, error = Fake.Tools.Git.CommandHelper.runGitCommand repoDir "fetch"
@@ -174,9 +178,22 @@ module GitAPI =
 
                     if containsFlag "Force" gitArgs then
 
-                        log.Trace("Remote does not exist and --force flag was set. Trying to create upstream repo.")
+                        if remoteIsGitHub() then
+                            let m = 
+                                [
+                                    "Remote does not exist and --force flag was set. But force pushing a new repository to GitHub is not supported."
+                                    "First create an empty repository on github and try pushing again"
+                                    "More info: https://docs.github.com/en/get-started/importing-your-projects-to-github/importing-source-code-to-github/adding-an-existing-project-to-github-using-the-command-line"
+                                ]
+                                |> List.reduce (fun a b -> a + "\n" + b)
 
-                        executeGitCommand repoDir ($"push --set-upstream origin {branch}") |> ignore
+                            log.Error(m)
+
+                        else 
+
+                            log.Trace("Remote does not exist and --force flag was set. Trying to create upstream repo.")
+
+                            executeGitCommand repoDir ($"push --set-upstream origin {branch}") |> ignore
 
                     else
                         let m = 
