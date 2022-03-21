@@ -1,4 +1,26 @@
-﻿### 0.2.2+1d186e3 (Released 2022-3-9)
+﻿### 0.3.0+d317b5e (Released 2022-3-21)
+* Additions:
+    * latest commit #d317b5e
+    * [[#d75be69](https://github.com/nfdi4plants/arcCommander/commit/d75be69c4a63cff0299e77233a6164adb4af5e18)] bump to 0.2.2
+    * [[#a8cbbd4](https://github.com/nfdi4plants/arcCommander/commit/a8cbbd4705a60f6129c35439eaf2e8708ee0cfb6)] Bump IsaDotNet package to v0.0.4-preview.5 :arrow_up:
+    * [[#fb0f1d2](https://github.com/nfdi4plants/arcCommander/commit/fb0f1d2bb4c0b52dd067a7304fc753fc111ed78e)] Bump IsaDotNet to v0.0.4-preview.5 :arrow_up:
+    * [[#bd748bb](https://github.com/nfdi4plants/arcCommander/commit/bd748bbceac1701041f97b1f69efd9f80a57deef)] Add Trace msg when starting
+    * [[#0d85b27](https://github.com/nfdi4plants/arcCommander/commit/0d85b27e18000c88e1b7690b009ef73039351b8f)] Unify phrasing :lipstick:
+    * [[#765736d](https://github.com/nfdi4plants/arcCommander/commit/765736dc30833cecda925f8839e36076155575bf)] Improve usage description :bulb:
+    * [[#58e63cd](https://github.com/nfdi4plants/arcCommander/commit/58e63cd294e2e5fd00cb937eb608f368ea671ab8)] Replace `externals` with `studies` :boom::art::wrench::hammer:
+    * [[#8c19943](https://github.com/nfdi4plants/arcCommander/commit/8c199437eba577d063fffb14846a073459fb7efd)] Update unit tests :heavy_check_mark:
+    * [[#a5e2d39](https://github.com/nfdi4plants/arcCommander/commit/a5e2d396d31c05f0ea1e8927d6e7e8a792159448)] Improve phrasing :lipstick::ok_hand:
+    * [[#76b1e7e](https://github.com/nfdi4plants/arcCommander/commit/76b1e7eed34a47197d745e746b99d5d5dd7f3c76)] Replace if statement with `Option.defaultValue` :hammer::ok_hand:
+    * [[#2be3bbf](https://github.com/nfdi4plants/arcCommander/commit/2be3bbf951e0e1d5a897e1429a6248c9e262fe4a)] Replace generic sheet name with study ID :hammer::art::ok_hand:
+    * [[#d317b5e](https://github.com/nfdi4plants/arcCommander/commit/d317b5e96a537b3b0a32539b766ef3fcd6cf5441)] Merge pull request #117 from nfdi4plants/ArcSpecificationV++
+* Bugfixes:
+    * [[#7c1297e](https://github.com/nfdi4plants/arcCommander/commit/7c1297ec2c321f00deefb29d19b57eea9863bc90)] Fix wrong logging path :bug:
+    * [[#a16b8c8](https://github.com/nfdi4plants/arcCommander/commit/a16b8c8fb691933d9d1987aa008c4b80d752bc2a)] Fix typos :lipstick:
+    * [[#d686111](https://github.com/nfdi4plants/arcCommander/commit/d6861114008fb3a33ec3aa0123d8cfae09a6196e)] Fix typo :lipstick:
+    * [[#4f79459](https://github.com/nfdi4plants/arcCommander/commit/4f794592294f29d61f76ab74aa7a57828dad8539)] Fix typo :bug::ok_hand:
+    * [[#81960b2](https://github.com/nfdi4plants/arcCommander/commit/81960b2343fc30ae2182d590acb1d22e99f0691a)] Fix typo and order bug :bug::ok_hand:
+
+### 0.2.2+1d186e3 (Released 2022-3-9)
 * Additions:
     * latest commit #1d186e3
     * [[#16a3a60](https://github.com/nfdi4plants/arcCommander/commit/16a3a60eaa1db000630bf9d3c66199f9616f6af4)] add first draft of arc gitignore
