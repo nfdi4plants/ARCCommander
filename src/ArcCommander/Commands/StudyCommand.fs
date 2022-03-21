@@ -40,7 +40,7 @@ type StudyCommand =
             | Add           _ -> "Create a new study file in the ARC and subsequently register it with the given study metadata"
             | Delete        _ -> "Delete a study from the ARC file structure"
             | Unregister    _ -> "Unregister a study from the ARC investigation file"
-            | Remove        _ -> "Remove a study from the ARC"
+            | Remove        _ -> "Remove a study from the ARC (delete the study and unregister it from the investigation file)"
             | Update        _ -> "Update an existing study in the ARC with the given study metadata"
             | Edit          _ -> "Open and edit an existing study in the ARC with a text editor. Arguments passed for this command will be pre-set in the editor."
             | Show          _ -> "Get the values of a study"

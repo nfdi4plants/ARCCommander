@@ -11,7 +11,7 @@ forceeditor=false
 
 [isamodel]
 investigationfilename=isa.investigation.xlsx
-studiesfilename=isa.studies.xlsx
+studyfilename=isa.study.xlsx
 # assay location=folder.assay.rootfolder
 assayfilename=isa.assay.xlsx
 
@@ -25,9 +25,9 @@ files=README.md
 rootfolder=workflows
 dockerfile=Dockerfile
 
-[external]
-rootfolder=externals
-externalsfile=isa.tab
+[study]
+rootfolder=studies
+studyfile=README.md
 
 [run]
 rootfolder=runs

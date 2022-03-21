@@ -34,7 +34,7 @@ module AssayAPI =
         /// Creates an assay file from the given assay in the ARC.
         let create (arcConfiguration : ArcConfiguration) (assay) (identifier : string) =
             IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
-            |> ISADotNet.XLSX.AssayFile.Assay.init "Investigation" (Some assay) None identifier
+            |> ISADotNet.XLSX.AssayFile.Assay.init (Some assay) None identifier
 
     /// Initializes a new empty assay file and associated folder structure in the ARC.
     let init (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
@@ -109,7 +109,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                log.Trace("No Study Identifier given, use assayIdentifier instead.")
+                log.Trace("No Study Identifier given, use Assay Identifier instead.")
                 s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -122,7 +122,7 @@ module AssayAPI =
 
         // part that writes assay metadata into the assay file
         try 
-            MetaData.overwriteWithAssayInfo "Investigation" assay doc
+            MetaData.overwriteWithAssayInfo "Assay" assay doc
             
         finally
             Spreadsheet.close doc
@@ -285,7 +285,7 @@ module AssayAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
 
         let investigation = Investigation.fromFile investigationFilePath
-                
+
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -305,14 +305,14 @@ module AssayAPI =
             | None ->
                 log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
                 if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
-                    StudyAPI.StudyFile.create arcConfiguration studyIdentifier
+                    StudyAPI.StudyFile.create arcConfiguration (Study.create(Identifier = studyIdentifier)) studyIdentifier
                 let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
             log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
             if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
-                StudyAPI.StudyFile.create arcConfiguration studyIdentifier
+                StudyAPI.StudyFile.create arcConfiguration (Study.create(Identifier = studyIdentifier)) studyIdentifier
             let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
             [Study.fromParts info [] [] [] [assay] [] []]
         |> API.Investigation.setStudies investigation

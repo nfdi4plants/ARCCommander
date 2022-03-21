@@ -11,18 +11,18 @@ type ArcConfiguration =
         IsaModel    : Map<string,string>
         Assay       : Map<string,string>
         Workflow    : Map<string,string>
-        External    : Map<string,string>
+        Study     : Map<string,string>
         Run         : Map<string,string>
     }
 
     /// Creates an ArcConfiguration from the section settings.
-    static member create general isaModel assay workflow external run =
+    static member create general isaModel assay workflow study run =
         {
             General     = general
             IsaModel    = isaModel
             Assay       = assay
             Workflow    = workflow
-            External    = external 
+            Study       = study
             Run         = run
         }
 
@@ -44,7 +44,7 @@ type ArcConfiguration =
         "general.forceeditor"               , "false"
         
         "isamodel.investigationfilename"    , "isa.investigation.xlsx"
-        "isamodel.studiesfilename"          , "isa.studies.xlsx"
+        "isamodel.studyfilename"            , "isa.study.xlsx"
         "isamodel.assay location"           , "folder.assay.rootfolder"
         "isamodel.assayfilename"            , "isa.assay.xlsx"
         
@@ -56,8 +56,8 @@ type ArcConfiguration =
         "workflow.rootfolder"               , "workflows"
         "workflow.dockerfile"               , "Dockerfile"
         
-        "external.rootfolder"               , "externals"
-        "external.externalsfile"            , "isa.tab"
+        "study.rootfolder"                  , "studies"
+        "study.file"                        , "README.md"
         
         "run.rootfolder"                    , "runs"
         ]
@@ -71,7 +71,7 @@ type ArcConfiguration =
             (getSectionMap "isamodel"  argumentConfig)
             (getSectionMap "assay"     argumentConfig)
             (getSectionMap "workflow"  argumentConfig)
-            (getSectionMap "external"  argumentConfig)
+            (getSectionMap "study"     argumentConfig)
             (getSectionMap "run"       argumentConfig)
 
     /// Gets the current configuration by merging the default settings, the global settings, the local settings and the settings given through arguments. Uses `ofIniData`for this.
@@ -97,7 +97,7 @@ type ArcConfiguration =
         [|
             configuration.General.TryFind "rootfolder"
             configuration.Assay.TryFind "rootfolder"
-            configuration.External.TryFind "rootfolder"
+            configuration.Study.TryFind "rootfolder"
             configuration.IsaModel.TryFind "rootfolder"
             configuration.Run.TryFind "rootfolder"
             configuration.Workflow.TryFind "rootfolder"
@@ -111,7 +111,7 @@ type ArcConfiguration =
         [|
             configuration.General |> Map.map (keyValueToNameValue "general")
             configuration.Assay |> Map.map (keyValueToNameValue "assay")
-            configuration.External |> Map.map (keyValueToNameValue "external")
+            configuration.Study |> Map.map (keyValueToNameValue "study")
             configuration.IsaModel |> Map.map (keyValueToNameValue "isamodel")
             configuration.Run |> Map.map (keyValueToNameValue "run")
             configuration.Workflow |> Map.map (keyValueToNameValue "workflow")
@@ -244,28 +244,31 @@ module IsaModelConfiguration =
         |> Option.get
 
     /// Returns the name of the study's file if it exists. Else returns None.
-    let tryGetStudiesFileName identifier (configuration : ArcConfiguration) =
-        //Map.tryFind "studiesfilename" configuration.IsaModel
-        sprintf "%s_isa.study.xlsx" identifier
-        |> Some
+    let tryGetStudyFileName identifier (configuration : ArcConfiguration) =
+        let studyFilename = Map.tryFind "studyfilename" configuration.IsaModel
+        match studyFilename with
+        | Some f ->
+            Path.Combine(identifier, f)
+            |> Some
+        | _ -> None
 
     /// Returns the name of the study's file.
-    let getStudiesFileName identifier (configuration : ArcConfiguration) =
-        tryGetStudiesFileName identifier configuration
+    let getStudyFileName identifier (configuration : ArcConfiguration) =
+        tryGetStudyFileName identifier configuration
         |> Option.get 
 
     /// Returns the full path of the study's file if it exists. Else returns None.
-    let tryGetStudiesFilePath identifier (configuration : ArcConfiguration) =
+    let tryGetStudyFilePath identifier (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
-        match tryGetStudiesFileName identifier configuration with
+        match tryGetStudyFileName identifier configuration with
         | Some i -> 
-            Path.Combine(workDir, i)
+            Path.Combine(workDir, "studies", i)
             |> Some
         | _ -> None
       
     /// Returns the full path of the study's file.
-    let getStudiesFilePath identifier (configuration : ArcConfiguration) =
-        tryGetStudiesFilePath identifier configuration
+    let getStudyFilePath identifier (configuration : ArcConfiguration) =
+        tryGetStudyFilePath identifier configuration
         |> Option.get
 
     /// Returns the full path of the study files located in the arc root folder.
