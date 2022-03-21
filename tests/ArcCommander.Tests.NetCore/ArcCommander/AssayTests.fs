@@ -25,7 +25,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list w
     Prompt.deannotateArguments g 
     |> commandF arcConfiguration
 
-let setupArc (arcConfiguration:ArcConfiguration) =
+let setupArc (arcConfiguration : ArcConfiguration) =
     let investigationArgs = [InvestigationCreateArgs.Identifier "TestInvestigation"]
     let arcArgs : ArcInitArgs list = [] 
 
@@ -59,7 +59,7 @@ let testAssayTestFunction =
         )
         testCase "ListsCorrectAssaysInCorrectStudies" (fun () -> 
             let testAssays = [
-                "BII-S-1",["a_proteome.txt";"a_metabolome.txt";"a_transcriptome.txt"]
+                "BII-S-1",["a_proteome.txt";"a_metabolome.txt"; "a_transcriptome.txt"]
                 "BII-S-2",["a_microarray.txt"]
             ]
             let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
@@ -371,7 +371,7 @@ let testAssayUpdate =
 
             let assay = study.Assays.Value.[1]
 
-            Expect.equal assay.FileName testAssay.FileName "Assay Filename has changed even though it shouldnt"
+            Expect.equal assay.FileName testAssay.FileName "Assay Filename has changed even though it shouldn't"
             Expect.equal assay.TechnologyType testAssay.TechnologyType "Assay technology type has changed, even though no value was given and the \"ReplaceWithEmptyValues\" flag was not set"
             Expect.equal assay.MeasurementType testAssay.MeasurementType "Assay Measurement type was not updated correctly"
 
