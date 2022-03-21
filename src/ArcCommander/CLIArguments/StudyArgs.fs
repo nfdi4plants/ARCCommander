@@ -2,8 +2,8 @@
 
 open Argu 
 
-/// CLI arguments for empty study initialization
-type StudyInitArgs =
+/// CLI arguments for interactively editing existing study metadata 
+type StudyEditArgs =
     | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
 
     interface IArgParserTemplate with
@@ -33,10 +33,6 @@ type StudyUpdateArgs =
             | AddIfMissing              _ -> "If this flag is set, a new study will be registered with the given parameters, if it did not previously exist"
 
 
-/// CLI arguments for interactively editing existing study metadata 
-// Same arguments as `init` because the study can be identified just by the identifier
-type StudyEditArgs = StudyInitArgs
-
 /// CLI arguments for registering existing study metadata 
 type StudyRegisterArgs = 
     | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
@@ -53,6 +49,10 @@ type StudyRegisterArgs =
             | Description _->   "A textual description of the study, with components such as objective or goals"
             | SubmissionDate _->   "The date on which the study is submitted to an archive"
             | PublicReleaseDate _->   "The date on which the study SHOULD be released publicly"
+
+// Same arguments as `init` because the study can be identified just by the identifier
+/// CLI arguments for empty study initialization
+type StudyInitArgs = StudyRegisterArgs
 
 /// CLI arguments for initializing and subsequently registering study metadata 
 // Same arguments as `update` because all metadata fields that can be updated can also be set while registering a new assay

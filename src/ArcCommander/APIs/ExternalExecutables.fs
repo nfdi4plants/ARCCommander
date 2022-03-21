@@ -30,11 +30,14 @@ module ExternalExecutables =
         |> Array.reduce (fun a b -> a + "-" + b)
 
     /// Returns ARC folders where an external executable might be present.
-    let getArcFoldersForExtExe root = // arc folder: Externals, .arc, root; 
-        root :: (
-            ["externals"; ".arc"]
-            |> List.map (fun p -> Path.Combine(root, p))
-        )
+    let getArcFoldersForExtExe root = // arc folder: .arc, root, study 
+        let stdFolders =
+            root :: (
+                ["study"; ".arc"]
+                |> List.map (fun p -> Path.Combine(root, p))
+            )
+        let studySubFolders = Directory.GetDirectories(List.last stdFolders, "*", searchOption = SearchOption.AllDirectories) |> List.ofArray
+        List.append stdFolders studySubFolders
 
     /// Adds a extra directory to the PATH variable.
     let addExtraDirToPath os extraDir =

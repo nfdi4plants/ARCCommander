@@ -4,6 +4,7 @@ open ArcCommander
 open ArcCommander.ArgumentProcessing
 
 open System
+open System.IO
 open ISADotNet
 open ISADotNet.XLSX
 
@@ -13,13 +14,47 @@ module StudyAPI =
     module StudyFile =
     
         let exists (arcConfiguration : ArcConfiguration) (identifier : string) =
-            IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
-            |> System.IO.File.Exists
+
+            let log = Logging.createLogger "StudyFileExistsLog"
+
+            log.Trace "Start StudyFile.exists"
+
+            let studyFilePath = IsaModelConfiguration.getStudyFilePath identifier arcConfiguration
+
+            log.Trace "Check for file existence"
+
+            let fileExists = File.Exists studyFilePath
+
+            log.Trace "Check for folder existence"
+
+            let folderExists = Directory.GetParent(studyFilePath).FullName |> Directory.Exists
+
+            match fileExists, folderExists with
+            | true, _ -> true
+            | false, true ->
+                log.Trace "Study file cannot be found in study folder."
+                false
+            | _ ->
+                log.Trace "Study file and folder can not be found."
+                false
     
-        let create (arcConfiguration : ArcConfiguration) (identifier : string) =
-            IsaModelConfiguration.getStudiesFilePath identifier arcConfiguration
-            |> FSharpSpreadsheetML.Spreadsheet.initWithSst identifier
-            |> FSharpSpreadsheetML.Spreadsheet.close
+
+        let create (arcConfiguration : ArcConfiguration) study (studyIdentifier : string) =
+
+            let log = Logging.createLogger "StudyFileCreateLog"
+
+            log.Trace "Start StudyFile.create"
+
+            let studyFilePath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+
+            let studyFolderPath = (Directory.GetParent studyFilePath).FullName
+
+            log.Trace "Create study directory and file"
+
+            Directory.CreateDirectory studyFolderPath |> ignore
+
+            StudyFile.Study.init (Some study) "(noAssayAssociated)" studyFilePath
+
 
     /// Initializes a new empty study file in the ARC.
     let init (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
@@ -30,10 +65,22 @@ module StudyAPI =
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
+        let study = 
+            let studyInfo = 
+                Study.StudyInfo.create
+                    (identifier)
+                    (getFieldValueByName "Title"                studyArgs)
+                    (getFieldValueByName "Description"          studyArgs)
+                    (getFieldValueByName "SubmissionDate"       studyArgs)
+                    (getFieldValueByName "PublicReleaseDate"    studyArgs)
+                    (IsaModelConfiguration.getStudyFileName identifier arcConfiguration)
+                    []
+            Study.fromParts studyInfo [] [] [] [] [] [] 
+
         if StudyFile.exists arcConfiguration identifier then
             log.Error("Study file already exists.")
         else 
-            StudyFile.create arcConfiguration identifier
+            StudyFile.create arcConfiguration study identifier
 
     /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
@@ -55,7 +102,7 @@ module StudyAPI =
                     (getFieldValueByName "Description"          studyArgs)
                     (getFieldValueByName "SubmissionDate"       studyArgs)
                     (getFieldValueByName "PublicReleaseDate"    studyArgs)
-                    (IsaModelConfiguration.getStudiesFileName identifier arcConfiguration)
+                    (IsaModelConfiguration.getStudyFileName identifier arcConfiguration)
                     []
             Study.fromParts studyInfo [] [] [] [] [] [] 
 
@@ -139,12 +186,12 @@ module StudyAPI =
         let study = 
             let studyInfo = 
                 Study.StudyInfo.create
-                    (identifier)
+                    identifier
                     (getFieldValueByName "Title"                studyArgs)
                     (getFieldValueByName "Description"          studyArgs)
                     (getFieldValueByName "SubmissionDate"       studyArgs)
                     (getFieldValueByName "PublicReleaseDate"    studyArgs)
-                    (IsaModelConfiguration.getStudiesFileName identifier arcConfiguration)
+                    (IsaModelConfiguration.getStudyFileName identifier arcConfiguration)
                     []
             Study.fromParts studyInfo [] [] [] [] [] [] 
 
@@ -179,9 +226,9 @@ module StudyAPI =
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
-        let studyFilePath = IsaModelConfiguration.getStudiesFileName identifier arcConfiguration
+        let studyFilePath = IsaModelConfiguration.getStudyFileName identifier arcConfiguration
 
-        try System.IO.File.Delete studyFilePath with
+        try File.Delete studyFilePath with
         | err -> log.Error($"Couldn't delete study file:\n {err.ToString()}")
 
     /// Unregisters an existing study from the ARC's investigation file.
