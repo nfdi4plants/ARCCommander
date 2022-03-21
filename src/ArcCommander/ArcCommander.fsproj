@@ -66,8 +66,8 @@
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
     <PackageReference Include="IdentityModel.OidcClient" Version="5.0.0" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.4" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.4" />
+    <PackageReference Include="ISADotNet" Version="0.4.0-preview.5" />
+    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.5" />
     <PackageReference Include="JWT" Version="8.9.0" />
     <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
     <PackageReference Include="NLog" Version="4.7.13" />
