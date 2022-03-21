@@ -257,6 +257,8 @@ let main argv =
         Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
 
+        log.Trace("Start ArcCommander")
+
         // Try parse the command line arguments
         let parseResults = tryExecuteExternalTool log parser argv workingDir
 
