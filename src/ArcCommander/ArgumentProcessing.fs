@@ -55,7 +55,7 @@ module ArgumentProcessing =
 
     /// Returns the value given by the user for name k.
     let getFieldValueByName k (arguments : Map<string,Argument>) = 
-        let log = Logging.createLogger "ArgumentProcessingGetFieldByValueLog"
+        let log = Logging.createLogger "ArgumentProcessingGetFieldValueByNameLog"
         match Map.find k arguments with
         | Field v -> v
         | Flag -> 

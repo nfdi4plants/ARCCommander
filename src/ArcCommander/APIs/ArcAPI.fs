@@ -23,7 +23,7 @@ module ArcAPI =
         log.Debug($"v{ver.Major}.{ver.Minor}.{ver.Build}")
 
     // TODO TO-DO TO DO: make use of args
-    /// Initializes the arc specific folder structure.
+    /// Initializes the ARC-specific folder structure.
     let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
 
         let log = Logging.createLogger "ArcInitLog"
@@ -35,7 +35,7 @@ module ArcAPI =
         let editor              = tryGetFieldValueByName "EditorPath"           arcArgs
         let gitLFSThreshold     = tryGetFieldValueByName "GitLFSByteThreshold"  arcArgs
         let branch              = tryGetFieldValueByName "Branch"               arcArgs |> Option.defaultValue "main"
-        let repositoryAddress   = tryGetFieldValueByName "RepositoryAddress"     arcArgs 
+        let repositoryAddress   = tryGetFieldValueByName "RepositoryAddress"    arcArgs 
 
 
         log.Trace("Create Directory")
@@ -135,7 +135,7 @@ module ArcAPI =
                     | None ->
                         Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
                         |> API.Study.add studies
-                | None ->                   
+                | None ->
                     [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
                 |> API.Investigation.setStudies investigation
                 |> updateInvestigationAssays t

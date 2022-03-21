@@ -235,7 +235,7 @@ let main argv =
         let workingDir =
             match safeParseResults.TryGetResult(WorkingDir) with
             | Some s    -> s
-            | None      -> System.IO.Directory.GetCurrentDirectory()
+            | None      -> Directory.GetCurrentDirectory()
 
         let verbosity = safeParseResults.TryGetResult(Verbosity) |> Option.map string
 
@@ -251,11 +251,12 @@ let main argv =
         
         let arcCommanderDataFolder = IniData.createDataFolder ()
         let arcDataFolder = 
-            if (tryGetArcDataFolderPath workingDir arcCommanderDataFolder).IsSome then 
-                (tryGetArcDataFolderPath workingDir arcCommanderDataFolder).Value
-            else arcCommanderDataFolder
+            tryGetArcDataFolderPath workingDir arcCommanderDataFolder
+            |> Option.defaultValue arcCommanderDataFolder
         Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
+
+        log.Trace("Start ArcCommander")
 
         // Try parse the command line arguments
         let parseResults = tryExecuteExternalTool log parser argv workingDir
@@ -276,11 +277,22 @@ let main argv =
 
     with e1 ->
         
-        // create logging config, create .arc folder if not already existing
         let currDir = Directory.GetCurrentDirectory()
-        let arcFolder = Path.Combine(currDir, ".arc")
-        Directory.CreateDirectory(arcFolder) |> ignore
-        Logging.generateConfig arcFolder 0 
+
+        // check for existence of an ARC-specific log file:
+        try
+            let arcCommanderDataFolder = IniData.createDataFolder ()
+            let arcDataFolder = 
+                tryGetArcDataFolderPath currDir arcCommanderDataFolder
+                |> Option.defaultValue arcCommanderDataFolder
+            Logging.generateConfig arcDataFolder 0
+
+        // create logging config, create .arc folder if not already existing:
+        with _ ->
+            let arcFolder = Path.Combine(currDir, ".arc")
+            Directory.CreateDirectory(arcFolder) |> ignore
+            Logging.generateConfig arcFolder 0 
+        
         let log = Logging.createLogger "ArcCommanderMainLog"
 
         Logging.handleExceptionMessage log e1

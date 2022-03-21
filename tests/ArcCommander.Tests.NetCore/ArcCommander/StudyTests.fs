@@ -12,7 +12,7 @@ let standardISAArgs =
     Map.ofList 
         [
             "investigationfilename","isa.investigation.xlsx";
-            "studiesfilename","isa.study.xlsx";
+            "studyfilename","isa.study.xlsx";
             "assayfilename","isa.assay.xlsx"
         ]
 
@@ -63,8 +63,8 @@ let testStudyProtocolLoad =
 
     let configuration = 
         ArcConfiguration.create 
-            (Map.ofList ["workdir",testDirectory;"verbosity","2";"editor","Decoy"]) 
-            (standardISAArgs)
+            (Map.ofList ["workdir", testDirectory; "verbosity", "2"; "editor", "Decoy"]) 
+            standardISAArgs
             Map.empty Map.empty Map.empty Map.empty
 
     testList "StudyProtocolLoadTests" [
@@ -79,7 +79,7 @@ let testStudyProtocolLoad =
             
             let testProtocolName = "peptide_digestion"
             let testProtocolTypeName = AnnotationValue.Text "Protein Digestion"
-                        
+
             setupArc configuration
             processCommand configuration StudyAPI.register studyArgs
             processCommand configuration StudyAPI.Protocols.load loadArgs
@@ -90,7 +90,7 @@ let testStudyProtocolLoad =
                 let protocols = study.Protocols
                 Expect.isSome protocols "Protocol was not added, as Protocols is still None"
                 let protocol = API.Protocol.tryGetByName testProtocolName protocols.Value
-                Expect.isSome protocol "Protocol could not be found, either it was no added or the name was not inserted correctly"
+                Expect.isSome protocol "Protocol could not be found, either it was not added or the name was not inserted correctly"
                 let protocolType = protocol.Value.ProtocolType
                 Expect.isSome protocolType "ProtocolType was not added to protocol"
                 Expect.equal protocolType.Value.Name.Value testProtocolTypeName "ProtocolType name field was not correctly transferred from protocol file"
