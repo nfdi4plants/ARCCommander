@@ -32,7 +32,7 @@ module StudyAPI =
             match fileExists, folderExists with
             | true, _ -> true
             | false, true ->
-                log.Trace "Study file cannot be found in study folder."
+                log.Trace "Study file cannot be found in the study's folder."
                 false
             | _ ->
                 log.Trace "Study file and folder can not be found."
