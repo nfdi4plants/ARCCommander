@@ -33,7 +33,7 @@ module ExternalExecutables =
     let getArcFoldersForExtExe root = // arc folder: .arc, root, study 
         let stdFolders =
             root :: (
-                ["study"; ".arc"]
+                [".arc"; "studies"]
                 |> List.map (fun p -> Path.Combine(root, p))
             )
         let studySubFolders = Directory.GetDirectories(List.last stdFolders, "*", searchOption = SearchOption.AllDirectories) |> List.ofArray
