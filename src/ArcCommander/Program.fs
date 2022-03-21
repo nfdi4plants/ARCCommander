@@ -251,9 +251,8 @@ let main argv =
         
         let arcCommanderDataFolder = IniData.createDataFolder ()
         let arcDataFolder = 
-            let adfp = tryGetArcDataFolderPath workingDir arcCommanderDataFolder
-            if adfp.IsSome then adfp.Value
-            else arcCommanderDataFolder
+            tryGetArcDataFolderPath workingDir arcCommanderDataFolder
+            |> Option.defaultValue arcCommanderDataFolder
         Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
 
@@ -284,9 +283,8 @@ let main argv =
         try
             let arcCommanderDataFolder = IniData.createDataFolder ()
             let arcDataFolder = 
-                let adfp = tryGetArcDataFolderPath currDir arcCommanderDataFolder
-                if adfp.IsSome then adfp.Value
-                else arcCommanderDataFolder
+                tryGetArcDataFolderPath currDir arcCommanderDataFolder
+                |> Option.defaultValue arcCommanderDataFolder
             Logging.generateConfig arcDataFolder 0
 
         // create logging config, create .arc folder if not already existing:
