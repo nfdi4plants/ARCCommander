@@ -53,7 +53,7 @@ module StudyAPI =
 
             Directory.CreateDirectory studyFolderPath |> ignore
 
-            StudyFile.Study.init (Some study) "(noAssayAssociated)" studyFilePath
+            StudyFile.Study.init (Some study) studyIdentifier studyFilePath
 
 
     /// Initializes a new empty study file in the ARC.
