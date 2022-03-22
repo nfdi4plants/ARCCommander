@@ -306,14 +306,14 @@ module AssayAPI =
                 log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
                 if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                     StudyAPI.StudyFile.create arcConfiguration (Study.create(Identifier = studyIdentifier)) studyIdentifier
-                let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (Path.Combine(studyIdentifier, "isa.study.xlsx")) []
+                let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration) []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
             log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
             if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                 StudyAPI.StudyFile.create arcConfiguration (Study.create(Identifier = studyIdentifier)) studyIdentifier
-            let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (Path.Combine(studyIdentifier, "isa.study.xlsx")) []
+            let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration) []
             [Study.fromParts info [] [] [] [assay] [] []]
         |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
@@ -428,7 +428,7 @@ module AssayAPI =
                             |> API.Investigation.setStudies investigation
                         | None -> 
                             log.Trace($"Target Study with the identifier {studyIdentifier} does not exist in the investigation file, creating new study to move assay to.")
-                            let info = Study.StudyInfo.create targetStudyIdentifer "" "" "" "" (Path.Combine(targetStudyIdentifer, "isa.study.xlsx")) []
+                            let info = Study.StudyInfo.create targetStudyIdentifer "" "" "" "" (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration) []
                             Study.fromParts info [] [] [] [assay] [] []
                             |> API.Study.add studies
                             |> API.Investigation.setStudies investigation
