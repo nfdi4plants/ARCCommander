@@ -376,17 +376,40 @@ module AssayAPI =
     let delete (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let log = Logging.createLogger "AssayDeleteLog"
-        
+
         log.Info("Start Assay Delete")
+
+        let isForced = (containsFlag "Force" assayArgs)
 
         let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
 
-        let assayFolder = 
+        let assayFolderPath = 
             AssayConfiguration.tryGetFolderPath assayIdentifier arcConfiguration
             |> Option.get
 
-        if System.IO.Directory.Exists(assayFolder) then
-            System.IO.Directory.Delete(assayFolder, true)
+        let isStandard =
+            let allFiles =
+                Directory.GetFiles(assayFolderPath, "*", SearchOption.AllDirectories)
+                |> Array.map (
+                    fun f -> f.Split assayIdentifier
+                    >> Array.last
+                )
+            allFiles = [|
+                @"\README.md"
+                @"\isa.assay.xlsx"
+                @"\protocols\.gitkeep"
+                @"\dataset\.gitkeep"
+            |]
+
+        match isForced, isStandard with
+        | true, _
+        | false, true ->
+            try Directory.Delete(assayFolderPath, true) with
+            | err -> log.Error($"Cannot delete assay:\n {err.ToString()}")
+        | _ ->
+            log.Error "Assay contains user-specific files. Deletion aborted."
+            log.Info "Run the command with `--force` to force deletion."
+
 
     /// Remove an assay from the ARC by both unregistering it from the investigation file and removing its folder with the underlying file structure.
     let remove (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =

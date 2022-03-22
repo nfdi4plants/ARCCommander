@@ -245,12 +245,35 @@ module StudyAPI =
         
         log.Info("Start Study Delete")
 
+        let isForced = (containsFlag "Force" studyArgs)
+
         let identifier = getFieldValueByName "Identifier" studyArgs
 
-        let studyFilePath = IsaModelConfiguration.getStudyFileName identifier arcConfiguration
+        let studyFolderPath = IsaModelConfiguration.getStudyFolderPath identifier arcConfiguration
 
-        try File.Delete studyFilePath with
-        | err -> log.Error($"Couldn't delete study file:\n {err.ToString()}")
+        let isStandard =
+            let allFiles =
+                Directory.GetFiles(studyFolderPath, "*", SearchOption.AllDirectories)
+                |> Array.map (
+                    fun f -> f.Split identifier
+                    >> Array.last
+                )
+            allFiles = [|
+                @"\README.md"
+                @"\isa.study.xlsx"
+                @"\protocols\.gitkeep"
+                @"\resources\.gitkeep"
+            |]
+
+        match isForced, isStandard with
+        | true, _
+        | false, true ->
+            try Directory.Delete(studyFolderPath, true) with
+            | err -> log.Error($"Cannot delete study:\n {err.ToString()}")
+        | _ ->
+            log.Error "Study contains user-specific files. Deletion aborted."
+            log.Info "Run the command with `--force` to force deletion."
+            
 
     /// Unregisters an existing study from the ARC's investigation file.
     let unregister (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
@@ -779,7 +802,7 @@ module StudyAPI =
                     | Some publications -> 
                         // TODO : Remove the "Some" when the
                         match API.Publication.tryGetByDoi doi publications with
-                        | Some publication ->                    
+                        | Some publication ->
                             ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Publications.toRows None) 
                                 (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 

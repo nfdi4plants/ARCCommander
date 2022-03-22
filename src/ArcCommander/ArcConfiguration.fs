@@ -271,6 +271,17 @@ module IsaModelConfiguration =
         tryGetStudyFilePath identifier configuration
         |> Option.get
 
+    /// Returns the path of the study's folder if it exists. Else returns None.
+    let tryGetStudyFolderPath identifier (configuration : ArcConfiguration) =
+        match tryGetStudyFilePath identifier configuration with
+        | Some sfp  -> Some (Directory.GetParent sfp).FullName
+        | _         -> None
+
+    /// Returns the path of the study's folder.
+    let getStudyFolderPath identifier (configuration : ArcConfiguration) =
+        tryGetStudyFolderPath identifier configuration
+        |> Option.get
+
     /// Returns the full path of the study files located in the arc root folder.
     let findStudyFilePaths (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
