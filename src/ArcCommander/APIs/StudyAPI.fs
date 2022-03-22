@@ -47,7 +47,7 @@ module StudyAPI =
                 false
     
 
-        let create (arcConfiguration : ArcConfiguration) study (studyIdentifier : string) =
+        let create (arcConfiguration : ArcConfiguration) (study : Study) (studyIdentifier : string) =
 
             let log = Logging.createLogger "StudyFileCreateLog"
 
@@ -56,6 +56,8 @@ module StudyAPI =
             let studyFilePath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
 
             let studyFolderPath = (Directory.GetParent studyFilePath).FullName
+
+            let study = {study with FileName = Some (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration)}
 
             log.Trace "Create study directory and file"
 

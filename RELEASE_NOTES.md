@@ -1,4 +1,16 @@
-﻿### 0.3.0+d317b5e (Released 2022-3-21)
+﻿### 0.3.1+29ae936 (Released 2022-3-22)
+* Additions:
+    * latest commit #29ae936
+    * [[#2472be4](https://github.com/nfdi4plants/arcCommander/commit/2472be44a050079c0722ad209dba354429d1898c)] Merge pull request #119 from nfdi4plants/Brilator-patch-1
+    * [[#c03937b](https://github.com/nfdi4plants/arcCommander/commit/c03937be8419e4e8b4a7a73b8b72befe7884224e)] add standard subfolders to study init command
+    * [[#1fc6460](https://github.com/nfdi4plants/arcCommander/commit/1fc6460612dde7d4620b0ef43b8e17b072d7dc70)] increase study value consistency
+    * [[#29ae936](https://github.com/nfdi4plants/arcCommander/commit/29ae9360d1332e51af61cc9ac4b0393d7f20b80b)] Merge pull request #122 from nfdi4plants/ArcSpecificationV++
+* Bugfixes:
+    * [[#05ce1ff](https://github.com/nfdi4plants/arcCommander/commit/05ce1ffe0e665ef541284a89c0ceb33436f85b55)] fix typo in gitignore
+    * [[#8499965](https://github.com/nfdi4plants/arcCommander/commit/849996584dc82da9bd35dc46c16bbf3cb7a3546d)] :bug: Fix bug with study filename
+    * [[#e84c426](https://github.com/nfdi4plants/arcCommander/commit/e84c4260046a72fc7c1358945ee965ba1d7c2f31)] Merge pull request #120 from nfdi4plants/bugfixes
+
+### 0.3.0+d317b5e (Released 2022-3-21)
 * Additions:
     * latest commit #d317b5e
     * [[#d75be69](https://github.com/nfdi4plants/arcCommander/commit/d75be69c4a63cff0299e77233a6164adb4af5e18)] bump to 0.2.2
