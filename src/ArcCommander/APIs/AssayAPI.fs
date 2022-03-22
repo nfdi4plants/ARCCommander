@@ -32,7 +32,7 @@ module AssayAPI =
             |> System.IO.File.Exists
         
         /// Creates an assay file from the given assay in the ARC.
-        let create (arcConfiguration : ArcConfiguration) (assay) (identifier : string) =
+        let create (arcConfiguration : ArcConfiguration) assay (identifier : string) =
             IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
             |> ISADotNet.XLSX.AssayFile.Assay.init (Some assay) None identifier
 
@@ -306,14 +306,14 @@ module AssayAPI =
                 log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
                 if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                     StudyAPI.StudyFile.create arcConfiguration (Study.create(Identifier = studyIdentifier)) studyIdentifier
-                let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
+                let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (Path.Combine(studyIdentifier, "isa.study.xlsx")) []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
         | None ->
             log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
             if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
                 StudyAPI.StudyFile.create arcConfiguration (Study.create(Identifier = studyIdentifier)) studyIdentifier
-            let info = Study.StudyInfo.create studyIdentifier "" "" "" "" "" []
+            let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (Path.Combine(studyIdentifier, "isa.study.xlsx")) []
             [Study.fromParts info [] [] [] [assay] [] []]
         |> API.Investigation.setStudies investigation
         |> Investigation.toFile investigationFilePath
@@ -428,7 +428,7 @@ module AssayAPI =
                             |> API.Investigation.setStudies investigation
                         | None -> 
                             log.Trace($"Target Study with the identifier {studyIdentifier} does not exist in the investigation file, creating new study to move assay to.")
-                            let info = Study.StudyInfo.create targetStudyIdentifer "" "" "" "" "" []
+                            let info = Study.StudyInfo.create targetStudyIdentifer "" "" "" "" (Path.Combine(targetStudyIdentifer, "isa.study.xlsx")) []
                             Study.fromParts info [] [] [] [assay] [] []
                             |> API.Study.add studies
                             |> API.Investigation.setStudies investigation
