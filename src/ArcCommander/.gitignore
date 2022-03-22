@@ -8,8 +8,8 @@
 !.arc/**
 !assays/
 !assays/**
-!study/
-!study/**
+!studies/
+!studies/**
 !workflows/
 !workflows/**
 !runs/
