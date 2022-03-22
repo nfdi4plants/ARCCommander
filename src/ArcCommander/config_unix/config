@@ -27,7 +27,8 @@ dockerfile=Dockerfile
 
 [study]
 rootfolder=studies
-studyfile=README.md
+folders=protocols;resources
+files=README.md
 
 [run]
 rootfolder=runs

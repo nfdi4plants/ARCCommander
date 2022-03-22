@@ -10,6 +10,14 @@ open ISADotNet.XLSX
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs.
 module StudyAPI =
+    
+    /// API for working with study folders.
+    module StudyFolder =
+        
+        /// Checks if an study folder exists in the ARC.
+        let exists (arcConfiguration : ArcConfiguration) (identifier : string) =
+            StudyConfiguration.getFolderPath identifier arcConfiguration
+            |> System.IO.Directory.Exists
 
     module StudyFile =
     
@@ -51,10 +59,21 @@ module StudyAPI =
 
             log.Trace "Create study directory and file"
 
-            Directory.CreateDirectory studyFolderPath |> ignore
+            
+            if StudyFolder.exists arcConfiguration studyIdentifier then
+                log.Error($"Study folder with identifier {studyIdentifier} already exists.")
+            else
+                StudyConfiguration.getSubFolderPaths studyIdentifier arcConfiguration
+                |> Array.iter (
+                    Directory.CreateDirectory 
+                    >> fun dir -> File.Create(Path.Combine(dir.FullName, ".gitkeep")) |> ignore 
+                )
 
-            StudyFile.Study.init (Some study) studyIdentifier studyFilePath
+                StudyFile.Study.init (Some study) studyIdentifier studyFilePath
 
+                StudyConfiguration.getFilePaths studyIdentifier arcConfiguration
+                |> Array.iter (File.Create >> ignore)
+          
 
     /// Initializes a new empty study file in the ARC.
     let init (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
