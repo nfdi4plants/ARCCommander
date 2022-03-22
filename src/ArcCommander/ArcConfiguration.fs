@@ -49,7 +49,6 @@ type ArcConfiguration =
         "isamodel.assayfilename"            , "isa.assay.xlsx"
         
         "assay.rootfolder"                  , "assays"
-        //"assay.rootfolder.<assayIdentifier>.folder"
         "assay.folders"                     , "dataset;protocols"
         "assay.files"                       , "README.md"
         
@@ -57,7 +56,8 @@ type ArcConfiguration =
         "workflow.dockerfile"               , "Dockerfile"
         
         "study.rootfolder"                  , "studies"
-        "study.file"                        , "README.md"
+        "study.folders"                     , "protocols;resources"
+        "study.files"                       , "README.md"
         
         "run.rootfolder"                    , "runs"
         ]
@@ -365,3 +365,43 @@ module AssayConfiguration =
         | _ -> Array.empty
 
 
+/// Functions for retrieving Study related information from the configuration.
+module StudyConfiguration =
+
+    /// Returns the full path of the files associated with the study.
+    let getFilePaths assayIdentifier configuration =
+        let workDir = Map.find "workdir" configuration.General
+        let fileNames = Map.tryFind "files" configuration.Study
+        let rootFolder = Map.tryFind "rootfolder" configuration.Study
+        match fileNames,rootFolder with
+        | Some vs, Some r -> 
+            vs
+            |> splitValues
+            |> Array.map (fun v ->
+                Path.Combine([|workDir; r; assayIdentifier; v|])
+            )                
+        | _ -> [||]
+
+    /// Returns the full path of the study folder if it exists. Else returns None.
+    let tryGetFolderPath assayIdentifier configuration =
+        let workDir = Map.find "workdir" configuration.General
+        Map.tryFind "rootfolder" configuration.Study
+        |> Option.map (fun r -> Path.Combine([|workDir; r; assayIdentifier|]))
+
+    /// Returns the full path of the study folder.
+    let getFolderPath assayIdentifier configuration =
+        tryGetFolderPath assayIdentifier configuration 
+        |> Option.get
+
+    /// Returns the full path of the subFolders associated with the assay.
+    let getSubFolderPaths studyIdentifier configuration =
+        let subFolderNames = Map.tryFind "folders" configuration.Study
+        let assayFolder = tryGetFolderPath studyIdentifier configuration
+        match subFolderNames,assayFolder with
+        | Some vs, Some r -> 
+            vs
+            |> splitValues
+            |> Array.map (fun v ->
+                Path.Combine([|r; v|])
+            )
+        | _ -> Array.empty
