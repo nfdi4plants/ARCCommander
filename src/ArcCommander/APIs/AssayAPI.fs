@@ -372,7 +372,7 @@ module AssayAPI =
             investigation
         |> Investigation.toFile investigationFilePath
     
-    /// Deletes assay folder and underlying file structure of given assay.
+    /// Deletes an assay's folder and underlying file structure from the ARC.
     let delete (arcConfiguration : ArcConfiguration) (assayArgs : Map<string,Argument>) =
 
         let log = Logging.createLogger "AssayDeleteLog"
@@ -381,25 +381,35 @@ module AssayAPI =
 
         let isForced = (containsFlag "Force" assayArgs)
 
-        let assayIdentifier = getFieldValueByName "AssayIdentifier" assayArgs
+        let identifier = getFieldValueByName "AssayIdentifier" assayArgs
 
-        let assayFolderPath = 
-            AssayConfiguration.tryGetFolderPath assayIdentifier arcConfiguration
-            |> Option.get
+        let assayFolderPath = AssayConfiguration.getFolderPath identifier arcConfiguration
 
-        let isStandard =
-            let allFiles =
-                Directory.GetFiles(assayFolderPath, "*", SearchOption.AllDirectories)
+        /// Standard files that should be always present in an assay.
+        let standard = [|
+            IsaModelConfiguration.getAssayFilePath identifier arcConfiguration
+            |> Path.truncateFolderPath identifier
+            yield!
+                AssayConfiguration.getFilePaths identifier arcConfiguration
+                |> Array.map (Path.truncateFolderPath identifier)
+            yield!
+                AssayConfiguration.getSubFolderPaths identifier arcConfiguration
                 |> Array.map (
-                    fun f -> f.Split assayIdentifier
-                    >> Array.last
+                    fun p -> Path.Combine(p, ".gitkeep")
+                    >> Path.truncateFolderPath identifier
                 )
-            allFiles = [|
-                @"\README.md"
-                @"\isa.assay.xlsx"
-                @"\protocols\.gitkeep"
-                @"\dataset\.gitkeep"
-            |]
+        |]
+
+        /// Actual files found.
+        let allFiles =
+            Directory.GetFiles(assayFolderPath, "*", SearchOption.AllDirectories)
+            |> Array.map (Path.truncateFolderPath identifier)
+
+        /// A check if there are no files in the folder that are not standard and if there are no standard files missing.
+        let isStandard =
+            Array.forall (fun t -> Array.contains t allFiles) standard
+            &&
+            Array.forall (fun t -> Array.contains t standard) allFiles
 
         match isForced, isStandard with
         | true, _
