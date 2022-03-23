@@ -11,7 +11,7 @@ type ArcConfiguration =
         IsaModel    : Map<string,string>
         Assay       : Map<string,string>
         Workflow    : Map<string,string>
-        Study     : Map<string,string>
+        Study       : Map<string,string>
         Run         : Map<string,string>
     }
 
@@ -118,6 +118,14 @@ type ArcConfiguration =
         |]
         |> Seq.collect (Map.toSeq >> Seq.map snd)
 
+
+/// Functions for working with paths.
+module Path =
+
+    /// Takes a folder's path and returns the part of the path after a name.
+    let truncateFolderPath (name : string) (folderPath : string) = folderPath.Split name |> Array.last
+    
+
 /// Functions for retrieving general settings from the configuration.
 module GeneralConfiguration =
 
@@ -211,7 +219,6 @@ module IsaModelConfiguration =
         | [|assayIdentifier; fn |] when fn = name -> Some assayIdentifier
         | [|assayIdentifier; _ |] -> None
         | _ -> None
-        
 
     /// Returns the relative path of the assay file if it exists. Else returns None.
     let tryGetAssayFileName assayIdentifier (configuration : ArcConfiguration) =
@@ -271,23 +278,6 @@ module IsaModelConfiguration =
         tryGetStudyFilePath identifier configuration
         |> Option.get
 
-    /// Returns the path of the study's folder if it exists. Else returns None.
-    let tryGetStudyFolderPath identifier (configuration : ArcConfiguration) =
-        match tryGetStudyFilePath identifier configuration with
-        | Some sfp  -> Some (Directory.GetParent sfp).FullName
-        | _         -> None
-
-    /// Returns the path of the study's folder.
-    let getStudyFolderPath identifier (configuration : ArcConfiguration) =
-        tryGetStudyFolderPath identifier configuration
-        |> Option.get
-
-    /// Returns the full path of the study files located in the arc root folder.
-    let findStudyFilePaths (configuration : ArcConfiguration) =
-        let workDir = Map.find "workdir" configuration.General
-        Directory.GetFiles(workDir)
-        |> Array.filter (fun s -> s.EndsWith "_isa.study.xlsx")
-
     /// Returns the study identifiers of the study files located in the arc root folder.
     let findStudyIdentifiers (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
@@ -312,6 +302,7 @@ module IsaModelConfiguration =
     let getInvestigationFilePath (configuration : ArcConfiguration) =
         tryGetInvestigationFilePath configuration
         |> Option.get
+
 
 /// Functions for retrieving Assay related information from the configuration.
 module AssayConfiguration =
@@ -379,6 +370,12 @@ module AssayConfiguration =
 /// Functions for retrieving Study related information from the configuration.
 module StudyConfiguration =
 
+    /// Returns the full path of the study files located in the arc root folder.
+    let findFilePaths (configuration : ArcConfiguration) =
+        let workDir = Map.find "workdir" configuration.General
+        Directory.GetFiles(workDir)
+        |> Array.filter (fun s -> s.EndsWith "_isa.study.xlsx")
+
     /// Returns the full path of the files associated with the study.
     let getFilePaths assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General
@@ -390,16 +387,16 @@ module StudyConfiguration =
             |> splitValues
             |> Array.map (fun v ->
                 Path.Combine([|workDir; r; assayIdentifier; v|])
-            )                
+            )
         | _ -> [||]
 
-    /// Returns the full path of the study folder if it exists. Else returns None.
+    /// Returns the full path of the study's folder if it exists. Else returns None.
     let tryGetFolderPath assayIdentifier configuration =
         let workDir = Map.find "workdir" configuration.General
         Map.tryFind "rootfolder" configuration.Study
         |> Option.map (fun r -> Path.Combine([|workDir; r; assayIdentifier|]))
 
-    /// Returns the full path of the study folder.
+    /// Returns the full path of the study's folder.
     let getFolderPath assayIdentifier configuration =
         tryGetFolderPath assayIdentifier configuration 
         |> Option.get

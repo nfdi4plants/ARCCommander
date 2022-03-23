@@ -55,12 +55,9 @@ module StudyAPI =
 
             let studyFilePath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
 
-            let studyFolderPath = (Directory.GetParent studyFilePath).FullName
-
             let study = {study with FileName = Some (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration)}
 
             log.Trace "Create study directory and file"
-
             
             if StudyFolder.exists arcConfiguration studyIdentifier then
                 log.Error($"Study folder with identifier {studyIdentifier} already exists.")
@@ -238,7 +235,7 @@ module StudyAPI =
         init arcConfiguration studyArgs
         register arcConfiguration studyArgs
 
-    /// Deletes the study file from the ARC.
+    /// Deletes a study's folder and underlying file structure from the ARC.
     let delete (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
     
         let log = Logging.createLogger "StudyDeleteLog"
@@ -249,21 +246,33 @@ module StudyAPI =
 
         let identifier = getFieldValueByName "Identifier" studyArgs
 
-        let studyFolderPath = IsaModelConfiguration.getStudyFolderPath identifier arcConfiguration
+        let studyFolderPath = StudyConfiguration.getFolderPath identifier arcConfiguration
 
-        let isStandard =
-            let allFiles =
-                Directory.GetFiles(studyFolderPath, "*", SearchOption.AllDirectories)
+        /// Standard files that should always be present in a study.
+        let standard = [|
+            IsaModelConfiguration.getStudyFilePath identifier arcConfiguration 
+            |> Path.truncateFolderPath identifier
+            yield!
+                StudyConfiguration.getFilePaths identifier arcConfiguration 
+                |> Array.map (Path.truncateFolderPath identifier)
+            yield!
+                StudyConfiguration.getSubFolderPaths identifier arcConfiguration
                 |> Array.map (
-                    fun f -> f.Split identifier
-                    >> Array.last
+                    fun p -> Path.Combine(p, ".gitkeep")
+                    >> Path.truncateFolderPath identifier
                 )
-            allFiles = [|
-                @"\README.md"
-                @"\isa.study.xlsx"
-                @"\protocols\.gitkeep"
-                @"\resources\.gitkeep"
-            |]
+        |]
+
+        /// Actual files found.
+        let allFiles =
+            Directory.GetFiles(studyFolderPath, "*", SearchOption.AllDirectories)
+            |> Array.map (Path.truncateFolderPath identifier)
+        
+        /// A check if there are no files in the folder that are not standard and if there are no standard files missing.
+        let isStandard = 
+            Array.forall (fun t -> Array.contains t allFiles) standard
+            &&
+            Array.forall (fun t -> Array.contains t standard) allFiles
 
         match isForced, isStandard with
         | true, _
