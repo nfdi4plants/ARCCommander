@@ -269,8 +269,7 @@ module StudyAPI =
             |> Array.map (Path.truncateFolderPath identifier)
         
         /// A check if there are no files in the folder that are not standard.
-        let isStandard = 
-            Array.forall (fun t -> Array.contains t allFiles) standard
+        let isStandard = Array.forall (fun t -> Array.contains t standard) allFiles
 
         match isForced, isStandard with
         | true, _
