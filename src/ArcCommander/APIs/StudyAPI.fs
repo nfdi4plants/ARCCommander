@@ -55,12 +55,9 @@ module StudyAPI =
 
             let studyFilePath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
 
-            let studyFolderPath = (Directory.GetParent studyFilePath).FullName
-
             let study = {study with FileName = Some (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration)}
 
             log.Trace "Create study directory and file"
-
             
             if StudyFolder.exists arcConfiguration studyIdentifier then
                 log.Error($"Study folder with identifier {studyIdentifier} already exists.")
@@ -238,19 +235,51 @@ module StudyAPI =
         init arcConfiguration studyArgs
         register arcConfiguration studyArgs
 
-    /// Deletes the study file from the ARC.
+    /// Deletes a study's folder and underlying file structure from the ARC.
     let delete (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) = 
     
         let log = Logging.createLogger "StudyDeleteLog"
         
         log.Info("Start Study Delete")
 
+        let isForced = (containsFlag "Force" studyArgs)
+
         let identifier = getFieldValueByName "Identifier" studyArgs
 
-        let studyFilePath = IsaModelConfiguration.getStudyFileName identifier arcConfiguration
+        let studyFolderPath = StudyConfiguration.getFolderPath identifier arcConfiguration
 
-        try File.Delete studyFilePath with
-        | err -> log.Error($"Couldn't delete study file:\n {err.ToString()}")
+        /// Standard files that should always be present in a study.
+        let standard = [|
+            IsaModelConfiguration.getStudyFilePath identifier arcConfiguration 
+            |> Path.truncateFolderPath identifier
+            yield!
+                StudyConfiguration.getFilePaths identifier arcConfiguration 
+                |> Array.map (Path.truncateFolderPath identifier)
+            yield!
+                StudyConfiguration.getSubFolderPaths identifier arcConfiguration
+                |> Array.map (
+                    fun p -> Path.Combine(p, ".gitkeep")
+                    >> Path.truncateFolderPath identifier
+                )
+        |]
+
+        /// Actual files found.
+        let allFiles =
+            Directory.GetFiles(studyFolderPath, "*", SearchOption.AllDirectories)
+            |> Array.map (Path.truncateFolderPath identifier)
+        
+        /// A check if there are no files in the folder that are not standard.
+        let isStandard = Array.forall (fun t -> Array.contains t standard) allFiles
+
+        match isForced, isStandard with
+        | true, _
+        | false, true ->
+            try Directory.Delete(studyFolderPath, true) with
+            | err -> log.Error($"Cannot delete study:\n {err.ToString()}")
+        | _ ->
+            log.Error "Study contains user-specific files. Deletion aborted."
+            log.Info "Run the command with `--force` to force deletion."
+            
 
     /// Unregisters an existing study from the ARC's investigation file.
     let unregister (arcConfiguration : ArcConfiguration) (studyArgs : Map<string,Argument>) =
@@ -779,7 +808,7 @@ module StudyAPI =
                     | Some publications -> 
                         // TODO : Remove the "Some" when the
                         match API.Publication.tryGetByDoi doi publications with
-                        | Some publication ->                    
+                        | Some publication ->
                             ArgumentProcessing.Prompt.createIsaItemQuery editor
                                 (List.singleton >> Publications.toRows None) 
                                 (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
