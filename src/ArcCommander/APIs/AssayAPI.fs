@@ -109,7 +109,7 @@ module AssayAPI =
             match getFieldValueByName "StudyIdentifier" assayArgs with
             | "" -> assayIdentifier
             | s -> 
-                log.Trace("No Study Identifier given, use Assay Identifier instead.")
+                log.Info "No Study Identifier given, use Assay Identifier instead."
                 s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -120,52 +120,62 @@ module AssayAPI =
 
         let doc = Spreadsheet.fromFile assayFilepath true
 
-        // part that writes assay metadata into the assay file
-        try 
-            MetaData.overwriteWithAssayInfo "Assay" assay doc
+        // write assay metadata into the assay file
+        try MetaData.overwriteWithAssayInfo "Assay" assay doc
             
-        finally
-            Spreadsheet.close doc
+        finally Spreadsheet.close doc
 
-        // part that writes assay metadata into the investigation file
+        // write assay metadata into the study file
+        let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+        
+        let oldStudy = StudyFile.Study.fromFile studyFilepath
+
+        let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+        let newStudy = 
+            match oldStudy.Assays with
+            | Some assays ->
+                if API.Assay.existsByFileName assayFileName assays then
+                    API.Assay.updateByFileName updateOption assay assays
+                    |> API.Study.setAssays oldStudy
+                else 
+                    let msg = $"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}."
+                    if containsFlag "AddIfMissing" assayArgs then
+                        log.Warn msg
+                        log.Info "Registering assay as AddIfMissing Flag was set."
+                        API.Study.setAssays oldStudy [assay]
+                    else 
+                        log.Error msg
+                        log.Info "AddIfMissing argument can be used to register assay with the update command if it is missing."
+                        oldStudy
+            | None -> 
+                let msg = $"The study with the identifier {studyIdentifier} does not contain any assays."
+                if containsFlag "AddIfMissing" assayArgs then
+                    log.Warn msg
+                    log.Info "Registering assay as AddIfMissing Flag was set."
+                    [assay]
+                    |> API.Study.setAssays oldStudy
+                else 
+                    log.Error msg
+                    log.Info "AddIfMissing argument can be used to register assay with the update command if it is missing."
+                    oldStudy
+
+        try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
+
+        finally Spreadsheet.close oldStudyFile
+
+        // write assay metadata into the investigation file
         match investigation.Studies with
         | Some studies -> 
             match API.Study.tryGetByIdentifier studyIdentifier studies with
             | Some study -> 
-                match study.Assays with
-                | Some assays -> 
-                    if API.Assay.existsByFileName assayFileName assays then
-                        API.Assay.updateByFileName updateOption assay assays
-                        |> API.Study.setAssays study
-                    else
-                        let msg = $"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}."
-                        if containsFlag "AddIfMissing" assayArgs then 
-                            log.Warn($"{msg}")
-                            log.Info("Registering assay as AddIfMissing Flag was set.")
-                            API.Assay.add assays assay
-                            |> API.Study.setAssays study
-                        else 
-                            log.Error($"{msg}")
-                            log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
-                            study
-                | None -> 
-                    let msg = $"The study with the identifier {studyIdentifier} does not contain any assays."
-                    if containsFlag "AddIfMissing" assayArgs then
-                        log.Warn($"{msg}")
-                        log.Info("Registering assay as AddIfMissing Flag was set.")
-                        [assay]
-                        |> API.Study.setAssays study
-                    else 
-                        log.Error($"{msg}")
-                        log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
-                        study
-                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                API.Study.updateByIdentifier API.Update.UpdateAll newStudy studies
                 |> API.Investigation.setStudies investigation
             | None -> 
-                log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+                log.Error $"Study with the identifier {studyIdentifier} does not exist in the investigation file."
                 investigation
         | None -> 
-            log.Error("The investigation does not contain any studies.")
+            log.Error "The investigation does not contain any studies."
             investigation
         |> Investigation.toFile investigationFilePath
 
@@ -186,23 +196,16 @@ module AssayAPI =
 
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
-            | "" -> assayIdentifier
-            | s -> 
-                log.Trace("No Study Identifier given, use assayIdentifier instead.")
-                s
+            | "" -> 
+                log.Info "No Study Identifier given, use assayIdentifier instead."
+                assayIdentifier
+            | s -> s
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
         
         let investigation = Investigation.fromFile investigationFilePath
 
         let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
-
-        let compareAssayMetadata (assay1 : Assay) (assay2 : Assay) =
-            assay1.FileName             = assay2.FileName           &&
-            assay1.MeasurementType      = assay2.MeasurementType    &&
-            assay1.TechnologyType       = assay2.TechnologyType     &&
-            assay1.TechnologyPlatform   = assay2.TechnologyPlatform &&
-            assay1.Comments             = assay2.Comments
 
         // read assay metadata information from assay file
         let _, _, _, oldAssayAssayFile = AssayFile.Assay.fromFile assayFilepath
@@ -254,8 +257,8 @@ module AssayAPI =
         let doc = Spreadsheet.fromFile assayFilepath true
         
         try 
-            MetaData.overwriteWithAssayInfo "Investigation" newAssay doc
-                    
+            MetaData.overwriteWithAssayInfo "Assay" newAssay doc
+
         finally
             Spreadsheet.close doc
 
@@ -853,18 +856,18 @@ module AssayAPI =
             let doc = Spreadsheet.fromFile assayFilePath true
             
             try 
-                let persons = MetaData.getPersons "Investigation" doc
+                let persons = MetaData.getPersons "Assay" doc
 
                 if API.Person.existsByFullName firstName midInitials lastName persons then
                     let newPersons = API.Person.updateByFullName updateOption person persons
-                    MetaData.overwriteWithPersons "Investigation" newPersons doc
+                    MetaData.overwriteWithPersons "Assay" newPersons doc
                 else
                     let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}."
                     if containsFlag "AddIfMissing" personArgs then
                         log.Warn($"{msg}")
                         log.Info("Registering person as AddIfMissing Flag was set.")
                         let newPersons = API.Person.add persons person
-                        MetaData.overwriteWithPersons "Investigation" newPersons doc
+                        MetaData.overwriteWithPersons "Assay" newPersons doc
                     else log.Error($"{msg}")
 
             finally
@@ -891,7 +894,7 @@ module AssayAPI =
             let doc = Spreadsheet.fromFile assayFilePath true
 
             try
-                let persons = MetaData.getPersons "Investigation" doc
+                let persons = MetaData.getPersons "Assay" doc
 
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person ->
@@ -901,7 +904,7 @@ module AssayAPI =
                         person
                     |> fun p -> 
                         let newPersons = API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                        MetaData.overwriteWithPersons "Investigation" newPersons doc
+                        MetaData.overwriteWithPersons "Assay" newPersons doc
                 | None ->
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
@@ -949,10 +952,10 @@ module AssayAPI =
             let doc = Spreadsheet.fromFile assayFilePath true
 
             try
-                let persons = MetaData.getPersons "Investigation" doc
+                let persons = MetaData.getPersons "Assay" doc
 
                 let newPersons = API.Person.add persons person
-                MetaData.overwriteWithPersons "Investigation" newPersons doc
+                MetaData.overwriteWithPersons "Assay" newPersons doc
 
             finally
                 Spreadsheet.close doc
@@ -976,11 +979,11 @@ module AssayAPI =
             let doc = Spreadsheet.fromFile assayFilePath true
 
             try 
-                let persons = MetaData.getPersons "Investigation" doc
+                let persons = MetaData.getPersons "Assay" doc
 
                 if API.Person.existsByFullName firstName midInitials lastName persons then
                     let newPersons = API.Person.removeByFullName firstName midInitials lastName persons
-                    MetaData.overwriteWithPersons "Investigation" newPersons doc
+                    MetaData.overwriteWithPersons "Assay" newPersons doc
                 else
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")
 
@@ -1006,7 +1009,7 @@ module AssayAPI =
             let doc = Spreadsheet.fromFile assayFilePath true
             
             try
-                let persons = MetaData.getPersons "Investigation" doc
+                let persons = MetaData.getPersons "Assay" doc
 
                 match API.Person.tryGetByFullName firstName midInitials lastName persons with
                 | Some person ->
@@ -1038,7 +1041,7 @@ module AssayAPI =
 
                 let docs = assayFilePaths |> Array.map (fun afp -> Spreadsheet.fromFile afp true)
 
-                let allPersons = docs |> Array.map (MetaData.getPersons "Investigation")
+                let allPersons = docs |> Array.map (MetaData.getPersons "Assay")
 
                 (allPersons, assayIdentifiers)
                 ||> Array.iter2 (

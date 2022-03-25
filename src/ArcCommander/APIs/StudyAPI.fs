@@ -7,6 +7,7 @@ open System
 open System.IO
 open ISADotNet
 open ISADotNet.XLSX
+open FSharpSpreadsheetML
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs.
 module StudyAPI =
@@ -110,49 +111,59 @@ module StudyAPI =
         // ?TODO? <- Test this : Add updateoption which updates by existing values and appends list
         let updateOption = if containsFlag "ReplaceWithEmptyValues" studyArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting
 
-        let identifier = getFieldValueByName "Identifier" studyArgs
+        let studyIdentifier = getFieldValueByName "Identifier" studyArgs
 
-        let study = 
+        let newStudy = 
             let studyInfo = 
                 Study.StudyInfo.create
-                    (identifier)
+                    (studyIdentifier)
                     (getFieldValueByName "Title"                studyArgs)
                     (getFieldValueByName "Description"          studyArgs)
                     (getFieldValueByName "SubmissionDate"       studyArgs)
                     (getFieldValueByName "PublicReleaseDate"    studyArgs)
-                    (IsaModelConfiguration.getStudyFileName identifier arcConfiguration)
+                    (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration)
                     []
             Study.fromParts studyInfo [] [] [] [] [] [] 
+
+        let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+        
+        let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+        
+        // update study file
+        try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
+
+        finally Spreadsheet.close oldStudyFile
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
         let investigation = Investigation.fromFile investigationFilePath
 
+        // update investigation file
         match investigation.Studies with
         | Some studies -> 
-            if API.Study.existsByIdentifier identifier studies then
-                API.Study.updateByIdentifier updateOption study studies
+            if API.Study.existsByIdentifier studyIdentifier studies then
+                API.Study.updateByIdentifier updateOption newStudy studies
                 |> API.Investigation.setStudies investigation
             else 
-                let msg = $"Study with the identifier {identifier} does not exist in the investigation."
+                let msg = $"Study with the identifier {studyIdentifier} does not exist in the investigation."
                 if containsFlag "AddIfMissing" studyArgs then 
-                    log.Warn($"{msg}")
+                    log.Warn msg
                     log.Info("Registering study as AddIfMissing Flag was set.")
-                    API.Study.add studies study
+                    API.Study.add studies newStudy
                     |> API.Investigation.setStudies investigation
                 else 
-                    log.Error($"{msg}")
-                    log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
+                    log.Error msg
+                    log.Info("AddIfMissing argument can be used to register study with the update command if it is missing.")
                     investigation
         | None -> 
             let msg = "The investigation does not contain any studies."
             if containsFlag "AddIfMissing" studyArgs then 
-                log.Warn($"{msg}")
+                log.Warn msg
                 log.Info("Registering study as AddIfMissing Flag was set.")
-                [study]
+                [newStudy]
                 |> API.Investigation.setStudies investigation
             else 
-                log.Error($"{msg}")
+                log.Error msg
                 log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
                 investigation
         |> Investigation.toFile investigationFilePath
@@ -166,30 +177,60 @@ module StudyAPI =
         
         log.Info("Start Study Edit")
 
-        let identifier = getFieldValueByName "Identifier" studyArgs
+        let studyIdentifier = getFieldValueByName "Identifier" studyArgs
 
         let editor = GeneralConfiguration.getEditor arcConfiguration
+
+        let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+
+        let oldStudy = StudyFile.Study.fromFile studyFilepath
+
+        let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+        let editedStudy =
+            ArgumentProcessing.Prompt.createIsaItemQuery editor Study.StudyInfo.toRows 
+                (Study.StudyInfo.fromRows 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
+                oldStudy
+        
+        // edit study file
+        try StudyFile.MetaData.overwriteWithStudyInfo "Study" editedStudy oldStudyFile
+
+        finally Spreadsheet.close oldStudyFile
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
         let investigation = Investigation.fromFile investigationFilePath
 
+        let updateOption = if containsFlag "ReplaceWithEmptyValues" studyArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting
+
+        // edit investigation file
         match investigation.Studies with
         | Some studies -> 
-            match API.Study.tryGetByIdentifier identifier studies with
-            | Some study -> 
-                let editedStudy =
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor Study.StudyInfo.toRows 
-                        (Study.StudyInfo.fromRows 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
-                        study
-                API.Study.updateBy ((=) study) API.Update.UpdateAllAppendLists editedStudy studies
+            if API.Study.existsByIdentifier studyIdentifier studies then
+                API.Study.updateByIdentifier updateOption editedStudy studies
                 |> API.Investigation.setStudies investigation
-            | None -> 
-                log.Error($"Study with the identifier {identifier} does not exist in the investigation.")
-                investigation
+            else 
+                let msg = $"Study with the identifier {studyIdentifier} does not exist in the investigation."
+                if containsFlag "AddIfMissing" studyArgs then 
+                    log.Warn msg
+                    log.Info("Registering study as AddIfMissing Flag was set.")
+                    API.Study.add studies editedStudy
+                    |> API.Investigation.setStudies investigation
+                else 
+                    log.Error msg
+                    log.Info("AddIfMissing argument can be used to register study with the update command if it is missing.")
+                    investigation
         | None -> 
-            log.Error("The investigation does not contain any studies.")
-            investigation
+            let msg = "The investigation does not contain any studies."
+            if containsFlag "AddIfMissing" studyArgs then 
+                log.Warn msg
+                log.Info("Registering study as AddIfMissing Flag was set.")
+                [editedStudy]
+                |> API.Investigation.setStudies investigation
+            else 
+                log.Error msg
+                log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
+                investigation
         |> Investigation.toFile investigationFilePath
 
     /// Registers an existing study in the ARC's investigation file with the given study metadata contained in cliArgs.

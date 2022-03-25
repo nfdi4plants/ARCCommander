@@ -126,6 +126,38 @@ module Path =
 
     /// Takes a folder's path and returns the part of the path after a name.
     let truncateFolderPath (name : string) (folderPath : string) = folderPath.Split name |> Array.last
+
+/// Functions for comparing different types of ISA models with others of the same kind.
+module IsaModelComparison =
+
+    open ISADotNet
+    
+    /// Checks if two assays do not differ.
+    let compareAssayMetadata (assay1 : Assay) (assay2 : Assay) =
+        assay1.FileName             = assay2.FileName           &&
+        assay1.MeasurementType      = assay2.MeasurementType    &&
+        assay1.TechnologyType       = assay2.TechnologyType     &&
+        assay1.TechnologyPlatform   = assay2.TechnologyPlatform &&
+        assay1.Comments             = assay2.Comments           &&
+        assay1.DataFiles            = assay1.DataFiles
+
+    // Checks if two studies do not differ.
+    let compareStudyMetadata (study1 : Study) (study2 : Study) =
+        study1.Comments             = study2.Comments           &&
+        study1.Contacts             = study2.Contacts           &&
+        study1.Assays               = study2.Assays             &&
+        study1.Description          = study2.Description        &&
+        study1.FileName             = study2.FileName           &&
+        study1.Protocols            = study2.Protocols          &&
+        study1.ProcessSequence      = study2.ProcessSequence    &&
+        study1.Publications         = study2.Publications       &&
+        study1.PublicReleaseDate    = study2.PublicReleaseDate  &&
+        study1.Materials            = study2.Materials          &&
+        study1.Title                = study2.Title              &&
+        study1.SubmissionDate       = study2.SubmissionDate
+
+    //let compareAssayMetadataOfStudy (study1 : Study) (study2 : Study) =
+        
     
 
 /// Functions for retrieving general settings from the configuration.
