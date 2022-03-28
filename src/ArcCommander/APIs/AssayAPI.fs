@@ -229,7 +229,7 @@ module AssayAPI =
                         match API.Assay.tryGetByFileName assayFileName assays with
                         | Some oldAssayInvestigationFile -> 
                             // check if assay metadata from assay file and investigation file differ
-                            if compareAssayMetadata oldAssayInvestigationFile oldAssayAssayFile |> not then 
+                            if oldAssayInvestigationFile <> oldAssayAssayFile then 
                                 log.Warn("The assay metadata in the investigation file differs from that in the assay file.")
                             getNewAssay oldAssayAssayFile
                             // update assay metadata in investigation file
