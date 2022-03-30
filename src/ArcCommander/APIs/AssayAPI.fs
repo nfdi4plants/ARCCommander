@@ -229,17 +229,33 @@ module AssayAPI =
                         match API.Assay.tryGetByFileName assayFileName assays with
                         | Some oldAssayInvestigationFile -> 
                             // check if assay metadata from assay file and investigation file differ
-                            if oldAssayInvestigationFile <> oldAssayAssayFile then 
+                            if not <| IsaModelComparison.compareAssayMetadata oldAssayInvestigationFile oldAssayAssayFile then 
                                 log.Warn("The assay metadata in the investigation file differs from that in the assay file.")
-                            getNewAssay oldAssayAssayFile
-                            // update assay metadata in investigation file
-                            |> fun a -> 
-                                API.Assay.updateBy ((=) oldAssayInvestigationFile) API.Update.UpdateAll a assays
+                            let associatedStudyFilePath, associatedStudy = 
+                                match study.Identifier with
+                                | Some id ->
+                                    let sfp = IsaModelConfiguration.getStudyFilePath id arcConfiguration
+                                    Some sfp,
+                                    Some <| StudyFile.Study.fromFile sfp
+                                | None -> None, None
+                            let newAssay = getNewAssay oldAssayAssayFile
+                            if associatedStudy.IsNone then log.Warn "No study associated to this assay found."
+                            // update assay metadata in study file
+                            else // TO DO: Test this!
+                                let newStudy =
+                                    API.Assay.updateByFileName API.Update.UpdateAll newAssay assays
+                                    |> API.Study.setAssays associatedStudy.Value
+                                let oldStudyFile = Spreadsheet.fromFile associatedStudyFilePath.Value true
+                                try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
+                                finally Spreadsheet.close oldStudyFile
+                            let newStudy =
+                                API.Assay.updateBy ((=) oldAssayInvestigationFile) API.Update.UpdateAll newAssay assays
                                 |> API.Study.setAssays study
-                                |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
-                                |> API.Investigation.setStudies investigation
-                                |> Investigation.toFile investigationFilePath
-                                a
+                            // update assay metadata in investigation file
+                            API.Study.updateByIdentifier API.Update.UpdateAll newStudy studies
+                            |> API.Investigation.setStudies investigation
+                            |> Investigation.toFile investigationFilePath
+                            newAssay
                         | None -> 
                             log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}. It is advised to register the assay in the investigation file via \"arc a register\".")
                             getNewAssay oldAssayAssayFile
@@ -256,11 +272,8 @@ module AssayAPI =
         // part that writes assay metadata into the assay file
         let doc = Spreadsheet.fromFile assayFilepath true
         
-        try 
-            MetaData.overwriteWithAssayInfo "Assay" newAssay doc
-
-        finally
-            Spreadsheet.close doc
+        try MetaData.overwriteWithAssayInfo "Assay" newAssay doc
+        finally Spreadsheet.close doc
 
 
     /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in the assay file's investigation sheet.
