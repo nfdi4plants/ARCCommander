@@ -1,8 +1,12 @@
 # ArcCommander
 
-ArcCommander is a command line tool to create, manage and share your ARCs. 
+ArcCommander is a command line tool to create, manage and share your ARCs.
 
 ## Install and start
+
+- [Windows](#windows)
+- [Linux](#linux)
+- [MacOS](#macos)
 
 Head over to [Releases](https://github.com/nfdi4plants/arcCommander/releases). Download the newest release for the OS you use.
 
