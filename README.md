@@ -1,8 +1,12 @@
 # ArcCommander
 
-ArcCommander is a command line tool to create, manage and share your ARCs. 
+ArcCommander is a command line tool to create, manage and share your ARCs.
 
 ## Install and start
+
+- [Windows](#windows)
+- [Linux](#linux)
+- [MacOS](#macos)
 
 Head over to [Releases](https://github.com/nfdi4plants/arcCommander/releases). Download the newest release for the OS you use.
 
@@ -31,51 +35,83 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
 
 ### Linux
 
-1. Open the shell (Click on the Dash icon -> type in "Terminal" -> Click the Terminal application icon)
-2. Change to the directory where you downloaded the ArcCommander, e.g. `cd home/~/Downloads`
-3. Move the ArcCommander to a folder that fits your needs (this can be the directory of your ARC) via (examplarily) `mv arc home/~/ArcCommander/`
-    - Use `sudo` if you don't have write access
-4. Add this folder to your PATH: type in `export PATH=$PATH:~/ArcCommander`, this allows you to start the ArcCommander from any folder
-5. Change to a folder in which you want to initialize an ARC
-6. Run the ArcCommander by executing `arc`
+1. Download the latest ArcCommander release
+
+    ```bash
+    wget https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.1-linux.x64/arc
+    ```
+
+1. Make it executable
+
+    ```bash
+    chmod u+x arc
+    ```
+
+1. Move to suitable place (e.g. in your home directory or to `/home/bin/` to make it accessible for all users)
+
+    ```bash
+    if ! [ -d "$HOME/bin" ]; then mkdir "$HOME/bin"; fi # If it does not exist, create a folder `bin` in your home directory. 
+    mv arc $HOME/bin/ # move executable to that folder
+    ```
+
+1. You might have to start a fresh terminal or `source ~/.profile`
+
+1. Test that ArcCommander is properly installed
+
+    ```bash
+    arc --version # check the current version 
+    ```
+
+You should see the following or similar message:
+
+> Start processing parameterless command.  
+> Start Arc Version  
+> v0.3.1
+> Done processing command.  
 
 ### MacOS
 
-1. Download the asset called `arc` from the [latest osx release](https://github.com/nfdi4plants/arcCommander/releases) to your Downloads folder. 
 1. Open a Terminal (Applications -> Utilities -> Terminal)
-1. Copy/paste the following commands into your terminal and execute them to (a) change to the directory where you downloaded the arc, (b) change permissions to make the arcCommander executable and (c) move the arcCommander program to a location from where it is executable via the terminal:
-    
+2. Copy/paste the following commands into your terminal and execute them to (a) download the latest ArcCommander release, (b) change permissions to make the arcCommander executable and (c) move the arcCommander program to a location from where it is executable via the terminal:
+
     ```bash
-    cd ~/Downloads/
-    chmod a+x arc
+    wget https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.1-osx.x64/arc
+    chmod u+x arc
     mv arc /usr/local/bin/
     ```
-    
-1. Run arcCommander from the terminal by executing `arc`. 
-1. MacOS security note: On first execution, MacOS will not allow arc to be run. Instead it opens a pop-up: 
-    
+
+3. Run arcCommander from the terminal by executing:
+
+    ```bash
+    arc
+    ```
+
+4. MacOS security note: On first execution, MacOS will not allow arc to be run. Instead it opens a pop-up:
+
     > "arc" cannot be opened because it is from an unidentified developer
-    
-1. Open the Security Panel in system Preferences (Applications -> System Preferences -> "Security & Privacy") or by executing the follwing command in your terminal  :
+
+5. Open the Security Panel in system Preferences (Applications -> System Preferences -> "Security & Privacy") or by executing the following command in your terminal:
 
     ```bash
     open "x-apple.systempreferences:com.apple.preference.security"
     ```
-    
-In the "General" tab click the bottom-right button "Allow Anyway" right next to 
-    > arc was blocked from use because it is not from an identified developer. 
-1. Head back to the terminal and execute `arc` again. Another pop-up will ask you to confirm by clicking "Open". 
-1. Check that arc is properly installed by executing
-    
+
+    In the "General" tab click the bottom-right button "Allow Anyway" right next to
+    > arc was blocked from use because it is not from an identified developer.
+
+6. Head back to the terminal and execute `arc` again. Another pop-up will ask you to confirm by clicking "Open".
+
+7. Check that arc is properly installed by executing
+
     ```bash
     arc --version
     ```
 
-You should see the following or similar message: 
+You should see the following or similar message:
 
 > Start processing parameterless command.  
 > Start Arc Version  
-> v0.2.1  
+> v0.3.1
 > Done processing command.  
 
 ---
