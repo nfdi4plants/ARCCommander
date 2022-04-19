@@ -75,9 +75,9 @@ You should see the following or similar message:
 2. Copy/paste the following commands into your terminal and execute them to (a) download the latest ArcCommander release, (b) change permissions to make the arcCommander executable and (c) move the arcCommander program to a location from where it is executable via the terminal:
 
     ```bash
-    wget https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.1-osx.x64/arc
-    chmod u+x arc
-    mv arc /usr/local/bin/
+    curl -L https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.1-osx.x64/arc > arc
+    chmod u+x ./arc
+    mv ./arc /usr/local/bin/
     ```
 
 3. Run arcCommander from the terminal by executing:
