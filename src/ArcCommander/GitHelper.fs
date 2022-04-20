@@ -118,11 +118,12 @@ module GitHelper =
         executeGitCommand dir "push"
 
     /// Stores git credentials to a git host using the git credential interface
-    let storeCredentials (log : NLog.Logger) host username password =
+    let storeCredentials (log : NLog.Logger) (host : string) username password =
 
         log.Info($"INFO: Start git credential storing")
 
         let protocol = "https"
+        let host = host.Replace($"{protocol}://","")
         let path = $"git:{protocol}://{host}"
     
         let procStartInfo = 
@@ -144,12 +145,12 @@ module GitHelper =
         
         let errorHandler (_sender:obj) (args:DataReceivedEventArgs) = 
             
-            if args.Data.Contains "trace:" then
-                outputs.Add args.Data
-                log.Trace($"{args.Data}")
-            else 
+            if args.Data.ToLower().Contains "error" then
                 errors.Add args.Data
                 log.Error($"{args.Data}")
+            else 
+                outputs.Add args.Data
+                log.Trace($"{args.Data}")
 
         let p = new Process(StartInfo = procStartInfo)
         
@@ -164,11 +165,17 @@ module GitHelper =
         
         log.Trace($"Start feeding credentials into git credential interface")
 
+        log.Trace($"url={path}")
         p.StandardInput.WriteLine $"url={path}"
+        log.Trace($"username={username}")
         p.StandardInput.WriteLine $"username={username}"
+        log.Trace($"host={host}")
         p.StandardInput.WriteLine $"host={host}"
+        log.Trace($"path={path}")
         p.StandardInput.WriteLine $"path={path}"
+        log.Trace($"protocol={protocol}")
         p.StandardInput.WriteLine $"protocol={protocol}"
+        log.Trace($"password={password}")
         p.StandardInput.WriteLine $"password={password}"
         p.StandardInput.WriteLine ""
 

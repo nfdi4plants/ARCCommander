@@ -168,7 +168,7 @@ module Authentication =
 
             t.Wait()
             t.Result
-            |> Result.map (fun result -> IdentityToken.ofJwt result.IdentityToken)
+            //|> Result.map (fun result -> IdentityToken.ofJwt result.IdentityToken)
 
     module OAuth2 =
 
