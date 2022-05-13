@@ -1,4 +1,23 @@
-﻿### 0.3.1+29ae936 (Released 2022-3-22)
+﻿### 0.3.2+bf0f956 (Released 2022-5-13)
+* Additions:
+    * latest commit #bf0f956
+    * [[#ab5d5e3](https://github.com/nfdi4plants/arcCommander/commit/ab5d5e3b3b8928df89a9af248af9ba6969d55210)] update config to new nfdi4plants gitlab authentication settings
+    * [[#4760cae](https://github.com/nfdi4plants/arcCommander/commit/4760cae9eb70f1982fd041099eca156878c07761)] update access token getter
+    * [[#9ff7865](https://github.com/nfdi4plants/arcCommander/commit/9ff7865d06a10fc943785ad10d768e379eeb41d6)] add TOC
+    * [[#00c1c4f](https://github.com/nfdi4plants/arcCommander/commit/00c1c4f9c818d7fa5c87e4687fe6a3091e73ee49)] edit installation instructions
+    * [[#936b279](https://github.com/nfdi4plants/arcCommander/commit/936b2797e87cead881fdba379fb8590cb775781c)] adapt linux instructions
+    * [[#e7c91b9](https://github.com/nfdi4plants/arcCommander/commit/e7c91b95ea0196eb727430e7583ab6a43476216c)] :ok_hand: Apply code review changes
+    * [[#046bbf1](https://github.com/nfdi4plants/arcCommander/commit/046bbf1a3bccde100e025d04ccb4e6bf7d48a740)] :construction: Update deletion functionality for assays and studies
+* Deletions:
+    * [[#88418b0](https://github.com/nfdi4plants/arcCommander/commit/88418b08e480c8a81044e0b3a1ffb68565e72471)] :hammer: Update assay delete
+    * [[#a934424](https://github.com/nfdi4plants/arcCommander/commit/a934424a2cd64d9e89110740ae2bf6667932c912)] :hammer: Update study delete
+* Bugfixes:
+    * [[#bf0f956](https://github.com/nfdi4plants/arcCommander/commit/bf0f956e5b893d2fb68fbadcdfd449d6fc811579)] small fix to git credential storing
+    * [[#f46f809](https://github.com/nfdi4plants/arcCommander/commit/f46f809d18b3f06f1b7171da779eca5662de187a)] quickfix: update macos instructions
+    * [[#9dfc755](https://github.com/nfdi4plants/arcCommander/commit/9dfc755baa9e4b407d5026504b0b0ebcb426b207)] :twisted_rightwards_arrows: Merge pull request #123 from nfdi4plants/bugfixes
+    * [[#b6f7a9a](https://github.com/nfdi4plants/arcCommander/commit/b6f7a9a20d4945fbff8c7e44246729a40d1a3726)] :bug: Fix file recognition bug
+
+### 0.3.1+29ae936 (Released 2022-3-22)
 * Additions:
     * latest commit #29ae936
     * [[#2472be4](https://github.com/nfdi4plants/arcCommander/commit/2472be44a050079c0722ad209dba354429d1898c)] Merge pull request #119 from nfdi4plants/Brilator-patch-1
