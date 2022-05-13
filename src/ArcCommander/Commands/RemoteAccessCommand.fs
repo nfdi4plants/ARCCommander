@@ -8,7 +8,7 @@ open AccessToken
 /// Remote access subcommand verbs
 type RemoteAccessCommand =
 
-    | [<CliPrefix(CliPrefix.None)>] AccessToken of access_token_verbs   : ParseResults<AccessTokenCommand>
+    | [<AltCommandLine("token")>][<CliPrefix(CliPrefix.None)>] AccessToken of access_token_verbs   : ParseResults<AccessTokenCommand>
 
 
     interface IArgParserTemplate with

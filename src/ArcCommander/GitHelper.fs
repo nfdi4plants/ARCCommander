@@ -145,12 +145,19 @@ module GitHelper =
         
         let errorHandler (_sender:obj) (args:DataReceivedEventArgs) = 
             
-            if args.Data.ToLower().Contains "error" then
-                errors.Add args.Data
-                log.Error($"{args.Data}")
-            else 
-                outputs.Add args.Data
-                log.Trace($"{args.Data}")
+            try
+
+                if args.Data.ToLower().Contains "error" then
+                    errors.Add args.Data
+                    log.Error($"{args.Data}")
+                else 
+                    outputs.Add args.Data
+                    log.Trace($"{args.Data}")
+
+            with
+            | err -> 
+                if err.Message.Contains "Object reference not set to an instance of an object" |> not then
+                    log.Error($"{err}")
 
         let p = new Process(StartInfo = procStartInfo)
         
