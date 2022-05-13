@@ -38,9 +38,11 @@ type ArcConfiguration =
         "general.verbosity"                 , "1"
         "general.editor"                    , editor
         "general.rootfolder"                , ".arc"
-        "general.verbosity"                 , "1"
         "general.gitlfsbytethreshold"       , "150000000"
         "general.gitlfsrules"               , "**/dataset/**"
+        "general.authclientid"              , "80f4fbff13c3a27713860b6e71755fb3cba7adf644cf71a7cfcc9c1f67ac3680"
+        "general.authscope"                 , "openid email profile read_repository write_repository"
+        "general.authredirecturi"           , "http://localhost:7890"
         "general.forceeditor"               , "false"
         
         "isamodel.investigationfilename"    , "isa.investigation.xlsx"
