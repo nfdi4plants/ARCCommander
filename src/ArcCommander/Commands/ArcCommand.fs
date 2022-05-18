@@ -3,6 +3,7 @@
 open Argu 
 open ArcCommander.CLIArguments
 
+[<HelpFlags([|"--help"; "-h"|])>]
 type ArcCommand =
     ///Parameters
     | [<AltCommandLine("-p")>][<Unique>]                        WorkingDir  of working_directory : string
