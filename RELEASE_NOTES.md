@@ -1,4 +1,14 @@
-﻿### 0.3.2+bf0f956 (Released 2022-5-13)
+﻿### 0.3.3+1a582b2 (Released 2022-5-18)
+* Additions:
+    * latest commit #1a582b2
+    * [[#27adc34](https://github.com/nfdi4plants/arcCommander/commit/27adc34aec45370b1886e1ecc3336c8c729a0ea6)] bump to 0.3.2
+    * [[#39cd804](https://github.com/nfdi4plants/arcCommander/commit/39cd8040217d9ae1ca97ff6487a960406a0ba6a3)] update hard-coded links to arc mac/linux assests
+    * [[#018bdf3](https://github.com/nfdi4plants/arcCommander/commit/018bdf32ab1c275ae55638334b5db4e693f94258)] :sparkles: Add `-h` as short option for help
+    * [[#1a582b2](https://github.com/nfdi4plants/arcCommander/commit/1a582b2adc4157ffd3abeacd1f7a51502933d812)] :twisted_rightwards_arrows: Merge pull request #137 from nfdi4plants/helpShortOption
+* Bugfixes:
+    * [[#7deebb3](https://github.com/nfdi4plants/arcCommander/commit/7deebb3b414ddc2d1734283d12b2faf455474db5)] Merge pull request #136 from nfdi4plants/quickfix_installation
+
+### 0.3.2+bf0f956 (Released 2022-5-13)
 * Additions:
     * latest commit #bf0f956
     * [[#ab5d5e3](https://github.com/nfdi4plants/arcCommander/commit/ab5d5e3b3b8928df89a9af248af9ba6969d55210)] update config to new nfdi4plants gitlab authentication settings
