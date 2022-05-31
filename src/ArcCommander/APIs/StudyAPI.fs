@@ -457,7 +457,7 @@ module StudyAPI =
 
             let updateOption = if containsFlag "ReplaceWithEmptyValues" personArgs then API.Update.UpdateAll else API.Update.UpdateByExisting            
 
-            let lastName    = getFieldValueByName "LastName"    personArgs                   
+            let lastName    = getFieldValueByName "LastName"    personArgs
             let firstName   = getFieldValueByName "FirstName"   personArgs
             let midInitials = getFieldValueByName "MidInitials" personArgs
 

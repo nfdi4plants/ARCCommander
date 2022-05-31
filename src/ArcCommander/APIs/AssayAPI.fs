@@ -240,14 +240,34 @@ module AssayAPI =
                                 | None -> None, None
                             let newAssay = getNewAssay oldAssayAssayFile
                             if associatedStudy.IsNone then log.Warn "No study associated to this assay found."
-                            // update assay metadata in study file
-                            else // TO DO: Test this!
+                            else
                                 let newStudy =
                                     API.Assay.updateByFileName API.Update.UpdateAll newAssay assays
                                     |> API.Study.setAssays associatedStudy.Value
+                                let oldAssayStudyFile = 
+                                    let studyStudyFile = StudyFile.Study.fromFile associatedStudyFilePath.Value
+                                    match studyStudyFile.Assays with
+                                        | Some studyAssays ->
+                                            let assocAssay = 
+                                                studyAssays
+                                                |> List.tryFind (fun t -> t.ID = newAssay.ID)
+                                            match assocAssay with
+                                            | Some aa -> Some aa
+                                            | None -> // might actually not be possible
+                                                log.Warn "No assay found in associated study file."
+                                                None
+                                        | None -> // might actually not be possible
+                                            log.Warn "Associated study file does not contain any assays."
+                                            None
+                                match oldAssayStudyFile with
+                                | Some oasf -> 
+                                    if not <| IsaModelComparison.compareAssayMetadata oldAssayAssayFile oasf then
+                                        log.Warn("The assay metadata in the study file differs from that in the assay file.")
+                                | None -> ()
                                 let oldStudyFile = Spreadsheet.fromFile associatedStudyFilePath.Value true
                                 try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
                                 finally Spreadsheet.close oldStudyFile
+                            // update assay metadata in study file
                             let newStudy =
                                 API.Assay.updateBy ((=) oldAssayInvestigationFile) API.Update.UpdateAll newAssay assays
                                 |> API.Study.setAssays study
