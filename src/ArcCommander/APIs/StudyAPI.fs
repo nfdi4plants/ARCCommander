@@ -487,6 +487,62 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
+            let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+
+            let oldStudy = StudyFile.Study.fromFile studyFilepath
+
+            log.Info "Writing into Study file"
+
+            // write into Study file
+            match oldStudy.Contacts with
+            | Some persons ->
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+
+                    let newStudy = 
+                        API.Person.updateByFullName updateOption person persons
+                        |> API.Study.setContacts oldStudy
+
+                    let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+                    try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
+
+                    finally Spreadsheet.close oldStudyFile
+
+                else 
+
+                    let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
+                    if containsFlag "AddIfMissing" personArgs then
+                        log.Warn($"{msg}")
+                        log.Info("Registering person as AddIfMissing Flag was set.")
+                        let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+                        try StudyFile.MetaData.overwriteWithStudyInfo "Study" (API.Person.add persons person |> API.Study.setContacts oldStudy) oldStudyFile
+
+                        finally Spreadsheet.close oldStudyFile
+                        
+                    else 
+                        log.Error($"{msg}")
+                        log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
+
+            | None -> 
+
+                let msg = $"The study with the identifier {studyIdentifier} does not contain any persons."
+                if containsFlag "AddIfMissing" personArgs then
+                    log.Warn($"{msg}")
+                    log.Info("Registering person as AddIfMissing Flag was set.")
+                    
+                    let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+                    try StudyFile.MetaData.overwriteWithStudyInfo "Study" ([person] |> API.Study.setContacts oldStudy) oldStudyFile
+
+                    finally Spreadsheet.close oldStudyFile
+                else 
+                    log.Error($"{msg}")
+                    log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
+
+            log.Info "Writing into Investigation file"
+            
+            // write into Investigation file
             match investigation.Studies with
             | Some studies -> 
                 match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -548,6 +604,52 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
+            let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+
+            let oldStudy = StudyFile.Study.fromFile studyFilepath
+
+            log.Info "Writing into Study file"
+
+            // define new study and write into Study file
+            let newStudy =
+
+                match oldStudy.Contacts with
+                | Some persons ->
+                
+                    match API.Person.tryGetByFullName firstName midInitials lastName persons with
+                    | Some person ->
+
+                        let newStudy = 
+                            ArgumentProcessing.Prompt.createIsaItemQuery editor
+                                (List.singleton >> Contacts.toRows None) 
+                                (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
+                                person
+                            |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
+                            |> API.Study.setContacts oldStudy
+
+                        let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+                        try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
+
+                        finally Spreadsheet.close oldStudyFile
+
+                        newStudy
+
+                    | None -> 
+
+                        log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
+
+                        oldStudy
+
+                | None -> 
+                        
+                        log.Error($"The study with the identifier {studyIdentifier} does not contain any persons.")
+
+                        oldStudy
+
+            log.Info "Writing into Investigation file"
+            
+            // write into Investigation file
             match investigation.Studies with
             | Some studies -> 
                 match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -556,13 +658,7 @@ module StudyAPI =
                     | Some persons -> 
                         match API.Person.tryGetByFullName firstName midInitials lastName persons with
                         | Some person -> 
-                            ArgumentProcessing.Prompt.createIsaItemQuery editor
-                                (List.singleton >> Contacts.toRows None) 
-                                (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
-                                person
-                            |> fun p -> API.Person.updateBy ((=) person) API.Update.UpdateAll p persons
-                            |> API.Study.setContacts study
-                            |> fun s -> API.Study.updateByIdentifier API.Update.UpdateAll s studies
+                            API.Study.updateByIdentifier API.Update.UpdateAll newStudy studies
                             |> API.Investigation.setStudies investigation
                         | None ->
                             log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
@@ -615,6 +711,46 @@ module StudyAPI =
             
             let investigation = Investigation.fromFile investigationFilePath
 
+            let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+
+            let oldStudy = StudyFile.Study.fromFile studyFilepath
+
+            log.Info "Writing into Study file"
+
+            // write into Study file
+            match oldStudy.Contacts with
+            | Some persons ->
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+
+                    log.Info($"Person with the name {firstName} {midInitials} {lastName} already exists in the investigation file.")
+
+                else 
+
+                    let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+                    try StudyFile.MetaData.overwriteWithStudyInfo "Study" (API.Person.add persons person |> API.Study.setContacts oldStudy) oldStudyFile
+
+                    finally Spreadsheet.close oldStudyFile
+
+            | None -> 
+
+                let msg = $"The study with the identifier {studyIdentifier} does not contain any persons."
+                if containsFlag "AddIfMissing" personArgs then
+                    log.Warn($"{msg}")
+                    log.Info("Registering person as AddIfMissing Flag was set.")
+                    
+                    let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+                    try StudyFile.MetaData.overwriteWithStudyInfo "Study" ([person] |> API.Study.setContacts oldStudy) oldStudyFile
+
+                    finally Spreadsheet.close oldStudyFile
+                else 
+                    log.Error($"{msg}")
+                    log.Trace("AddIfMissing argument can be used to register person with the update command if it is missing.")
+
+            log.Info "Writing into Investigation file"
+            
+            // write into Investigation file
             match investigation.Studies with
             | Some studies -> 
                 match API.Study.tryGetByIdentifier studyIdentifier studies with
@@ -656,7 +792,37 @@ module StudyAPI =
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
             let investigation = Investigation.fromFile investigationFilePath
+
+            let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
+
+            let oldStudy = StudyFile.Study.fromFile studyFilepath
+
+            log.Info "Writing into Study file"
+
+            // write into Study file
+            match oldStudy.Contacts with
+            | Some persons ->
+
+                if API.Person.existsByFullName firstName midInitials lastName persons then
+                    let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+                    
+                    let newStudy =
+                        API.Person.removeByFullName firstName midInitials lastName persons
+                        |> API.Study.setContacts oldStudy
+
+                    try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
+
+                    finally Spreadsheet.close oldStudyFile
+
+                else log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
+
+            | None -> 
+
+                log.Error $"The study with the identifier {studyIdentifier} does not contain any persons."
             
+            log.Info "Writing into Investigation file"
+
+            // write into Investigation file
             match investigation.Studies with
             | Some studies -> 
                 match API.Study.tryGetByIdentifier studyIdentifier studies with
