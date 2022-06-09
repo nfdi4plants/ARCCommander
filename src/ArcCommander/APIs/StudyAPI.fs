@@ -128,6 +128,8 @@ module StudyAPI =
         let studyFilepath = IsaModelConfiguration.getStudyFilePath studyIdentifier arcConfiguration
         
         let oldStudyFile = Spreadsheet.fromFile studyFilepath true
+
+        log.Info "Writing into Study file"
         
         // update study file
         try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
@@ -137,6 +139,8 @@ module StudyAPI =
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
        
         let investigation = Investigation.fromFile investigationFilePath
+
+        log.Info "Writing into Investigation file"
 
         // update investigation file
         match investigation.Studies with
@@ -191,6 +195,8 @@ module StudyAPI =
             ArgumentProcessing.Prompt.createIsaItemQuery editor Study.StudyInfo.toRows 
                 (Study.StudyInfo.fromRows 1 >> fun (_,_,_,item) -> Study.fromParts item [] [] [] [] [] []) 
                 oldStudy
+
+        log.Info "Writing into Study file"
         
         // edit study file
         try StudyFile.MetaData.overwriteWithStudyInfo "Study" editedStudy oldStudyFile
@@ -202,6 +208,8 @@ module StudyAPI =
         let investigation = Investigation.fromFile investigationFilePath
 
         let updateOption = if containsFlag "ReplaceWithEmptyValues" studyArgs then API.Update.UpdateAllAppendLists else API.Update.UpdateByExisting
+
+        log.Info "Writing into Investigation file"
 
         // edit investigation file
         match investigation.Studies with
@@ -428,13 +436,13 @@ module StudyAPI =
         if not onlyRegistered.IsEmpty then
             log.Warn("The ARC contains following registered studies that have no associated file:")
             onlyRegistered
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can init the study file using \"arc s init\"")
 
         if not onlyInitialized.IsEmpty then
             log.Warn("The ARC contains study files with the following identifiers not registered in the investigation:")
             onlyInitialized
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can register the study using \"arc s register\"")
 
         if combined.IsEmpty then
@@ -861,28 +869,32 @@ module StudyAPI =
 
             let studyIdentifier = getFieldValueByName "StudyIdentifier" personArgs
 
-            let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
-            
-            let investigation = Investigation.fromFile investigationFilePath
 
-            match investigation.Studies with
-            | Some studies -> 
-                match API.Study.tryGetByIdentifier studyIdentifier studies with
-                | Some study -> 
-                    match study.Contacts with
-                    | Some persons -> 
-                        match API.Person.tryGetByFullName firstName midInitials lastName persons with
-                        | Some person ->
-                            [person]
-                            |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
-                            |> log.Debug
-                        | None -> log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
-                    | None -> 
-                        log.Error($"The study with the identifier {studyIdentifier} does not contain any persons.")
-                | None -> 
-                    log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
-            | None -> 
-                log.Error("The investigation does not contain any studies.")
+
+            // COMMENT: Deprecated. Person information from Study file has higher priority and shall be displayed instead.
+
+            //let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
+            
+            //let investigation = Investigation.fromFile investigationFilePath
+
+            //match investigation.Studies with
+            //| Some studies -> 
+            //    match API.Study.tryGetByIdentifier studyIdentifier studies with
+            //    | Some study -> 
+            //        match study.Contacts with
+            //        | Some persons -> 
+            //            match API.Person.tryGetByFullName firstName midInitials lastName persons with
+            //            | Some person ->
+            //                [person]
+            //                |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
+            //                |> log.Debug
+            //            | None -> log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")
+            //        | None -> 
+            //            log.Error($"The study with the identifier {studyIdentifier} does not contain any persons.")
+            //    | None -> 
+            //        log.Error($"Study with the identifier {studyIdentifier} does not exist in the investigation file.")
+            //| None -> 
+            //    log.Error("The investigation does not contain any studies.")
 
 
         /// Lists the full names of all persons included in the investigation.

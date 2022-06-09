@@ -118,6 +118,8 @@ module AssayAPI =
         
         let assayFilepath = IsaModelConfiguration.tryGetAssayFilePath assayIdentifier arcConfiguration |> Option.get
 
+        log.Info "Writing into Assay file"
+
         let doc = Spreadsheet.fromFile assayFilepath true
 
         // write assay metadata into the assay file
@@ -163,6 +165,8 @@ module AssayAPI =
         try StudyFile.MetaData.overwriteWithStudyInfo "Study" newStudy oldStudyFile
 
         finally Spreadsheet.close oldStudyFile
+
+        log.Info "Writing into Investigation file"
 
         // write assay metadata into the investigation file
         match investigation.Studies with
@@ -217,6 +221,8 @@ module AssayAPI =
                 (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                 oldAssay
         
+        log.Info "Writing into Investigation file"
+
         // read assay metadata information from investigation file, check with assay metadata from assay file, 
         // update assay metadata in investigation file and return new assay
         let newAssay = 
@@ -288,6 +294,8 @@ module AssayAPI =
             | None -> 
                 log.Error($"The investigation does not contain any studies. It is advised to register the assay with the identifier {assayIdentifier} in the investigation file via \"arc a register\".")
                 getNewAssay oldAssayAssayFile
+
+        log.Info "Writing into Assay file"
 
         // part that writes assay metadata into the assay file
         let doc = Spreadsheet.fromFile assayFilepath true
@@ -616,13 +624,13 @@ module AssayAPI =
         if not onlyRegistered.IsEmpty then
             log.Warn("The ARC contains following registered assays that have no associated folders:")
             onlyRegistered
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can init the assay folder using \"arc a init\".")
 
         if not onlyInitialized.IsEmpty then
             log.Warn("The ARC contains assay folders with the following identifiers not registered in the investigation:")
             onlyInitialized
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can register the assay using \"arc a register\".")
 
         if combined.IsEmpty then
