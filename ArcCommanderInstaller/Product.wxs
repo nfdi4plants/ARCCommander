@@ -15,7 +15,12 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <!--<Directory Id="ProgramFilesFolder">-->
       <Directory Id="AppDataFolder">
-        <Directory Id="INSTALLFOLDER" Name="ArcCommander" />
+        <Directory Id="ManufacturerFolder" Name="DataPLANT">
+          <Directory Id="INSTALLFOLDER" Name="ArcCommander" />
+          <!--<Component Id="SrcFolder" Guid="*">-->
+          <!--<RemoveFolder Id="RemoveINSTALLFOLDER" Directory="INSTALLFOLDER" On="uninstall" />-->
+          <!--</Component>-->
+        </Directory>
       </Directory>
     </Directory>
   </Fragment>
@@ -23,10 +28,17 @@
   <Fragment>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
-      <Component Id="ProductComponent">
+      <Component Id="ProductComponent" Guid="eb52dfbe-c5c3-4536-960d-beb1e8ec8371">
         <!-- TODO: Insert files, registry keys, and other resources here. -->
-        <File Source="$(var.ArcCommander.TargetPath)" />
-        <RemoveFile Id="INSTALLFOLDER" Name="ArcCommander" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[Product]"
+                       Name="Something (I like to use InstallFolder)"
+                       Value="Something (I like to use [INSTALLFOLDER])"
+                       Type="string"
+                       KeyPath="yes" />
+        <File Id="Exe" Name="ACExe" Source="$(var.ArcCommander.TargetPath)" />
+        <!--<RemoveFile Id="INSTALLFOLDER" Name="ArcCommander" On="uninstall" />-->
+        <RemoveFolder Id="RemoveManufacturerFolder" Directory="ManufacturerFolder" On="uninstall" />
+        <RemoveFolder Id="RemoveINSTALLFOLDER" Directory="INSTALLFOLDER" On="uninstall" />
       </Component>
     </ComponentGroup>
   </Fragment>
