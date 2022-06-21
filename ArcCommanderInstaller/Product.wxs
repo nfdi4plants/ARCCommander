@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="ArcCommander" Language="1033" Version="1.0.0.0" Manufacturer="DataPLANT" UpgradeCode="5a9ab6cc-9240-494c-9288-ac5eb6fea561">
+  <Product Id="*" Name="ArcCommander" Language="1033" Version="0.3.3.0" Manufacturer="DataPLANT" UpgradeCode="5a9ab6cc-9240-494c-9288-ac5eb6fea561">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-    <MediaTemplate />
+    <!--<MediaTemplate />-->
+    <Media Id="1" EmbedCab="yes" Cabinet="src.cab" />
 
     <Feature Id="ProductFeature" Title="ArcCommander" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
@@ -30,15 +31,41 @@
       <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
       <Component Id="ProductComponent" Guid="eb52dfbe-c5c3-4536-960d-beb1e8ec8371">
         <!-- TODO: Insert files, registry keys, and other resources here. -->
-        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[Product]"
-                       Name="Something (I like to use InstallFolder)"
-                       Value="Something (I like to use [INSTALLFOLDER])"
-                       Type="string"
-                       KeyPath="yes" />
-        <File Id="Exe" Name="ACExe" Source="$(var.ArcCommander.TargetPath)" />
-        <!--<RemoveFile Id="INSTALLFOLDER" Name="ArcCommander" On="uninstall" />-->
         <RemoveFolder Id="RemoveManufacturerFolder" Directory="ManufacturerFolder" On="uninstall" />
         <RemoveFolder Id="RemoveINSTALLFOLDER" Directory="INSTALLFOLDER" On="uninstall" />
+        
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]\arc.exe"
+                       Value="[INSTALLFOLDER]arc.exe"
+                       Name="Path"
+                       Type="string"
+                       KeyPath="yes" />
+        <File Id="Exe" Name="arc.exe" Source="$(var.SolutionDir)\publish\win-x64\arc.exe" />
+        <RemoveFile Id="Exe" Name="arc.exe" On="uninstall" />
+      </Component>
+      <Component Id="PathEnvVar" Guid="11111d87-c7e4-4f05-8430-2d9d9ac961cf">
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]"
+                       Value="[INSTALLFOLDER]"
+                       Name="AddToPATH"
+                       Type="string" />
+        <Environment 
+          Id="AddToPATH" 
+          Name="PATH" 
+          Value="[INSTALLFOLDER]" 
+          Permanent="yes" 
+          Part="last" 
+          Action="set" 
+          System="no" 
+        />
+        <!--<Environment 
+          Id="AddToPATH" 
+          Name="PATH" 
+          Value="[INSTALLFOLDER]" 
+          Permanent="yes" 
+          Part="last" 
+          Action="remove" 
+          System="no" 
+          On="uninstall"
+        />-->
       </Component>
     </ComponentGroup>
   </Fragment>
