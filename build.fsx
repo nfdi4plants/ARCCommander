@@ -126,8 +126,10 @@ module BasicTasks =
         }
     
     let build = BuildTask.create "Build" [clean] {
-        solutionFile
-        |> DotNet.build id
+        //solutionFile // deprecated due to non-buildable project files in solution
+        //|> DotNet.build id
+        !! "src/**/*.fsproj"
+        |> Seq.iter (DotNet.build id)
     }
 
     let copyBinaries = BuildTask.create "CopyBinaries" [clean; build] {
@@ -214,74 +216,52 @@ module PackageTasks =
             failwith "aborted"
     }
 
-    let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
-        let outputPath = sprintf "%s/win-x64" publishDir
-        solutionFile
-        |> DotNet.publish (fun p ->
-            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-            {
-                p with
-                    Runtime = Some "win-x64"
-                    Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some outputPath
-                    MSBuildParams = {
-                        standardParams with
-                            Properties = [
-                                "Version", stableVersionTag
-                                "Platform", "x64"
-                                "PublishSingleFile", "true"
-                            ]
-                    };
-            }
-        )
-        printfn "Beware that assemblyName differs from projectName!"
-    }
+    type OS =
+        | Windows
+        | MacOS
+        | Linux
 
-    let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
-        let outputPath = sprintf "%s/linux-x64" publishDir
-        solutionFile
-        |> DotNet.publish (fun p ->
-            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-            {
-                p with
-                    Runtime = Some "linux-x64"
-                    Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some outputPath
-                    MSBuildParams = {
-                        standardParams with
-                            Properties = [
-                                "Version", stableVersionTag
-                                "Platform", "x64"
-                                "PublishSingleFile", "true"
-                            ]
+    let publishBinaries os =
+        let osName =
+            match os with
+            | Windows   -> "Win"
+            | MacOS     -> "Mac"
+            | Linux     -> os.ToString()
+        let osRt =
+            match os with
+            | Windows   -> "win"
+            | MacOS     -> "osx"
+            | Linux     -> "linux"
+        BuildTask.create $"PublishBinaries{osName}" [clean.IfNeeded; build.IfNeeded] {
+            let outputPath = sprintf "%s/%s-x64" publishDir osRt
+            !! "src/**/*.fsproj"
+            |> Seq.iter (
+                DotNet.publish (fun p ->
+                    let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
+                    {
+                        p with
+                            Runtime = Some $"{osRt}-x64"
+                            Configuration = DotNet.BuildConfiguration.fromString configuration
+                            OutputPath = Some outputPath
+                            MSBuildParams = {
+                                standardParams with
+                                    Properties = [
+                                        "Version", stableVersionTag
+                                        "Platform", "x64"
+                                        "PublishSingleFile", "true"
+                                    ]
+                            };
                     }
-            }
-        )
-        printfn "Beware that assemblyName differs from projectName!"
-    }
+                )
+            )
+            printfn "Beware that assemblyName differs from projectName!"
+        }
 
-    let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
-        let outputPath = sprintf "%s/osx-x64" publishDir
-        solutionFile
-        |> DotNet.publish (fun p ->
-            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-            {
-                p with
-                    Runtime = Some "osx-x64"
-                    Configuration = DotNet.BuildConfiguration.fromString configuration
-                    OutputPath = Some outputPath
-                    MSBuildParams = {
-                        standardParams with
-                            Properties = [
-                                "Version", stableVersionTag
-                                "Platform", "x64"
-                                "PublishSingleFile", "true"
-                            ]
-                    }
-            }
-        )
-        printfn "Beware that assemblyName differs from projectName!"
-    }
+    let publishBinariesWin = publishBinaries Windows
+
+    let publishBinariesLinux = publishBinaries Linux
+
+    let publishBinariesMac = publishBinaries MacOS
 
     let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac]
 
