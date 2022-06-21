@@ -249,7 +249,7 @@ let main argv =
             |> ArcConfiguration.load
         // <-----
         
-        let arcCommanderDataFolder = IniData.createDataFolder ()
+        let arcCommanderDataFolder = Path.Combine(IniData.createDataFolder (), "logs")
         let arcDataFolder = 
             tryGetArcDataFolderPath workingDir arcCommanderDataFolder
             |> Option.defaultValue arcCommanderDataFolder
