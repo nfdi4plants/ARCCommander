@@ -13,10 +13,13 @@ open Argu
 /// Functions for processing arguments.
 module ArgumentProcessing = 
 
-    /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValuByName' to access the value.
+    /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValueByName' to access the value.
     type Argument =
         | Field of string
         | Flag
+
+    /// Used for marking filenames to later check for unpermitted chars.
+    type FileNameAttribute() = inherit Attribute()
 
     /// Argument with additional information.
     type AnnotatedArgument = 
@@ -89,6 +92,7 @@ module ArgumentProcessing =
     /// Adds all union cases of 'T which are missing to the list.
     let groupArguments (args : 'T list when 'T :> IArgParserTemplate) =
         let log = Logging.createLogger "ArgumentProcessingGroupArgumentsLog"
+        let forbiddenChars = [|'/'; '\\'; '"'; '>'; '<'; '?'; '='; '*'; '|'|]
         let m = 
             args 
             |> List.map splitUnion
@@ -96,6 +100,7 @@ module ArgumentProcessing =
         FSharpType.GetUnionCases(typeof<'T>)
         |> Array.map (fun unionCase ->
             let isMandatory = containsCustomAttribute<MandatoryAttribute>(unionCase) 
+            let isFileAttribute = containsCustomAttribute<FileNameAttribute> unionCase
             let fields = unionCase.GetFields()
             match fields with 
             | [||] -> 
@@ -107,7 +112,23 @@ module ArgumentProcessing =
                 let value, isFlag = 
                     match Map.tryFind unionCase.Name m with
                     | Some value -> 
-                        Field (string value.[0])
+                        let str = string value.[0]
+                        printfn $"str is {str}"
+                        let adjustedStr =
+                            if isFileAttribute then
+                                forbiddenChars
+                                |> Array.iter (
+                                    fun fc -> 
+                                        if str.Contains fc then
+                                            log.Error $"Symbol/letter \"{fc}\" is not permitted for identifiers/filenames. Please choose another one."
+                                            raise (Exception "")
+                                )
+                                if str.Contains(' ') then
+                                    log.Warn $"Identifiers/filename \"{str}\" contains one or several space(s). Replaced with underscore(s)."
+                                    str.Replace(" ", "_")
+                                else str
+                            else str
+                        Field adjustedStr
                         |> Some,
                         false
                     | None -> None, false
