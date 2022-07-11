@@ -38,6 +38,45 @@ module ArgumentProcessing =
             IsFlag = isFlag
         }
 
+    /// Characters that must not occur in file names.
+    let private forbiddenChars = 
+        // classic forbidden symbols for file names in Windows (which also includes Linux/macOS)
+        let forbiddenSymbols = [|'/'; '\\'; '"'; '>'; '<'; '?'; '='; '*'; '|'|]
+        let controlChars = Array.init 32 (fun i -> char i)
+        Array.append controlChars forbiddenSymbols
+
+    /// File names that are reserved in Windows and thus cannot be used by the user.
+    let private reservedFilenames = [|
+            "CON"; "PRN"; "AUX"; "NUL";
+            for i = 1 to 9 do
+                $"COM{i}"
+                $"LPT{i}"
+        |]
+
+    /// Takes a string and iterates through all characters, checking for forbidden chars.
+    let private iterForbiddenChars (str : string) =
+        let log = Logging.createLogger "ArgumentProcessingIterForbiddenCharsLog"
+        forbiddenChars
+        |> Array.iter (
+            fun fc -> 
+                if str.Contains fc then
+                    log.Error $"Symbol/letter \"{fc}\" is not permitted for identifiers/filenames. Please choose another one."
+                    raise (Exception "")
+        )
+
+    /// Takes a string a replaces all spaces with underscores.
+    let private replaceSpace (str : string) =
+        let log = Logging.createLogger "ArgumentProcessingReplaceSpaceLog"
+        if str.Contains ' ' then log.Warn $"Identifier/filename \"{str}\" contains one or several space(s). Replaced with underscore(s)."
+        str.Replace(' ', '_')
+
+    /// Takes a string and checks if it is a reserved file name.
+    let private checkForReservedFns str =
+        let log = Logging.createLogger "ArgumentProcessingCheckForReservedFnsLog"
+        if reservedFilenames |> Array.contains str then
+            log.Error $"Identifier/filename \"{str}\" is a reserved filename. Please choose another one."
+            raise (Exception "")
+
     /// Returns true if the argument flag of name k was given by the user.
     let containsFlag k (arguments : Map<string,Argument>) =
         let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
@@ -92,7 +131,6 @@ module ArgumentProcessing =
     /// Adds all union cases of 'T which are missing to the list.
     let groupArguments (args : 'T list when 'T :> IArgParserTemplate) =
         let log = Logging.createLogger "ArgumentProcessingGroupArgumentsLog"
-        let forbiddenChars = [|'/'; '\\'; '"'; '>'; '<'; '?'; '='; '*'; '|'|]
         let m = 
             args 
             |> List.map splitUnion
@@ -105,7 +143,7 @@ module ArgumentProcessing =
             match fields with 
             | [||] -> 
                 let toolTip = (FSharpValue.MakeUnion (unionCase, [||]) :?> 'T).Usage
-                let value,isFlag = if Map.containsKey unionCase.Name m then Some Flag,true else None,true             
+                let value,isFlag = if Map.containsKey unionCase.Name m then Some Flag,true else None,true
                 unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
             | [|c|] when c.PropertyType.Name = "String" -> 
                 let toolTip = (FSharpValue.MakeUnion (unionCase, [|box ""|]) :?> 'T).Usage
@@ -113,20 +151,11 @@ module ArgumentProcessing =
                     match Map.tryFind unionCase.Name m with
                     | Some value -> 
                         let str = string value.[0]
-                        printfn $"str is {str}"
                         let adjustedStr =
                             if isFileAttribute then
-                                forbiddenChars
-                                |> Array.iter (
-                                    fun fc -> 
-                                        if str.Contains fc then
-                                            log.Error $"Symbol/letter \"{fc}\" is not permitted for identifiers/filenames. Please choose another one."
-                                            raise (Exception "")
-                                )
-                                if str.Contains(' ') then
-                                    log.Warn $"Identifiers/filename \"{str}\" contains one or several space(s). Replaced with underscore(s)."
-                                    str.Replace(" ", "_")
-                                else str
+                                iterForbiddenChars str
+                                checkForReservedFns str
+                                replaceSpace str
                             else str
                         Field adjustedStr
                         |> Some,
@@ -172,8 +201,7 @@ module ArgumentProcessing =
             p.WaitForExit()
 
         /// Deletes the file.
-        let private delete (path:string) = 
-            File.Delete(path) 
+        let private delete (path : string) = File.Delete(path) 
 
         /// Writes a text string to a path.
         let private write (path : string) (text : string) = 
@@ -223,20 +251,34 @@ module ArgumentProcessing =
             |> sprintf "%s\n\n%s" header
     
         /// Splits the string at the first occurence of the char.
+        ///
+        /// Also checks for forbidden characters, reserved file names, and spaces if the key concerns file names.
         let private splitAtFirst (c : char) (s : string) =
+            let checkValue key (valu : string) = 
+                valu.Trim()
+                |> fun trValu ->
+                    if key = "Identifier" then
+                        iterForbiddenChars trValu
+                        checkForReservedFns trValu
+                        replaceSpace trValu
+                    else trValu
             match s.Split c with
             | [|k|]     -> k.Trim(), Flag 
-            | [|k ; v|] -> k.Trim(), v.Trim() |> Field 
-            | a         -> a.[0].Trim(), Array.skip 1 a |> Array.reduce (fun a b ->sprintf "%s%c%s" a c b) |> fun v -> v.Trim() |> Field
+            | [|k ; v|] -> k.Trim(), checkValue k v |> Field
+            | a         -> 
+                let k = a.[0].Trim()
+                k, 
+                Array.skip 1 a 
+                |> Array.reduce (fun a b -> sprintf "%s%c%s" a c b) 
+                |> checkValue k
+                |> Field
 
         /// Deserializes yaml format (key:value) arguments.
         let private deserializeArguments (s:string) =
             s.Split '\n'
             |> Array.choose (fun x -> 
-                if x.StartsWith "#" then
-                    None
-                else 
-                    splitAtFirst ':' x |> Some
+                if x.StartsWith "#" then None
+                else splitAtFirst ':' x |> Some
             )
 
         /// Opens a textprompt containing the result of the serializeF to the user. Returns the deserialized user input.
@@ -307,7 +349,7 @@ module ArgumentProcessing =
             (readF : System.Collections.Generic.IEnumerator<ISADotNet.XLSX.SparseRow> -> 'A)
             (isaItem : 'A) = 
 
-            let log = Logging.createLogger "ArgumentProessingPromptCreateIsaItemQueryLog"
+            let log = Logging.createLogger "ArgumentProcessingPromptCreateIsaItemQueryLog"
 
             let header = 
                 """# For editing the selected item, just provide the desired values for the keys below or change preexisting values
@@ -319,7 +361,7 @@ module ArgumentProcessing =
             let deserializeF (s : string) : 'A =
                 s.Split('\n')
                 |> Seq.choose (fun x ->
-                    x.Replace("\013", "")
+                    x.Replace("\013", "")   // due to Windows CR (carriage return) char
                     |> fun x ->
                         if x.Length = 0 || x.[0] = '#' then None
                         else
@@ -335,7 +377,7 @@ module ArgumentProcessing =
 
         /// Opens a textprompt containing the serialized iniData. Returns the iniData updated with the deserialized user input.
         let createIniDataQuery editorPath (iniData : IniParser.Model.IniData) =
-            let log = Logging.createLogger "ArgumentProessingPromptCreateIniDataQueryLog"
+            let log = Logging.createLogger "ArgumentProcessingPromptCreateIniDataQueryLog"
             let serializeF inp = 
                 IniData.flatten inp
                 |> Seq.map (fun (n,v) -> n + "=" + v)
