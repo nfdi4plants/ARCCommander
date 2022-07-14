@@ -310,10 +310,13 @@ module PackageTasks =
 
     let publishBinariesMacBoth = BuildTask.createEmpty "PublishBinariesMacBoth" [clean; build; publishBinariesMac; publishBinariesMacARM]
 
-    let packMacBinaries = BuildTask.create "PackMacBinaries" [publishBinariesMacBoth] {
-        let pr = new System.Diagnostics.Process()
-        pr.
-    }
+    // as of now (july 2022), it seems there is now possibility to run lipo on Windows
+    //let packMacBinaries = BuildTask.create "PackMacBinaries" [publishBinariesMacBoth] {
+    //    let pr = new System.Diagnostics.Process()
+    //    pr.StartInfo.FileName <- "lipo"
+    //    pr.StartInfo.Arguments <- "-create -output ArcCommander ./"   // TO DO: add filepaths to both executables (see https://www.kenmuse.com/blog/notarizing-dotnet-console-apps-for-macos/ Chapter "Creating Universal binaries"
+    //    pr.Start() |> ignore
+    //}
 
 module ToolTasks =
 
