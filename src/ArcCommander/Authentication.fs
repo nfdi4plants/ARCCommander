@@ -75,20 +75,20 @@ module Authentication =
             raise e
    
     /// Write the response string to the stream of the response context. This function is used to fill the the redirect page after user login.
-    let sendResponseAsync (responseString : string) (responseContext : Response) =
+    let sendResponseAsync (responseString : string) (responseContext : System.Net.HttpListenerResponse) =
         task {
             
             let buffer = Encoding.UTF8.GetBytes(responseString)
+
+            responseContext.ContentLength64 <- int64 buffer.Length
     
-            responseContext.ContentLength <- int64 buffer.Length
-    
-            let responseOutput = responseContext.Body;
+            let responseOutput = responseContext.OutputStream;
             let! _ = responseOutput.WriteAsync(buffer, 0, buffer.Length)
             responseOutput.Flush();
         }
 
     /// Try obtaining the token information from the request
-    let tryProcessRequestAsync (client : OidcClient) (state : AuthorizeState) (requestContext : Request) =
+    let tryProcessRequestAsync (client : OidcClient) (state : AuthorizeState) (requestContext : System.Net.HttpListenerRequest) =
         task {
             try
                 let! result = client.ProcessResponseAsync(requestContext.RawUrl, state);
@@ -117,10 +117,10 @@ module Authentication =
 
                 log.Trace($"Starting local listener for obtaining token service response at {options.RedirectUri}")
 
-                let settings = new WebListenerSettings()
-                settings.UrlPrefixes.Add(options.RedirectUri)
-                let http = new WebListener(settings)
-    
+                let http = new System.Net.HttpListener()
+                if options.RedirectUri.EndsWith "/" |> not then options.RedirectUri <- $"{options.RedirectUri}/"
+
+                http.Prefixes.Add(options.RedirectUri)
                 http.Start();
 
                 log.Trace("Prepare client for login procedure")
@@ -133,8 +133,8 @@ module Authentication =
                 openBrowser(state.StartUrl) |> ignore
     
                 log.Info("Waiting for user login")
-
-                let! context = http.AcceptAsync()
+                http.Start()
+                let! context = http.GetContextAsync()
     
                 log.Trace("Try processing request")
 
@@ -157,7 +157,7 @@ module Authentication =
         [<STAThread>]
         /// Try to get the token information from a token service specified in the arc configuration
         let tryLogin (log : NLog.Logger) authority (arcConfiguration : ArcConfiguration) =
-
+            
             log.Info("Initiate login protocol")
 
             log.Trace("Load token service options from config")
