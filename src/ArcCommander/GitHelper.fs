@@ -1,6 +1,7 @@
 ﻿namespace ArcCommander
 
 open System.Diagnostics
+open System.Runtime.InteropServices
 
 module GitHelper =
 
@@ -126,6 +127,14 @@ module GitHelper =
         let host = host.Replace($"{protocol}://","")
         let path = $"git:{protocol}://{host}"
     
+        let command = 
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "credential approve"
+            elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "credential-osxkeychain store"
+            elif RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then "credential approve"
+            else 
+                log.Error($"Could not determine OS for selecting the git credential manager. Trying standard command.")
+                "credential approve"
+
         let procStartInfo = 
             ProcessStartInfo(
                 RedirectStandardOutput = true,
@@ -134,7 +143,7 @@ module GitHelper =
                 RedirectStandardInput = true,
                 UseShellExecute = false,
                 FileName = "git",
-                Arguments = "credential approve"
+                Arguments = command
             )
             
         let outputs = System.Collections.Generic.List<string>()
