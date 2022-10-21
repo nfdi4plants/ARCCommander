@@ -1,4 +1,10 @@
-﻿### 0.3.3+1a582b2 (Released 2022-5-18)
+﻿### 0.3.4+08bac19 (Released 2022-10-21)
+* Additions:
+    * latest commit #08bac19
+    * [[#773f8c3](https://github.com/nfdi4plants/arcCommander/commit/773f8c3f5054417a256666bcb962235237beef5f)] make access token retrieval available to mac and linux
+    * [[#d0e505b](https://github.com/nfdi4plants/arcCommander/commit/d0e505b220abd1e7385de31089de98bfaac3d146)] make access token storage available to mac and linux
+
+### 0.3.3+1a582b2 (Released 2022-5-18)
 * Additions:
     * latest commit #1a582b2
     * [[#27adc34](https://github.com/nfdi4plants/arcCommander/commit/27adc34aec45370b1886e1ecc3336c8c729a0ea6)] bump to 0.3.2
