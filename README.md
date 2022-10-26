@@ -76,7 +76,7 @@ You should see the following or similar message:
 
     ```bash
     
-    curl -L https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.2-osx.x64/arc > arc
+    curl -L https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.4-osx.x64/arc > arc
     chmod u+x ./arc
     mv ./arc /usr/local/bin/
     ```
