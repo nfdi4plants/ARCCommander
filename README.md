@@ -26,8 +26,9 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
     - Open the Start Menu, type in `path` and click on _Edit the system environment variables_
     ![image](https://user-images.githubusercontent.com/47781170/119674721-b8a3f480-be3c-11eb-9982-e3c0fa191f05.png)
     - Click on _Environment Variables..._, click on _Path_ and on _Edit..._ in the tab _User variables for <your username>_, click on _New_ and type in the full path to your folder as seen in the example below:
-    ![image](https://user-images.githubusercontent.com/47781170/119674652-a9bd4200-be3c-11eb-81f8-72f1198842ef.png)
-    - this allows you to start the ArcCommander from any folder
+    ![image](https://user-images.githubusercontent.com/47781170/119674652-a9bd4200-be3c-11eb-81f8-72f1198842ef.png) 
+    - This allows you to start the ArcCommander from any folder
+    - **Please make sure that you do not have any blank spaces in your path**
 4. Navigate to a folder in which you want to initialize an ARC
 5. Open the Command Prompt (CMD) via typing in `cmd` in the folder address, press Enter
 ![image](https://user-images.githubusercontent.com/47781170/119680874-dd4e9b00-be41-11eb-8faf-ed699c827395.png)
