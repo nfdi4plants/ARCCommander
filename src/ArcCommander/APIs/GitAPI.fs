@@ -34,12 +34,18 @@ module GitAPI =
             | Some branchName -> $" -b {branchName}"
             | None -> ""
 
+        let lfsConfig = 
+            if containsFlag "NoLFS" gitArgs then
+                $" {GitHelper.noLFSConfig}"
+            else
+                ""
+
         if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
             log.Trace("Downloading into current folder.")
-            executeGitCommand repoDir $"clone {remoteAddress}{branch} ." |> ignore
+            executeGitCommand repoDir $"clone {lfsConfig} {remoteAddress}{branch} ." |> ignore
         else 
             log.Trace($"Specified folder \"{repoDir}\" is not empty. Downloading into subfolder.")
-            executeGitCommand repoDir $"clone {remoteAddress}{branch}" |> ignore
+            executeGitCommand repoDir $"clone {lfsConfig} {remoteAddress}{branch}" |> ignore
 
 
     /// Syncs with remote. Commit changes, then pull remote and push to remote.

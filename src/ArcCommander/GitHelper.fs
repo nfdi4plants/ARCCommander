@@ -10,6 +10,8 @@ module GitHelper =
 
         let log = Logging.createLogger "ExecuteGitCommandLog"
 
+        log.Trace($"Run git {command}")
+
         let procStartInfo = 
             ProcessStartInfo(
                 WorkingDirectory = repoDir,
@@ -104,6 +106,11 @@ module GitHelper =
 
     let clone dir url =
         executeGitCommand dir (sprintf "clone %s" url)
+
+    let noLFSConfig = "-c \"filter.lfs.smudge = git-lfs smudge --skip -- %f\" -c \"filter.lfs.process = git-lfs filter-process --skip\""
+
+    let cloneNoLFS dir url =
+        executeGitCommand dir (sprintf "clone %s %s" noLFSConfig url)        
 
     let cloneWithToken dir token url  =
         let url = formatRepoToken token url
