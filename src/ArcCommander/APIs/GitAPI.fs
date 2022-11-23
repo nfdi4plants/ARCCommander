@@ -63,9 +63,8 @@ module GitAPI =
             log.Error("ERROR: Git user metadata set in the arcCommander config do not match the ones in the git config. This information is needed for git commits. Consider running \"arc config setgituser\" to synchronize the information between configs.")
         
         else
-            log.Trace("Delete .gitattributes")
-
-            File.Delete(Path.Combine(repoDir,".gitattributes"))
+            log.Trace("Load .gitattributes")
+            let ruleSet = GitHelper.retrieveLFSRules repoDir
 
             // track all untracked files
             printfn "-----------------------------"
@@ -93,17 +92,18 @@ module GitAPI =
 
                 let lfsPath = file.Replace(repoDir, "").Replace("\\","/")
 
-                executeGitCommand repoDir $"lfs track \"{lfsPath}\"" |> ignore
+                if GitHelper.containsLFSRule ruleSet lfsPath |> not then
+                    executeGitCommand repoDir $"lfs track \"{lfsPath}\"" |> ignore
 
                 trackWithAdd file
-                trackWithAdd (System.IO.Path.Combine(repoDir, ".gitattributes"))
 
         
             let gitLfsRules = GeneralConfiguration.getGitLfsRules arcConfiguration
 
             gitLfsRules
             |> Array.iter (fun rule ->
-                executeGitCommand repoDir $"lfs track \"{rule}\"" |> ignore
+                if GitHelper.containsLFSRule ruleSet rule |> not then
+                    executeGitCommand repoDir $"lfs track \"{rule}\"" |> ignore
             )
 
             let gitLfsThreshold = GeneralConfiguration.tryGetGitLfsByteThreshold arcConfiguration
