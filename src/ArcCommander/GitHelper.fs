@@ -2,6 +2,7 @@
 
 open System.Diagnostics
 open System.Runtime.InteropServices
+open System.IO
 
 module GitHelper =
 
@@ -249,3 +250,23 @@ module GitHelper =
 
         nameConsistency && emailConsistency
             
+    /// Set containing all the paths and path rules that should be tracked using git lfs
+    type LFSRuleSet = Set<string>
+    
+    /// Checks the .gitattributes file in the repo for all git lfs paths and path rules
+    let retrieveLFSRules repoDir : LFSRuleSet =
+        let gitAttributesFilePath = Path.Combine(repoDir,".gitattributes")
+        let lfsRulePattern = ".*(?= filter=lfs diff=lfs merge=lfs -text)"
+        if File.Exists gitAttributesFilePath then
+            File.ReadAllLines(gitAttributesFilePath)
+            |> Array.choose (fun l -> 
+                let r = System.Text.RegularExpressions.Regex.Match(l,lfsRulePattern)
+                if r.Success then
+                    Some r.Value
+                else None     
+            )
+            |> set
+        else Set.empty
+
+    let containsLFSRule (ruleSet : LFSRuleSet) (path : string) =
+        ruleSet.Contains path
