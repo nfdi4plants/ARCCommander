@@ -71,7 +71,8 @@ let processCommandWithoutArgs (arcConfiguration : ArcConfiguration) commandF =
 
 let handleRemoteAccessAccessTokenSubCommands arcConfiguration accessTokenVerb =
     match accessTokenVerb with
-    | AccessTokenCommand.Get r  -> processCommand arcConfiguration RemoteAccessAPI.AccessToken.get r
+    | AccessTokenCommand.Store r    -> processCommand arcConfiguration RemoteAccessAPI.AccessToken.store r
+    | AccessTokenCommand.Get r      -> processCommand arcConfiguration RemoteAccessAPI.AccessToken.get r
 
 let handleStudyContactsSubCommands arcConfiguration contactsVerb =
     match contactsVerb with

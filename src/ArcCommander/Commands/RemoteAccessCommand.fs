@@ -19,10 +19,12 @@ type RemoteAccessCommand =
 
 and AccessTokenCommand =
 
+    | [<CliPrefix(CliPrefix.None)>] Store   of store_args:   ParseResults<AccessTokenStoreArgs>
     | [<CliPrefix(CliPrefix.None)>] Get     of get_args:     ParseResults<AccessTokenGetArgs>
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
+            | Store _ -> "Store a git access token using the credential manager."
             | Get   _ -> "Receive and store a git access token by authenticating to a token delivery service."
 
