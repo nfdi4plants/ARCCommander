@@ -39,17 +39,17 @@ type AssayDeleteArgs =
 
 /// CLI arguments for updating existing assay metadata.
 type AssayUpdateArgs =  
-    | [<AltCommandLine("-s")>][<Unique>][<FileName>]    StudyIdentifier                     of string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier                     of string
-    | [<Unique>]                                        MeasurementType                     of measurement_type             : string
-    | [<Unique>]                                        MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
-    | [<Unique>]                                        MeasurementTypeTermSourceREF        of measurement_type_term_source : string
-    | [<Unique>]                                        TechnologyType                      of technology_type              : string
-    | [<Unique>]                                        TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
-    | [<Unique>]                                        TechnologyTypeTermSourceREF         of technology_type_term_source  : string
-    | [<Unique>]                                        TechnologyPlatform                  of technology_platform          : string
-    | [<Unique>]                                        ReplaceWithEmptyValues
-    | [<Unique>]                                        AddIfMissing
+    | [<AltCommandLine("-s")>][<Unique>][<FileName>]                StudyIdentifier                     of string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]   AssayIdentifier                     of string
+    | [<Unique>]                                                    MeasurementType                     of measurement_type             : string
+    | [<Unique>]                                                    MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
+    | [<Unique>]                                                    MeasurementTypeTermSourceREF        of measurement_type_term_source : string
+    | [<Unique>]                                                    TechnologyType                      of technology_type              : string
+    | [<Unique>]                                                    TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
+    | [<Unique>]                                                    TechnologyTypeTermSourceREF         of technology_type_term_source  : string
+    | [<Unique>]                                                    TechnologyPlatform                  of technology_platform          : string
+    | [<Unique>]                                                    ReplaceWithEmptyValues
+    | [<Unique>]                                                    AddIfMissing
     
     interface IArgParserTemplate with
         member this.Usage =
@@ -68,8 +68,8 @@ type AssayUpdateArgs =
 
 /// CLI arguments for interactively editing existing assay metadata.
 type AssayEditArgs = 
-    | [<AltCommandLine("-s")>][<Unique>]                StudyIdentifier of study_identifier : string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier of assay_identifier : string
+    | [<AltCommandLine("-s")>][<Unique>][<FileNameAttribute>]               StudyIdentifier of study_identifier : string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileNameAttribute>]  AssayIdentifier of assay_identifier : string
 
     interface IArgParserTemplate with
         member this.Usage =
