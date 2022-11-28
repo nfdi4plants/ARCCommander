@@ -254,10 +254,10 @@ module ArgumentProcessing =
         ///
         /// Also checks for forbidden characters, reserved file names, and spaces if the key concerns file names.
         let private splitAtFirst (c : char) (s : string) =
-            let checkValue key (valu : string) = 
+            let checkValue (key : string) (valu : string) = 
                 valu.Trim()
                 |> fun trValu ->
-                    if key = "Identifier" then
+                    if key.Contains "Identifier" then
                         iterForbiddenChars trValu
                         checkForReservedFns trValu
                         replaceSpace trValu
@@ -301,7 +301,8 @@ module ArgumentProcessing =
             with
             | err -> 
                 delete filePath
-                log.Fatal($"Could not parse query:\n {err.ToString()}")
+                log.Fatal($"Could not parse query.")
+                log.Trace($"{err.ToString()}")
                 raise (Exception(""))
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
