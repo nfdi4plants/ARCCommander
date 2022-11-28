@@ -9,16 +9,55 @@ module RemoteAccessAPI =
 
     module AccessToken =
 
+        /// Store a git token using git credential manager.
+        let store (arcConfiguration : ArcConfiguration) (remoteAccessArgs : Map<string,Argument>) =
+
+            let log = Logging.createLogger "GitStoreLog"
+
+            let token = getFieldValueByName "Token" remoteAccessArgs
+
+            let hostAddress = 
+                let ha = 
+                    match tryGetFieldValueByName "Server" remoteAccessArgs with
+                    | Some s -> s
+                    | None -> @"https://git.nfdi4plants.org/"
+                if ha.Contains "https" then ha
+                else $"https://{ha}"
+
+            let user = 
+                match tryGetFieldValueByName "User" remoteAccessArgs with
+                | Some s -> s
+                | None -> @"oauth2"
+
+            log.Info("Start Remote token store")
+        
+            if GitHelper.storeCredentials log hostAddress user token then
+                log.Info($"Token stored successfully")
+
+            else
+                let m = 
+                    [
+                        $"Credentials could not be stored successfully."
+                        $"Check if git is installed and if a credential helper is setup:"
+                        $"Run \"git config --global credential.helper cache\" to cache credentials in memory"
+                        $"or Run \"git config --global credential.helper store\" to save credentials to disk"
+                        $"For more info go to: https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage"
+                    ]
+                    |> List.reduce (fun a b -> a + "\n" + b)
+                log.Error(m)
+
         /// Authenticates to a token service and stores the token using git credential manager.
         let get (arcConfiguration : ArcConfiguration) (remoteAccessArgs : Map<string,Argument>) =
 
             let log = Logging.createLogger "GitAuthenticateLog"
 
             let hostAddress = 
-                let ha = getFieldValueByName "Server" remoteAccessArgs
+                let ha = 
+                    match tryGetFieldValueByName "Server" remoteAccessArgs with
+                    | Some s -> s
+                    | None -> @"https://git.nfdi4plants.org/"
                 if ha.Contains "https" then ha
                 else $"https://{ha}"
-
 
             log.Info("Start Arc Authenticate")
         
@@ -35,29 +74,7 @@ module RemoteAccessAPI =
             match tryReceiveToken log hostAddress arcConfiguration with 
             | Ok token -> 
                 log.Info("Successfully retrieved access token from token service")
-
-                //log.Trace("Try transfer git user metadata to global arcCommander config")
-                //match IniData.tryGetGlobalConfigPath () with
-                //| Some globalConfigPath ->
-                //    IniData.setValueInIniPath globalConfigPath "general.gitname"    (token.FirstName + " " + token.LastName)
-                //    IniData.setValueInIniPath globalConfigPath "general.gitemail"   token.Email
-                //    log.Trace("Successfully transferred git user metadata to global arcCommander config")
-                //| None ->
-                //    log.Error("Could not transfer git user metadata to global arcCommander config")
-
-                if GitHelper.storeCredentials log hostAddress "oauth2" token.AccessToken then
-                    log.Info($"Finished Authentication")
-
-                else
-                    let m = 
-                        [
-                            $"Authentication worked, but credentials could not be stored successfully."
-                            $"Check if git is installed and if a credential helper is setup:"
-                            $"Run \"git config --global credential.helper cache\" to cache credentials in memory"
-                            $"or Run \"git config --global credential.helper store\" to save credentials to disk"
-                            $"For more info go to: https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage"
-                        ]
-                        |> List.reduce (fun a b -> a + "\n" + b)
-                    log.Error(m)
+                store arcConfiguration (Map.add "Token" (Field token.AccessToken) remoteAccessArgs)
             | Error err -> 
                 log.Error($"Could not retrieve access token: {err.Message}")
+
