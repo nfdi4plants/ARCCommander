@@ -1,6 +1,7 @@
 ﻿namespace ArcCommander.CLIArguments
 
 open Argu 
+open ArcCommander.ArgumentProcessing
 
 /// CLI arguments for interactively editing existing study metadata.
 type StudyEditArgs =
@@ -13,13 +14,13 @@ type StudyEditArgs =
 
 /// CLI arguments for updating existing study metadata.
 type StudyUpdateArgs =
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
-    | [<Unique>] Title of title : string
-    | [<Unique>] Description of description : string
-    | [<Unique>] SubmissionDate of submission_date : string
-    | [<Unique>] PublicReleaseDate of public_release_date : string
-    | [<Unique>] ReplaceWithEmptyValues
-    | [<Unique>] AddIfMissing
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>][<FileName>]   Identifier              of study_identifier : string
+    | [<Unique>]                                                    Title                   of title : string
+    | [<Unique>]                                                    Description             of description : string
+    | [<Unique>]                                                    SubmissionDate          of submission_date : string
+    | [<Unique>]                                                    PublicReleaseDate       of public_release_date : string
+    | [<Unique>]                                                    ReplaceWithEmptyValues
+    | [<Unique>]                                                    AddIfMissing
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -35,7 +36,7 @@ type StudyUpdateArgs =
 
 /// CLI arguments for registering existing study metadata.
 type StudyRegisterArgs = 
-    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] Identifier of study_identifier : string
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>][<FileName>] Identifier of study_identifier : string
     | [<Unique>] Title of title : string
     | [<Unique>] Description of description : string
     | [<Unique>] SubmissionDate of submission_date : string

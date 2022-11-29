@@ -1,17 +1,18 @@
 ﻿namespace ArcCommander.CLIArguments
 
 open Argu 
+open ArcCommander.ArgumentProcessing
 
 /// CLI arguments for empty assay initialization.
 type AssayInitArgs =
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier                     of string
-    | [<Unique>]                                        MeasurementType                     of measurement_type             : string
-    | [<Unique>]                                        MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
-    | [<Unique>]                                        MeasurementTypeTermSourceREF        of measurement_type_term_source : string
-    | [<Unique>]                                        TechnologyType                      of technology_type              : string
-    | [<Unique>]                                        TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
-    | [<Unique>]                                        TechnologyTypeTermSourceREF         of technology_type_term_source  : string
-    | [<Unique>]                                        TechnologyPlatform                  of technology_platform          : string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]   AssayIdentifier                     of string
+    | [<Unique>]                                                    MeasurementType                     of measurement_type             : string
+    | [<Unique>]                                                    MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
+    | [<Unique>]                                                    MeasurementTypeTermSourceREF        of measurement_type_term_source : string
+    | [<Unique>]                                                    TechnologyType                      of technology_type              : string
+    | [<Unique>]                                                    TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
+    | [<Unique>]                                                    TechnologyTypeTermSourceREF         of technology_type_term_source  : string
+    | [<Unique>]                                                    TechnologyPlatform                  of technology_platform          : string
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -27,7 +28,7 @@ type AssayInitArgs =
 
 /// CLI arguments for deleting assay file structure.
 type AssayDeleteArgs = 
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier                     of string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier of string
     | [<Unique>]                                        Force
 
     interface IArgParserTemplate with
@@ -38,17 +39,17 @@ type AssayDeleteArgs =
 
 /// CLI arguments for updating existing assay metadata.
 type AssayUpdateArgs =  
-    | [<AltCommandLine("-s")>][<Unique>]                StudyIdentifier                     of string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier                     of string
-    | [<Unique>]                                        MeasurementType                     of measurement_type             : string
-    | [<Unique>]                                        MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
-    | [<Unique>]                                        MeasurementTypeTermSourceREF        of measurement_type_term_source : string
-    | [<Unique>]                                        TechnologyType                      of technology_type              : string
-    | [<Unique>]                                        TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
-    | [<Unique>]                                        TechnologyTypeTermSourceREF         of technology_type_term_source  : string
-    | [<Unique>]                                        TechnologyPlatform                  of technology_platform          : string
-    | [<Unique>]                                        ReplaceWithEmptyValues
-    | [<Unique>]                                        AddIfMissing
+    | [<AltCommandLine("-s")>][<Unique>][<FileName>]                StudyIdentifier                     of string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]   AssayIdentifier                     of string
+    | [<Unique>]                                                    MeasurementType                     of measurement_type             : string
+    | [<Unique>]                                                    MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
+    | [<Unique>]                                                    MeasurementTypeTermSourceREF        of measurement_type_term_source : string
+    | [<Unique>]                                                    TechnologyType                      of technology_type              : string
+    | [<Unique>]                                                    TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
+    | [<Unique>]                                                    TechnologyTypeTermSourceREF         of technology_type_term_source  : string
+    | [<Unique>]                                                    TechnologyPlatform                  of technology_platform          : string
+    | [<Unique>]                                                    ReplaceWithEmptyValues
+    | [<Unique>]                                                    AddIfMissing
     
     interface IArgParserTemplate with
         member this.Usage =
@@ -67,8 +68,8 @@ type AssayUpdateArgs =
 
 /// CLI arguments for interactively editing existing assay metadata.
 type AssayEditArgs = 
-    | [<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier : string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier of assay_identifier : string
+    | [<AltCommandLine("-s")>][<Unique>][<FileNameAttribute>]               StudyIdentifier of study_identifier : string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileNameAttribute>]  AssayIdentifier of assay_identifier : string
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -93,15 +94,15 @@ type AssayUnregisterArgs = AssayEditArgs
 /// CLI arguments for initializing and subsequently registering assay metadata.
 // Same arguments as `register` because all metadata fields that can be updated can also be set while registering a new assay
 type AssayAddArgs =
-    | [<AltCommandLine("-s")>][<Unique>]                StudyIdentifier                     of string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier                     of string
-    | [<Unique>]                                        MeasurementType                     of measurement_type             : string
-    | [<Unique>]                                        MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
-    | [<Unique>]                                        MeasurementTypeTermSourceREF        of measurement_type_term_source : string
-    | [<Unique>]                                        TechnologyType                      of technology_type              : string
-    | [<Unique>]                                        TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
-    | [<Unique>]                                        TechnologyTypeTermSourceREF         of technology_type_term_source  : string
-    | [<Unique>]                                        TechnologyPlatform                  of technology_platform          : string
+    | [<AltCommandLine("-s")>][<Unique>][<FileName>]                StudyIdentifier                     of string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]   AssayIdentifier                     of string
+    | [<Unique>]                                                    MeasurementType                     of measurement_type             : string
+    | [<Unique>]                                                    MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
+    | [<Unique>]                                                    MeasurementTypeTermSourceREF        of measurement_type_term_source : string
+    | [<Unique>]                                                    TechnologyType                      of technology_type              : string
+    | [<Unique>]                                                    TechnologyTypeTermAccessionNumber   of technology_type_accession    : string
+    | [<Unique>]                                                    TechnologyTypeTermSourceREF         of technology_type_term_source  : string
+    | [<Unique>]                                                    TechnologyPlatform                  of technology_platform          : string
 
     interface IArgParserTemplate with
         member this.Usage =
