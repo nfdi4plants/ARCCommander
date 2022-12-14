@@ -1,4 +1,15 @@
-﻿### 0.3.4+08bac19 (Released 2022-10-21)
+﻿### 0.4.0+5d16b16 (Released 2022-12-14)
+* Additions:
+    * latest commit #5d16b16
+    * [[#555a52e](https://github.com/nfdi4plants/arcCommander/commit/555a52e30c2888f493160666207754d1e99936cd)] Add FileNameAttribute to AssayEditArgs
+    * [[#b3abd03](https://github.com/nfdi4plants/arcCommander/commit/b3abd03166a67fafd4ececd0fbc61154c8f35abe)] add direct access token storing functionality
+    * [[#e2aeed5](https://github.com/nfdi4plants/arcCommander/commit/e2aeed5a5800c23fe6ab6435ee75d71c80781ed7)] add nolfs flag to arc get
+
+* Bugfixes:
+    * [[#cca00ce](https://github.com/nfdi4plants/arcCommander/commit/cca00cec140154c1610b7a2417e1510f7a4a1acc)] Fix critical error not catching forbidden chars
+    * [[#476c97d](https://github.com/nfdi4plants/arcCommander/commit/476c97d1a4fad9791578db443d18c5a1f445963c)] fix git lfs tracking
+
+### 0.3.4+08bac19 (Released 2022-10-21)
 * Additions:
     * latest commit #08bac19
     * [[#773f8c3](https://github.com/nfdi4plants/arcCommander/commit/773f8c3f5054417a256666bcb962235237beef5f)] make access token retrieval available to mac and linux
