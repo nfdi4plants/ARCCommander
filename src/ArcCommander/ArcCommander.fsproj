@@ -59,17 +59,16 @@
   
   <!--References-->
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="6.0.3-beta.22076.4" />
+    <PackageReference Update="FSharp.Core" Version="7.0.0" />
+    <PackageReference Include="arcIO.NET" Version="0.0.3" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
     <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
     <PackageReference Include="IdentityModel.OidcClient" Version="5.0.0" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.5" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.5" />
     <PackageReference Include="JWT" Version="8.9.0" />
     <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
-    <PackageReference Include="NLog" Version="4.7.13" />
+    <PackageReference Include="NLog" Version="5.1.0" />
   </ItemGroup>
 </Project>

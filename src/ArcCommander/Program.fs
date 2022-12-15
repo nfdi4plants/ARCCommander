@@ -214,6 +214,7 @@ let handleCommand arcConfiguration command =
     // Verbs
     | Init r                    -> processCommand                   arcConfiguration ArcAPI.init r
     | Export r                  -> processCommand                   arcConfiguration ArcAPI.export r
+    | Import r                  -> processCommand                   arcConfiguration ArcAPI.import r
     | Update                    -> processCommandWithoutArgs        arcConfiguration ArcAPI.update
     | Version                   -> processCommandWithoutArgs        arcConfiguration ArcAPI.version
     // Git Verbs

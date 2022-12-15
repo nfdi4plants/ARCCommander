@@ -16,15 +16,14 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AltCover" Version="7.1.778" />
+    <PackageReference Include="arcIO.NET" Version="0.0.3" />
     <PackageReference Include="Expecto" Version="9.*" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
-    <PackageReference Update="FSharp.Core" Version="6.0.3-beta.22076.4" />
+    <PackageReference Update="FSharp.Core" Version="7.0.0" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.5" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.5" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ArcCommander\TestFiles\" />

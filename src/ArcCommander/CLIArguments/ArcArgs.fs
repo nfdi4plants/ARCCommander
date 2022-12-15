@@ -3,6 +3,20 @@
 open Argu 
 
 
+type ArcImportArgs = 
+
+    | [<Unique>][<AltCommandLine("-j")>] ArcJson of arc_json : string
+    | [<Unique>][<AltCommandLine("-f")>] ArcJsonFilePath of arc_json_filepath : string
+    | [<Unique>][<AltCommandLine("-r")>] RepositoryAddress of repository_address : string
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | ArcJson           _ ->  "Investigation json blob as string."
+            | ArcJsonFilePath   _ ->  "Investigation json blob as string in a file."
+            | RepositoryAddress _ ->  "Git repository address"
+
+
 type ArcInitArgs = 
 
     | [<Unique>] Owner of owner : string
@@ -18,7 +32,7 @@ type ArcInitArgs =
             match this with
             | Owner               _ ->  "Owner of the ARC"
             | Branch              _ ->  "Name of the git branch to be created"
-            | RepositoryAddress   _ ->  "Github address"
+            | RepositoryAddress   _ ->  "Git repository address"
             | EditorPath          _ ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"
             | GitLFSByteThreshold _ ->  "The git LFS file size threshold in bytes. File larger than this threshold will be tracked by git LFS (Default Value is 150000000 Bytes ~ 150 MB)."
             | Gitignore           _ ->  "Use this flag if you want a default .gitignore to be added to the initialized repo"

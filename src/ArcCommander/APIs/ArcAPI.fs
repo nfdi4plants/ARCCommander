@@ -30,7 +30,13 @@ module ArcAPI =
         
         log.Info("Start Arc Init")
 
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let workDir = 
+            let wd = GeneralConfiguration.getWorkDirectory arcConfiguration
+            if System.IO.Directory.GetFileSystemEntries wd |> Array.isEmpty then
+                wd
+            else 
+                let dir = System.IO.Directory.CreateDirectory(wd)
+                dir.FullName
 
         let editor              = tryGetFieldValueByName "EditorPath"           arcArgs
         let gitLFSThreshold     = tryGetFieldValueByName "GitLFSByteThreshold"  arcArgs
@@ -119,7 +125,9 @@ module ArcAPI =
             | a :: t ->
                 let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
                 let assayFileName = IsaModelConfiguration.getAssayFileName a arcConfiguration
-                let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
+                let persons,assay = AssayFile.Assay.fromFile assayFilePath
+                let factors = API.Assay.getFactors assay |> Option.defaultValue []
+                let protocols = API.Assay.getProtocols assay |> Option.defaultValue []
                 let studies = investigation.Studies
 
                 match studies with
@@ -151,52 +159,14 @@ module ArcAPI =
 
         log.Info("Start Arc Export")
        
-        let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
     
-        let assayNames = AssayConfiguration.getAssayNames arcConfiguration
-                
-        let investigation =
-            try Investigation.fromFile investigationFilePath 
-            with
-            | :? FileNotFoundException -> 
-                Investigation.empty
-            | err -> 
-                log.Fatal($"{err.Message}")
-                raise (Exception(""))
-    
-        let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
-            match assayNames with
-            | a :: t ->
-                let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
-                let assayFileName = (IsaModelConfiguration.getAssayFileName a arcConfiguration).Replace("\\","/")
-                let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
-                let studies = investigation.Studies
-
-                match studies with
-                | Some studies ->
-                    match studies |> Seq.tryFind (API.Study.getAssays >> Option.defaultValue [] >> API.Assay.existsByFileName assayFileName) with
-                    | Some study -> 
-                        study
-                        |> API.Study.mapAssays (API.Assay.updateByFileName API.Update.UpdateByExistingAppendLists assay)
-                        |> API.Study.mapFactors (List.append factors >> List.distinctBy (fun f -> f.Name))
-                        |> API.Study.mapProtocols (List.append protocols >> List.distinctBy (fun p -> p.Name))
-                        |> API.Study.mapContacts (List.append persons >> List.distinctBy (fun p -> p.FirstName,p.LastName))
-                        |> fun s -> API.Study.updateBy ((=) study) API.Update.UpdateAll s studies
-                    | None ->
-                        Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
-                        |> API.Study.add studies
-                | None ->                   
-                    [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
-                |> API.Investigation.setStudies investigation
-                |> updateInvestigationAssays t
-            | [] -> investigation
-                
-        let output = updateInvestigationAssays (assayNames |> List.ofArray) investigation
+        let investigation = arcIO.NET.Investigation.fromArcFolder workDir
 
         if containsFlag "ProcessSequence" arcArgs then
 
             let output = 
-                output.Studies 
+                investigation.Studies 
                 |> Option.defaultValue [] |> List.collect (fun s -> 
                     s.Assays
                     |> Option.defaultValue [] |> List.collect (fun a -> 
@@ -213,11 +183,71 @@ module ArcAPI =
         else 
                
             match tryGetFieldValueByName "Output" arcArgs with
-            | Some p -> ISADotNet.Json.Investigation.toFile p output
+            | Some p -> ISADotNet.Json.Investigation.toFile p investigation
             | None -> ()
 
             //System.Console.Write(ISADotNet.Json.Investigation.toString output)
-            log.Debug(ISADotNet.Json.Investigation.toString output)
+            log.Debug(ISADotNet.Json.Investigation.toString investigation)
+
+
+
+
+
+    let import (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
+
+        let log = Logging.createLogger "ArcImportLog"
+        
+        log.Info("Start Arc Import")
+
+        let investigation = 
+            match tryGetFieldValueByName "ArcJson" arcArgs with
+            | Some b -> 
+                b
+                |> Json.Investigation.fromString
+            | None -> 
+                match tryGetFieldValueByName "ArcJsonFilePath" arcArgs with
+                | Some p -> 
+                    p
+                    |> Json.Investigation.fromFile
+                | None ->
+                    log.Error("Couldn't import ARC, neither json blob nor json file provided")
+                    failwith ""
+            |> fun i -> {i with Remarks = []}
+
+        let workDir = 
+            let wd = GeneralConfiguration.getWorkDirectory arcConfiguration
+            if System.IO.Directory.GetFileSystemEntries wd |> Array.isEmpty then
+                wd
+            else 
+                match investigation.Identifier with
+                | Some i -> 
+                    let dir = System.IO.Directory.CreateDirectory(Path.Combine(wd,i))
+                    dir.FullName
+                | None -> 
+                    log.Error("Couldn't import ARC, Target Folder is not empty and investigation has no Identifier needed to create an alternative subfolder.")
+                    failwith ""
+
+        let repositoryAddress = tryGetFieldValueByName "RepositoryAddress" arcArgs
+
+
+        arcIO.NET.Arc.importFromInvestigation workDir investigation
+       
+        log.Trace("Init Git repository")
+
+        try
+
+            GitHelper.executeGitCommand workDir $"init"
+
+            log.Trace("Add remote repository")
+            match repositoryAddress with
+            | None -> ()
+            | Some remote ->
+                GitHelper.executeGitCommand workDir $"remote add origin {remote}"
+                //GitHelper.executeGitCommand workDir $"branch -u origin/{branch} {branch}"
+
+        with 
+        | e -> 
+            log.Error($"Git could not be set up. Please try installing Git cli and run `arc git init`.\n\t{e}")
 
     /// Returns true if called anywhere in an ARC.
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())

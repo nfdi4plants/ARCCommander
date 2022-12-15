@@ -205,7 +205,7 @@ module AssayAPI =
             assay1.Comments             = assay2.Comments
 
         // read assay metadata information from assay file
-        let _, _, _, oldAssayAssayFile = AssayFile.Assay.fromFile assayFilepath
+        let _, oldAssayAssayFile = AssayFile.Assay.fromFile assayFilepath
 
         let getNewAssay oldAssay =
             ArgumentProcessing.Prompt.createIsaItemQuery 
@@ -273,7 +273,7 @@ module AssayAPI =
         
         let assayFilePath = IsaModelConfiguration.getAssayFilePath assayIdentifier arcConfiguration
 
-        let _, _, _, assay = Assay.fromFile assayFilePath
+        let _, assay = Assay.fromFile assayFilePath
 
         let studyIdentifier = 
             match getFieldValueByName "StudyIdentifier" assayArgs with
@@ -657,7 +657,7 @@ module AssayAPI =
 
             if System.IO.File.Exists assayFilePath then
                 try
-                    let _, _, p, a = AssayFile.Assay.fromFile assayFilePath
+                    let p, a = AssayFile.Assay.fromFile assayFilePath
                     p, Some a
                 with
                 | err -> 
@@ -753,7 +753,7 @@ module AssayAPI =
 
                     if System.IO.File.Exists assayFilePath then
                         try
-                            let _,_,p,a = AssayFile.Assay.fromFile assayFilePath
+                            let p,a = AssayFile.Assay.fromFile assayFilePath
                             p, Some a
                         with
                         | err -> 

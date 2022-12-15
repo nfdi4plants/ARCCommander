@@ -999,12 +999,10 @@ module StudyAPI =
             let name = getFieldValueByName "DesignType" designArgs
 
             let design = 
-                 DesignDescriptors.fromString
+                 OntologyAnnotation.fromString
                      name
                      (getFieldValueByName  "TypeTermAccessionNumber"    designArgs)
                      (getFieldValueByName  "TypeTermSourceREF"          designArgs)
-
-                     []
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -1111,11 +1109,10 @@ module StudyAPI =
             let name = getFieldValueByName "DesignType" designArgs
 
             let design = 
-                DesignDescriptors.fromString
+                OntologyAnnotation.fromString
                     name
                     (getFieldValueByName  "TypeTermAccessionNumber"    designArgs)
                     (getFieldValueByName  "TypeTermSourceREF"          designArgs)
-                    []
             
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
 
