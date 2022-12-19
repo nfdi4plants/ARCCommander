@@ -39,7 +39,7 @@ We strongly recommend to read the in-depth guide to the ArcCommander in this rep
 1. Download the latest ArcCommander release
 
     ```bash
-    wget https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.4-linux.x64/arc
+    wget https://github.com/nfdi4plants/arcCommander/releases/download/v0.4.0-linux.x64/arc
     ```
 
 1. Make it executable
@@ -76,8 +76,7 @@ You should see the following or similar message:
 2. Copy/paste the following commands into your terminal and execute them to (a) download the latest ArcCommander release, (b) change permissions to make the arcCommander executable and (c) move the arcCommander program to a location from where it is executable via the terminal:
 
     ```bash
-    
-    curl -L https://github.com/nfdi4plants/arcCommander/releases/download/v0.3.4-osx.x64/arc > arc
+    curl -L https://github.com/nfdi4plants/arcCommander/releases/download/v0.4.0-osx.x64/arc > arc
     chmod u+x ./arc
     mv ./arc /usr/local/bin/
     ```
