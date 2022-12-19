@@ -67,7 +67,7 @@ You should see the following or similar message:
 
 > Start processing parameterless command.  
 > Start Arc Version  
-> v0.3.4
+> v0.4.0
 > Done processing command.  
 
 ### MacOS
@@ -112,7 +112,7 @@ You should see the following or similar message:
 
 > Start processing parameterless command.  
 > Start Arc Version  
-> v0.3.4
+> v0.4.0
 > Done processing command.  
 
 ---
