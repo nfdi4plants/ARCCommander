@@ -24,7 +24,7 @@
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
-    <None Include=".gitignore" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="defaultGitignore" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="Logging.fs" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
