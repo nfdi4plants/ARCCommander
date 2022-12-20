@@ -77,6 +77,12 @@ module ArgumentProcessing =
             log.Error $"Identifier/filename \"{str}\" is a reserved filename. Please choose another one."
             raise (Exception "")
 
+    /// Takes a string and checks if it is longer than 31 chars
+    let private checkForNameLength (str : string) =
+        let log = Logging.createLogger "ArgumentProcessingCheckForFileNameLength"
+        if seq str |> Seq.length |> (<) 31 then
+            log.Warn $"Identifier/filename \"{str}\" is longer than 31 characters, which might cause problems in excel sheets."
+        
     /// Returns true if the argument flag of name k was given by the user.
     let containsFlag k (arguments : Map<string,Argument>) =
         let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
@@ -155,6 +161,7 @@ module ArgumentProcessing =
                             if isFileAttribute then
                                 iterForbiddenChars str
                                 checkForReservedFns str
+                                checkForNameLength str
                                 replaceSpace str
                             else str
                         Field adjustedStr
@@ -260,6 +267,7 @@ module ArgumentProcessing =
                     if key.Contains "Identifier" then
                         iterForbiddenChars trValu
                         checkForReservedFns trValu
+                        checkForNameLength trValu
                         replaceSpace trValu
                     else trValu
             match s.Split c with

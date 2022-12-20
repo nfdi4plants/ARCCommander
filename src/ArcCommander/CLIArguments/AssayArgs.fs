@@ -68,8 +68,8 @@ type AssayUpdateArgs =
 
 /// CLI arguments for interactively editing existing assay metadata.
 type AssayEditArgs = 
-    | [<AltCommandLine("-s")>][<Unique>][<FileNameAttribute>]               StudyIdentifier of study_identifier : string
-    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileNameAttribute>]  AssayIdentifier of assay_identifier : string
+    | [<AltCommandLine("-s")>][<Unique>][<FileName>]               StudyIdentifier of study_identifier : string
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]  AssayIdentifier of assay_identifier : string
 
     interface IArgParserTemplate with
         member this.Usage =
