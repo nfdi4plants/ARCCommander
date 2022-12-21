@@ -1,13 +1,14 @@
 ﻿namespace ArcCommander.CLIArguments
 
 open Argu 
+open ArcCommander.ArgumentProcessing
 
 /// CLI arguments for creating a new investigation file for the arc
 // in the case of investigations 'empty' does not mean empty file but rather an 
 // investigation without studies/assays. To reflect the need for metadata here,
 // this command is called `create` instead of `init`
 type InvestigationCreateArgs = 
-    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
+    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
     | [<Unique>] Title of title:string
     | [<Unique>] Description of description:string
     | [<Unique>] SubmissionDate of submission_date:string
@@ -24,7 +25,7 @@ type InvestigationCreateArgs =
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 
-    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
+    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
     | [<Unique>] Title of title:string
     | [<Unique>] Description of description:string
     | [<Unique>] SubmissionDate of submission_date:string
