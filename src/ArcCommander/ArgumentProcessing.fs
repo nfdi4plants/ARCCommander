@@ -28,20 +28,23 @@ module ArgumentProcessing =
             Tooltip     : string
             IsMandatory : bool
             IsFlag      : bool
+            IsFileName  : bool
         }
     
-    let createAnnotatedArgument arg tt mand isFlag = 
+    let createAnnotatedArgument arg tt mand isFlag isFN = 
         {
             Arg = arg
             Tooltip = tt 
             IsMandatory = mand
             IsFlag = isFlag
+            IsFileName = isFN
         }
+
+     // classic forbidden symbols for file names in Windows (which also includes Linux/macOS)
+    let private forbiddenSymbols = [|'/'; '\\'; '"'; '>'; '<'; '?'; '='; '*'; '|'|]
 
     /// Characters that must not occur in file names.
     let private forbiddenChars = 
-        // classic forbidden symbols for file names in Windows (which also includes Linux/macOS)
-        let forbiddenSymbols = [|'/'; '\\'; '"'; '>'; '<'; '?'; '='; '*'; '|'|]
         let controlChars = Array.init 32 (fun i -> char i)
         Array.append controlChars forbiddenSymbols
 
@@ -150,7 +153,7 @@ module ArgumentProcessing =
             | [||] -> 
                 let toolTip = (FSharpValue.MakeUnion (unionCase, [||]) :?> 'T).Usage
                 let value,isFlag = if Map.containsKey unionCase.Name m then Some Flag,true else None,true
-                unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag
+                unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag isFileAttribute
             | [|c|] when c.PropertyType.Name = "String" -> 
                 let toolTip = (FSharpValue.MakeUnion (unionCase, [|box ""|]) :?> 'T).Usage
                 let value, isFlag = 
@@ -168,7 +171,7 @@ module ArgumentProcessing =
                         |> Some,
                         false
                     | None -> None, false
-                unionCase.Name, createAnnotatedArgument value toolTip isMandatory isFlag
+                unionCase.Name, createAnnotatedArgument value toolTip isMandatory isFlag isFileAttribute
             | _ ->
                 log.Fatal($"Cannot parse argument {unionCase.Name} because its parsing rules were not yet implemented.")
                 raise (Exception(""))
@@ -246,13 +249,20 @@ module ArgumentProcessing =
                     elif arg.IsFlag then
                         sprintf "Remove # below to set flag: %s" arg.Tooltip
                     else sprintf "%s" arg.Tooltip
+                let fileComment =
+                    $"""# FileName: The value of this argument will be used as a file or folder name.
+# FileName: Please refrain from using the following characters: {forbiddenSymbols |> Seq.map string |> String.concat " "}.
+# FileName: Please write a value of length at most 31 characters."""
                 let value = 
                     match arg.Arg with
                     | Some (Flag)           -> sprintf "%s" key
                     | Some (Field v)        -> sprintf "%s:%s" key v
                     | None when arg.IsFlag  -> sprintf "#%s" key
                     | None                  -> sprintf "%s:" key
-                sprintf "#%s\n%s" comment value
+                if arg.IsFileName then
+                    sprintf "#%s\n%s\n%s" comment fileComment value
+                else
+                    sprintf "#%s\n%s" comment value
             )
             |> Array.reduce (fun a b -> a + "\n\n" + b)
             |> sprintf "%s\n\n%s" header
