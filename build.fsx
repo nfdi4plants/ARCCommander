@@ -283,7 +283,40 @@ module PackageTasks =
         printfn "Beware that assemblyName differs from projectName!"
     }
 
+    let publishBinariesMacARM = BuildTask.create "PublishBinariesMacARM" [clean.IfNeeded; build.IfNeeded] {
+        let outputPath = sprintf "%s/osx-arm64" publishDir
+        solutionFile
+        |> DotNet.publish (fun p ->
+            let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
+            {
+                p with
+                    Runtime = Some "osx.12-arm64"
+                    Configuration = DotNet.BuildConfiguration.fromString configuration
+                    OutputPath = Some outputPath
+                    MSBuildParams = {
+                        standardParams with
+                            Properties = [
+                                "Version", stableVersionTag
+                                //"Platform", "arm64"   // throws MSBuild Error although it should work: error MSB4126: The specified solution configuration "Release|ARM64" is invalid. Please specify a valid solution configuration using the Configuration and Platform properties (e.g. MSBuild.exe Solution.sln /p:Configuration=Debug /p:Platform="Any CPU") or leave those properties blank to use the default solution configuration. [C:\Repos\omaus\arcCommander\ArcCommander.sln]
+                                "PublishSingleFile", "true"
+                            ]
+                    }
+            }
+        )
+        printfn "Beware that assemblyName differs from projectName!"
+    }
+
     let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac]
+
+    let publishBinariesMacBoth = BuildTask.createEmpty "PublishBinariesMacBoth" [clean; build; publishBinariesMac; publishBinariesMacARM]
+
+    // as of now (july 2022), it seems there is now possibility to run lipo on Windows
+    //let packMacBinaries = BuildTask.create "PackMacBinaries" [publishBinariesMacBoth] {
+    //    let pr = new System.Diagnostics.Process()
+    //    pr.StartInfo.FileName <- "lipo"
+    //    pr.StartInfo.Arguments <- "-create -output ArcCommander ./"   // TO DO: add filepaths to both executables (see https://www.kenmuse.com/blog/notarizing-dotnet-console-apps-for-macos/ Chapter "Creating Universal binaries"
+    //    pr.Start() |> ignore
+    //}
 
 module ToolTasks =
 
