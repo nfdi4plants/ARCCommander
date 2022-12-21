@@ -73,7 +73,8 @@ module ArcAPI =
             //GitHelper.executeGitCommand workDir $"commit -m \"Initial commit\""
 
             if containsFlag "Gitignore" arcArgs then
-                let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".gitignore")
+                log.Warn("The default GitIgnore is an experimental feature. Be careful and double check that all your wanted files are being tracked.")
+                let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "defaultGitignore")
                 let gitignoreArcPath = Path.Combine(workDir, ".gitignore")
                 log.Trace($"Copy .gitignore from {gitignoreAppPath} to {gitignoreArcPath}")
                 File.Copy(gitignoreAppPath, gitignoreArcPath)
