@@ -1,5 +1,6 @@
-﻿### 0.4.0+5c1482f (Released 2023-1-3)
+﻿### 0.4.0+ae1c773 (Released 2023-1-3)
 * Additions:
+    * [[#ae1c773](https://github.com/nfdi4plants/arcCommander/commit/ae1c7733487464dd6f074e60dd517d15fd589ddc)] Clean up open modules in build project.
     * [[#7951930](https://github.com/nfdi4plants/arcCommander/commit/79519301f218c7795f81de9fa8fe174208b698dc)] bump to 0.4.0
     * [[#c8257c5](https://github.com/nfdi4plants/arcCommander/commit/c8257c5128738ef23711e977887242614a4743b0)] Clean up README.md :books:
     * [[#f89eb28](https://github.com/nfdi4plants/arcCommander/commit/f89eb2820477f35f2dfab0f8532f599bfcf3acde)] rename default gitignore filename in source folder
