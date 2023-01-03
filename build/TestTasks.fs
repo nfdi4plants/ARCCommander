@@ -5,13 +5,14 @@ open BlackFox.Fake
 open ProjectInfo
 open BasicTasks
 open Helpers
+open System.IO
 
 let runTests = BuildTask.createFn "RunTests" [clean; cleanTestResults; build; copyBinaries] (fun config ->
     let isWatch = 
         config.Context.Arguments
         |> List.exists (fun x -> x.ToLower() = "watch")
 
-    let singleRunTestsCommand = @"run --project tests\ArcCommander.Tests.NetCore"
+    let singleRunTestsCommand = $"run --project tests{Path.DirectorySeparatorChar}ArcCommander.Tests.NetCore"
     let watchRunTestsCommand = "watch " + singleRunTestsCommand
 
     if isWatch then
