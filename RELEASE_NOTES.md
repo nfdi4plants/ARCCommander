@@ -1,5 +1,6 @@
-﻿### 0.4.0+ae1c773 (Released 2023-1-3)
+﻿### 0.4.0+c769c38 (Released 2023-1-3)
 * Additions:
+    * [[#35bdf43](https://github.com/nfdi4plants/arcCommander/commit/35bdf4327b19a84e27f3794b9fe3b5fef55d8990)] Add Version.fs to arccommander project.
     * [[#ae1c773](https://github.com/nfdi4plants/arcCommander/commit/ae1c7733487464dd6f074e60dd517d15fd589ddc)] Clean up open modules in build project.
     * [[#7951930](https://github.com/nfdi4plants/arcCommander/commit/79519301f218c7795f81de9fa8fe174208b698dc)] bump to 0.4.0
     * [[#c8257c5](https://github.com/nfdi4plants/arcCommander/commit/c8257c5128738ef23711e977887242614a4743b0)] Clean up README.md :books:
@@ -19,6 +20,8 @@
     * [[#5f3345b](https://github.com/nfdi4plants/arcCommander/commit/5f3345b77feacc3e77bd64ad7357d35b2287909a)] Remove deprecated files :fire:
     * [[#60479ad](https://github.com/nfdi4plants/arcCommander/commit/60479ada0a4f414fde1935b3c8ccec67dfba74a6)] Update executables
 * Bugfixes:
+    * [[#c769c38](https://github.com/nfdi4plants/arcCommander/commit/c769c386a83d0ed08b3cd7a5c7f2dd890a174897)] Fix typos in github workflows :bug:
+    * [[#d330e51](https://github.com/nfdi4plants/arcCommander/commit/d330e51ce0feefa56e95ab016160432ead981d9f)] Fix "build and tests" issues :bug:
     * [[#cca00ce](https://github.com/nfdi4plants/arcCommander/commit/cca00cec140154c1610b7a2417e1510f7a4a1acc)] Fix critical error not catching forbidden chars
     * [[#476c97d](https://github.com/nfdi4plants/arcCommander/commit/476c97d1a4fad9791578db443d18c5a1f445963c)] fix git lfs tracking
 
