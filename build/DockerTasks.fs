@@ -2,7 +2,6 @@
 
 open BlackFox.Fake
 open Fake.Core
-open Fake.IO
 open Helpers
 
 open Fake.Extensions.Release

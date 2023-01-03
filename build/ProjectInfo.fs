@@ -1,7 +1,6 @@
 ﻿module ProjectInfo
 
 open Fake.Core
-open Helpers
 open Fake.IO
 
 // run this here to make sure a RELEASE_NOTES.md exists, otherwise "let release = ReleaseNotes.load "RELEASE_NOTES.md" will fail.

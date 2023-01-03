@@ -1,7 +1,6 @@
 ﻿module Helpers
 
 open Fake.Core
-open System.Runtime.InteropServices
 
 let initializeContext () =
     let execContext = Context.FakeExecutionContext.Create false "build.fsx" [ ]

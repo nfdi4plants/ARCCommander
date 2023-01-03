@@ -1,18 +1,10 @@
 ﻿module ToolTasks
 
-open System.IO
-open Fake.Core
 open Fake.IO
-open Fake.DotNet
-open Fake.IO.Globbing.Operators
 open BlackFox.Fake
 
 open ProjectInfo
 open Helpers
-
-open ProjectInfo
-open BasicTasks
-open TestTasks
 open PackageTasks
 
 let installPackagedTool = BuildTask.create "InstallPackagedTool" [packPrerelease] {

@@ -5,8 +5,6 @@ open BasicTasks
 open TestTasks
 open PackageTasks
 open ReleaseTasks
-open ReleaseNoteTasks
-open DockerTasks
 
 initializeContext()
 

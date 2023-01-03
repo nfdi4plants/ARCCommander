@@ -1,7 +1,5 @@
 ﻿module TestTasks
 
-open Fake.Core
-open Fake.DotNet
 open BlackFox.Fake
 
 open ProjectInfo
