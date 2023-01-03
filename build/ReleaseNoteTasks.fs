@@ -22,7 +22,7 @@ let updateReleaseNotes = BuildTask.createFn "ReleaseNotes" [] (fun config ->
     let release = ReleaseNotes.load "RELEASE_NOTES.md"
 
     Fake.DotNet.AssemblyInfoFile.createFSharp  "src/arcCommander/Server/Version.fs"
-        [   Fake.DotNet.AssemblyInfo.Title "SWATE"
+        [   Fake.DotNet.AssemblyInfo.Title "ArcCommander"
             Fake.DotNet.AssemblyInfo.Version release.AssemblyVersion
             Fake.DotNet.AssemblyInfo.Metadata ("ReleaseDate", release.Date |> Option.defaultValue System.DateTime.Today |> fun d -> d.ToShortDateString())
         ]

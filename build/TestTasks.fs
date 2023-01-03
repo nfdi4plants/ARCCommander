@@ -11,7 +11,7 @@ let runTests = BuildTask.createFn "RunTests" [clean; cleanTestResults; build; co
         config.Context.Arguments
         |> List.exists (fun x -> x.ToLower() = "watch")
 
-    let singleRunTestsCommand = "run --project tests\ArcCommander.Tests.NetCore"
+    let singleRunTestsCommand = @"run --project tests\ArcCommander.Tests.NetCore"
     let watchRunTestsCommand = "watch " + singleRunTestsCommand
 
     if isWatch then
