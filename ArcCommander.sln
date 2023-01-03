@@ -28,6 +28,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".devcontainer", ".devcontai
 		.devcontainer\Dockerfile = .devcontainer\Dockerfile
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Build", "build\Build.fsproj", "{44736484-8325-4C62-8BA5-3091FB02FAE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,6 +64,18 @@ Global
 		{618F5887-509A-4C7A-8536-6CCA51A8F85B}.Release|x64.Build.0 = Release|Any CPU
 		{618F5887-509A-4C7A-8536-6CCA51A8F85B}.Release|x86.ActiveCfg = Release|Any CPU
 		{618F5887-509A-4C7A-8536-6CCA51A8F85B}.Release|x86.Build.0 = Release|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Debug|x64.Build.0 = Debug|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Debug|x86.Build.0 = Debug|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Release|x64.ActiveCfg = Release|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Release|x64.Build.0 = Release|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Release|x86.ActiveCfg = Release|Any CPU
+		{44736484-8325-4C62-8BA5-3091FB02FAE7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
