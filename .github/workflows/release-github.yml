@@ -11,15 +11,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '6.0.x'
-    - name: Restore local tools
-      run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesWin
+      run: dotnet run --project ./build/build.fsproj publishBinariesWin
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -35,15 +33,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '6.0.x'
-    - name: Restore local tools
-      run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesLinux
+      run: dotnet run --project ./build/build.fsproj publishBinariesLinux
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -59,15 +55,13 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '6.0.x'
-    - name: Restore local tools
-      run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesMac
+      run: dotnet run --project ./build/build.fsproj publishBinariesMac
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
