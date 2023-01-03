@@ -1,11 +1,27 @@
-﻿### 0.4.0+5d16b16 (Released 2022-12-14)
+﻿### 0.4.0+c769c38 (Released 2023-1-3)
 * Additions:
-    * latest commit #5d16b16
+    * [[#35bdf43](https://github.com/nfdi4plants/arcCommander/commit/35bdf4327b19a84e27f3794b9fe3b5fef55d8990)] Add Version.fs to arccommander project.
+    * [[#ae1c773](https://github.com/nfdi4plants/arcCommander/commit/ae1c7733487464dd6f074e60dd517d15fd589ddc)] Clean up open modules in build project.
+    * [[#7951930](https://github.com/nfdi4plants/arcCommander/commit/79519301f218c7795f81de9fa8fe174208b698dc)] bump to 0.4.0
+    * [[#c8257c5](https://github.com/nfdi4plants/arcCommander/commit/c8257c5128738ef23711e977887242614a4743b0)] Clean up README.md :books:
+    * [[#f89eb28](https://github.com/nfdi4plants/arcCommander/commit/f89eb2820477f35f2dfab0f8532f599bfcf3acde)] rename default gitignore filename in source folder
+    * [[#c37540f](https://github.com/nfdi4plants/arcCommander/commit/c37540fc0e180fe59e41b5a40ad433a68ea3ead3)] replace default gitignore with os-specific rules
+    * [[#e404f65](https://github.com/nfdi4plants/arcCommander/commit/e404f65301401b71b094815b053106d5ff74218b)] throw warning when character length of file name arguments exceed 31
+    * [[#fd75cc8](https://github.com/nfdi4plants/arcCommander/commit/fd75cc870760cc45431ba73528fc3354b9ee8488)] add filename attribute info to argument query
+    * [[#0601c1f](https://github.com/nfdi4plants/arcCommander/commit/0601c1f2af3a7565e8429132c95f2bb966303e19)] move readme parts and link to new online resources
+    * [[#14ded34](https://github.com/nfdi4plants/arcCommander/commit/14ded3442e943f415e36de3abb4857a2d93a6e63)] Add build project :tada:
+    * [[#e782d3d](https://github.com/nfdi4plants/arcCommander/commit/e782d3da476537ab9bb5177a3f816b98981b8ac7)] Update github workflows
+    * [[#cd97d52](https://github.com/nfdi4plants/arcCommander/commit/cd97d5283c4d024cdc0fb37739e75ae78134c00f)] Update global.json
+    * [[#435a80a](https://github.com/nfdi4plants/arcCommander/commit/435a80a9f074a65ac63d51262254e32699e6ef21)] Clean up solution
     * [[#555a52e](https://github.com/nfdi4plants/arcCommander/commit/555a52e30c2888f493160666207754d1e99936cd)] Add FileNameAttribute to AssayEditArgs
     * [[#b3abd03](https://github.com/nfdi4plants/arcCommander/commit/b3abd03166a67fafd4ececd0fbc61154c8f35abe)] add direct access token storing functionality
     * [[#e2aeed5](https://github.com/nfdi4plants/arcCommander/commit/e2aeed5a5800c23fe6ab6435ee75d71c80781ed7)] add nolfs flag to arc get
-
+* Deletions:
+    * [[#5f3345b](https://github.com/nfdi4plants/arcCommander/commit/5f3345b77feacc3e77bd64ad7357d35b2287909a)] Remove deprecated files :fire:
+    * [[#60479ad](https://github.com/nfdi4plants/arcCommander/commit/60479ada0a4f414fde1935b3c8ccec67dfba74a6)] Update executables
 * Bugfixes:
+    * [[#c769c38](https://github.com/nfdi4plants/arcCommander/commit/c769c386a83d0ed08b3cd7a5c7f2dd890a174897)] Fix typos in github workflows :bug:
+    * [[#d330e51](https://github.com/nfdi4plants/arcCommander/commit/d330e51ce0feefa56e95ab016160432ead981d9f)] Fix "build and tests" issues :bug:
     * [[#cca00ce](https://github.com/nfdi4plants/arcCommander/commit/cca00cec140154c1610b7a2417e1510f7a4a1acc)] Fix critical error not catching forbidden chars
     * [[#476c97d](https://github.com/nfdi4plants/arcCommander/commit/476c97d1a4fad9791578db443d18c5a1f445963c)] fix git lfs tracking
 
@@ -153,69 +169,59 @@
 * Deletions:
     * [[#91a3dee](https://github.com/nfdi4plants/arcCommander/commit/91a3dee82367ed06152c5c7833265579873367f8)] Delete deprecated assembly source file :fire:
 
-#### 0.1.4 - Wednesday, January 26, 2022
+### 0.1.4 (Released 2023-1-3)
 * Additions:
     * latest commit #8f34df30
     * ArcCommander is now able to call external tools. :sparkles:
 
-#### 0.1.3 - Tuesday, January 11, 2022
+### 0.1.3 (Released 2023-1-3)
+    * - Person functions for assay commands now available.
+    * - `arc i show` now available.
+    * - ArcCommander now logs every action.
 
-- Person functions for assay commands now available.
-- `arc i show` now available.
-- ArcCommander now logs every action.
+### 0.1.2 (Released 2023-1-3)
+    * - Publish tasks now available in build script.
+    * - CLI scripts for ARC templates.
+    * - Unit tests for `person update`.
+    * - Raised .NET 5.0 target.
+    * - Now it is possible to convert an ARC to a JSON object via JSON export.
+    * - Global config file now gets created automatically (with default parameters).
 
-#### 0.1.2 - Tuesday, November 2, 2021
+### 0.1.1 (Released 2023-1-3)
+    * - Configurable Git LFS threshold.
+    * - Issue templates available now.
 
-- Publish tasks now available in build script.
-- CLI scripts for ARC templates.
-- Unit tests for `person update`.
-- Raised .NET 5.0 target.
-- Now it is possible to convert an ARC to a JSON object via JSON export.
-- Global config file now gets created automatically (with default parameters).
+### 0.1.0 (Released 2023-1-3)
+    * - First release! :tada:
+    * - New synchronize command.
+    * - New Git commands and API.
+    * - Now packed as dotnet tool.
 
-#### 0.1.1 - Thursday, May 20, 2021
+### 0.0.7-alpha (Released 2023-1-3)
+    * - Unit tests for Investigation, Assay, Study.
+    * - Updated build chain.
+    * - ISA-XLSX moved to ISA.NET: https://github.com/nfdi4plants/ISADotNet
 
-- Configurable Git LFS threshold.
-- Issue templates available now.
+### 0.0.6-alpha (Released 2023-1-3)
+    * - Removed FSharpSpreadsheetML to its own repository: https://github.com/CSBiology/FSharpSpreadsheetML
 
-#### 0.1.0 - Wednesday, April 28, 2021
+### 0.0.5-alpha (Released 2023-1-3)
+    * - Global and local config file and configuration backbone added.
+    * - SpreadsheetML refactored.
+    * - ISA-XLSX and ISA-XLSX.IO unit tests added.
 
-- First release! :tada:
-- New synchronize command.
-- New Git commands and API.
-- Now packed as dotnet tool.
+### 0.0.4-alpha (Released 2023-1-3)
+    * - Improved CLIArgs.
+    * - Assay subcommands.
+    * - Investigation subcommands.
+    * - Sheet functions added.
 
-#### 0.0.7-alpha - Thursday, February 11, 2021, 
+### 0.0.3-alpha (Released 2023-1-3)
+    * - Added ISA-XLSX project.
 
-- Unit tests for Investigation, Assay, Study.
-- Updated build chain.
-- ISA-XLSX moved to ISA.NET: https://github.com/nfdi4plants/ISADotNet
+### 0.0.2-alpha (Released 2023-1-3)
+    * - Added ArcCommander project.
 
-#### 0.0.6-alpha - Tuesday, January 19, 2021
+### 0.0.1-alpha (Released 2023-1-3)
+    * Created repository.**
 
-- Removed FSharpSpreadsheetML to its own repository: https://github.com/CSBiology/FSharpSpreadsheetML
-
-#### 0.0.5-alpha - Wednesday, January 6, 2021
-
-- Global and local config file and configuration backbone added.
-- SpreadsheetML refactored.
-- ISA-XLSX and ISA-XLSX.IO unit tests added.
-
-#### 0.0.4-alpha - Monday, November 9, 2020
-
-- Improved CLIArgs.
-- Assay subcommands.
-- Investigation subcommands.
-- Sheet functions added.
-
-#### 0.0.3-alpha - Wednesday, October 21, 2020
-
-- Added ISA-XLSX project.
-
-#### 0.0.2-alpha - Monday, October 12, 2020
-
-- Added ArcCommander project.
-
-#### 0.0.1-alpha - Saturday, September 5, 2020
-
-**Created repository.**
