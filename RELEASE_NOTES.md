@@ -1,25 +1,16 @@
-﻿### 0.4.0+435a80a (Released 2023-1-3)
+﻿### 0.4.0+5c1482f (Released 2023-1-3)
 * Additions:
     * [[#7951930](https://github.com/nfdi4plants/arcCommander/commit/79519301f218c7795f81de9fa8fe174208b698dc)] bump to 0.4.0
-    * [[#c8257c5](https://github.com/nfdi4plants/arcCommander/commit/c8257c5128738ef23711e977887242614a4743b0)] Update README.md
-    * [[#b6e7ef3](https://github.com/nfdi4plants/arcCommander/commit/b6e7ef365d499e94543a711570142201550a0036)] update expected version in Readme.md
-    * [[#6817fc2](https://github.com/nfdi4plants/arcCommander/commit/6817fc235763a53214ed0bfd288d0c884e6419e6)] Merge pull request #166 from nfdi4plants/installation-patch-v0.4
+    * [[#c8257c5](https://github.com/nfdi4plants/arcCommander/commit/c8257c5128738ef23711e977887242614a4743b0)] Clean up README.md :books:
     * [[#f89eb28](https://github.com/nfdi4plants/arcCommander/commit/f89eb2820477f35f2dfab0f8532f599bfcf3acde)] rename default gitignore filename in source folder
     * [[#c37540f](https://github.com/nfdi4plants/arcCommander/commit/c37540fc0e180fe59e41b5a40ad433a68ea3ead3)] replace default gitignore with os-specific rules
-    * [[#b06e581](https://github.com/nfdi4plants/arcCommander/commit/b06e5810da135ffea9d92a34f521c6eaad438a32)] automatically update version of ArcCommander release in Readme.md
-    * [[#a8754a9](https://github.com/nfdi4plants/arcCommander/commit/a8754a9b32a397af2cc9d44344eb036527675946)] Merge pull request #169 from nfdi4plants/versionupdater
     * [[#e404f65](https://github.com/nfdi4plants/arcCommander/commit/e404f65301401b71b094815b053106d5ff74218b)] throw warning when character length of file name arguments exceed 31
     * [[#fd75cc8](https://github.com/nfdi4plants/arcCommander/commit/fd75cc870760cc45431ba73528fc3354b9ee8488)] add filename attribute info to argument query
-    * [[#c71fd91](https://github.com/nfdi4plants/arcCommander/commit/c71fd917c5178968452b739706a7c438811e36ea)] Merge pull request #168 from nfdi4plants/gitignore
-    * [[#5167eec](https://github.com/nfdi4plants/arcCommander/commit/5167eec386da90928f8136cb0d657a1a15cb3d8d)] Merge pull request #170 from nfdi4plants/filenameAttribute
-    * [[#73a4e9b](https://github.com/nfdi4plants/arcCommander/commit/73a4e9bc97eb440e7889de04f35c0ef973c093cc)] Merge pull request #146 from nfdi4plants/ExtendedFakeBuildScriptMacOS
     * [[#0601c1f](https://github.com/nfdi4plants/arcCommander/commit/0601c1f2af3a7565e8429132c95f2bb966303e19)] move readme parts and link to new online resources
-    * [[#89729e7](https://github.com/nfdi4plants/arcCommander/commit/89729e7b07b3d20392227236a013894c318e3d9c)] Merge pull request #172 from nfdi4plants/move_readme_content
     * [[#14ded34](https://github.com/nfdi4plants/arcCommander/commit/14ded3442e943f415e36de3abb4857a2d93a6e63)] Add build project :tada:
     * [[#e782d3d](https://github.com/nfdi4plants/arcCommander/commit/e782d3da476537ab9bb5177a3f816b98981b8ac7)] Update github workflows
     * [[#cd97d52](https://github.com/nfdi4plants/arcCommander/commit/cd97d5283c4d024cdc0fb37739e75ae78134c00f)] Update global.json
     * [[#435a80a](https://github.com/nfdi4plants/arcCommander/commit/435a80a9f074a65ac63d51262254e32699e6ef21)] Clean up solution
-    * latest commit #5d16b16
     * [[#555a52e](https://github.com/nfdi4plants/arcCommander/commit/555a52e30c2888f493160666207754d1e99936cd)] Add FileNameAttribute to AssayEditArgs
     * [[#b3abd03](https://github.com/nfdi4plants/arcCommander/commit/b3abd03166a67fafd4ececd0fbc61154c8f35abe)] add direct access token storing functionality
     * [[#e2aeed5](https://github.com/nfdi4plants/arcCommander/commit/e2aeed5a5800c23fe6ab6435ee75d71c80781ed7)] add nolfs flag to arc get
