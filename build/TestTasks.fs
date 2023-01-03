@@ -6,8 +6,18 @@ open ProjectInfo
 open BasicTasks
 open Helpers
 
-let runTests = BuildTask.create "RunTests" [clean; cleanTestResults; build; copyBinaries] {
-    run dotnet "watch run --project tests\ArcCommander.Tests.NetCore" ""
+let runTests = BuildTask.createFn "RunTests" [clean; cleanTestResults; build; copyBinaries] (fun config ->
+    let isWatch = 
+        config.Context.Arguments
+        |> List.exists (fun x -> x.ToLower() = "watch")
+
+    let singleRunTestsCommand = "run --project tests\ArcCommander.Tests.NetCore"
+    let watchRunTestsCommand = "watch " + singleRunTestsCommand
+
+    if isWatch then
+        run dotnet watchRunTestsCommand ""
+    else
+        run dotnet singleRunTestsCommand ""
     //let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
     //Fake.DotNet.DotNet.test(fun testParams ->
     //    {
@@ -17,4 +27,4 @@ let runTests = BuildTask.create "RunTests" [clean; cleanTestResults; build; copy
     //            NoBuild = true
     //    }
     //) testProject
-}
+)
