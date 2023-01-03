@@ -25,15 +25,6 @@ let updateVersionOfReleaseWorkflow (stableVersionTag) =
     s.Replace(lastVersion,$"v{stableVersionTag}")
     |> File.writeString false filePath
 
-let updateVersionOfReadme (stableVersionTag) = 
-    printfn "Start updating readme to version %s" stableVersionTag
-    let filePath = Path.getFullName "README.md"
-    let s = File.readAsString filePath
-    let lastVersion = System.Text.RegularExpressions.Regex.Match(s,@"v\d+.\d+.\d+").Value
-    s.Replace(lastVersion,$"v{stableVersionTag}")
-    |> File.writeString false filePath
-
-
 let updateReleaseNotes = BuildTask.createFn "ReleaseNotes" [] (fun config ->
     ReleaseNotes.ensure()
 
@@ -52,7 +43,6 @@ let updateReleaseNotes = BuildTask.createFn "ReleaseNotes" [] (fun config ->
     let stableVersionTag = (sprintf "%i.%i.%i" stableVersion.Major stableVersion.Minor stableVersion.Patch )
 
     updateVersionOfReleaseWorkflow (stableVersionTag)
-    updateVersionOfReadme (stableVersionTag)
 )
 
 let githubDraft = BuildTask.createFn "GithubDraft" [] (fun config ->
