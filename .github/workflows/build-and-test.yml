@@ -18,7 +18,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: Build and test
-      run: dotnet run --project ./build/build.fsproj runTests
+      run: dotnet run --project ./build/Build.fsproj runTests
 
   build-and-test-windows:
     
@@ -31,4 +31,4 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: Build and test
-      run: dotnet run --project ./build/build.fsproj runTests
+      run: dotnet run --project ./build/Build.fsproj runTests

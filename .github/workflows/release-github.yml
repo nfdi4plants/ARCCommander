@@ -17,7 +17,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: Build and publish
-      run: dotnet run --project ./build/build.fsproj publishBinariesWin
+      run: dotnet run --project ./build/Build.fsproj publishBinariesWin
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -39,7 +39,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: Build and publish
-      run: dotnet run --project ./build/build.fsproj publishBinariesLinux
+      run: dotnet run --project ./build/Build.fsproj publishBinariesLinux
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -61,7 +61,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: Build and publish
-      run: dotnet run --project ./build/build.fsproj publishBinariesMac
+      run: dotnet run --project ./build/Build.fsproj publishBinariesMac
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
