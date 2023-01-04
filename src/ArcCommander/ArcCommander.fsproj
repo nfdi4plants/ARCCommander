@@ -55,6 +55,7 @@
     <Compile Include="APIs\ArcAPI.fs" />
     <Compile Include="APIs\ExternalExecutables.fs" />
     <Compile Include="Server\Version.fs" />
+    <Compile Include="Server\ArcAPIHandler.fs" />
     <Compile Include="Program.fs" />
 
   </ItemGroup>
