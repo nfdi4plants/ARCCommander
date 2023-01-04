@@ -13,6 +13,7 @@ type ArcCommand =
     | [<CliPrefix(CliPrefix.None)>]                             Export          of export_args  : ParseResults<ArcExportArgs>
     | [<CliPrefix(CliPrefix.None)>]                             Sync            of sync_args    : ParseResults<ArcSyncArgs>
     | [<CliPrefix(CliPrefix.None)>]                             Get             of get_args     : ParseResults<ArcGetArgs>
+    | [<CliPrefix(CliPrefix.None)>]                             Server          of server_args  : ParseResults<ArcServerArgs>
     | [<CliPrefix(CliPrefix.None)>][<SubCommand()>]             Update
     | [<CliPrefix(CliPrefix.DoubleDash)>][<SubCommand()>]       Version
     ///Subcommands
@@ -38,3 +39,4 @@ type ArcCommand =
             | Assay         _   -> "Assay functions"
             | Configuration _   -> "Configuration editing"
             | Version       _   -> "Get the ArcCommander's current version"
+            | Server        _   -> "Start the ArcCommander as a local server"

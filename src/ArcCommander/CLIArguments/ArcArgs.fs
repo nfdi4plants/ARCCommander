@@ -18,7 +18,7 @@ type ArcInitArgs =
             match this with
             | Owner               _ ->  "Owner of the ARC"
             | Branch              _ ->  "Name of the git branch to be created"
-            | RepositoryAddress   _ ->  "Github address"
+            | RepositoryAddress   _ ->  "Git repository address"
             | EditorPath          _ ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"
             | GitLFSByteThreshold _ ->  "The git LFS file size threshold in bytes. File larger than this threshold will be tracked by git LFS (Default Value is 150000000 Bytes ~ 150 MB)."
             | Gitignore           _ ->  "Use this flag if you want a default .gitignore to be added to the initialized repo"
@@ -63,3 +63,12 @@ type ArcGetArgs =
             | RepositoryAddress _ -> "Git remote address from which to pull the ARC"
             | BranchName        _ -> "Branch of the remote address which should be used. If none is given, uses \"main\""
             | NoLFS             _ -> "Does download only the pointers of LFS files, not the file content itself. Ideal for when you're only interested in the experimental metadata, not the data itself."
+
+
+type ArcServerArgs =
+    | [<Unique>][<AltCommandLine("-p")>] Port           of port_address : string
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Port              _ -> "<insert description here>"
