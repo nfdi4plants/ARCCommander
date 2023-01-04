@@ -18,8 +18,8 @@
     <FsDocsLicenseLink>https://github.com/nfdi4plants/arcCommander/blob/developer/LICENSE</FsDocsLicenseLink>
     <FsDocsReleaseNotesLink>https://github.com/nfdi4plants/arcCommander/blob/developer/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
     <AssemblyName>arc</AssemblyName>
-  </PropertyGroup>   
-  
+  </PropertyGroup>
+
   <!--Compile-States-->
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
@@ -56,12 +56,20 @@
     <Compile Include="APIs\ExternalExecutables.fs" />
     <Compile Include="Server\Version.fs" />
     <Compile Include="Program.fs" />
-	  
+
   </ItemGroup>
-  
+
+  <!--This copies our static files for the server function to the location of the dll. Allowing us to access it.-->
+  <ItemGroup>
+    <Content Include="Server\WebRoot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <!--References-->
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="6.0.3-beta.22076.4" />
+    <PackageReference Include="arcIO.NET" Version="0.0.4" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
     <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
@@ -72,6 +80,7 @@
     <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.5" />
     <PackageReference Include="JWT" Version="8.9.0" />
     <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
+    <PackageReference Include="Giraffe" Version="6.0.0" />
     <PackageReference Include="NLog" Version="4.7.13" />
   </ItemGroup>
 </Project>
