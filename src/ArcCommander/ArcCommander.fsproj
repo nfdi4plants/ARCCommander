@@ -56,16 +56,18 @@
     <Compile Include="APIs\ExternalExecutables.fs" />
     <Compile Include="Server\Version.fs" />
     <Compile Include="Server\ArcAPIHandler.fs" />
+    <Compile Include="Server\ApiDocs\BaseView.Docs.fs" />
+    <Compile Include="Server\ApiDocs\ArcApi.Docs.fs" />
+    <!--This copies our static files for the server function to the location of the dll. Allowing us to access it.-->
+    <Content Include="Server\WebRoot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
 
   </ItemGroup>
 
-  <!--This copies our static files for the server function to the location of the dll. Allowing us to access it.-->
-  <ItemGroup>
-    <Content Include="Server\WebRoot\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <ItemGroup />
 
   <!--References-->
   <ItemGroup>

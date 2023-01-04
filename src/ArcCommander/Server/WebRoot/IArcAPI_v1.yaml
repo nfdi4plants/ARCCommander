@@ -1,0 +1,80 @@
+﻿openapi: 3.0.3
+info:
+  version: 0.0.1
+  title: ARC API v1
+  description: |-
+    ARC API docs description
+    email: info@nfdi4plants.org
+servers:
+  - url: "http://localhost:5000"
+    description: "Local Test"
+paths:
+  /ping:
+    get:
+      summary: "Test function to verify client server connection."
+      description: "This function is only used for testing connection. If client has connection to server this request will return `pong`."
+      operationId: GET_ping
+      responses:
+        200:
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                Only_Result: 
+                  summary: This api must always return "pong".
+                  value: "pong"
+    post:
+      summary: "Test function to verify client server connection."
+      description: "This function is only used for testing connection. If client has connection to server and requests an integer, this request will return it."
+      operationId: POST_ping
+      requestBody:
+        description: "Test POST API request."
+        content:
+          application/json:
+            schema:
+              type: integer
+            examples:
+              the_answer:
+                summary: any number
+                value: 42
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  "is this your number?": 
+                    type: string
+              examples:
+                the_answer: 
+                  value:
+                    "is this your number?": "Your number is 42!"
+
+  /v1/arc/get:
+    post:
+      summary: "Takes an ISA-JSON as byte stream and returns a byte stream, consisting of the corresponding ARC created from it as a ZIP archive."
+      description: |
+        Give an ISA-JSON as byte stream via Http Request.
+        The ArcCommander server as backend will process and create the resulting ARC out of it. The ARC gets compressed as a ZIP archive.
+        This ZIP archive is then returned as a byte stream again.
+      operationId: POST_v1/arc/get
+      requestBody:
+        description: |
+          A JSON file, consisting of ISA, in the form of a byte stream.
+        content:
+          "*/*":
+            schema:
+              type: string
+              format: byte
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: byte
