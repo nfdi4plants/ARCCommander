@@ -362,7 +362,7 @@ module StudyAPI =
         log.Info("Start Study List")
 
         let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
-        log.Debug($"InvestigationFile: {investigationFilePath}")
+        log.Trace($"InvestigationFile: {investigationFilePath}")
 
         let investigation = Investigation.fromFile investigationFilePath
         
