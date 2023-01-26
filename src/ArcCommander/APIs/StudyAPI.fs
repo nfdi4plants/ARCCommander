@@ -387,13 +387,13 @@ module StudyAPI =
         if not onlyRegistered.IsEmpty then
             log.Warn("The ARC contains following registered studies that have no associated file:")
             onlyRegistered
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can init the study file using \"arc s init\"")
 
         if not onlyInitialized.IsEmpty then
             log.Warn("The ARC contains study files with the following identifiers not registered in the investigation:")
             onlyInitialized
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can register the study using \"arc s register\"")
 
         if combined.IsEmpty then

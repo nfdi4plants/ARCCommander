@@ -87,7 +87,7 @@ type ArcConfiguration =
                 |> merge fileConfig
                 |> merge argumentConfig
             | None -> 
-                log.Warn("WARNING: No config file found. Load default config instead.")
+                log.Warn("No config file found. Load default config instead.")
                 ArcConfiguration.GetDefault()
                 |> merge argumentConfig
         ArcConfiguration.ofIniData mergedIniData

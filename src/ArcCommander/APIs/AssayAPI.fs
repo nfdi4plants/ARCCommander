@@ -580,13 +580,13 @@ module AssayAPI =
         if not onlyRegistered.IsEmpty then
             log.Warn("The ARC contains following registered assays that have no associated folders:")
             onlyRegistered
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can init the assay folder using \"arc a init\".")
 
         if not onlyInitialized.IsEmpty then
             log.Warn("The ARC contains assay folders with the following identifiers not registered in the investigation:")
             onlyInitialized
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
+            |> Seq.iter ((sprintf "%s") >> log.Warn) 
             log.Info($"You can register the assay using \"arc a register\".")
 
         if combined.IsEmpty then
