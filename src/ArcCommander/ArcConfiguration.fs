@@ -2,6 +2,7 @@
 
 open System.IO
 open IniData
+open Logging
 
 /// Contains settings about the arc
 type ArcConfiguration =
@@ -269,9 +270,11 @@ module IsaModelConfiguration =
     /// Returns the full path of the study's file if it exists. Else returns None.
     let tryGetStudyFilePath identifier (configuration : ArcConfiguration) =
         let workDir = Map.find "workdir" configuration.General
+        let studiesDir = Map.find "rootfolder" configuration.Study
+        let studiesPath = Path.Combine(workDir, studiesDir)
         match tryGetStudyFileName identifier configuration with
         | Some i -> 
-            Path.Combine(workDir, "studies", i)
+            Path.Combine(studiesPath, i)
             |> Some
         | _ -> None
       
@@ -280,15 +283,27 @@ module IsaModelConfiguration =
         tryGetStudyFilePath identifier configuration
         |> Option.get
 
-    /// Returns the study identifiers of the study files located in the arc root folder.
+    /// Returns the study identifiers of the study files located in each study's folder.
     let findStudyIdentifiers (configuration : ArcConfiguration) =
+        let log = Logging.createLogger "findStudyIdentifiersLog"
         let workDir = Map.find "workdir" configuration.General
-        Directory.GetFiles(workDir)
-        |> Array.choose (fun s -> 
-            if s.EndsWith "_isa.study.xlsx" then
-                Some (System.IO.FileInfo(s).Name.Replace("_isa.study.xlsx",""))
-            else 
-                None
+        let studiesDir = Map.find "rootfolder" configuration.Study
+        let studiesPath = Path.Combine(workDir, studiesDir)
+        let studyFolders = Directory.GetDirectories studiesPath
+        studyFolders
+        |> Array.collect (
+            fun sf ->
+                let studyIdentifier = (DirectoryInfo sf).Name
+                Directory.GetFiles sf
+                |> Array.choose (fun s -> 
+                    if s.EndsWith "isa.study.xlsx" then
+                        Some studyIdentifier
+                    elif s.EndsWith "_isa.study.xlsx" then
+                        log.Warn $"The Study File of Study {studyIdentifier} has a deprecated File Name: {s}"
+                        Some studyIdentifier
+                    else 
+                        None
+                )
         )
 
     /// Returns the full path of the investigation file if it exists. Else returns None.
