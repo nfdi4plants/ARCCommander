@@ -13,6 +13,7 @@ open System.IO
 open System.Text
 open System.Diagnostics
 open Argu
+open arcIO.NET
 
 /// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input.
 let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =

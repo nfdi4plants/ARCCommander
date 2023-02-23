@@ -7,6 +7,7 @@ open System
 open System.IO
 open ISADotNet
 open ISADotNet.XLSX
+open arcIO.NET
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs.
 module StudyAPI =
@@ -999,12 +1000,10 @@ module StudyAPI =
             let name = getFieldValueByName "DesignType" designArgs
 
             let design = 
-                 DesignDescriptors.fromString
+                 OntologyAnnotation.fromString
                      name
                      (getFieldValueByName  "TypeTermAccessionNumber"    designArgs)
-                     (getFieldValueByName  "TypeTermSourceREF"          designArgs)
-
-                     []
+                     (getFieldValueByName  "TypeTermSourceREF"          designArgs)                    
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
             
@@ -1111,11 +1110,10 @@ module StudyAPI =
             let name = getFieldValueByName "DesignType" designArgs
 
             let design = 
-                DesignDescriptors.fromString
+                OntologyAnnotation.fromString
                     name
                     (getFieldValueByName  "TypeTermAccessionNumber"    designArgs)
                     (getFieldValueByName  "TypeTermSourceREF"          designArgs)
-                    []
             
             let studyIdentifier = getFieldValueByName "StudyIdentifier" designArgs
 

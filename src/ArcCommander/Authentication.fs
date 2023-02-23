@@ -1,7 +1,6 @@
 ﻿namespace ArcCommander
 
 open IdentityModel.OidcClient;
-open Microsoft.Net.Http.Server;
 open System;
 open System.Collections.Generic;
 open System.Diagnostics;
@@ -11,18 +10,18 @@ open System.Text;
 open System.Text.Json
 open System.Text.Json.Serialization
 open System.Threading.Tasks;
-open JWT.Builder
-open JWT.Algorithms
+//open JWT.Builder
+//open JWT.Algorithms
 
 module Authentication =
 
-    let decodeResponse (response : string) = 
+    //let decodeResponse (response : string) = 
         
-        JwtBuilder.Create()
-        |> fun b -> b.WithAlgorithm(new HMACSHA256Algorithm()) // symmetric
-        //|> fun b -> b.WithSecret(secret)
-        //|> fun b -> b.MustVerifySignature()
-        |> fun b -> b.Decode(response)
+    //    JwtBuilder.Create()
+    //    |> fun b -> b.WithAlgorithm(new HMACSHA256Algorithm()) // symmetric
+    //    //|> fun b -> b.WithSecret(secret)
+    //    //|> fun b -> b.MustVerifySignature()
+    //    |> fun b -> b.Decode(response)
 
     /// Fields returned by the token service
     type IdentityToken =    
@@ -49,9 +48,9 @@ module Authentication =
         static member ofJson (jsonString : string) =
             ISADotNet.JsonExtensions.fromString<IdentityToken> jsonString
 
-        static member ofJwt (jwtResponse : string) =
-            decodeResponse jwtResponse
-            |> IdentityToken.ofJson
+        //static member ofJwt (jwtResponse : string) =
+        //    decodeResponse jwtResponse
+        //    |> IdentityToken.ofJson
     
     /// Create a standard html site text with given string as body
     let fillHTML s = $"<html><head></head><body><h1>{s}</h1></body></html>"
@@ -154,8 +153,8 @@ module Authentication =
                     return result
             }
 
-        [<STAThread>]
         /// Try to get the token information from a token service specified in the arc configuration
+        [<STAThread>]
         let tryLogin (log : NLog.Logger) authority (arcConfiguration : ArcConfiguration) =
             
             log.Info("Initiate login protocol")
@@ -172,8 +171,8 @@ module Authentication =
 
     module OAuth2 =
 
-        [<STAThread>]
         /// Try to get the token information from a token service specified in the arc configuration
+        [<STAThread>]
         let tryLogin (log : NLog.Logger) authority (arcConfiguration : ArcConfiguration) =
 
             raise (NotImplementedException("Login via OAuth2 authorization protocol is not yet implemented"))
