@@ -351,9 +351,12 @@ module StudyAPI =
         
         log.Info("Start Study List")
 
-        let ardDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let arcDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        Study.list ardDir  
+        Study.list arcDir  
+        |> Seq.iter (fun identifier ->
+            log.Debug(sprintf "Study: %s" identifier)
+        )
 
     /// Functions for altering investigation contacts.
     module Contacts =
