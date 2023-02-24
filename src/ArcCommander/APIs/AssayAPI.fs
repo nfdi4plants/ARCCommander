@@ -310,6 +310,7 @@ module AssayAPI =
                 let info = Study.StudyInfo.create studyIdentifier "" "" "" "" (IsaModelConfiguration.getStudyFileName studyIdentifier arcConfiguration) []
                 Study.fromParts info [] [] [] [assay] [] []
                 |> API.Study.add studies
+                |> List.filter (fun s -> s <> Study.empty)
         | None ->
             log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
             if StudyAPI.StudyFile.exists arcConfiguration studyIdentifier |> not then
