@@ -334,25 +334,14 @@ module StudyAPI =
         let log = Logging.createLogger "StudyShowLog"
         
         log.Info("Start Study Show")
-
-        let identifier = getFieldValueByName "Identifier" studyArgs
-
-        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
-
-        let investigation = Investigation.fromFile investigationFilePath
         
-        match investigation.Studies with
-        | Some studies -> 
-            match API.Study.tryGetByIdentifier identifier studies with
-            | Some study ->
-                study
-                |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.toRows
-                |> log.Debug
-            | None -> 
-                log.Error($"Study with the identifier {identifier} does not exist in the investigation file.")
-                ()
-        | None -> 
-            log.Error("The investigation does not contain any studies.")
+        let arcDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let identifier = getFieldValueByName "Identifier" studyArgs
+        let study = Study.readByIdentifier arcDir identifier
+
+        study
+        |> Prompt.serializeXSLXWriterOutput Study.StudyInfo.toRows
+        |> log.Debug       
             
 
     /// Lists all study identifiers registered in this ARC's investigation file.
@@ -362,48 +351,9 @@ module StudyAPI =
         
         log.Info("Start Study List")
 
-        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get  
-        log.Debug($"InvestigationFile: {investigationFilePath}")
+        let ardDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let investigation = Investigation.fromFile investigationFilePath
-        
-        let studyFileIdentifiers = set (IsaModelConfiguration.findStudyIdentifiers arcConfiguration)
-
-        let studyIdentifiers = 
-            investigation.Studies
-            |> Option.defaultValue []
-            |> List.choose (fun s -> 
-                match s.Identifier with
-                | None | Some "" -> 
-                    log.Warn("Study does not have identifier")
-                    None
-                | Some i -> Some i
-            ) 
-            |> set
-            
-        let onlyRegistered = Set.difference studyIdentifiers studyFileIdentifiers
-        let onlyInitialized = Set.difference studyFileIdentifiers studyIdentifiers
-        let combined = Set.union studyIdentifiers studyFileIdentifiers
-
-        if not onlyRegistered.IsEmpty then
-            log.Warn("The ARC contains following registered studies that have no associated file:")
-            onlyRegistered
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
-            log.Info($"You can init the study file using \"arc s init\"")
-
-        if not onlyInitialized.IsEmpty then
-            log.Warn("The ARC contains study files with the following identifiers not registered in the investigation:")
-            onlyInitialized
-            |> Seq.iter ((sprintf "WARN: %s") >> log.Warn) 
-            log.Info($"You can register the study using \"arc s register\"")
-
-        if combined.IsEmpty then
-            log.Error("The ARC does not contain any studies.")
-
-        combined
-        |> Seq.iter (fun identifier ->
-            log.Debug(sprintf "Study: %s" identifier)
-        )
+        Study.list ardDir  
 
     /// Functions for altering investigation contacts.
     module Contacts =
