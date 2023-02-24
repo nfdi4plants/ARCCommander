@@ -196,7 +196,6 @@ let testStudyContacts =
     let studyBeforeChangingIt = 
         ISADotNet.XLSX.Investigation.fromFile investigationToCopy
         |> API.Investigation.getStudies
-        |> Option.get
         |> API.Study.tryGetByIdentifier studyIdentifier
         |> Option.get
 

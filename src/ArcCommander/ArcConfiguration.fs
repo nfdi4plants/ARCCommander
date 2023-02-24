@@ -2,6 +2,7 @@
 
 open System.IO
 open IniData
+open arcIO.NET
 
 /// Contains settings about the arc
 type ArcConfiguration =
