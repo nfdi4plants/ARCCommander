@@ -114,54 +114,10 @@ module ArcAPI =
         
         log.Info("Start Arc Update")
 
-        let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
+        let arcDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
-
-        let assayNames = 
-            DirectoryInfo(assayRootFolder).GetDirectories()
-            |> Array.map (fun d -> d.Name)
-            
-        let investigation =
-            try Investigation.fromFile investigationFilePath 
-            with
-            | :? FileNotFoundException -> 
-                Investigation.empty
-            | err -> 
-                log.Fatal($"{err.ToString()}")
-                raise (Exception(""))
-
-        let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
-            match assayNames with
-            | a :: t ->
-                let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
-                let assayFileName = IsaModelConfiguration.getAssayFileName a arcConfiguration
-                let persons,assay = AssayFile.Assay.fromFile assayFilePath
-                let factors = API.Assay.getFactors assay
-                let protocols = API.Assay.getProtocols assay
-                let studies = investigation.Studies
-
-                match studies with
-                | Some studies ->
-                    match studies |> Seq.tryFind (API.Study.getAssays  >> API.Assay.existsByFileName assayFileName) with
-                    | Some study -> 
-                        study
-                        |> API.Study.mapAssays (API.Assay.updateByFileName API.Update.UpdateByExistingAppendLists assay)
-                        |> API.Study.mapFactors (List.append factors >> List.distinctBy (fun f -> f.Name))
-                        |> API.Study.mapProtocols (List.append protocols >> List.distinctBy (fun p -> p.Name))
-                        |> API.Study.mapContacts (List.append persons >> List.distinctBy (fun p -> p.FirstName,p.LastName))
-                        |> fun s -> API.Study.updateBy ((=) study) API.Update.UpdateAll s studies
-                    | None ->
-                        Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
-                        |> API.Study.add studies
-                | None ->
-                    [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
-                |> API.Investigation.setStudies investigation
-                |> updateInvestigationAssays t
-            | [] -> investigation
-
-        updateInvestigationAssays (assayNames |> List.ofArray) investigation
-        |> Investigation.toFile investigationFilePath
+        Investigation.fromArcFolder arcDir
+        |> Investigation.overWrite arcDir
 
     /// Export the complete ARC as a JSON object.
     let export (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
