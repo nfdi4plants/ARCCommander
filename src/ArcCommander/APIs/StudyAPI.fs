@@ -349,8 +349,6 @@ module StudyAPI =
         
         let log = Logging.createLogger "StudyListLog"
         
-        log.Info("Start Study List")
-
         let arcDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         Study.list arcDir  

@@ -167,10 +167,13 @@ module ArcAPI =
         let studyIdentifier = tryGetFieldValueByName "StudyIdentifier" arcArgs
 
         log.Info("Fetch converter dll")
-
-        let dll = ArcConversion.getDll repoOwner repoName $"{converterName}.dll"
-
-        let assembly = System.Reflection.Assembly.Load dll
+       
+        let assembly = 
+            if nameRoot.Contains ".dll" then
+                System.Reflection.Assembly.LoadFile nameRoot
+            else
+                let dll = ArcConversion.getDll repoOwner repoName $"{converterName}.dll"
+                System.Reflection.Assembly.Load dll
         let converter = 
             ArcConversion.callMethodOfAssembly converterName "create" assembly :?> ARCconverter
         log.Info("Load ARC")
@@ -186,6 +189,8 @@ module ArcAPI =
             ArcConversion.handleTSV i s a workDir nameRoot converter
         | ARCtoXLSX f -> 
             ArcConversion.handleXLSX i s a workDir nameRoot converter
+        | ARCtoJSON f -> 
+            ArcConversion.handleJSON i s a workDir nameRoot converter
         | _ -> failwith "no other converter defined"
         |> function 
            | Ok messages ->

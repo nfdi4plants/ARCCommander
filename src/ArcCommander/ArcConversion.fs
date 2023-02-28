@@ -8,6 +8,7 @@ open System
 open System.IO
 open System.Diagnostics
 open Argu
+open JsonDSL
 open arcIO.NET
 open arcIO.NET.Converter
 open ISADotNet.QueryModel
@@ -18,27 +19,6 @@ open Octokit
 
 /// Functions for trying to run external tools, given the command line arguments can not be parsed.
 module ArcConversion =
-
-    type ARCconverter with
-        member this.ConvertCSV(i,s,a) = 
-            match this with
-            | ARCtoCSV f -> f i s a
-            | _ -> failwith "could not convert to csv"
-
-        member this.ConvertTSV(i,s,a) = 
-            match this with
-            | ARCtoTSV f -> f i s a
-            | _ -> failwith "could not convert to tsv"
-
-        member this.ConvertXLSX(i,s,a) = 
-            match this with
-            | ARCtoXLSX f -> f i s a
-            | _ -> failwith "could not convert to xlsx"
-
-        member this.ConvertXML(i,s,a) = 
-            match this with
-            | ARCtoXML f -> f i s a
-            | _ -> failwith "could not convert to xml"
 
     let getDll (repoOwner : string) (repoName : string) (dllname : string) =
 
@@ -92,12 +72,12 @@ module ArcConversion =
         | Option.Some "N" | Option.Some "n" -> false
         | _ -> System.Console.WriteLine("Sorry, invalid answer"); promptYesNo msg
 
-    let handleTransformations arcDir namePrefix (messages : Message list) = 
+    let handleTransformations arcDir namePrefix (messages : exn list) = 
         let i = Investigation.fromArcFolder arcDir
         let s = i.Studies.Value.Head
         let transformations = 
             messages
-            |> ISADotNet.QueryModel.Linq.Spreadsheet.ErrorHandling.getStudyformations namePrefix
+            |> ISADotNet.QueryModel.ErrorHandling.getStudyformations namePrefix
             |> List.distinct       
         let updatedStudy = 
             transformations
@@ -110,10 +90,10 @@ module ArcConversion =
         Study.overWrite arcDir updatedStudy
         Investigation.overWrite arcDir updatedArc
 
-    let writeMessages (arcDir : string) (messages : Message list) =
+    let writeMessages (arcDir : string) (messages : exn list) =
         let messagesOutPath = Path.Combine(arcDir,".arc/OutputMessages.txt")
         messages
-        |> List.map (fun m -> m.AsString())
+        |> List.map (fun m -> m.ToString())
         |> List.toArray
         |> Array.distinct
         |> fun messages -> 
@@ -125,9 +105,9 @@ module ArcConversion =
         | Some (workbook,messages) -> 
             let wb = workbook.Parse()
             wb.ToFile(outPath)
-            Ok(messages)
+            Ok(messages |> List.choose (fun m -> m.TryException()))
         | NoneOptional messages | NoneRequired messages ->
-            Error(messages)
+            Error(messages |> List.choose (fun m -> m.TryException()))
 
     let handleCSV (i : QInvestigation) (s : QStudy) (a : QAssay) arcDir converterName (f : arcIO.NET.Converter.ARCconverter) =
         let outPath = Path.Combine([|arcDir;".arc";$"{converterName}.csv"|])
@@ -135,9 +115,9 @@ module ArcConversion =
         | Some (workbook,messages) -> 
             let wb = workbook.Parse()
             FsSpreadsheet.CsvIO.Writer.toFile(outPath,wb,Separator = ',')
-            Ok(messages)
+            Ok(messages |> List.choose (fun m -> m.TryException()))
         | NoneOptional messages | NoneRequired messages ->
-            Error(messages)
+            Error(messages |> List.choose (fun m -> m.TryException()))
 
     let handleTSV (i : QInvestigation) (s : QStudy) (a : QAssay) arcDir converterName (f : arcIO.NET.Converter.ARCconverter) =
         let outPath = Path.Combine([|arcDir;".arc";$"{converterName}.csv"|])
@@ -145,6 +125,16 @@ module ArcConversion =
         | Some (workbook,messages) -> 
             let wb = workbook.Parse()
             FsSpreadsheet.CsvIO.Writer.toFile(outPath,wb,Separator = '\t')
-            Ok(messages)
+            Ok(messages |> List.choose (fun m -> m.TryException()))
         | NoneOptional messages | NoneRequired messages ->
-            Error(messages)
+            Error(messages |> List.choose (fun m -> m.TryException()))
+
+    let handleJSON (i : QInvestigation) (s : QStudy) (a : QAssay) arcDir converterName (f : arcIO.NET.Converter.ARCconverter) =
+        let outPath = Path.Combine([|arcDir;".arc";$"{converterName}.json"|])
+        match f.ConvertJsn(i,s,a) with
+        | JEntity.Some (node,messages) -> 
+            let s = node.ToJsonString()
+            File.WriteAllText(outPath,s)
+            Ok(messages |> List.map (fun m -> m.AsException()))
+        | JEntity.NoneOptional messages | JEntity.NoneRequired messages ->
+            Error(messages |> List.map (fun m -> m.AsException()))
