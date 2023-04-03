@@ -1,7 +1,23 @@
 ﻿namespace ArcCommander.CLIArguments
 /// ------------ TOP LEVEL ------------ ///
-open Argu 
 
+open ArcCommander
+open Argu 
+open ArgumentProcessing
+
+type ArcConvertArgs =
+
+    | [<MainCommand>][<Mandatory>][<Unique>]            Target          of target           : string
+    | [<AltCommandLine("-s")>][<Unique>][<FileName>]    StudyIdentifier of study_identifier : string
+    | [<AltCommandLine("-a")>][<Unique>][<FileName>]    AssayIdentifier of assay_identifier : string
+
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Target            _ -> "Target format to which arc should be exported."
+            | StudyIdentifier   _ -> "Identifier of the study to be exported"
+            | AssayIdentifier   _ -> "Identifier of the assay to be exported"
 
 type ArcInitArgs = 
 

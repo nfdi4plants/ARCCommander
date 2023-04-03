@@ -8,6 +8,22 @@ open ArcCommander.ArgumentProcessing
 
 open ISADotNet
 open ISADotNet.XLSX
+open arcIO.NET
+open arcIO.NET.Converter
+
+module API =
+    
+    module Investigation = 
+        
+        let getProcesses (investigation) =
+            investigation.Studies 
+            |> Option.defaultValue [] |> List.collect (fun s -> 
+                s.Assays
+                |> Option.defaultValue [] |> List.collect (fun a -> 
+                    a.ProcessSequence |> Option.defaultValue []
+                )
+            )
+
 
 /// ArcCommander API functions that get executed by top level subcommand verbs.
 module ArcAPI = 
@@ -98,52 +114,10 @@ module ArcAPI =
         
         log.Info("Start Arc Update")
 
-        let assayRootFolder = AssayConfiguration.getRootFolderPath arcConfiguration
+        let arcDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
-
-        let assayNames = 
-            DirectoryInfo(assayRootFolder).GetDirectories()
-            |> Array.map (fun d -> d.Name)
-            
-        let investigation =
-            try Investigation.fromFile investigationFilePath 
-            with
-            | :? FileNotFoundException -> 
-                Investigation.empty
-            | err -> 
-                log.Fatal($"{err.ToString()}")
-                raise (Exception(""))
-
-        let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
-            match assayNames with
-            | a :: t ->
-                let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
-                let assayFileName = IsaModelConfiguration.getAssayFileName a arcConfiguration
-                let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
-                let studies = investigation.Studies
-
-                match studies with
-                | Some studies ->
-                    match studies |> Seq.tryFind (API.Study.getAssays >> Option.defaultValue [] >> API.Assay.existsByFileName assayFileName) with
-                    | Some study -> 
-                        study
-                        |> API.Study.mapAssays (API.Assay.updateByFileName API.Update.UpdateByExistingAppendLists assay)
-                        |> API.Study.mapFactors (List.append factors >> List.distinctBy (fun f -> f.Name))
-                        |> API.Study.mapProtocols (List.append protocols >> List.distinctBy (fun p -> p.Name))
-                        |> API.Study.mapContacts (List.append persons >> List.distinctBy (fun p -> p.FirstName,p.LastName))
-                        |> fun s -> API.Study.updateBy ((=) study) API.Update.UpdateAll s studies
-                    | None ->
-                        Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
-                        |> API.Study.add studies
-                | None ->
-                    [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
-                |> API.Investigation.setStudies investigation
-                |> updateInvestigationAssays t
-            | [] -> investigation
-
-        updateInvestigationAssays (assayNames |> List.ofArray) investigation
-        |> Investigation.toFile investigationFilePath
+        Investigation.fromArcFolder arcDir
+        |> Investigation.overWrite arcDir
 
     /// Export the complete ARC as a JSON object.
     let export (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
@@ -152,73 +126,82 @@ module ArcAPI =
 
         log.Info("Start Arc Export")
        
-        let investigationFilePath = IsaModelConfiguration.getInvestigationFilePath arcConfiguration
-    
-        let assayNames = AssayConfiguration.getAssayNames arcConfiguration
-                
-        let investigation =
-            try Investigation.fromFile investigationFilePath 
-            with
-            | :? FileNotFoundException -> 
-                Investigation.empty
-            | err -> 
-                log.Fatal($"{err.Message}")
-                raise (Exception(""))
-    
-        let rec updateInvestigationAssays (assayNames : string list) (investigation : Investigation) =
-            match assayNames with
-            | a :: t ->
-                let assayFilePath = IsaModelConfiguration.getAssayFilePath a arcConfiguration
-                let assayFileName = (IsaModelConfiguration.getAssayFileName a arcConfiguration).Replace("\\","/")
-                let factors,protocols,persons,assay = AssayFile.Assay.fromFile assayFilePath
-                let studies = investigation.Studies
-
-                match studies with
-                | Some studies ->
-                    match studies |> Seq.tryFind (API.Study.getAssays >> Option.defaultValue [] >> API.Assay.existsByFileName assayFileName) with
-                    | Some study -> 
-                        study
-                        |> API.Study.mapAssays (API.Assay.updateByFileName API.Update.UpdateByExistingAppendLists assay)
-                        |> API.Study.mapFactors (List.append factors >> List.distinctBy (fun f -> f.Name))
-                        |> API.Study.mapProtocols (List.append protocols >> List.distinctBy (fun p -> p.Name))
-                        |> API.Study.mapContacts (List.append persons >> List.distinctBy (fun p -> p.FirstName,p.LastName))
-                        |> fun s -> API.Study.updateBy ((=) study) API.Update.UpdateAll s studies
-                    | None ->
-                        Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons
-                        |> API.Study.add studies
-                | None ->                   
-                    [Study.fromParts (Study.StudyInfo.create a "" "" "" "" "" []) [] [] factors [assay] protocols persons]
-                |> API.Investigation.setStudies investigation
-                |> updateInvestigationAssays t
-            | [] -> investigation
-                
-        let output = updateInvestigationAssays (assayNames |> List.ofArray) investigation
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+                    
+        let investigation = arcIO.NET.Investigation.fromArcFolder workDir
 
         if containsFlag "ProcessSequence" arcArgs then
 
-            let output = 
-                output.Studies 
-                |> Option.defaultValue [] |> List.collect (fun s -> 
-                    s.Assays
-                    |> Option.defaultValue [] |> List.collect (fun a -> 
-                        a.ProcessSequence |> Option.defaultValue []
-                    )
-                )
+            let output = API.Investigation.getProcesses investigation
 
             match tryGetFieldValueByName "Output" arcArgs with
             | Some p -> ArgumentProcessing.serializeToFile p output
             | None -> ()
 
-            //System.Console.Write(ArgumentProcessing.serializeToString output)
             log.Debug(ArgumentProcessing.serializeToString output)
         else 
-               
+
             match tryGetFieldValueByName "Output" arcArgs with
-            | Some p -> ISADotNet.Json.Investigation.toFile p output
+            | Some p -> ISADotNet.Json.Investigation.toFile p investigation
             | None -> ()
 
-            //System.Console.Write(ISADotNet.Json.Investigation.toString output)
-            log.Debug(ISADotNet.Json.Investigation.toString output)
+            log.Debug(ISADotNet.Json.Investigation.toString investigation)
+
+    /// Convert the complete ARC to a target format.
+    let convert (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
+    
+        let log = Logging.createLogger "ArcConvertLog"
+
+        log.Info("Start Arc Convert")
+       
+        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+
+        let nameRoot = getFieldValueByName "Target" arcArgs
+        let converterName = $"arc-convert-{nameRoot}"
+        let repoOwner =  "nfdi4plants"
+        let repoName = "converters"
+
+        log.Info (converterName)
+
+        let assayIdentifier = tryGetFieldValueByName "AssayIdentifier" arcArgs
+        let studyIdentifier = tryGetFieldValueByName "StudyIdentifier" arcArgs
+
+        log.Info("Fetch converter dll")
+       
+        let assembly = 
+            if nameRoot.Contains ".dll" then
+                System.Reflection.Assembly.LoadFile nameRoot
+            else
+                let dll = ArcConversion.getDll repoOwner repoName $"{converterName}.dll"
+                System.Reflection.Assembly.Load dll
+        let converter = 
+            ArcConversion.callMethodOfAssembly converterName "create" assembly :?> ARCconverter
+        log.Info("Load ARC")
+
+        let i,s,a = ArcConversion.getISA studyIdentifier assayIdentifier workDir
+
+        log.Info("Run conversion")
+           
+        match converter with
+        | ARCtoCSV f -> 
+            ArcConversion.handleCSV i s a workDir nameRoot converter
+        | ARCtoTSV f -> 
+            ArcConversion.handleTSV i s a workDir nameRoot converter
+        | ARCtoXLSX f -> 
+            ArcConversion.handleXLSX i s a workDir nameRoot converter
+        | ARCtoJSON f -> 
+            ArcConversion.handleJSON i s a workDir nameRoot converter
+        | _ -> failwith "no other converter defined"
+        |> function 
+           | Ok messages ->
+                log.Info $"Successfully converted to {nameRoot}"
+                ArcConversion.writeMessages workDir messages
+           | Error messages ->
+                ArcConversion.writeMessages workDir messages
+                log.Error $"Arc could not be converted to {nameRoot}, as some required values could not be retreived"
+                if ArcConversion.promptYesNo "Do you want missing fields to be written back into ARC? (y/n)" then
+                    ArcConversion.handleTransformations workDir converterName messages
+
 
     /// Returns true if called anywhere in an ARC.
     let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())

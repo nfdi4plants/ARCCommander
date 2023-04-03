@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Diagnostics
 open Argu
+open arcIO.NET
 
 /// Functions for trying to run external tools, given the command line arguments can not be parsed.
 module ExternalExecutables =
@@ -82,9 +83,9 @@ module ExternalExecutables =
                         let roev = reviseOutput ev.Data
                         if matchCmdErrMsg roev || matchBashErrMsg roev then 
                             log.Error("No executable, command or script file with given argument name known.") 
-                            handleExceptionMessage log e2
+                            Logging.handleExceptionMessage log e2
                             raise (Exception())
-                        else checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
+                        else Logging.checkNonLog roev (sprintf "External Tool ERROR: %s" >> log.Error)
                 )
                 let sbOutput = Text.StringBuilder() // StringBuilder for TRACE output (verbosity 2)
                 sbOutput.Append("External tool: ") |> ignore
@@ -98,9 +99,9 @@ module ExternalExecutables =
                             sbOutput.Append(char charAsInt) |> ignore
                     p.WaitForExit()
                     log.Trace(sbOutput.ToString()) // it is fine that the logging occurs after the external tool has done its job
-                with e3 -> handleExceptionMessage log e3
+                with e3 -> Logging.handleExceptionMessage log e3
                 None
             // If neither parsing, nor external executable tool search led to success, just return the error message
             | None -> 
-                handleExceptionMessage log e2
+                Logging.handleExceptionMessage log e2
                 None

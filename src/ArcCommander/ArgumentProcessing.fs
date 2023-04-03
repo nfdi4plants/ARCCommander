@@ -8,7 +8,7 @@ open System.Diagnostics
 open System.Text
 open System.Text.Json
 open Argu
-
+open arcIO.NET
 
 /// Functions for processing arguments.
 module ArgumentProcessing = 

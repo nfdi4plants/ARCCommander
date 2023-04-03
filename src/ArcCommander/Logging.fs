@@ -81,36 +81,6 @@ module Logging =
         // activate config for logger
         LogManager.Configuration <- config
 
-    /// Creates a new logger with the given name. Configuration details are obtained from the generateConfig function.
-    let createLogger (loggerName : string) = 
-
-        // new instance of "Logger" with activated config
-        let logger = LogManager.GetLogger(loggerName)
-
-        logger
-
-    /// Takes a logger and an exception and separates usage and error messages. Usage messages will be printed into the console while error messages will be logged.
-    let handleExceptionMessage (log : NLog.Logger) (exn : Exception) =
-        // separate usage message (Argu) and error messages. Error messages shall be logged, usage messages shall not, empty error message shall not appear at all
-        let isUsageMessage = exn.Message.Contains("USAGE") || exn.Message.Contains("SUBCOMMANDS")
-        let isErrorMessage = exn.Message.Contains("ERROR")
-        let isEmptyMessage = exn.Message = ""
-        match isUsageMessage, isErrorMessage, isEmptyMessage with
-        | true,true,false -> // exception message contains usage AND error messages
-            let eMsg, uMsg = 
-                exn.Message.Split(Environment.NewLine) // '\n' leads to parsing problems
-                |> fun arr ->
-                    arr |> Array.find (fun t -> t.Contains("ERROR")),
-                    arr |> Array.filter (fun t -> t.Contains("ERROR") |> not) |> String.concat "\n" // Argu usage instruction shall not be logged as error
-            log.Error(eMsg)
-            printfn "%s" uMsg
-        | true,false,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
-        | false,false,true -> () // empty error message
-        | _ -> log.Error(exn) // everything else will be a non-empty error message
-    
-    /// Checks if a message (string) is empty and if it is not, applies a logging function to it.
-    let checkNonLog s (logging : string -> unit) = if s <> "" then logging s
-    
     /// Deletes unwanted new lines at the end of an output.
     let rec reviseOutput (output : string) = 
         if output = null then ""

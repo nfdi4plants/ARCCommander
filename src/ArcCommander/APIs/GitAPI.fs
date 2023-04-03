@@ -4,7 +4,7 @@ open ArcCommander
 open ArgumentProcessing
 open Fake.IO
 open System.IO
-
+open arcIO.NET
 
 module GitAPI =
 
@@ -113,7 +113,7 @@ module GitAPI =
             allFilesPlusSizes 
             |> List.iter (fun (file,size) ->
 
-                    /// Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
+                    // Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
                     match gitLfsThreshold with
                     | Some thr when size > thr -> trackWithLFS file
                     | _ -> trackWithAdd file

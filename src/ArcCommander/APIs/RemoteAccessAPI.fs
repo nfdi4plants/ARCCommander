@@ -2,7 +2,7 @@
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-
+open arcIO.NET
 
 
 module RemoteAccessAPI =
