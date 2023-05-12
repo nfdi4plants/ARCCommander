@@ -152,7 +152,7 @@ let publishBinariesMacARM = BuildTask.create "PublishBinariesMacARM" [clean.IfNe
     printfn "Beware that assemblyName differs from projectName!"
 }
 
-let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac]
+let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac; publishBinariesMacARM]
 
 let publishBinariesMacBoth = BuildTask.createEmpty "PublishBinariesMacBoth" [clean; build; publishBinariesMac; publishBinariesMacARM]
 

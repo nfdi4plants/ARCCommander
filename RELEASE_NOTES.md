@@ -1,4 +1,29 @@
-﻿### 0.4.0+c769c38 (Released 2023-1-3)
+﻿### 0.5.0+59f219b (Released 2023-4-12)
+* Additions:
+    * [[#ea33a5f](https://github.com/nfdi4plants/arcCommander/commit/ea33a5fbc688f880f0ae733843d8c40a43bea74d)] Merge pull request #174 from Freymaurer/developer
+    * [[#fc698ce](https://github.com/nfdi4plants/arcCommander/commit/fc698ce40f00468fc0fbd8c55c9f7ab73630e436)] Move GitHub workflows to meta folder
+    * [[#87ab386](https://github.com/nfdi4plants/arcCommander/commit/87ab38689163d4a3fed3e3abde161c2d8c683e08)] Add Giraffe package and Server-related static files to .fsproj
+    * [[#4116fe3](https://github.com/nfdi4plants/arcCommander/commit/4116fe3f665da3694a4b7019811ef750a1d55247)] Add ArcAPIHandler functions
+    * [[#913eb3c](https://github.com/nfdi4plants/arcCommander/commit/913eb3c7ac5f263c9d6dbfe5f6707cbbc6617b34)] Add Server.fs with `arc server` functions, WebRoot and ApiDocs to project
+    * [[#c4471da](https://github.com/nfdi4plants/arcCommander/commit/c4471da4e5e5023d46dc31c5d7e49217de462038)] Add Argu commands & args for Server functionality
+    * [[#d0e3a09](https://github.com/nfdi4plants/arcCommander/commit/d0e3a09a387a4cac50889b2fc7cf9fd1e66baf21)] Merge pull request #175 from nfdi4plants/ArcServer
+    * [[#85a6c89](https://github.com/nfdi4plants/arcCommander/commit/85a6c8998eb15df850ba94513eea2fb712c230d9)] Update FAKE in .proj file & .NET SDK in global.json
+    * [[#91eb7a6](https://github.com/nfdi4plants/arcCommander/commit/91eb7a6d8fcdf39bfb6efe9640f8b95d606879cc)] move loggind to arcIO
+    * [[#6c051b1](https://github.com/nfdi4plants/arcCommander/commit/6c051b188cf93e3da98be39d7b4fa8120c896585)] add arc convert command
+    * [[#e7fa3f2](https://github.com/nfdi4plants/arcCommander/commit/e7fa3f27aee4b284962d024f06749e650e5d16ed)] use update functionality defined in arcIO.Net
+    * [[#2c5796d](https://github.com/nfdi4plants/arcCommander/commit/2c5796deec340ea9d0b335e302ce0b71ea4376f0)] replace study list with arcIO.NET function
+    * [[#ca663e1](https://github.com/nfdi4plants/arcCommander/commit/ca663e106ceb2121ef4e91645ca942fb5d04cd77)] update test action to .net 7
+    * [[#f39eea7](https://github.com/nfdi4plants/arcCommander/commit/f39eea770752d335663973a22ca89427882deca1)] update Fake versions
+    * [[#9350650](https://github.com/nfdi4plants/arcCommander/commit/93506507c768c5c7770ae639b9dbce300ede9aa1)] add json to convert command
+    * [[#73c970d](https://github.com/nfdi4plants/arcCommander/commit/73c970d5df856d3939e8a68f6e7c5d49de306623)] set .net sdk version of github action to 6.0
+    * [[#4a30252](https://github.com/nfdi4plants/arcCommander/commit/4a30252ee6ff44f0c266bfe749b8514a2bb2db62)] loosen .NET version constraints in global.json
+    * [[#59f219b](https://github.com/nfdi4plants/arcCommander/commit/59f219bc0791e3fad5563b66618d07e1b8d6066d)] Merge pull request #181 from nfdi4plants/arcIONetMigration
+* Bugfixes:
+    * [[#857b2ef](https://github.com/nfdi4plants/arcCommander/commit/857b2efbc451b45dd247bdb43493be1eb669f5f2)] Fix DirectorySeparatorChar in tests for linux :bug:
+    * [[#810f791](https://github.com/nfdi4plants/arcCommander/commit/810f791b942c068837041a6aaab7239cfd124c0a)] fix empty study being left when adding assay
+    * [[#c7a84e9](https://github.com/nfdi4plants/arcCommander/commit/c7a84e9a92a8548bc0a242c576575e0391ae3bcd)] fix study list
+
+### 0.4.0+c769c38 (Released 2023-1-3)
 * Additions:
     * [[#35bdf43](https://github.com/nfdi4plants/arcCommander/commit/35bdf4327b19a84e27f3794b9fe3b5fef55d8990)] Add Version.fs to arccommander project.
     * [[#ae1c773](https://github.com/nfdi4plants/arcCommander/commit/ae1c7733487464dd6f074e60dd517d15fd589ddc)] Clean up open modules in build project.
