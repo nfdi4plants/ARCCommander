@@ -4,7 +4,7 @@ ARC Commander is a command line tool to create, manage and share your ARCs.
 
 ## Install and use
 
-Please visit the [ARC Commander Manual](https://nfdi4plants.org/nfdi4plants.knowledgebase/docs/implementation/ArcCommanderManual/index.html) in the DataPLANT Knowledge Base to find guides on ARC Commander installation and use.
+Please visit the [ARC Commander Manual](https://nfdi4plants.org/nfdi4plants.knowledgebase/docs/ArcCommanderManual/index.html) in the DataPLANT Knowledge Base to find guides on ARC Commander installation and use.
 
 ## Develop and contribute
 
