@@ -28,7 +28,9 @@ module GitAPI =
         let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
-                   
+              
+        let merge = containsFlag "Merge" gitArgs
+              
         let branch = 
             match tryGetFieldValueByName "BranchName" gitArgs with 
             | Some branchName -> $" -b {branchName}"
@@ -40,7 +42,7 @@ module GitAPI =
             else
                 ""
 
-        if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
+        if merge then
             log.Trace("Downloading into current folder.")
             executeGitCommand repoDir $"clone {lfsConfig} {remoteAddress}{branch} ." |> ignore
         else 

@@ -72,6 +72,7 @@ type ArcGetArgs =
     | [<Mandatory>][<Unique>][<AltCommandLine("-r")>] RepositoryAddress of repository_address:string
     | [<Unique>][<AltCommandLine("-b")>] BranchName         of branch_name:string
     | [<Unique>][<AltCommandLine("-n")>] NoLFS
+    | [<Unique>][<AltCommandLine("-m")>] Merge
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -79,7 +80,7 @@ type ArcGetArgs =
             | RepositoryAddress _ -> "Git remote address from which to pull the ARC"
             | BranchName        _ -> "Branch of the remote address which should be used. If none is given, uses \"main\""
             | NoLFS             _ -> "Does download only the pointers of LFS files, not the file content itself. Ideal for when you're only interested in the experimental metadata, not the data itself."
-
+            | Merge             _ -> "Merges the repository into the current folder. Fails, if the current folder isn't empty."
 
 type ArcServerArgs =
     | [<Unique>][<AltCommandLine("-p")>] Port           of port_address : string
