@@ -3,6 +3,7 @@
 open System.Diagnostics
 open System.Runtime.InteropServices
 open System.IO
+open arcIO.NET
 
 module GitHelper =
 

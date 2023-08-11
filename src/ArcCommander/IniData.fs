@@ -6,6 +6,7 @@ open System.Runtime.InteropServices
 
 open IniParser
 open IniParser.Model
+open arcIO.NET
 
 type OS =
 | Windows

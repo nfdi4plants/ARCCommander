@@ -18,19 +18,20 @@
     <FsDocsLicenseLink>https://github.com/nfdi4plants/arcCommander/blob/developer/LICENSE</FsDocsLicenseLink>
     <FsDocsReleaseNotesLink>https://github.com/nfdi4plants/arcCommander/blob/developer/RELEASE_NOTES.md</FsDocsReleaseNotesLink>
     <AssemblyName>arc</AssemblyName>
-  </PropertyGroup>   
-  
+  </PropertyGroup>
+
   <!--Compile-States-->
   <ItemGroup>
     <None Include="config_unix\config" CopyToOutputDirectory="PreserveNewest" />
     <None Include="config_win\config" CopyToOutputDirectory="PreserveNewest" />
-    <None Include=".gitignore" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="defaultGitignore" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="Logging.fs" />
     <Compile Include="IniData.fs" />
     <Compile Include="ArcConfiguration.fs" />
     <Compile Include="ArgumentProcessing.fs" />
     <Compile Include="Authentication.fs" />
     <Compile Include="GitHelper.fs" />
+    <Compile Include="ArcConversion.fs" />
     <None Include="CLIArguments\README.md" />
     <Compile Include="CLIArguments\ConfigurationArgs.fs" />
     <Compile Include="CLIArguments\RemoteAccessArgs.fs" />
@@ -54,22 +55,31 @@
     <Compile Include="APIs\AssayAPI.fs" />
     <Compile Include="APIs\ArcAPI.fs" />
     <Compile Include="APIs\ExternalExecutables.fs" />
+    <Compile Include="Server\Version.fs" />
+    <Compile Include="Server\ArcAPIHandler.fs" />
+    <Compile Include="Server\ApiDocs\BaseView.Docs.fs" />
+    <Compile Include="Server\ApiDocs\ArcApi.Docs.fs" />
+    <!--This copies our static files for the server function to the location of the dll. Allowing us to access it.-->
+    <Content Include="Server\WebRoot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
+
   </ItemGroup>
-  
+
   <!--References-->
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="6.0.3-beta.22076.4" />
+    <PackageReference Update="FSharp.Core" Version="7.0.300-beta.23114.3" />
+    <PackageReference Include="arcIO.NET" Version="0.1.0-preview.7" />
     <PackageReference Include="Argu" Version="6.1.1" />
-    <PackageReference Include="Fake.IO.FileSystem" Version="5.20.4" />
-    <PackageReference Include="Fake.Tools.Git" Version="5.20.4" />
-    <PackageReference Include="FSharpSpreadsheetML" Version="0.0.8" />
-    <PackageReference Include="IdentityModel.OidcClient" Version="5.0.0" />
+    <PackageReference Include="Fake.IO.FileSystem" Version="6.0.0" />
+    <PackageReference Include="Fake.Tools.Git" Version="6.0.0" />
+    <PackageReference Include="FSharp.Data" Version="5.0.2" />
+    <PackageReference Include="FsSpreadsheet.CsvIO" Version="0.3.0" />
+    <PackageReference Include="IdentityModel.OidcClient" Version="5.2.1" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
-    <PackageReference Include="ISADotNet" Version="0.4.0-preview.5" />
-    <PackageReference Include="ISADotNet.XLSX" Version="0.4.0-preview.5" />
-    <PackageReference Include="JWT" Version="8.9.0" />
-    <PackageReference Include="Microsoft.Net.Http.Server" Version="1.1.4" />
-    <PackageReference Include="NLog" Version="4.7.13" />
+    <PackageReference Include="Giraffe" Version="6.0.0" />
+    <PackageReference Include="Octokit" Version="5.0.0" />
   </ItemGroup>
 </Project>

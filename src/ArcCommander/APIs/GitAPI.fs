@@ -4,7 +4,7 @@ open ArcCommander
 open ArgumentProcessing
 open Fake.IO
 open System.IO
-
+open arcIO.NET
 
 module GitAPI =
 
@@ -28,7 +28,9 @@ module GitAPI =
         let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
         let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
-                   
+              
+        let merge = containsFlag "Merge" gitArgs
+              
         let branch = 
             match tryGetFieldValueByName "BranchName" gitArgs with 
             | Some branchName -> $" -b {branchName}"
@@ -40,7 +42,7 @@ module GitAPI =
             else
                 ""
 
-        if System.IO.Directory.GetFileSystemEntries repoDir |> Array.isEmpty then
+        if merge then
             log.Trace("Downloading into current folder.")
             executeGitCommand repoDir $"clone {lfsConfig} {remoteAddress}{branch} ." |> ignore
         else 
@@ -113,7 +115,7 @@ module GitAPI =
             allFilesPlusSizes 
             |> List.iter (fun (file,size) ->
 
-                    /// Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
+                    // Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
                     match gitLfsThreshold with
                     | Some thr when size > thr -> trackWithLFS file
                     | _ -> trackWithAdd file

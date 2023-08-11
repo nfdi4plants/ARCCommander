@@ -11,21 +11,19 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '6.0.x'
-    - name: Restore local tools
-      run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesWin
+      run: dotnet run --project ./build/Build.fsproj publishBinariesWin
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "v0.4.0-win.x64"
+        automatic_release_tag: "v0.5.0-win.x64"
         prerelease: false
-        title: "v0.4.0-win.x64"
+        title: "v0.5.0-win.x64"
         files: |
             src/ArcCommander/config_win/config
             publish/win-x64/arc.exe
@@ -35,21 +33,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '6.0.x'
-    - name: Restore local tools
-      run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesLinux
+      run: dotnet run --project ./build/Build.fsproj publishBinariesLinux
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "v0.4.0-linux.x64"
+        automatic_release_tag: "v0.5.0-linux.x64"
         prerelease: false
-        title: "v0.4.0-linux.x64"
+        title: "v0.5.0-linux.x64"
         files: |
             src/ArcCommander/config_unix/config
             publish/linux-x64/arc
@@ -59,21 +55,19 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '6.0.x'
-    - name: Restore local tools
-      run: dotnet tool restore
     - name: Build and publish
-      run: dotnet fake build -t publishBinariesMac
+      run: dotnet run --project ./build/Build.fsproj publishBinariesMac
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "v0.4.0-osx.x64"
+        automatic_release_tag: "v0.5.0-osx.x64"
         prerelease: false
-        title: "v0.4.0-osx.x64"
+        title: "v0.5.0-osx.x64"
         files: |
             src/ArcCommander/config_unix/config
             publish/osx-x64/arc

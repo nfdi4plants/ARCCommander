@@ -5,7 +5,7 @@ open ArcCommander.ArgumentProcessing
 
 open ISADotNet
 open ISADotNet.XLSX
-
+open arcIO.NET
 
 /// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs.
 module InvestigationAPI =
@@ -66,7 +66,7 @@ module InvestigationAPI =
        
         let originalInvestigation = Investigation.fromFile investigationFilePath
 
-        API.Investigation.update updateOption originalInvestigation investigation
+        API.Investigation.updateBy updateOption originalInvestigation investigation
         |> Investigation.toFile investigationFilePath
 
     /// Opens the existing investigation info in the ARC with the text editor set in globalArgs.
@@ -87,7 +87,7 @@ module InvestigationAPI =
                 (Investigation.InvestigationInfo.fromRows 1 >> fun (_,_,_,item) -> Investigation.fromParts item [] [] [] [] []) 
                 investigation
                
-        API.Investigation.update API.Update.UpdateAllAppendLists investigation editedInvestigation
+        API.Investigation.updateBy API.Update.UpdateAllAppendLists investigation editedInvestigation
         |> Investigation.toFile investigationFilePath
 
     /// Deletes the existing investigation file in the ARC if the given identifier matches the identifier set in the investigation file.

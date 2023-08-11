@@ -1,7 +1,23 @@
 ﻿namespace ArcCommander.CLIArguments
 /// ------------ TOP LEVEL ------------ ///
-open Argu 
 
+open ArcCommander
+open Argu 
+open ArgumentProcessing
+
+type ArcConvertArgs =
+
+    | [<MainCommand>][<Mandatory>][<Unique>]            Target          of target           : string
+    | [<AltCommandLine("-s")>][<Unique>][<FileName>]    StudyIdentifier of study_identifier : string
+    | [<AltCommandLine("-a")>][<Unique>][<FileName>]    AssayIdentifier of assay_identifier : string
+
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Target            _ -> "Target format to which arc should be exported."
+            | StudyIdentifier   _ -> "Identifier of the study to be exported"
+            | AssayIdentifier   _ -> "Identifier of the assay to be exported"
 
 type ArcInitArgs = 
 
@@ -18,7 +34,7 @@ type ArcInitArgs =
             match this with
             | Owner               _ ->  "Owner of the ARC"
             | Branch              _ ->  "Name of the git branch to be created"
-            | RepositoryAddress   _ ->  "Github address"
+            | RepositoryAddress   _ ->  "Git repository address"
             | EditorPath          _ ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"
             | GitLFSByteThreshold _ ->  "The git LFS file size threshold in bytes. File larger than this threshold will be tracked by git LFS (Default Value is 150000000 Bytes ~ 150 MB)."
             | Gitignore           _ ->  "Use this flag if you want a default .gitignore to be added to the initialized repo"
@@ -56,6 +72,7 @@ type ArcGetArgs =
     | [<Mandatory>][<Unique>][<AltCommandLine("-r")>] RepositoryAddress of repository_address:string
     | [<Unique>][<AltCommandLine("-b")>] BranchName         of branch_name:string
     | [<Unique>][<AltCommandLine("-n")>] NoLFS
+    | [<Unique>][<AltCommandLine("-m")>] Merge
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -63,3 +80,12 @@ type ArcGetArgs =
             | RepositoryAddress _ -> "Git remote address from which to pull the ARC"
             | BranchName        _ -> "Branch of the remote address which should be used. If none is given, uses \"main\""
             | NoLFS             _ -> "Does download only the pointers of LFS files, not the file content itself. Ideal for when you're only interested in the experimental metadata, not the data itself."
+            | Merge             _ -> "Merges the repository into the current folder. Fails, if the current folder isn't empty."
+
+type ArcServerArgs =
+    | [<Unique>][<AltCommandLine("-p")>] Port           of port_address : string
+
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Port              _ -> "<insert description here>"
