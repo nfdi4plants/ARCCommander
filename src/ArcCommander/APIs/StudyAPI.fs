@@ -684,8 +684,8 @@ module StudyAPI =
                      (getFieldValueByName  "AuthorList"                 publicationArgs)
                      (getFieldValueByName  "Title"                      publicationArgs)
                      (getFieldValueByName  "Status"                     publicationArgs)
-                     (getFieldValueByName  "StatusTermAccessionNumber"  publicationArgs)
                      (getFieldValueByName  "StatusTermSourceREF"        publicationArgs)
+                     (getFieldValueByName  "StatusTermAccessionNumber"  publicationArgs)
                      []
 
             let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
@@ -800,8 +800,8 @@ module StudyAPI =
                      (getFieldValueByName  "AuthorList"                 publicationArgs)
                      (getFieldValueByName  "Title"                      publicationArgs)
                      (getFieldValueByName  "Status"                     publicationArgs)
-                     (getFieldValueByName  "StatusTermAccessionNumber"  publicationArgs)
                      (getFieldValueByName  "StatusTermSourceREF"        publicationArgs)
+                     (getFieldValueByName  "StatusTermAccessionNumber"  publicationArgs)
                      []
             
             let studyIdentifier = getFieldValueByName "StudyIdentifier" publicationArgs
