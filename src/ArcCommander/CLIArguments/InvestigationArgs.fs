@@ -17,7 +17,7 @@ type InvestigationCreateArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Identifier        _-> "A identifier or an accession number provided by a repository. This SHOULD be locally unique."
+            | Identifier        _-> "An identifier or an accession number provided by a repository. This SHOULD be locally unique."
             | Title             _-> "A concise name given to the investigation"
             | Description       _-> "A textual description of the investigation"
             | SubmissionDate    _-> "The date on which the investigation was reported to the repository"
