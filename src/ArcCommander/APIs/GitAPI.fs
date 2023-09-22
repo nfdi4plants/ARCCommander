@@ -4,7 +4,8 @@ open ArcCommander
 open ArgumentProcessing
 open Fake.IO
 open System.IO
-open arcIO.NET
+open ARCtrl.NET
+open ArcCommander.CLIArguments
 
 module GitAPI =
 
@@ -18,7 +19,7 @@ module GitAPI =
         Fake.IO.Path.getDirectory(gitDir)
 
     /// Clones Git repository ARC.
-    let get (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
+    let get (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcGetArgs>) =
 
         let log = Logging.createLogger "GitGetLog"
         
@@ -27,17 +28,17 @@ module GitAPI =
         // get repository directory
         let repoDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let remoteAddress = getFieldValueByName "RepositoryAddress" gitArgs
+        let remoteAddress = arcArgs.GetFieldValue ArcGetArgs.RepositoryAddress
               
-        let merge = containsFlag "Merge" gitArgs
+        let merge = arcArgs.ContainsFlag ArcGetArgs.Merge
               
         let branch = 
-            match tryGetFieldValueByName "BranchName" gitArgs with 
+            match arcArgs.TryGetFieldValue ArcGetArgs.BranchName with 
             | Some branchName -> $" -b {branchName}"
             | None -> ""
 
         let lfsConfig = 
-            if containsFlag "NoLFS" gitArgs then
+            if arcArgs.ContainsFlag ArcGetArgs.NoLFS then
                 $" {GitHelper.noLFSConfig}"
             else
                 ""
@@ -51,7 +52,7 @@ module GitAPI =
 
 
     /// Syncs with remote. Commit changes, then pull remote and push to remote.
-    let sync (arcConfiguration : ArcConfiguration) (gitArgs : Map<string,Argument>) =
+    let sync (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcSyncArgs>) =
 
         let log = Logging.createLogger "GitSyncLog"
         
@@ -127,7 +128,7 @@ module GitAPI =
 
             // commit all changes
             let commitMessage =
-                match tryGetFieldValueByName "CommitMessage" gitArgs with
+                match arcArgs.TryGetFieldValue ArcSyncArgs.CommitMessage with
                 | None -> "Update"
                 | Some s -> s
 
@@ -139,7 +140,7 @@ module GitAPI =
 
             Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
-            let branch = tryGetFieldValueByName "Branch" gitArgs |> Option.defaultValue "main"
+            let branch = arcArgs.TryGetFieldValue ArcSyncArgs.Branch |> Option.defaultValue "main"
 
             executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
@@ -163,7 +164,7 @@ module GitAPI =
                 |> not
 
             // add remote if specified
-            match tryGetFieldValueByName "RepositoryAddress" gitArgs with
+            match arcArgs.TryGetFieldValue ArcSyncArgs.RepositoryAddress with
                 | None -> ()
                 | Some remote ->
                     if remoteSpecified () then executeGitCommand repoDir ("remote remove origin") |> ignore
@@ -184,7 +185,7 @@ module GitAPI =
 
                 else
 
-                    if containsFlag "Force" gitArgs then
+                    if arcArgs.ContainsFlag ArcSyncArgs.Force then
 
                         if remoteIsGitHub() then
                             let m = 
