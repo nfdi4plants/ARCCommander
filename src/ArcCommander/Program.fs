@@ -13,10 +13,10 @@ open System.IO
 open System.Text
 open System.Diagnostics
 open Argu
-open arcIO.NET
+open ARCtrl.NET
 
 /// Runs the given command with the given arguments and configuration. If mandatory arguments are missing, or the "forceEditor" flag is set, opens a prompt asking for additional input.
-let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResults<'T>) =
+let processCommand (arcConfiguration : ArcConfiguration) (commandF : ArcConfiguration -> ArcParseResults<'T> -> unit) (r : ParseResults<'T>) =
 
     let log = Logging.createLogger "ProcessCommandLog"
 
@@ -43,7 +43,7 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : ParseResu
         else 
             Prompt.deannotateArguments annotatedArguments
 
-    arguments |> Map.fold (fun acc k t -> acc + $"\t{k}:{t}\n") "Start processing command with the arguments:\n" |> log.Info
+    arguments.AsMap |> Map.fold (fun acc k t -> acc + $"\t{k}:{t}\n") "Start processing command with the arguments:\n" |> log.Info
 
     arcConfiguration
     |> ArcConfiguration.flatten

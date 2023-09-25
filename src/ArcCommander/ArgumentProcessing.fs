@@ -17,6 +17,11 @@ type Argument<'Template> =
     | Field of string
     | Flag
 
+    member this.Cast<'NewTemplate>() : Argument<'NewTemplate> =
+        match this with
+        | Field v -> Field v
+        | Flag -> Flag
+
 type ArcParseResults<'Template>(arguments : Map<string, Argument<'Template>>) = 
 
     let expr2Uci (e : Expr) =
@@ -36,7 +41,7 @@ type ArcParseResults<'Template>(arguments : Map<string, Argument<'Template>>) =
 
         aux None [] e
 
-
+    
     /// Returns true if the argument flag of name k was given by the user.
     let containsFlag ([<ReflectedDefinition>] k : Expr<'Template>) (arguments : Map<string,Argument<'Template>>) =
         let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
@@ -70,6 +75,11 @@ type ArcParseResults<'Template>(arguments : Map<string, Argument<'Template>>) =
         | Flag -> 
             log.Fatal($"Argument {k} is not a field, but a flag.")
             raise (Exception(""))
+
+    member this.Cast<'NewTemplate>() =
+        arguments
+        |> Map.map (fun _ a -> a.Cast<'NewTemplate>())
+        |> ArcParseResults<'NewTemplate>
 
     member this.AsMap = arguments
 
