@@ -35,7 +35,7 @@ type StudyUpdateArgs =
 
 
 /// CLI arguments for registering existing study metadata.
-type StudyRegisterArgs = 
+type StudyInitArgs = 
     | [<Mandatory>][<AltCommandLine("-s")>][<Unique>][<FileName>] Identifier of study_identifier : string
     | [<Unique>] Title of title : string
     | [<Unique>] Description of description : string
@@ -53,11 +53,11 @@ type StudyRegisterArgs =
 
 // Same arguments as `init` because the study can be identified just by the identifier
 /// CLI arguments for empty study initialization.
-type StudyInitArgs = StudyRegisterArgs
+type StudyRegisterArgs = StudyEditArgs
 
 /// CLI arguments for initializing and subsequently registering study metadat.
 // Same arguments as `update` because all metadata fields that can be updated can also be set while registering a new assay
-type StudyAddArgs = StudyUpdateArgs
+type StudyAddArgs = StudyInitArgs
 
 /// CLI arguments for study deletion.
 type StudyDeleteArgs = 
@@ -80,7 +80,7 @@ type StudyRemoveArgs = StudyDeleteArgs
 
 /// CLI arguments for getting a study.
 // same as `init` because both commands only need to be passed a study identifier
-type StudyShowArgs = StudyInitArgs
+type StudyShowArgs = StudyEditArgs
 
 /// CLI arguments for study contacts.
 module StudyContacts = 
