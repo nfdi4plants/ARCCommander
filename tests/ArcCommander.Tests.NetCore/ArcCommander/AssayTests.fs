@@ -4,12 +4,28 @@ open System.IO
 open Argu
 open Expecto
 open TestingUtils
-open ISADotNet
+open ARCtrl
+open ARCtrl.ISA
+open ARCtrl.ISA.Spreadsheet
+open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
+type ArcInvestigation with
+
+    member this.ContainsStudy(studyIdentifier : string) =
+        this.StudyIdentifiers |> Seq.contains studyIdentifier
+
+    member this.TryGetStudy(studyIdentifier : string) =
+        if this.ContainsStudy studyIdentifier then 
+            Some (this.GetStudy studyIdentifier)
+        else
+            None
+
+    member this.DeregisterStudy(studyIdentifier : string) =
+        this.RegisteredStudyIdentifiers.Remove(studyIdentifier)
 
 let standardISAArgs = 
     Map.ofList 
@@ -26,11 +42,9 @@ let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list w
     |> commandF arcConfiguration
 
 let setupArc (arcConfiguration : ArcConfiguration) =
-    let investigationArgs = [InvestigationCreateArgs.Identifier "TestInvestigation"]
-    let arcArgs : ArcInitArgs list = [] 
+    let arcArgs : ArcInitArgs list = [ArcInitArgs.Identifier "TestInvestigation"] 
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
-    processCommand arcConfiguration InvestigationAPI.create investigationArgs
 
 let createConfigFromDir testListName testCaseName =
     let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
@@ -43,39 +57,44 @@ let createConfigFromDir testListName testCaseName =
 let testAssayTestFunction = 
 
     let testDirectory = Path.Combine(__SOURCE_DIRECTORY__, "TestFiles")
-    let investigationFileName = "isa.investigation.xlsx"
-    let investigationFilePath = Path.Combine(testDirectory, investigationFileName)
 
     testList "AssayTestFunctionTests" [
-        testCase "MatchesAssayValues" (fun () -> 
-            let testAssay = ISADotNet.XLSX.Assays.fromString
-                                "protein expression profiling" "OBI" "http://purl.obolibrary.org/obo/OBI_0000615"
-                                "mass spectrometry" "OBI" "" "iTRAQ" "a_proteome.txt" []
-            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+        testCase "MatchesAssayValues" (fun () ->
+            let assayIdentifier = "a_proteome"
+            let mt = OntologyAnnotation.fromString("protein expression profiling","OBI","http://purl.obolibrary.org/obo/OBI_0000615")
+            let tt = OntologyAnnotation.fromString("mass spectrometry","OBI")
+            let tp = OntologyAnnotation.fromString "iTRAQ"
+
+            let testAssay = ArcAssay.create(assayIdentifier,mt,tt,tp)
+
+            let arc = ARC.load(testDirectory)
+            let investigation = arc.ISA.Value
             // Positive control
-            Expect.equal investigation.Studies.Value.Head.Assays.Value.Head testAssay "The assay in the file should match the one created per hand but did not"
+            Expect.equal investigation.Studies.[0].RegisteredAssays.[0] testAssay "The assay in the file should match the one created per hand but did not"
             // Negative control
-            Expect.notEqual investigation.Studies.Value.Head.Assays.Value.[1] testAssay "The assay in the file did not match the one created per hand and still returned true"
+            Expect.notEqual investigation.Studies.[0].RegisteredAssays.[1] testAssay "The assay in the file did not match the one created per hand and still returned true"
         )
         testCase "ListsCorrectAssaysInCorrectStudies" (fun () -> 
             let testAssays = [
-                "BII-S-1",["a_proteome.txt";"a_metabolome.txt"; "a_transcriptome.txt"]
-                "BII-S-2",["a_microarray.txt"]
+                "BII-S-1",["a_proteome";"a_metabolome"; "a_transcriptome"]
+                "BII-S-2",["a_microarray"]
             ]
-            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+
+            let arc = ARC.load(testDirectory)
+            let investigation = arc.ISA.Value
 
             testAssays
             |> List.iter (fun (studyIdentifier,assayIdentifiers) ->
-                match ISADotNet.API.Study.tryGetByIdentifier studyIdentifier investigation.Studies.Value with
+                match investigation.TryGetStudy studyIdentifier with
                 | Some study ->
-                    let actualAssayIdentifiers = study.Assays.Value |> List.map (fun a -> a.FileName.Value)
-                    Expect.sequenceEqual actualAssayIdentifiers assayIdentifiers "Assay Filenames did not match the expected ones"
+                    Expect.sequenceEqual study.RegisteredAssayIdentifiers assayIdentifiers "Assay Filenames did not match the expected ones"
                 | None -> failwith "Study %s could not be taken from the ivnestigation even though it should be there"                    
             )
         )
 
     ]
     |> testSequenced
+
 
 [<Tests>]
 let testAssayRegister = 
@@ -88,7 +107,6 @@ let testAssayRegister =
             setupArc configuration
 
             let assayIdentifier = "TestAssay"
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
             
@@ -101,18 +119,19 @@ let testAssayRegister =
                 AssayRegisterArgs.StudyIdentifier studyIdentifier
                 AssayRegisterArgs.AssayIdentifier assayIdentifier
             ]
-            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
+            let testAssay = ArcAssay.create (assayIdentifier,measurementType = OntologyAnnotation.fromString(measurementType))
             
             processCommand configuration StudyAPI.register studyArgs
             processCommand configuration AssayAPI.init     assayInitArgs
             processCommand configuration AssayAPI.register assayRegisterArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies.Value with
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            match isa.TryGetStudy studyIdentifier with
             | Some study ->
-                let assayOption = API.Assay.tryGetByFileName assayFileName study.Assays.Value
-                Expect.isSome assayOption "Assay was not added to study"
-                Expect.equal assayOption.Value testAssay "Assay is missing values"
+                let assay = study.GetRegisteredAssay assayIdentifier
+                Expect.equal assay testAssay "Assay is missing values"
             | None ->
                 failwith "Study was not added to the investigation"
         )
@@ -122,7 +141,6 @@ let testAssayRegister =
             setupArc configuration
 
             let assayIdentifier = "TestAssay"
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
 
@@ -140,20 +158,22 @@ let testAssayRegister =
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 AssayAddArgs.MeasurementType "failedTestMeasurementType"
             ]
-            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
+            let testMT = OntologyAnnotation.fromString(measurementType)
+            let testAssay = ArcAssay.create (assayIdentifier,measurementType = testMT)
             
             processCommand configuration AssayAPI.add assay1Args
             processCommand configuration AssayAPI.add assay2Args // <- trying to create a second, nearly identical assay which shall NOT work
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies.Value with
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            match isa.TryGetStudy studyIdentifier with
             | Some study ->
-                let assayOption = API.Assay.tryGetByFileName assayFileName study.Assays.Value
-                Expect.isSome assayOption "Assay is no longer part of study"
-                Expect.equal assayOption.Value testAssay "Assay values were removed"
-                Expect.equal study.Assays.Value.Length 1 "Assay was added even though it should't have been as an assay with the same identifier was already present"
-                let testMT = OntologyAnnotation.fromString measurementType "" ""
-                Expect.equal study.Assays.Value.Head.MeasurementType.Value testMT "Assay was overwritten with second assay."
+                let assay = study.GetRegisteredAssay assayIdentifier
+                Expect.equal assay testAssay "Assay values were removed"
+                Expect.equal study.RegisteredAssayCount 1 "Assay was added even though it should't have been as an assay with the same identifier was already present"
+                
+                Expect.equal assay.MeasurementType.Value testMT "Assay was overwritten with second assay."
             | None ->
                 failwith "Study was removed from the investigation"
         )
@@ -163,7 +183,6 @@ let testAssayRegister =
             setupArc configuration
 
             let oldAssayIdentifier = "TestAssay"
-            let oldAssayFileName = IsaModelConfiguration.getAssayFileName oldAssayIdentifier configuration
             let oldMeasurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
 
@@ -176,7 +195,6 @@ let testAssayRegister =
             processCommand configuration AssayAPI.add assayAddArgs
 
             let newAssayIdentifier = "SecondTestAssay"
-            let newAssayFileName = IsaModelConfiguration.getAssayFileName newAssayIdentifier configuration
             let newMeasurementType = "OtherMeasurementType"
 
             let assayInitArgs = [
@@ -188,19 +206,23 @@ let testAssayRegister =
                     AssayRegisterArgs.StudyIdentifier studyIdentifier
                     AssayRegisterArgs.AssayIdentifier newAssayIdentifier
                 ]
-            let testAssay = ISADotNet.XLSX.Assays.fromString newMeasurementType "" "" "" "" "" "" newAssayFileName []
+
+            let testMT = OntologyAnnotation.fromString(newMeasurementType)
+            let testAssay = ArcAssay.create (newAssayIdentifier,measurementType = testMT)
+            
             
             processCommand configuration AssayAPI.init      assayInitArgs
             processCommand configuration AssayAPI.register  assayRegisterArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            match API.Study.tryGetByIdentifier studyIdentifier investigation.Studies.Value with
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            match isa.TryGetStudy studyIdentifier with
             | Some study ->
-                let assayFileNames = study.Assays.Value |> List.map (fun a -> a.FileName.Value)
-                let assayOption = API.Assay.tryGetByFileName newAssayFileName study.Assays.Value
-                Expect.isSome assayOption "New Assay was not added to study"
-                Expect.equal assayOption.Value testAssay "New Assay is missing values"
-                Expect.sequenceEqual assayFileNames [oldAssayFileName; newAssayFileName] "Either an assay is missing or they're in an incorrect order"
+
+                let assay = study.GetRegisteredAssay newAssayIdentifier
+                Expect.equal assay testAssay "New Assay is missing values"
+                Expect.sequenceEqual (study.RegisteredAssayIdentifiers) [oldAssayIdentifier; newAssayIdentifier] "Either an assay is missing or they're in an incorrect order"
             | None ->
                 failwith "Study was removed from the investigation"
         )
@@ -210,7 +232,6 @@ let testAssayRegister =
             setupArc configuration
 
             let assayIdentifier = "TestAssay"
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "MeasurementTypeOfStudyCreatedByAssayRegister"
             let studyIdentifier = "StudyCreatedByAssayRegister"
             
@@ -219,17 +240,19 @@ let testAssayRegister =
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 MeasurementType "MeasurementTypeOfStudyCreatedByAssayRegister"
             ]
-            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "" "" "" "" assayFileName []
+            let testMT = OntologyAnnotation.fromString(measurementType)
+            let testAssay = ArcAssay.create (assayIdentifier,measurementType = testMT)
             
             processCommand configuration AssayAPI.add assayArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            let studyOption = API.Study.tryGetByIdentifier studyIdentifier investigation.Studies.Value
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            let studyOption = isa.TryGetStudy studyIdentifier
             Expect.isSome studyOption "Study should have been created in order for assay to be placed in it"     
             
-            let assayOption = API.Assay.tryGetByFileName assayFileName studyOption.Value.Assays.Value
-            Expect.isSome assayOption "Assay was not added to newly created study"
-            Expect.equal assayOption.Value testAssay "Assay is missing values"
+            let assay = studyOption.Value.GetRegisteredAssay assayIdentifier
+            Expect.equal assay testAssay "Assay is missing values"
         )
         testCase "StudyNameNotGivenUseAssayName" (fun () -> 
 
@@ -237,24 +260,25 @@ let testAssayRegister =
             setupArc configuration
 
             let assayIdentifier = "TestAssayWithoutStudyName"
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let technologyType = "InferName"
             
             let assayArgs = [
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 TechnologyType technologyType
             ]
-            let testAssay = ISADotNet.XLSX.Assays.fromString "" "" "" technologyType "" "" "" assayFileName []
+            let tt = OntologyAnnotation.fromString(technologyType)
+            let testAssay = ArcAssay(assayIdentifier,technologyType = tt)
             
             processCommand configuration AssayAPI.add assayArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            let studyOption = API.Study.tryGetByIdentifier assayIdentifier investigation.Studies.Value
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            let studyOption = isa.TryGetStudy assayIdentifier
             Expect.isSome studyOption "Study should have been created with the name of the assay but was not"     
             
-            let assayOption = API.Assay.tryGetByFileName assayFileName studyOption.Value.Assays.Value
-            Expect.isSome assayOption "Assay was not added to newly created study"
-            Expect.equal assayOption.Value testAssay "Assay is missing values"
+            let assay = studyOption.Value.GetRegisteredAssay assayIdentifier
+            Expect.equal assay testAssay "Assay is missing values"
         )
         // This case checks if no duplicate study gets created when the user adds an assay with an identifier (and no given study identifier) that equals a previously added study's identifier.
         testCase "StudyNameNotGivenUseAssayNameNoDuplicateStudy" (fun () -> 
@@ -268,11 +292,10 @@ let testAssayRegister =
             let assayIdentifier = studyIdentifier
             processCommand configuration AssayAPI.add [AssayAddArgs.AssayIdentifier assayIdentifier]
             
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
+            let testAssay = ArcAssay.create (assayIdentifier)
 
-            let testAssay = ISADotNet.XLSX.Assays.fromString "" "" "" "" "" "" "" assayFileName []
-            
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
             
             let studiesWithIdentifiers = investigation.Studies.Value |> List.filter (fun s -> s.Identifier.Value = assayIdentifier)
             

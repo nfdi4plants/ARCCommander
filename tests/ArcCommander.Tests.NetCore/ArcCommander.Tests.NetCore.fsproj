@@ -16,10 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AltCover" Version="7.1.778" />
-    <PackageReference Include="Expecto" Version="9.*" />
+    <PackageReference Include="Expecto" Version="10.1.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
-    <PackageReference Update="FSharp.Core" Version="7.0.300-beta.23114.3" />
+    <PackageReference Update="FSharp.Core" Version="7.0.400" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
   </ItemGroup>

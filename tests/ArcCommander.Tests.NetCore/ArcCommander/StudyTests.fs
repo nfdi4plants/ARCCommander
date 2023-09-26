@@ -2,11 +2,26 @@
 
 open Argu
 open Expecto
-open ISADotNet
+open ARCtrl
+open ARCtrl.ISA
 open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
+
+type ArcInvestigation with
+
+    member this.ContainsStudy(studyIdentifier : string) =
+        this.StudyIdentifiers |> Seq.contains studyIdentifier
+
+    member this.TryGetStudy(studyIdentifier : string) =
+        if this.ContainsStudy studyIdentifier then 
+            Some (this.GetStudy studyIdentifier)
+        else
+            None
+
+    member this.DeregisterStudy(studyIdentifier : string) =
+        this.RegisteredStudyIdentifiers.Remove(studyIdentifier)
 
 let standardISAArgs = 
     Map.ofList 
@@ -23,11 +38,9 @@ let processCommand (arcConfiguration:ArcConfiguration) commandF (r : 'T list whe
     |> commandF arcConfiguration
 
 let setupArc (arcConfiguration:ArcConfiguration) =
-    let investigationArgs = [InvestigationCreateArgs.Identifier "TestInvestigation"]
-    let arcArgs : ArcInitArgs list =  [] 
+    let arcArgs : ArcInitArgs list =  [ArcInitArgs.Identifier "TestInvestigation"] 
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
-    processCommand arcConfiguration InvestigationAPI.create investigationArgs
 
 [<Tests>]
 let testStudyRegister =
