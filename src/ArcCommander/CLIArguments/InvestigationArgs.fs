@@ -3,25 +3,25 @@
 open Argu 
 open ArcCommander.ArgumentProcessing
 
-/// CLI arguments for creating a new investigation file for the arc
-// in the case of investigations 'empty' does not mean empty file but rather an 
-// investigation without studies/assays. To reflect the need for metadata here,
-// this command is called `create` instead of `init`
-type InvestigationCreateArgs = 
-    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
-    | [<Unique>] Title of title:string
-    | [<Unique>] Description of description:string
-    | [<Unique>] SubmissionDate of submission_date:string
-    | [<Unique>] PublicReleaseDate of public_release_date:string
+///// CLI arguments for creating a new investigation file for the arc
+//// in the case of investigations 'empty' does not mean empty file but rather an 
+//// investigation without studies/assays. To reflect the need for metadata here,
+//// this command is called `create` instead of `init`
+//type InvestigationCreateArgs = 
+//    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
+//    | [<Unique>] Title of title:string
+//    | [<Unique>] Description of description:string
+//    | [<Unique>] SubmissionDate of submission_date:string
+//    | [<Unique>] PublicReleaseDate of public_release_date:string
 
-    interface IArgParserTemplate with
-        member this.Usage =
-            match this with
-            | Identifier        _-> "An identifier or an accession number provided by a repository. This SHOULD be locally unique. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
-            | Title             _-> "A concise name given to the investigation"
-            | Description       _-> "A textual description of the investigation"
-            | SubmissionDate    _-> "The date on which the investigation was reported to the repository"
-            | PublicReleaseDate _-> "The date on which the investigation was released publicly"
+//    interface IArgParserTemplate with
+//        member this.Usage =
+//            match this with
+//            | Identifier        _-> "An identifier or an accession number provided by a repository. This SHOULD be locally unique. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
+//            | Title             _-> "A concise name given to the investigation"
+//            | Description       _-> "A textual description of the investigation"
+//            | SubmissionDate    _-> "The date on which the investigation was reported to the repository"
+//            | PublicReleaseDate _-> "The date on which the investigation was released publicly"
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 
@@ -43,14 +43,14 @@ type InvestigationUpdateArgs =
             | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the investigation. If this flag is not set, only these fields for which a value was given will be updated."
 
 
-/// CLI arguments for deleting the arc's investigation file (danger zone!)
-type InvestigationDeleteArgs =
-    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
+///// CLI arguments for deleting the arc's investigation file (danger zone!)
+//type InvestigationDeleteArgs =
+//    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>] Identifier of investigation_identifier:string
 
-    interface IArgParserTemplate with
-        member this.Usage =
-            match this with
-            | Identifier _-> "DANGER ZONE: In order to delete this investigation file, please provide its identifier here"
+//    interface IArgParserTemplate with
+//        member this.Usage =
+//            match this with
+//            | Identifier _-> "DANGER ZONE: In order to delete this investigation file, please provide its identifier here"
 
 /// CLI arguments for Investigation Contacts
 module InvestigationContacts = 

@@ -153,7 +153,7 @@ let handleInvestigationSubCommands arcConfiguration investigationVerb =
     //| InvestigationCommand.Create r                 -> processCommand arcConfiguration InvestigationAPI.create   r
     | InvestigationCommand.Update r                 -> processCommand arcConfiguration InvestigationAPI.update   r
     | InvestigationCommand.Edit                     -> processCommandWithoutArgs arcConfiguration InvestigationAPI.edit
-    | InvestigationCommand.Delete r                 -> processCommand arcConfiguration InvestigationAPI.delete   r
+    //| InvestigationCommand.Delete r                 -> processCommand arcConfiguration InvestigationAPI.delete   r
     | InvestigationCommand.Person subCommand        -> handleInvestigationContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
     | InvestigationCommand.Publication subCommand   -> handleInvestigationPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
     | InvestigationCommand.Show                     -> processCommandWithoutArgs arcConfiguration InvestigationAPI.show
