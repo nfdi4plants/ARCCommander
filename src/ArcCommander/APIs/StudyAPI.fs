@@ -13,6 +13,13 @@ open ARCtrl.ISA.Spreadsheet
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs.
 module StudyAPI =    
+    
+    type ArcStudy with
+        member this.UpdateTopLevelInfo(other : ArcStudy, replaceWithEmptyValues : bool) =
+            if other.Title.IsSome || replaceWithEmptyValues then this.Title <- other.Title
+            if other.Description.IsSome || replaceWithEmptyValues then this.Description <- other.Description
+            if other.SubmissionDate.IsSome || replaceWithEmptyValues then this.SubmissionDate <- other.SubmissionDate
+            if other.PublicReleaseDate.IsSome || replaceWithEmptyValues then this.PublicReleaseDate <- other.PublicReleaseDate
 
     type ArcInvestigation with
 
@@ -63,7 +70,7 @@ module StudyAPI =
         
         log.Info("Start Study Update")
 
-        let onlyReplaceExisting = studyArgs.ContainsFlag StudyUpdateArgs.ReplaceWithEmptyValues |> not
+        let replaceWithEmptyValues = studyArgs.ContainsFlag StudyUpdateArgs.ReplaceWithEmptyValues |> not
         let addIfMissing = studyArgs.ContainsFlag StudyUpdateArgs.AddIfMissing
 
         let identifier = studyArgs.GetFieldValue StudyUpdateArgs.Identifier
@@ -84,7 +91,7 @@ module StudyAPI =
         match isa.TryGetStudy identifier with
         | Some s ->
             
-            s.UpdateReferenceByStudyFile(study,onlyReplaceExisting)        
+            s.UpdateTopLevelInfo(study,replaceWithEmptyValues)        
         | None when addIfMissing ->
             log.Warn($"{msg}")
             log.Info("Registering study as AddIfMissing Flag was set.")
@@ -121,7 +128,7 @@ module StudyAPI =
         match isa.TryGetStudy studyIdentifier with 
         | Some study ->
             let newStudy = getNewStudy study
-            study.UpdateReferenceByStudyFile(newStudy,false)
+            study.UpdateTopLevelInfo(newStudy,true)      
         | None ->
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
 

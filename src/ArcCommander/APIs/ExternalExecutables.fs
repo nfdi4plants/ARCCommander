@@ -6,7 +6,7 @@ open System
 open System.IO
 open System.Diagnostics
 open Argu
-open arcIO.NET
+open ARCtrl.NET
 
 /// Functions for trying to run external tools, given the command line arguments can not be parsed.
 module ExternalExecutables =

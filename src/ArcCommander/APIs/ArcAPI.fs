@@ -4,19 +4,25 @@ open System
 open System.IO
 
 open ArcCommander
-open ArcCommander.ArgumentProcessing
+open ArcCommander.CLIArguments
 
-open ISADotNet
-open ISADotNet.XLSX
-open arcIO.NET
-open arcIO.NET.Converter
+open ARCtrl
+open ARCtrl.NET
+open ARCtrl.ISA
+
+[<AutoOpen>]
+module ARCExtensions = 
+    type ARC with
+        member this.Write(arcPath) =
+            this.GetWriteContracts()
+            |> Array.iter (Contract.fulfillWriteContract arcPath)
 
 module API =
     
-    module Investigation = 
+    module ARC = 
         
-        let getProcesses (investigation) =
-            investigation.Studies 
+        let getProcesses (arc : ARC) =
+            arc.ISA.Value.ToInvestigation().Studies 
             |> Option.defaultValue [] |> List.collect (fun s -> 
                 s.Assays
                 |> Option.defaultValue [] |> List.collect (fun a -> 
@@ -35,12 +41,11 @@ module ArcAPI =
         log.Info($"Start Arc Version")
         
         let ver = Reflection.Assembly.GetExecutingAssembly().GetName().Version
-
+        
         log.Debug($"v{ver.Major}.{ver.Minor}.{ver.Build}")
 
-    // TODO TO-DO TO DO: make use of args
     /// Initializes the ARC-specific folder structure.
-    let init (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
+    let init (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcInitArgs>) =
 
         let log = Logging.createLogger "ArcInitLog"
         
@@ -48,11 +53,13 @@ module ArcAPI =
 
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let editor              = tryGetFieldValueByName "EditorPath"           arcArgs
-        let gitLFSThreshold     = tryGetFieldValueByName "GitLFSByteThreshold"  arcArgs
-        let branch              = tryGetFieldValueByName "Branch"               arcArgs |> Option.defaultValue "main"
-        let repositoryAddress   = tryGetFieldValueByName "RepositoryAddress"    arcArgs 
-
+        let editor              = arcArgs.TryGetFieldValue ArcInitArgs.EditorPath
+        let gitLFSThreshold     = arcArgs.TryGetFieldValue ArcInitArgs.GitLFSByteThreshold 
+        let branch              = arcArgs.TryGetFieldValue ArcInitArgs.Branch
+        let repositoryAddress   = arcArgs.TryGetFieldValue ArcInitArgs.RepositoryAddress 
+        let identifier =    
+            arcArgs.TryGetFieldValue ArcInitArgs.Identifier
+            |> Option.defaultValue (DirectoryInfo(workDir).Name)       
 
         log.Trace("Create Directory")
 
@@ -60,11 +67,8 @@ module ArcAPI =
 
         log.Trace("Initiate folder structure")
 
-        ArcConfiguration.getRootFolderPaths arcConfiguration
-        |> Array.iter (
-            Directory.CreateDirectory 
-            >> fun dir -> File.Create(Path.Combine(dir.FullName, ".gitkeep")) |> ignore 
-        )
+        let isa = ArcInvestigation.create(identifier)
+        ARC(isa).Write(workDir)     
 
         log.Trace("Set configuration")
 
@@ -85,10 +89,8 @@ module ArcAPI =
         try
 
             GitHelper.executeGitCommand workDir $"init -b {branch}"
-            //GitHelper.executeGitCommand workDir $"add ."
-            //GitHelper.executeGitCommand workDir $"commit -m \"Initial commit\""
 
-            if containsFlag "Gitignore" arcArgs then
+            if arcArgs.ContainsFlag ArcInitArgs.Gitignore then
                 log.Warn("The default GitIgnore is an experimental feature. Be careful and double check that all your wanted files are being tracked.")
                 let gitignoreAppPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "defaultGitignore")
                 let gitignoreArcPath = Path.Combine(workDir, ".gitignore")
@@ -114,13 +116,10 @@ module ArcAPI =
         
         log.Info("Start Arc Update")
 
-        let arcDir = GeneralConfiguration.getWorkDirectory arcConfiguration
-
-        Investigation.fromArcFolder arcDir
-        |> Investigation.overWrite arcDir
+        ARC.load(arcConfiguration).Write(arcConfiguration)
 
     /// Export the complete ARC as a JSON object.
-    let export (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
+    let export (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcExportArgs>) =
     
         let log = Logging.createLogger "ArcExportLog"
 
@@ -128,80 +127,75 @@ module ArcAPI =
        
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
                     
-        let investigation = arcIO.NET.Investigation.fromArcFolder workDir
+        let arc = ARC.load workDir
 
-        if containsFlag "ProcessSequence" arcArgs then
+        let output =
+            if arcArgs.ContainsFlag ProcessSequence then
+                API.ARC.getProcesses arc
+                |> ARCtrl.ISA.Json.ProcessSequence.toString
+            else 
+                arc.ISA.Value
+                |> ARCtrl.ISA.Json.ArcInvestigation.toString
 
-            let output = API.Investigation.getProcesses investigation
+        match arcArgs.TryGetFieldValue Output with
+        | Some p -> System.IO.File.WriteAllText(p, output)
+        | None -> ()
 
-            match tryGetFieldValueByName "Output" arcArgs with
-            | Some p -> ArgumentProcessing.serializeToFile p output
-            | None -> ()
-
-            log.Debug(ArgumentProcessing.serializeToString output)
-        else 
-
-            match tryGetFieldValueByName "Output" arcArgs with
-            | Some p -> ISADotNet.Json.Investigation.toFile p investigation
-            | None -> ()
-
-            log.Debug(ISADotNet.Json.Investigation.toString investigation)
-
+        log.Debug(output)
+        
     /// Convert the complete ARC to a target format.
-    let convert (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) =
+    let convert (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcConvertArgs>) =
     
         let log = Logging.createLogger "ArcConvertLog"
 
-        log.Info("Start Arc Convert")
+        log.Fatal("Convert command currently disabled.")
+
+        //log.Info("Start Arc Convert")
        
-        let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
+        //let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
 
-        let nameRoot = getFieldValueByName "Target" arcArgs
-        let converterName = $"arc-convert-{nameRoot}"
-        let repoOwner =  "nfdi4plants"
-        let repoName = "converters"
+        //let nameRoot = getFieldValueByName "Target" arcArgs
+        //let converterName = $"arc-convert-{nameRoot}"
+        //let repoOwner =  "nfdi4plants"
+        //let repoName = "converters"
 
-        log.Info (converterName)
+        //log.Info (converterName)
 
-        let assayIdentifier = tryGetFieldValueByName "AssayIdentifier" arcArgs
-        let studyIdentifier = tryGetFieldValueByName "StudyIdentifier" arcArgs
+        //let assayIdentifier = tryGetFieldValueByName "AssayIdentifier" arcArgs
+        //let studyIdentifier = tryGetFieldValueByName "StudyIdentifier" arcArgs
 
-        log.Info("Fetch converter dll")
+        //log.Info("Fetch converter dll")
        
-        let assembly = 
-            if nameRoot.Contains ".dll" then
-                System.Reflection.Assembly.LoadFile nameRoot
-            else
-                let dll = ArcConversion.getDll repoOwner repoName $"{converterName}.dll"
-                System.Reflection.Assembly.Load dll
-        let converter = 
-            ArcConversion.callMethodOfAssembly converterName "create" assembly :?> ARCconverter
-        log.Info("Load ARC")
+        //let assembly = 
+        //    if nameRoot.Contains ".dll" then
+        //        System.Reflection.Assembly.LoadFile nameRoot
+        //    else
+        //        let dll = ArcConversion.getDll repoOwner repoName $"{converterName}.dll"
+        //        System.Reflection.Assembly.Load dll
+        //let converter = 
+        //    ArcConversion.callMethodOfAssembly converterName "create" assembly :?> ARCconverter
+        //log.Info("Load ARC")
 
-        let i,s,a = ArcConversion.getISA studyIdentifier assayIdentifier workDir
+        //let i,s,a = ArcConversion.getISA studyIdentifier assayIdentifier workDir
 
-        log.Info("Run conversion")
+        //log.Info("Run conversion")
            
-        match converter with
-        | ARCtoCSV f -> 
-            ArcConversion.handleCSV i s a workDir nameRoot converter
-        | ARCtoTSV f -> 
-            ArcConversion.handleTSV i s a workDir nameRoot converter
-        | ARCtoXLSX f -> 
-            ArcConversion.handleXLSX i s a workDir nameRoot converter
-        | ARCtoJSON f -> 
-            ArcConversion.handleJSON i s a workDir nameRoot converter
-        | _ -> failwith "no other converter defined"
-        |> function 
-           | Ok messages ->
-                log.Info $"Successfully converted to {nameRoot}"
-                ArcConversion.writeMessages workDir messages
-           | Error messages ->
-                ArcConversion.writeMessages workDir messages
-                log.Error $"Arc could not be converted to {nameRoot}, as some required values could not be retreived"
-                if ArcConversion.promptYesNo "Do you want missing fields to be written back into ARC? (y/n)" then
-                    ArcConversion.handleTransformations workDir converterName messages
-
-
-    /// Returns true if called anywhere in an ARC.
-    let isArc (arcConfiguration : ArcConfiguration) (arcArgs : Map<string,Argument>) = raise (NotImplementedException())
+        //match converter with
+        //| ARCtoCSV f -> 
+        //    ArcConversion.handleCSV i s a workDir nameRoot converter
+        //| ARCtoTSV f -> 
+        //    ArcConversion.handleTSV i s a workDir nameRoot converter
+        //| ARCtoXLSX f -> 
+        //    ArcConversion.handleXLSX i s a workDir nameRoot converter
+        //| ARCtoJSON f -> 
+        //    ArcConversion.handleJSON i s a workDir nameRoot converter
+        //| _ -> failwith "no other converter defined"
+        //|> function 
+        //   | Ok messages ->
+        //        log.Info $"Successfully converted to {nameRoot}"
+        //        ArcConversion.writeMessages workDir messages
+        //   | Error messages ->
+        //        ArcConversion.writeMessages workDir messages
+        //        log.Error $"Arc could not be converted to {nameRoot}, as some required values could not be retreived"
+        //        if ArcConversion.promptYesNo "Do you want missing fields to be written back into ARC? (y/n)" then
+        //            ArcConversion.handleTransformations workDir converterName messages

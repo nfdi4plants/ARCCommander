@@ -2,30 +2,31 @@
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open arcIO.NET
+open ARCtrl.NET
 
+open ArcCommander.CLIArguments.AccessToken
 
 module RemoteAccessAPI =
 
     module AccessToken =
 
         /// Store a git token using git credential manager.
-        let store (arcConfiguration : ArcConfiguration) (remoteAccessArgs : Map<string,Argument>) =
+        let store (arcConfiguration : ArcConfiguration) (remoteAccessArgs : ArcParseResults<AccessTokenStoreArgs>) =
 
             let log = Logging.createLogger "GitStoreLog"
 
-            let token = getFieldValueByName "Token" remoteAccessArgs
+            let token = remoteAccessArgs.GetFieldValue AccessTokenStoreArgs.Token
 
             let hostAddress = 
                 let ha = 
-                    match tryGetFieldValueByName "Server" remoteAccessArgs with
+                    match remoteAccessArgs.TryGetFieldValue AccessTokenStoreArgs.Server with
                     | Some s -> s
                     | None -> @"https://git.nfdi4plants.org/"
                 if ha.Contains "https" then ha
                 else $"https://{ha}"
 
             let user = 
-                match tryGetFieldValueByName "User" remoteAccessArgs with
+                match remoteAccessArgs.TryGetFieldValue AccessTokenStoreArgs.User with
                 | Some s -> s
                 | None -> @"oauth2"
 
@@ -47,13 +48,13 @@ module RemoteAccessAPI =
                 log.Error(m)
 
         /// Authenticates to a token service and stores the token using git credential manager.
-        let get (arcConfiguration : ArcConfiguration) (remoteAccessArgs : Map<string,Argument>) =
+        let get (arcConfiguration : ArcConfiguration) (remoteAccessArgs : ArcParseResults<AccessTokenGetArgs>) =
 
             let log = Logging.createLogger "GitAuthenticateLog"
 
             let hostAddress = 
                 let ha = 
-                    match tryGetFieldValueByName "Server" remoteAccessArgs with
+                    match remoteAccessArgs.TryGetFieldValue AccessTokenGetArgs.Server with
                     | Some s -> s
                     | None -> @"https://git.nfdi4plants.org/"
                 if ha.Contains "https" then ha
@@ -63,9 +64,9 @@ module RemoteAccessAPI =
         
             // Select Authorization protocol
             let tryReceiveToken = 
-                if containsFlag "OAuth2" remoteAccessArgs then
+                if remoteAccessArgs.ContainsFlag AccessTokenGetArgs.OAuth2  then
                     Authentication.OAuth2.tryLogin
-                elif containsFlag "OpenID" remoteAccessArgs then
+                elif remoteAccessArgs.ContainsFlag AccessTokenGetArgs.OpenID then
                     Authentication.Oidc.tryLogin
                 else
                     log.Info ("No authentication protocol specified, defaulting to OpenID")
@@ -74,7 +75,8 @@ module RemoteAccessAPI =
             match tryReceiveToken log hostAddress arcConfiguration with 
             | Ok token -> 
                 log.Info("Successfully retrieved access token from token service")
-                store arcConfiguration (Map.add "Token" (Field token.AccessToken) remoteAccessArgs)
+                let castedArgs = remoteAccessArgs.Cast<AccessTokenStoreArgs>().AsMap
+                store arcConfiguration (ArcParseResults(Map.add "Token" (Field token.AccessToken) castedArgs))
             | Error err -> 
                 log.Error($"Could not retrieve access token: {err.Message}")
 

@@ -20,6 +20,13 @@ open FsSpreadsheet.ExcelIO
 /// ArcCommander Assay API functions that get executed by the assay focused subcommand verbs
 module AssayAPI =
 
+    type ArcAssay with
+        member this.UpdateTopLevelInfo(other : ArcAssay, replaceWithEmptyValues : bool) =
+            if other.TechnologyType.IsSome || replaceWithEmptyValues then this.TechnologyType <- other.TechnologyType
+            if other.TechnologyPlatform.IsSome || replaceWithEmptyValues then this.TechnologyPlatform <- other.TechnologyPlatform
+            if other.MeasurementType.IsSome || replaceWithEmptyValues then this.MeasurementType <- other.MeasurementType
+
+
     type ArcInvestigation with
 
         member this.ContainsAssay(assayIdentifier : string) =
@@ -59,7 +66,7 @@ module AssayAPI =
 
         if isa.AssayIdentifiers |> Array.contains assayIdentifier then
             log.Error($"Assay with identifier {assayIdentifier} already exists.")
-        
+        else
         isa.AddAssay(assay)
         arc.ISA <- Some isa
         arc.Write(arcConfiguration)
@@ -71,7 +78,7 @@ module AssayAPI =
 
         log.Info("Start Assay Update")
 
-        let onlyReplaceExisting = assayArgs.ContainsFlag AssayUpdateArgs.ReplaceWithEmptyValues |> not
+        let replaceWithEmptyValues = assayArgs.ContainsFlag AssayUpdateArgs.ReplaceWithEmptyValues |> not
         let addIfMissing = assayArgs.ContainsFlag AssayUpdateArgs.AddIfMissing
         
         let assayIdentifier = assayArgs.GetFieldValue  AssayUpdateArgs.AssayIdentifier
@@ -96,7 +103,7 @@ module AssayAPI =
         let msg = $"Assay with the identifier {assayIdentifier} does not exist."
         try 
             let a = isa.GetAssay assayIdentifier
-            a.UpdateBy(assay,onlyReplaceExisting)
+            a.UpdateTopLevelInfo(assay,replaceWithEmptyValues)
         with 
         | _ when addIfMissing ->
             log.Warn($"{msg}")
@@ -133,7 +140,7 @@ module AssayAPI =
         try 
             let assay = isa.GetAssay assayIdentifier
             let newAssay = getNewAssay assay
-            assay.UpdateBy(newAssay,false)
+            assay.UpdateTopLevelInfo(newAssay,true)
         with
         | _ ->
             log.Error($"Assay with the identifier {assayIdentifier} does not exist.")
