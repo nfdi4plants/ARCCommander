@@ -7,9 +7,11 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Giraffe
 open ArcCommander.ArgumentProcessing
+open ArcCommander.CLIArguments
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.StaticFiles
+
 
 module Server =
 
@@ -84,10 +86,10 @@ module Server =
         services.AddCors(fun options -> options.AddPolicy(corsPolicyName, corsPolicyConfig)) |> ignore
         services.AddGiraffe() |> ignore
 
-    let start arcConfiguration (arcServerArgs : Map<string,Argument>) =
+    let start arcConfiguration (arcServerArgs : ArcParseResults<ArcServerArgs>) =
 
         let port = 
-            tryGetFieldValueByName "Port" arcServerArgs
+            arcServerArgs.TryGetFieldValue ArcServerArgs.Port
             |> Option.defaultValue "5000"
 
         // https://trustbit.tech/blog/2021/03/12/introduction-to-web-programming-in-f-sharp-with-giraffe-part-3
