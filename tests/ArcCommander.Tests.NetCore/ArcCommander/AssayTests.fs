@@ -27,6 +27,16 @@ type ArcInvestigation with
     member this.DeregisterStudy(studyIdentifier : string) =
         this.RegisteredStudyIdentifiers.Remove(studyIdentifier)
 
+type ArcStudy with
+    member this.TryGetRegisteredAssayAt(index : int) = 
+        this.RegisteredAssays
+        |> Seq.tryItem index
+
+    member this.TryGetRegisteredAssay(assayIdentifier : string) =
+        this.RegisteredAssayIdentifiers 
+        |> Seq.tryFindIndex((=) assayIdentifier)
+        |> Option.bind this.TryGetRegisteredAssayAt
+
 let standardISAArgs = 
     Map.ofList 
         [
@@ -297,16 +307,15 @@ let testAssayRegister =
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
             
-            let studiesWithIdentifiers = investigation.Studies.Value |> List.filter (fun s -> s.Identifier.Value = assayIdentifier)
+            let studiesWithIdentifiers = isa.StudyIdentifiers |> Seq.toList |> List.filter ((=) assayIdentifier)
             
             Expect.equal studiesWithIdentifiers.Length 1 "Duplicate study was added"
 
-            let study = API.Study.tryGetByIdentifier assayIdentifier investigation.Studies.Value |> Option.get
+            let study = isa.GetStudy assayIdentifier
 
-            let assayOption = API.Assay.tryGetByFileName assayFileName study.Assays.Value
-            Expect.isSome assayOption "New Assay was not added to study"
-            Expect.equal assayOption.Value testAssay "New Assay is missing values"
-            Expect.equal study.Assays.Value.Length 1 "Assay missing"
+            let assay = study.GetRegisteredAssay assayIdentifier
+            Expect.equal assay testAssay "New Assay is missing values"
+            Expect.equal study.RegisteredAssayCount 1 "Assay missing"
         )
         testCase "StudyNameNotGivenUseAssayNameNoDuplicateAssay" (fun () ->
 
@@ -314,24 +323,23 @@ let testAssayRegister =
             setupArc configuration
 
             let assayIdentifier = "StudyCreatedByAssayRegister"
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
 
             let assayArgs = [AssayAddArgs.AssayIdentifier assayIdentifier]
             
             processCommand configuration AssayAPI.add assayArgs
             processCommand configuration AssayAPI.add assayArgs // <- trying to create a second, nearly identical assay which shall NOT work
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
             
-            let studiesWithIdentifiers = investigation.Studies.Value |> List.filter (fun s -> s.Identifier.Value = assayIdentifier)
+            let studiesWithIdentifiers = isa.StudyIdentifiers |> Seq.toList |> List.filter ((=) assayIdentifier)
             
             Expect.equal studiesWithIdentifiers.Length 1 "Duplicate study was added"
 
-            let study = API.Study.tryGetByIdentifier assayIdentifier investigation.Studies.Value |> Option.get
-
-            let assayOption = API.Assay.tryGetByFileName assayFileName study.Assays.Value
-            Expect.isSome assayOption "Assay was removed"
-            Expect.equal study.Assays.Value.Length 1 "Duplicate Assay added"
+            let study = isa.GetStudy assayIdentifier 
+            
+            let assay = study.GetRegisteredAssay assayIdentifier
+            Expect.equal study.RegisteredAssayCount 1 "Duplicate Assay added"
         )
     ]
     |> testSequenced
@@ -370,31 +378,35 @@ let testAssayUpdate =
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args
 
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier configuration
             let measurementType = "NewMeasurementType"
-            let testAssay = ISADotNet.XLSX.Assays.fromString measurementType "" "" "Assay2Tech" "" "" "" assayFileName []
+            let mt = OntologyAnnotation.fromString(measurementType)
+            let tt = OntologyAnnotation.fromString("Assay2Tech")
+            let testAssay = ArcAssay.create(assayIdentifier,mt,tt)
 
             let assayUpdateArgs : AssayUpdateArgs list = [
-                AssayUpdateArgs.StudyIdentifier studyIdentifier
                 AssayUpdateArgs.AssayIdentifier assayIdentifier
                 AssayUpdateArgs.MeasurementType measurementType
             ]
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
+
             processCommand configuration AssayAPI.update assayUpdateArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
             
-            Expect.equal investigation.Studies.Value.[1] investigationBeforeUpdate.Studies.Value.[1] "Only assay in first study was supposed to be updated, but study 2 is also different"
+            Expect.equal (isa.GetStudyAt(1).RegisteredAssays[1]) (isaBeforeUpdate.GetStudyAt(1).RegisteredAssays[1]) "Only assay in first study was supposed to be updated, but study 2 is also different"
             
-            let study = investigation.Studies.Value.[0]
-            let studyBeforeUpdate = investigationBeforeUpdate.Studies.Value.[0]
+            let study = isa.GetStudyAt 0
+            let studyBeforeUpdate = isaBeforeUpdate.GetStudyAt 0
 
-            Expect.equal study.Assays.Value.[0] studyBeforeUpdate.Assays.Value.[0] "Only assay number 1 in first study was supposed to be updated, but first assay is also different"
+            Expect.equal (study.RegisteredAssays[0]) (studyBeforeUpdate.RegisteredAssays[0]) "Only assay number 1 in first study was supposed to be updated, but first assay is also different"
 
-            let assay = study.Assays.Value.[1]
+            let assay = study.RegisteredAssays[1]
 
-            Expect.equal assay.FileName testAssay.FileName "Assay Filename has changed even though it shouldn't"
+            Expect.equal assay.Identifier testAssay.Identifier "Assay Filename has changed even though it shouldn't"
             Expect.equal assay.TechnologyType testAssay.TechnologyType "Assay technology type has changed, even though no value was given and the \"ReplaceWithEmptyValues\" flag was not set"
             Expect.equal assay.MeasurementType testAssay.MeasurementType "Assay Measurement type was not updated correctly"
 
@@ -426,29 +438,31 @@ let testAssayUpdate =
 
             processCommand configuration AssayAPI.add assay2AddArgs
 
-            let assayFileName = IsaModelConfiguration.getAssayFileName assayIdentifier2 configuration
             let newMeasurementType = "NewMeasurementType"
-            let testAssay = ISADotNet.XLSX.Assays.fromString newMeasurementType "" "" "" "" "" "" assayFileName []
+            let mt = OntologyAnnotation.fromString(newMeasurementType)
+            let testAssay = ArcAssay.create(assayIdentifier2,mt)
 
             let assayUpdateArgs : AssayUpdateArgs list = [
                 AssayUpdateArgs.ReplaceWithEmptyValues
-                AssayUpdateArgs.StudyIdentifier studyIdentifier2
                 AssayUpdateArgs.AssayIdentifier assayIdentifier2
                 AssayUpdateArgs.MeasurementType newMeasurementType
             ]           
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
             processCommand configuration AssayAPI.update assayUpdateArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"          
 
-            Expect.equal investigation.Studies.Value.[0] investigationBeforeUpdate.Studies.Value.[0] "Only assay in second study was supposed to be updated, but study 1 is also different"
+            Expect.equal (isa.GetStudyAt(0)) (isaBeforeUpdate.GetStudyAt(0))  "Only assay in second study was supposed to be updated, but study 1 is also different"
             
-            let study = investigation.Studies.Value.[1]
+            let study = isa.RegisteredStudies[1]
 
-            let assay = study.Assays.Value.[0]
+            let assay = study.RegisteredAssays[0]
 
-            Expect.equal assay.FileName testAssay.FileName "Assay Filename has changed even though it shouldnt"
+            Expect.equal assay.Identifier testAssay.Identifier "Assay Filename has changed even though it shouldnt"
             Expect.isNone assay.TechnologyType "Assay technology type has not been removed, even though no value was given and the \"ReplaceWithEmptyValues\" flag was set"
             Expect.equal assay.MeasurementType testAssay.MeasurementType "Assay Measurement type was not updated correctly"
         )
@@ -494,21 +508,22 @@ let testAssayUnregister =
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
             processCommand configuration AssayAPI.unregister assayArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"              
 
-            Expect.equal investigation.Studies.Value.[1] investigationBeforeUpdate.Studies.Value.[1] "Only assay in first study was supposed to be unregistered, but study 2 is also different"
+            Expect.equal (isa.RegisteredStudies[1]) (isaBeforeUpdate.RegisteredStudies[1])  "Only assay in first study was supposed to be unregistered, but study 2 is also different"
             
-            let study = investigation.Studies.Value.[0]
-            let studyBeforeUpdate = investigationBeforeUpdate.Studies.Value.[0]
+            let study = isa.RegisteredStudies[0]
+            let studyBeforeUpdate = isaBeforeUpdate.RegisteredStudies[0]
 
-            Expect.isSome study.Assays "Only assay number 2 in first study was supposed to be unregistered, but both assays were removed"
-            Expect.notEqual study.Assays.Value [] "Only assay number 2 in first study was supposed to be unregistered, but both assays were removed"
-            Expect.equal study.Assays.Value.[0] studyBeforeUpdate.Assays.Value.[0] "Only assay number 2 in first study was supposed to be unregistered, but first assay is also different"
-            Expect.equal study.Assays.Value.Length 1 "Only first assay was supposed to be left in the study after removing the second but both are still present"
+            Expect.notEqual study.RegisteredAssayCount 0 "Only assay number 2 in first study was supposed to be unregistered, but both assays were removed"
+            Expect.equal study.RegisteredAssays[0] studyBeforeUpdate.RegisteredAssays[0] "Only assay number 2 in first study was supposed to be unregistered, but first assay is also different"
+            Expect.equal study.RegisteredAssayCount 1 "Only first assay was supposed to be left in the study after removing the second but both are still present"
         )
         testCase "AssayDoesNotExist" (fun () -> 
 
@@ -520,12 +535,15 @@ let testAssayUnregister =
 
             let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
             processCommand configuration AssayAPI.unregister assayArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"           
 
-            Expect.equal investigation investigationBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been removed"
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been removed"
             
         )
         testCase "StudyDoesNotExist" (fun () -> 
@@ -541,12 +559,15 @@ let testAssayUnregister =
                 AssayUnregisterArgs.AssayIdentifier assayIdentifier
             ]
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
             processCommand configuration AssayAPI.unregister assayUnrArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"              
 
-            Expect.equal investigation investigationBeforeUpdate "Investigation values did change even though the given study does not exist and none should have been removed"
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given study does not exist and none should have been removed"
             
         )
     ]
@@ -593,23 +614,24 @@ let testAssayMove =
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            let testAssay = investigationBeforeUpdate.Studies.Value.[0].Assays.Value.[1]
-            let fileName = testAssay.FileName.Value
+
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let testAssay = isaBeforeUpdate.GetStudyAt(0).RegisteredAssays[1]
 
             processCommand configuration AssayAPI.move assayMovArgs
+
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            
-            let studies = investigation.Studies.Value
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"  
 
-            Expect.isNone (API.Assay.tryGetByFileName fileName studies.[0].Assays.Value) "Assay was not removed from source study"
+            Expect.equal (isa.GetStudyAt(0).RegisteredAssayCount) (isaBeforeUpdate.GetStudyAt(0).RegisteredAssayCount - 1) "Assay was not removed from source study"
 
-            let assay = API.Assay.tryGetByFileName fileName studies.[1].Assays.Value
+            let assay = isa.GetStudyAt(1).GetRegisteredAssay assayIdentifier
 
-            Expect.isSome assay "Assay was not added to target study"
+            //Expect.isSome assay "Assay was not added to target study"
 
-            Expect.equal assay.Value testAssay "Assay was moved but some values are not correct"
+            Expect.equal assay testAssay "Assay was moved but some values are not correct"
             
         )
         testCase "ToNewStudy" (fun () -> 
@@ -635,23 +657,25 @@ let testAssayMove =
                 AssayMoveArgs.AssayIdentifier assayIdentifier
             ]
  
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            let testAssay = investigationBeforeUpdate.Studies.Value.[0].Assays.Value.[0]
-            let fileName = testAssay.FileName.Value
+
+
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let testAssay = isaBeforeUpdate.GetStudyAt(0).RegisteredAssays[0]
 
             processCommand configuration AssayAPI.move assayMovArgs
-            
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            
-            let studies = investigation.Studies.Value
 
-            Expect.isNone (studies.[0].Assays |> Option.defaultValue [] |> API.Assay.tryGetByFileName fileName) "Assay was not removed from source study"
+            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"  
 
-            let study = API.Study.tryGetByIdentifier "NewStudy" studies
+            Expect.isNone (isa.GetStudyAt(0).TryGetRegisteredAssay assayIdentifier) "Assay was not removed from source study"
+
+            let study = isa.TryGetStudy "NewStudy"
 
             Expect.isSome study "New Study was not created"
 
-            let assay = API.Assay.tryGetByFileName fileName study.Value.Assays.Value
+            let assay = study.Value.TryGetRegisteredAssay assayIdentifier
 
             Expect.isSome assay "Assay was not added to target study"
 
@@ -669,12 +693,17 @@ let testAssayMove =
 
             let assayArgs : AssayMoveArgs list = [AssayMoveArgs.StudyIdentifier studyIdentifier;AssayMoveArgs.TargetStudyIdentifier targetStudyIdentifier;AssayMoveArgs.AssayIdentifier assayIdentifier]
 
-            let investigationBeforeUpdate = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-            processCommand configuration AssayAPI.move assayArgs
-            
-            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)            
 
-            Expect.equal investigation investigationBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been moved"
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
+            processCommand configuration AssayAPI.move assayArgs
+
+            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"           
+
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been moved"
             
         )
     ]
