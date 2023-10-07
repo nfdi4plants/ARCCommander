@@ -5,7 +5,7 @@ VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ArcCommander", "src\ArcCommander\ArcCommander.fsproj", "{E482262C-A2BF-44E9-BCD0-A7E2E80F419C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ArcCommander.Tests.NetCore", "tests\ArcCommander.Tests.NetCore\ArcCommander.Tests.NetCore.fsproj", "{618F5887-509A-4C7A-8536-6CCA51A8F85B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ArcCommander.Tests", "tests\ArcCommander.Tests.NetCore\ArcCommander.Tests.fsproj", "{618F5887-509A-4C7A-8536-6CCA51A8F85B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "meta", "meta", "{655069DF-7C2B-4771-BD96-226EB6808D95}"
 	ProjectSection(SolutionItems) = preProject

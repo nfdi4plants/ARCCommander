@@ -3,7 +3,7 @@
 open Expecto
 open TestingUtils
 
-[<Tests>]
+[<PTests>]
 let testConfiguration = 
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"

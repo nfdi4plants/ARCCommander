@@ -7,11 +7,14 @@
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Remove="ArcCommander\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Utils.fs" />
-    <Compile Include="ArcCommander\InvestigationTests.fs" />
-    <Compile Include="ArcCommander\StudyTests.fs" />
-    <Compile Include="ArcCommander\AssayTests.fs" />
-    <Compile Include="ArcCommander\ConfigurationTests.fs" />
+    <Compile Include="InvestigationTests.fs" />
+    <Compile Include="StudyTests.fs" />
+    <Compile Include="AssayTests.fs" />
+    <Compile Include="ConfigurationTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -24,7 +27,7 @@
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ArcCommander\TestFiles\" />
+    <Folder Include="TestFiles\" />
     <ProjectReference Include="..\..\src\ArcCommander\ArcCommander.fsproj" />
   </ItemGroup>
 </Project>
