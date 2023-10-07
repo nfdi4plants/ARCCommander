@@ -132,10 +132,10 @@ module ArcAPI =
         let output =
             if arcArgs.ContainsFlag ProcessSequence then
                 API.ARC.getProcesses arc
-                |> ARCtrl.ISA.Json.ProcessSequence.toString
+                |> ARCtrl.ISA.Json.ProcessSequence.toJsonString
             else 
                 arc.ISA.Value
-                |> ARCtrl.ISA.Json.ArcInvestigation.toString
+                |> ARCtrl.ISA.Json.ArcInvestigation.toJsonString
 
         match arcArgs.TryGetFieldValue Output with
         | Some p -> System.IO.File.WriteAllText(p, output)

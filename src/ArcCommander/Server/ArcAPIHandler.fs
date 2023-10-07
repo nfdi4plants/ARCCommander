@@ -63,7 +63,7 @@ let arcImportHandler : HttpHandler =
             let tmpDir = Path.Combine(Path.GetTempPath(), "tmpArc")
             let tmpZip = Path.Combine(Path.GetTempPath(), "tmpArc.zip")
 
-            ArcInvestigation.fromString isaJsonString
+            ArcInvestigation.fromJsonString isaJsonString
             //|> fun i -> {i with Remarks = []}
             |> fun i -> ARC(i).Write(tmpDir)
 

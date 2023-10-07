@@ -49,17 +49,26 @@ module AssayAPI =
         
         let assayFileName = Identifier.Assay.fileNameFromIdentifier assayIdentifier
 
+        let mt = 
+            OntologyAnnotation.fromString(
+                ?termName = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementType),
+                ?tan = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementTypeTermAccessionNumber),
+                ?tsr = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementTypeTermSourceREF)
+                    )
+            |> Aux.Option.fromValueWithDefault OntologyAnnotation.empty
+        let tt = 
+            OntologyAnnotation.fromString(
+                ?termName = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyType),
+                ?tan = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyTypeTermAccessionNumber),
+                ?tsr = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyTypeTermSourceREF)
+                    )
+            |> Aux.Option.fromValueWithDefault OntologyAnnotation.empty
+        let tp = 
+            assayArgs.TryGetFieldValue AssayInitArgs.TechnologyPlatform
+            |> Option.map ArcAssay.decomposeTechnologyPlatform
+            
         let assay = 
-            Assays.fromString
-                (assayArgs.TryGetFieldValue  AssayInitArgs.MeasurementType)
-                (assayArgs.TryGetFieldValue  AssayInitArgs.MeasurementTypeTermAccessionNumber)
-                (assayArgs.TryGetFieldValue  AssayInitArgs.MeasurementTypeTermSourceREF)
-                (assayArgs.TryGetFieldValue  AssayInitArgs.TechnologyType)
-                (assayArgs.TryGetFieldValue  AssayInitArgs.TechnologyTypeTermAccessionNumber)
-                (assayArgs.TryGetFieldValue  AssayInitArgs.TechnologyTypeTermSourceREF)
-                (assayArgs.TryGetFieldValue  AssayInitArgs.TechnologyPlatform)
-                assayFileName
-                [||]
+            ArcAssay.create(assayIdentifier, ?measurementType = mt,?technologyType = tt, ?technologyPlatform = tp)
         
         let arc = ARC.load(arcConfiguration)
         let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
@@ -371,10 +380,10 @@ module AssayAPI =
                 if assayArgs.ContainsFlag AssayExportArgs.ProcessSequence then               
                     a.Tables |> Seq.collect (fun t -> t.GetProcesses())
                     |> Seq.toList
-                    |> ARCtrl.ISA.Json.ProcessSequence.toString
+                    |> ARCtrl.ISA.Json.ProcessSequence.toJsonString
                 else 
                     Study.create(Contacts = (a.Performers |> Array.toList),Assays = [a.ToAssay()])
-                    |> ARCtrl.ISA.Json.Study.toString
+                    |> ARCtrl.ISA.Json.Study.toJsonString
 
             match assayArgs.TryGetFieldValue AssayExportArgs.Output with
             | Some p -> System.IO.File.WriteAllText(p, output)
@@ -405,7 +414,7 @@ module AssayAPI =
                     ass
                     |> Seq.collect (fun a -> a.Tables |> Seq.collect (fun t -> t.GetProcesses()))
                     |> Seq.toList
-                    |> ARCtrl.ISA.Json.ProcessSequence.toString
+                    |> ARCtrl.ISA.Json.ProcessSequence.toJsonString
                 else 
                     ass
                     |> Seq.map (fun a -> 
