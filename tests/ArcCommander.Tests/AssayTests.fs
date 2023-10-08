@@ -45,7 +45,7 @@ let standardISAArgs =
             "assayfilename"         , "isa.assay.xlsx"
         ]
 
-let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
+let processCommand (arcConfiguration : ArcConfiguration)  (commandF : _ -> ArcParseResults<'T> -> _) (r : 'T list when 'T :> IArgParserTemplate) =
 
     let g = groupArguments r
     Prompt.deannotateArguments g 
@@ -120,7 +120,7 @@ let testAssayRegister =
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
             
-            let studyArgs : StudyRegisterArgs list = [StudyRegisterArgs.Identifier studyIdentifier]
+            let studyArgs : StudyAddArgs list = [StudyAddArgs.Identifier studyIdentifier]
             let assayInitArgs : AssayInitArgs list = [
                 AssayInitArgs.AssayIdentifier assayIdentifier
                 AssayInitArgs.MeasurementType measurementType
@@ -131,7 +131,7 @@ let testAssayRegister =
             ]
             let testAssay = ArcAssay.create (assayIdentifier,measurementType = OntologyAnnotation.fromString(measurementType))
             
-            processCommand configuration StudyAPI.register studyArgs
+            processCommand configuration StudyAPI.add studyArgs
             processCommand configuration AssayAPI.init     assayInitArgs
             processCommand configuration AssayAPI.register assayRegisterArgs
             
@@ -154,9 +154,9 @@ let testAssayRegister =
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
 
-            let studyArgs : StudyRegisterArgs list = [StudyRegisterArgs.Identifier studyIdentifier]
+            let studyArgs : StudyAddArgs list = [StudyAddArgs.Identifier studyIdentifier]
 
-            processCommand configuration StudyAPI.register studyArgs
+            processCommand configuration StudyAPI.add studyArgs
             
             let assay1Args : AssayAddArgs list = [
                 AssayAddArgs.StudyIdentifier studyIdentifier
@@ -172,7 +172,7 @@ let testAssayRegister =
             let testAssay = ArcAssay.create (assayIdentifier,measurementType = testMT)
             
             processCommand configuration AssayAPI.add assay1Args
-            processCommand configuration AssayAPI.add assay2Args // <- trying to create a second, nearly identical assay which shall NOT work
+            Expect.throws (fun () -> processCommand configuration AssayAPI.add assay2Args) "trying to create a second, nearly identical assay which shall NOT work"
             
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
@@ -327,7 +327,7 @@ let testAssayRegister =
             let assayArgs = [AssayAddArgs.AssayIdentifier assayIdentifier]
             
             processCommand configuration AssayAPI.add assayArgs
-            processCommand configuration AssayAPI.add assayArgs // <- trying to create a second, nearly identical assay which shall NOT work
+            Expect.throws (fun () -> processCommand configuration AssayAPI.add assayArgs)  "trying to create a second, nearly identical assay which shall NOT work"
             
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
@@ -397,7 +397,7 @@ let testAssayUpdate =
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
             
-            Expect.equal (isa.GetStudyAt(1).RegisteredAssays[1]) (isaBeforeUpdate.GetStudyAt(1).RegisteredAssays[1]) "Only assay in first study was supposed to be updated, but study 2 is also different"
+            Expect.equal (isa.GetStudyAt(1).RegisteredAssays[0]) (isaBeforeUpdate.GetStudyAt(1).RegisteredAssays[0]) "Only assay in first study was supposed to be updated, but study 2 is also different"
             
             let study = isa.GetStudyAt 0
             let studyBeforeUpdate = isaBeforeUpdate.GetStudyAt 0

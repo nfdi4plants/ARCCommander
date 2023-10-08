@@ -8,7 +8,7 @@ Fake.Extensions.Release.ReleaseNotes.ensure()
 
 let project = "ArcCommander"
 
-let testProject = Path.getFullName "tests/ArcCommander.Tests.NetCore/ArcCommander.Tests.NetCore.fsproj"
+let testProject = Path.getFullName "tests/ArcCommander.Tests/ArcCommander.Tests.fsproj"
 
 let summary = "ArcCommander is a command line tool to create, manage and share your ARCs."
 

@@ -1,5 +1,5 @@
 ﻿
-module ArcCommander.Tests.NetCore
+module ArcCommander.Tests
 
 open Expecto
 
@@ -13,9 +13,9 @@ let main argv =
   Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv AssayTests.testAssayUnregister |> ignore
   Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv AssayTests.testAssayMove |> ignore
 
-  //Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv StudyTests.testStudyRegister |> ignore
+  Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv StudyTests.testStudyAdd |> ignore
   //Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv StudyTests.testStudyProtocolLoad |> ignore
-  //Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv StudyTests.testStudyContacts |> ignore
+  Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv StudyTests.testStudyContacts |> ignore
 
 
   //Tests.runTestsWithCLIArgs [Tests.CLIArguments.Sequenced] argv InvestigationTests.testInvestigationReading |> ignore

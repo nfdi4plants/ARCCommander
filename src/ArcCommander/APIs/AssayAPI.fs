@@ -87,7 +87,7 @@ module AssayAPI =
 
         log.Info("Start Assay Update")
 
-        let replaceWithEmptyValues = assayArgs.ContainsFlag AssayUpdateArgs.ReplaceWithEmptyValues |> not
+        let replaceWithEmptyValues = assayArgs.ContainsFlag AssayUpdateArgs.ReplaceWithEmptyValues
         let addIfMissing = assayArgs.ContainsFlag AssayUpdateArgs.AddIfMissing
         
         let assayIdentifier = assayArgs.GetFieldValue  AssayUpdateArgs.AssayIdentifier
@@ -292,23 +292,30 @@ module AssayAPI =
         let arc = ARC.load(arcConfiguration)
         let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
 
-
+        
         if isa.StudyIdentifiers |> Seq.contains studyIdentifier then
             let s = isa.GetStudy studyIdentifier
-            s.DeregisterAssay assayIdentifier
-              
-        let s = 
-            if isa.StudyIdentifiers |> Seq.contains targetStudyIdentifer then
-                isa.GetStudy targetStudyIdentifer
-            else
-                log.Info($"Study with the identifier {targetStudyIdentifer} does not exist yet, creating it now.")
-                isa.AddRegisteredStudy (ArcStudy(targetStudyIdentifer))
-                isa.GetStudy targetStudyIdentifer
+            if s.RegisteredAssayIdentifiers |> Seq.contains assayIdentifier then
 
-        s.RegisterAssay assayIdentifier
+                s.DeregisterAssay assayIdentifier             
+                let targetStudy = 
+                    if isa.StudyIdentifiers |> Seq.contains targetStudyIdentifer then
+                        isa.GetStudy targetStudyIdentifer
+                    else
+                        log.Info($"Study with the identifier {targetStudyIdentifer} does not exist yet, creating it now.")
+                        isa.AddRegisteredStudy (ArcStudy(targetStudyIdentifer))
+                        isa.GetStudy targetStudyIdentifer
 
-        arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+                targetStudy.RegisterAssay assayIdentifier
+
+                arc.ISA <- Some isa
+                arc.Write(arcConfiguration)
+
+            else 
+                log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
+
+        else 
+            log.Error($"Study with the identifier {studyIdentifier} does not exist.")
 
     /// Moves an assay file from one study group to another (provided by assayArgs).
     let show (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayShowArgs>) =

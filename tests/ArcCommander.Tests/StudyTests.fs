@@ -44,7 +44,7 @@ let setupArc (arcConfiguration:ArcConfiguration) =
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
-[<PTests>]
+[<Tests>]
 let testStudyAdd =
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/studyAddTest"
@@ -92,7 +92,7 @@ let testStudyAdd =
             let studyDescription = "TestStudyDescription2"
 
             let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
-            processCommand configuration StudyAPI.add studyArgs
+            Expect.throws (fun () -> processCommand configuration StudyAPI.add studyArgs) "Study was added to ISA, even though it already existed"
             let arc = ARC.load(testDirectory)
             let isa = Expect.wantSome arc.ISA "ISA was not created"
             Expect.equal isa.Studies.Count 2 "Second study was added to ISA, even though it already existed"
@@ -230,7 +230,7 @@ let testStudyContacts =
     let investigationFileName = "isa.investigation.xlsx"
     let source = __SOURCE_DIRECTORY__
     let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
-
+    let investigationFilePath = System.IO.Path.Combine([|testDirectory;investigationFileName|])         
     let studyIdentifier = "BII-S-1"
 
     let configuration = 
@@ -239,17 +239,15 @@ let testStudyContacts =
             (standardISAArgs)
             Map.empty Map.empty Map.empty Map.empty
 
-    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
-    
-    let studyBeforeChangingIt = 
-        ISADotNet.XLSX.Investigation.fromFile investigationToCopy
-        |> API.Investigation.getStudies
-        |> API.Study.tryGetByIdentifier studyIdentifier
-        |> Option.get
 
     setupArc configuration
     //Copy testInvestigation
     System.IO.File.Copy(investigationToCopy,investigationFilePath,true)
+
+    let arc = ARC.load(testDirectory)
+
+    let studyBeforeChangingIt = 
+        arc.ISA.Value.GetStudy studyIdentifier
 
     testList "StudyContactTests" [
         testCase "Update" (fun () -> 
@@ -269,20 +267,20 @@ let testStudyContacts =
                 ]
 
             let personBeforeUpdating = 
-                studyBeforeChangingIt.Contacts.Value
-                |> API.Person.tryGetByFullName firstName midInitials lastName
-                |> Option.get
-            
+                studyBeforeChangingIt.Contacts
+                |> Person.tryGetByFullName firstName midInitials lastName
+                |> Option.get 
+
             processCommand configuration StudyAPI.Contacts.update contactArgs
             
-            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+            let arc = ARC.load(testDirectory)
+            let investigation = arc.ISA.Value
 
-            let study = investigation.Studies |> Option.bind (API.Study.tryGetByIdentifier studyIdentifier)
+            let study = investigation.TryGetStudy studyIdentifier
 
             Expect.isSome study "Study missing after updating person"
-            Expect.isSome study.Value.Contacts "Study Contacts missing after updating one person"
 
-            let person = API.Person.tryGetByFullName firstName midInitials lastName study.Value.Contacts.Value
+            let person = Person.tryGetByFullName firstName midInitials lastName study.Value.Contacts
 
             Expect.isSome person "Person missing after updating person"
 
