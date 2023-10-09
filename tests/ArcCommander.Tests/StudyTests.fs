@@ -32,26 +32,23 @@ let setupArc (arcConfiguration:ArcConfiguration) =
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
 let testStudyAdd =
-
-    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/studyAddTest"
     
-    let configuration = 
-        ArcConfiguration.create 
-            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-            (standardISAArgs)
-            Map.empty Map.empty Map.empty Map.empty
+    let testListName = "StudyAddTests"
 
-    setupArc configuration
 
-    testList "StudyAddTests" [
+    testList testListName [
         testCase "AddToEmptyInvestigation" (fun () -> 
+
+            let config = createConfigFromDir testListName "AddToEmptyInvestigation"
+
+            setupArc config
 
             let studyIdentifier = "TestStudy"
             let studyDescription = "TestStudyDescription"
 
             let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
-            processCommand configuration StudyAPI.add studyArgs
-            let arc = ARC.load(testDirectory)
+            processCommand config StudyAPI.add studyArgs
+            let arc = ARC.load(config)
             let isa = Expect.wantSome arc.ISA "ISA was not created" 
             Expect.equal isa.Studies.Count 1 "Study was not initialized in ARC"
             Expect.equal isa.RegisteredStudies.Count 1 "Study was not registetered to ISA"
@@ -60,12 +57,23 @@ let testStudyAdd =
             Expect.equal description studyDescription "Study was not registetered to ISA with correct description"
         )
         testCase "AddSecondStudy" (fun () -> 
+
+            let config = createConfigFromDir testListName "AddSecondStudy"
+
+            setupArc config
+
+            let studyIdentifier = "TestStudy"
+            let studyDescription = "TestStudyDescription"
+
+            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            processCommand config StudyAPI.add studyArgs
+
             let studyIdentifier = "TestStudy2"
             let studyDescription = "TestStudyDescription2"
 
             let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
-            processCommand configuration StudyAPI.add studyArgs
-            let arc = ARC.load(testDirectory)
+            processCommand config StudyAPI.add studyArgs
+            let arc = ARC.load(config)
             let isa = Expect.wantSome arc.ISA "ISA was not created"
             Expect.equal isa.Studies.Count 2 "Second study was not added to ISA"
             Expect.equal isa.RegisteredStudies.Count 2 "Second study was not registetered to ISA"
@@ -74,12 +82,29 @@ let testStudyAdd =
             Expect.equal description studyDescription "Second study was not registetered to ISA with correct description"
         )
         testCase "DoesntAddDuplicateStudy" (fun () -> 
+
+            let config = createConfigFromDir testListName "DoesntAddDuplicateStudy"
+
+            setupArc config
+
+            let studyIdentifier = "TestStudy"
+            let studyDescription = "TestStudyDescription"
+
+            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            processCommand config StudyAPI.add studyArgs
+
             let studyIdentifier = "TestStudy2"
             let studyDescription = "TestStudyDescription2"
 
             let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
-            Expect.throws (fun () -> processCommand configuration StudyAPI.add studyArgs) "Study was added to ISA, even though it already existed"
-            let arc = ARC.load(testDirectory)
+            processCommand config StudyAPI.add studyArgs
+
+            let studyIdentifier = "TestStudy2"
+            let studyDescription = "TestStudyDescription2"
+
+            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            Expect.throws (fun () -> processCommand config StudyAPI.add studyArgs) "Study was added to ISA, even though it already existed"
+            let arc = ARC.load(config)
             let isa = Expect.wantSome arc.ISA "ISA was not created"
             Expect.equal isa.Studies.Count 2 "Second study was added to ISA, even though it already existed"
             Expect.equal isa.RegisteredStudies.Count 2 "Second study was added to ISA, even though it already existed"
@@ -211,30 +236,29 @@ let testStudyAdd =
 
 
 let testStudyContacts = 
-    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/studyContactTest"
+
+    let testListName = "StudyContactTests"
+
+    let config = createConfigFromDir testListName "Contacts"
+
     let investigationFileName = "isa.investigation.xlsx"
     let source = __SOURCE_DIRECTORY__
     let investigationToCopy = System.IO.Path.Combine([|source;"TestFiles";investigationFileName|])
-    let investigationFilePath = System.IO.Path.Combine([|testDirectory;investigationFileName|])         
+    let investigationFilePath = System.IO.Path.Combine([|GeneralConfiguration.getWorkDirectory config;investigationFileName|])         
     let studyIdentifier = "BII-S-1"
 
-    let configuration = 
-        ArcConfiguration.create 
-            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-            (standardISAArgs)
-            Map.empty Map.empty Map.empty Map.empty
+    
 
-
-    setupArc configuration
+    setupArc config
     //Copy testInvestigation
     System.IO.File.Copy(investigationToCopy,investigationFilePath,true)
 
-    let arc = ARC.load(testDirectory)
+    let arc = ARC.load(config)
 
     let studyBeforeChangingIt = 
         arc.ISA.Value.GetStudy studyIdentifier
 
-    testList "StudyContactTests" [
+    testList testListName [
         testCase "Update" (fun () -> 
             let newAddress = "FunStreet"
 
@@ -256,9 +280,9 @@ let testStudyContacts =
                 |> Person.tryGetByFullName firstName midInitials lastName
                 |> Option.get 
 
-            processCommand configuration StudyAPI.Contacts.update contactArgs
+            processCommand config StudyAPI.Contacts.update contactArgs
             
-            let arc = ARC.load(testDirectory)
+            let arc = ARC.load(config)
             let investigation = arc.ISA.Value
 
             let study = investigation.TryGetStudy studyIdentifier

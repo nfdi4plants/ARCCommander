@@ -30,7 +30,7 @@ let standardISAArgs =
             "assayfilename","isa.assay.xlsx"
         ]
 
-let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
+let processCommand (arcConfiguration : ArcConfiguration) (commandF : _ -> ArcParseResults<'T> -> _) (r : 'T list when 'T :> IArgParserTemplate) =
     let g = groupArguments r
     Prompt.deannotateArguments g 
     |> commandF arcConfiguration

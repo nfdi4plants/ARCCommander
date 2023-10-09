@@ -13,7 +13,10 @@ open ARCtrl.ISA.Spreadsheet
 module InvestigationAPI =
 
     type ArcInvestigation with
-        member this.UpdateTopLevelInfo(other : ArcInvestigation, replaceWithEmptyValues : bool) =
+        member this.UpdateTopLevelInfo(other : ArcInvestigation, replaceWithEmptyValues : bool) =   
+            if not (Identifier.isMissingIdentifier other.Identifier) then 
+                IdentifierSetters.setInvestigationIdentifier other.Identifier this
+                |> ignore
             if other.Title.IsSome || replaceWithEmptyValues then this.Title <- other.Title
             if other.Description.IsSome || replaceWithEmptyValues then this.Description <- other.Description
             if other.SubmissionDate.IsSome || replaceWithEmptyValues then this.SubmissionDate <- other.SubmissionDate
@@ -65,9 +68,13 @@ module InvestigationAPI =
 
         let replaceWithEmptyValues = investigationArgs.ContainsFlag InvestigationUpdateArgs.ReplaceWithEmptyValues
         
+        let identifier = 
+            investigationArgs.TryGetFieldValue InvestigationUpdateArgs.Identifier
+            |> Option.defaultValue (Identifier.createMissingIdentifier())
+
         let investigation = 
             ArcInvestigation.create(
-                investigationArgs.GetFieldValue InvestigationUpdateArgs.Identifier,
+                identifier,
                 ?title = investigationArgs.TryGetFieldValue InvestigationUpdateArgs.Title,
                 ?description = investigationArgs.TryGetFieldValue InvestigationUpdateArgs.Description,
                 ?submissionDate = investigationArgs.TryGetFieldValue InvestigationUpdateArgs.SubmissionDate,

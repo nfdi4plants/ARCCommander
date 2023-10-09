@@ -25,7 +25,7 @@ open ArcCommander.ArgumentProcessing
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 
-    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
+    | [<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
     | [<Unique>] Title of title:string
     | [<Unique>] Description of description:string
     | [<Unique>] SubmissionDate of submission_date:string

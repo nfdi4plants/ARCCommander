@@ -4,7 +4,7 @@ open Argu
 open Expecto
 open ARCtrl
 open ARCtrl.ISA
-open ARCtrl.ISA.Spreadsheet
+open TestingUtils 
 open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
@@ -13,20 +13,6 @@ open ArcCommander.APIs
 open System
 open System.IO
 
-let standardISAArgs = 
-    Map.ofList 
-        [
-            "investigationfilename","isa.investigation.xlsx";
-            "studiesfilename","isa.study.xlsx";
-            "assayfilename","isa.assay.xlsx"
-        ]
-
-let processCommand (arcConfiguration : ArcConfiguration) commandF (r : 'T list when 'T :> IArgParserTemplate) =
-    let g = groupArguments r
-    Prompt.deannotateArguments g 
-    |> commandF arcConfiguration
-
-let processCommandWoArgs (arcConfiguration : ArcConfiguration) commandF = commandF arcConfiguration
 
 let setupArc (arcConfiguration : ArcConfiguration) =
 
@@ -35,192 +21,224 @@ let setupArc (arcConfiguration : ArcConfiguration) =
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
 
-//[<Tests>]
-//let testInvestigationReading = 
+let testInvestigationUpdate = 
 
-//    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"
-//    let investigationFileName = "isa.investigation.xlsx"
-//    let investigationFilePath = Path.Combine(testDirectory,investigationFileName)
+    let testListName = "InvestigationUpdateTests"
+    testList testListName [
+        testCase "UpdateStandard" (fun () -> 
+            let config = createConfigFromDir testListName "UpdateStandard"
 
-//    testCase "MatchesInvestigation" (fun () -> 
-//        let testInvestigation = 
-//            ISADotNet.XLSX.Investigation.InvestigationInfo.create
-//                "BII-I-1"
-//                "Growth control of the eukaryote cell: a systems biology study in yeast"
-//                "Background Cell growth underlies many key cellular and developmental processes, yet a limited number of studies have been carried out on cell-growth regulation. Comprehensive studies at the transcriptional, proteomic and metabolic levels under defined controlled conditions are currently lacking. Results Metabolic control analysis is being exploited in a systems biology study of the eukaryotic cell. Using chemostat culture, we have measured the impact of changes in flux (growth rate) on the transcriptome, proteome, endometabolome and exometabolome of the yeast Saccharomyces cerevisiae. Each functional genomic level shows clear growth-rate-associated trends and discriminates between carbon-sufficient and carbon-limited conditions. Genes consistently and significantly upregulated with increasing growth rate are frequently essential and encode evolutionarily conserved proteins of known function that participate in many protein-protein interactions. In contrast, more unknown, and fewer essential, genes are downregulated with increasing growth rate; their protein products rarely interact with one another. A large proportion of yeast genes under positive growth-rate control share orthologs with other eukaryotes, including humans. Significantly, transcription of genes encoding components of the TOR complex (a major controller of eukaryotic cell growth) is not subject to growth-rate regulation. Moreover, integrative studies reveal the extent and importance of post-transcriptional control, patterns of control of metabolic fluxes at the level of enzyme synthesis, and the relevance of specific enzymatic reactions in the control of metabolic fluxes during cell growth. Conclusion This work constitutes a first comprehensive systems biology study on growth-rate control in the eukaryotic cell. The results have direct implications for advanced studies on cell growth, in vivo regulation of metabolic fluxes for comprehensive metabolic engineering, and for the design of genome-scale systems biology models of the eukaryotic cell."
-//                "4/30/2007"
-//                "3/10/2009"
-//                [ISADotNet.XLSX.Comment.fromString "Created With Configuration" ""; ISADotNet.XLSX.Comment.fromString "Last Opened With Configuration" "isaconfig-default_v2013-02-13"]
-                
-//        let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
+            let investigationName = "TestInvestigation"
+            let initArgs = [ArcInitArgs.Identifier investigationName]
+            processCommand config ArcAPI.init initArgs
 
-//        Expect.equal investigation.Contacts.Value.Length 3 "There should be 3 Persons in the investigation"
-//        Expect.equal investigation.Studies.Value.Head.Assays.Value.Length 3 "There should be 3 Assays in the first study"
-//        Expect.equal investigation.Studies.Value.Length 2 "There should be two studies in the investigation"
-//        Expect.equal investigation.Identifier.Value testInvestigation.Identifier "Investigation Identifier does not match"
-//        Expect.sequenceEqual investigation.Comments.Value testInvestigation.Comments "Investigation Comments do not match"
-//    )
+            let newIdentifier = "BestInvestigation"
+            let newTitle = "newTitle"
+            let newSubmissionDate = "newSubmissionDate"
+            let investigationArgs = [InvestigationUpdateArgs.Identifier newIdentifier;InvestigationUpdateArgs.Title newTitle; InvestigationUpdateArgs.SubmissionDate newSubmissionDate]
 
-//[<Tests>]
-//let testInvestigationCreatedByInit = 
+            processCommand config InvestigationAPI.update investigationArgs
 
-//    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationCreateTest"
+            let arc = ARC.load(config)
+            let isa = Expect.wantSome arc.ISA "ISA was not created"
 
-//    let configuration = 
-//        ArcConfiguration.create 
-//            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-//            (standardISAArgs)
-//            Map.empty Map.empty Map.empty Map.empty
-//    testList "InvestigationCreateTests" [
-//        testCase "MatchesInvestigationValues" (fun () -> 
-//            let investigationName = "TestInvestigation"
-//            let submissionDate = "FirstOctillember"
-//            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName;InvestigationCreateArgs.SubmissionDate submissionDate]
+            Expect.equal isa.Identifier newIdentifier "Identifier was not set correctly"
 
-//            let testInvestigation = 
-//                ISADotNet.XLSX.Investigation.fromParts 
-//                    (ISADotNet.XLSX.Investigation.InvestigationInfo.create investigationName "" "" submissionDate "" [])
-//                    [] [] [] [] []
-   
-//            setupArc configuration
-//            processCommand configuration InvestigationAPI.create investigationArgs
+            let title = Expect.wantSome isa.Title "Title was not set correctly"
+            Expect.equal title newTitle "Title was not set correctly"
 
-//            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-//            Expect.equal investigation testInvestigation "The assay in the file should match the one created per hand but did not"
-//        )
-//        testCase "ShouldNotOverwrite" (fun () -> 
-//            let investigationName = "OverwriteInvestigation"
-//            let investigationArgs = [InvestigationCreateArgs.Identifier investigationName]
+            let submissionDate = Expect.wantSome isa.SubmissionDate "SubmissionDate was not set correctly"
+            Expect.equal submissionDate newSubmissionDate "SubmissionDate was not set correctly"
+        )
+        testCase "UpdateReplaceWithEmpty" (fun () -> 
+            let config = createConfigFromDir testListName "UpdateStandard"
 
-//            let testInvestigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let investigationName = "TestInvestigation"
+            let initArgs = [ArcInitArgs.Identifier investigationName]
+            processCommand config ArcAPI.init initArgs
 
-//            processCommand configuration InvestigationAPI.create investigationArgs
+            let newIdentifier = "BestInvestigation"
+            let newTitle = "newTitle"
+            let newSubmissionDate = "newSubmissionDate"
+            let investigationArgs = [InvestigationUpdateArgs.Identifier newIdentifier;InvestigationUpdateArgs.Title newTitle; InvestigationUpdateArgs.SubmissionDate newSubmissionDate]
 
-//            let investigation = ISADotNet.XLSX.Investigation.fromFile (IsaModelConfiguration.getInvestigationFilePath configuration)
-//            Expect.equal investigation testInvestigation "Investigation file was overwritten even if it should not have been"
-//        )
-//    ]
-//    |> testSequenced
+            processCommand config InvestigationAPI.update investigationArgs
+
+            let newNewTitle = "Even more Title"
+
+            let investigationArgs = [InvestigationUpdateArgs.Title newNewTitle; InvestigationUpdateArgs.ReplaceWithEmptyValues]
+
+            processCommand config InvestigationAPI.update investigationArgs
+
+            let arc = ARC.load(config)
+            let isa = Expect.wantSome arc.ISA "ISA was not created"
+
+            Expect.equal isa.Identifier newIdentifier "Identifier should not be overwritten by empty identifier, even if \"overwrite by empty\" is set."
+
+            let title = Expect.wantSome isa.Title "Title should be overwritten a second time"
+            Expect.equal title newNewTitle "Title was not set correctly"
+
+            Expect.isNone isa.SubmissionDate "SubmissionDate should be overwritten by empty."
+        )
+        |> testSequenced
+    ]
+
+let testInvestigationContacts = 
 
 
-//[<Tests>]
-//let testInvestigationUpdate = 
+    let testListName = "InvestigationContactTests"
+    testList testListName [
+        testCase "RegisterSimple" (fun () -> 
 
-//    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationUpdateTest"
-//    let investigationFileName = "isa.investigation.xlsx"
-//    let source = __SOURCE_DIRECTORY__
-//    let investigationToCopy = Path.Combine([|source;"TestFiles";investigationFileName|])
+            let configuration = createConfigFromDir testListName "Register"
+            setupArc configuration
 
-//    let configuration = 
-//        ArcConfiguration.create 
-//            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-//            (standardISAArgs)
-//            Map.empty Map.empty Map.empty Map.empty
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
 
-//    testList "InvestigationUpdateTests" [
-//        testCase "UpdateStandard" (fun () -> 
-//            let newTitle = "newTitle"
-//            let investigationArgs = [InvestigationUpdateArgs.Identifier "BII-I-1";InvestigationUpdateArgs.Title newTitle]
-//            let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let personRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName personFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName personLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let testPerson = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
 
-//            let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
-//            setupArc configuration
-//            //Copy testInvestigation
-//            File.Copy(investigationToCopy,investigationFilePath)
-//            processCommand configuration InvestigationAPI.update investigationArgs
+            processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa.Contacts.Length 1 "Person was not added to assay"
+            Expect.equal isa.Contacts.[0] testPerson "Person was not correctly added to assay"
+        )
+
+        testCase "RegisterSecond" (fun () ->
             
-//            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
-//            // Updated with given value
-//            Expect.equal investigation.Title.Value newTitle "The value which should be updated was not updated"
-//            // Updated with given value
-//            Expect.equal investigation.Description investigationBeforeChangingIt.Description "No update value was given for description and the \"ReplaceWithEmptyValues\" flag was not given but the description was still changed"
-//            // Updated with given value
-//            Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
-//            // Updated with given value
-//            Expect.sequenceEqual  investigation.Comments.Value investigationBeforeChangingIt.Comments.Value "Comments should not have been affected by update function"      
-//        )
-//        testCase "UpdateReplaceWithEmpty" (fun () -> 
-//            let newIdentifier = "BestInvestigation"
-//            let investigationArgs = [InvestigationUpdateArgs.Identifier newIdentifier;InvestigationUpdateArgs.ReplaceWithEmptyValues]
-//            let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
+            let configuration = createConfigFromDir testListName "RegisterSecond"
+            setupArc configuration
 
-//            let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
-   
-//            processCommand configuration InvestigationAPI.update investigationArgs
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
 
-//            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
-//            // Updated with given value
-//            Expect.equal investigation.Identifier.Value newIdentifier "The value which should be updated was not updated"
-//            // Updated with given value
-//            Expect.isNone investigation.SubmissionDate "No update value was given for submission date and the \"ReplaceWithEmptyValues\" flag was given but the value was not removed"
-//            // Updated with given value
-//            Expect.sequenceEqual  investigation.Studies.Value investigationBeforeChangingIt.Studies.Value "Studies should not have been affected by update function"
-//            // Updated with given value
-//            Expect.sequenceEqual  investigation.Comments.Value investigationBeforeChangingIt.Comments.Value "Comments should not have been affected by update function"      
-//        )
-//        |> testSequenced
-//    ]
+            let secondPersonFirstName = "Testy2"
+            let secondPersonLastName = "McTestface2"
+            let secondPersonOrcid = "0000-0000-0000-0001"
 
-//[<Tests>]
-//let testInvestigationContacts = 
-//    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/investigationContactTest"
-//    let investigationFileName = "isa.investigation.xlsx"
-//    let source = __SOURCE_DIRECTORY__
-//    let investigationToCopy = Path.Combine([|source;"TestFiles";investigationFileName|])
+            let personRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName personFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName personLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let secondPersonRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName secondPersonFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName secondPersonLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
+            ]
 
-//    let configuration = 
-//        ArcConfiguration.create 
-//            (Map.ofList ["workdir",testDirectory;"verbosity","2"]) 
-//            (standardISAArgs)
-//            Map.empty Map.empty Map.empty Map.empty
+            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
 
-//    let investigationFilePath = (IsaModelConfiguration.getInvestigationFilePath configuration)
-    
-//    let investigationBeforeChangingIt = ISADotNet.XLSX.Investigation.fromFile investigationToCopy
-//    setupArc configuration
-//    //Copy testInvestigation
-//    File.Copy(investigationToCopy,investigationFilePath)
+            processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
+            processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
 
-//    testList "InvestigationContactTests" [
-//        testCase "Update" (fun () -> 
-//            let newAddress = "FunStreet"
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
-//            let firstName = "Oliver"
-//            let midInitials = "G"
-//            let lastName = "Stephen"
-
-//            let contactArgs = 
-//                [
-//                    InvestigationContacts.PersonUpdateArgs.FirstName firstName;
-//                    InvestigationContacts.PersonUpdateArgs.MidInitials midInitials;
-//                    InvestigationContacts.PersonUpdateArgs.LastName lastName;
-//                    InvestigationContacts.PersonUpdateArgs.Address newAddress;
-//                ]
-
-//            let personBeforeUpdating = 
-//                investigationBeforeChangingIt.Contacts.Value
-//                |> API.Person.tryGetByFullName firstName midInitials lastName
-//                |> Option.get
+            Expect.equal isa.Contacts.Length 2 "Person was not added to assay"
+            Expect.equal isa.Contacts.[1] testPerson "Person was not correctly added to assay"       
+        
+        )
+        testCase "DontRegisterEqual" (fun () ->
             
-//            processCommand configuration InvestigationAPI.Contacts.update contactArgs
+            let configuration = createConfigFromDir "AssayPerformerTests" "DontRegisterEqual"
+            setupArc configuration
+
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
+
+            let secondPersonFirstName = "Testy2"
+            let secondPersonLastName = "McTestface2"
+            let secondPersonOrcid = "0000-0000-0000-0001"
+
+            let personRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName personFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName personLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let secondPersonRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName secondPersonFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName secondPersonLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
+            ]
+
+            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+
+            processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
+            processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
+            processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
+
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa.Contacts.Length 2 "Identical person was added to assay"
+            Expect.equal isa.Contacts.[1] testPerson "Person was modified"       
+        
+        )
+        testCase "Update" (fun () ->
             
-//            let investigation = ISADotNet.XLSX.Investigation.fromFile investigationFilePath
-//            Expect.isSome investigation.Contacts "Investigation Contacts missing after updating one person"
+            let configuration = createConfigFromDir "AssayPerformerTests" "Update"
+            setupArc configuration
 
-//            let person = API.Person.tryGetByFullName firstName midInitials lastName investigation.Contacts.Value
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
 
-//            Expect.isSome person "Person missing after updating person"
+            let secondPersonFirstName = "Testy2"
+            let secondPersonLastName = "McTestface2"
+            let secondPersonOrcid = "0000-0000-0000-0001"
 
-//            let adress = person.Value.Address
+            let secondPersonNewOrcid = "0000-0000-0000-0002"
+            let secondPersonNewEmail = "testy2@testmail.com"
 
-//            Expect.isSome adress "Adress missing after updating person"
-//            Expect.equal adress.Value newAddress "Adress was not updated with new value"
-//            Expect.equal person.Value {personBeforeUpdating with Address = Some newAddress} "Other values of person were changed even though only the Address should have been updated"
+            let personRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName personFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName personLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let secondPersonRegisterArgs : InvestigationContacts.PersonRegisterArgs list = [
+                InvestigationContacts.PersonRegisterArgs.FirstName secondPersonFirstName
+                InvestigationContacts.PersonRegisterArgs.LastName secondPersonLastName
+                InvestigationContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
+            ]
 
-//        )
+            let secondPersonUpdateArgs : InvestigationContacts.PersonUpdateArgs list = [
+                InvestigationContacts.PersonUpdateArgs.FirstName secondPersonFirstName
+                InvestigationContacts.PersonUpdateArgs.LastName secondPersonLastName
+                InvestigationContacts.PersonUpdateArgs.ORCID secondPersonNewOrcid
+                InvestigationContacts.PersonUpdateArgs.Email secondPersonNewEmail
+            ]
 
-//    ]
-//    |> testSequenced
+            let testPerson1 = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
+            let testPerson2 = Person.create(ORCID = secondPersonNewOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName, Email = secondPersonNewEmail)
+
+            processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
+            processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
+            processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
+            processCommand configuration InvestigationAPI.Contacts.update secondPersonUpdateArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa.Contacts.Length 2 "Identical person was added to assay"
+            Expect.equal isa.Contacts.[0] testPerson1 "Person was modified"       
+            Expect.equal isa.Contacts.[1] testPerson2 "Person was not correctly updated"   
+        )
+
+    ]
+    |> testSequenced
 
 // currently not valid anymore since Expecto does not trigger NLog's console loggings. Did not find any workarounds
 //[<Tests>]
@@ -264,3 +282,11 @@ let setupArc (arcConfiguration : ArcConfiguration) =
 
 //    ]
 //    |> testSequenced
+
+
+[<Tests>]
+let investigationTests = 
+    testList "Investigation" [
+        testInvestigationUpdate
+        testInvestigationContacts
+    ]
