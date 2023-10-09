@@ -150,7 +150,7 @@ module AssayContacts =
 
     /// CLI arguments for updating existing person metadata.
     type PersonUpdateArgs =  
-        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>]   AssayIdentifier             of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier             of string
         | [<Mandatory>][<AltCommandLine("-l")>][<Unique>]   LastName                    of last_name                    : string
         | [<Mandatory>][<AltCommandLine("-f")>][<Unique>]   FirstName                   of first_name                   : string
         | [<AltCommandLine("-m")>][<Unique>]                MidInitials                 of mid_initials                 : string
@@ -202,7 +202,7 @@ module AssayContacts =
 
     /// CLI arguments for registering person metadata.
     type PersonRegisterArgs = 
-        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>]   AssayIdentifier             of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier             of string
         | [<Mandatory>][<AltCommandLine("-l")>][<Unique>]   LastName                    of last_name                    : string
         | [<Mandatory>][<AltCommandLine("-f")>][<Unique>]   FirstName                   of first_name                   : string
         | [<AltCommandLine("-m")>][<Unique>]                MidInitials                 of mid_initials                 : string

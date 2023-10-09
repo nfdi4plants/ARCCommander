@@ -44,7 +44,6 @@ let setupArc (arcConfiguration:ArcConfiguration) =
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
-[<Tests>]
 let testStudyAdd =
 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/studyAddTest"
@@ -224,7 +223,6 @@ let testStudyAdd =
     //|> testSequenced
 
 
-[<Tests>]
 let testStudyContacts = 
     let testDirectory = __SOURCE_DIRECTORY__ + @"/TestResult/studyContactTest"
     let investigationFileName = "isa.investigation.xlsx"
@@ -294,3 +292,10 @@ let testStudyContacts =
 
     ]
     |> testSequenced
+
+[<Tests>]
+let studyTests = 
+    testList "Study" [
+        testStudyAdd
+        testStudyContacts
+    ]

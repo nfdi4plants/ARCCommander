@@ -62,8 +62,6 @@ let createConfigFromDir testListName testCaseName =
     |> ArcConfiguration.ofIniData
     |> fun c -> {c with General = (Map.ofList ["workdir", dir; "verbosity", "2"]) }
 
-
-[<Tests>]
 let testAssayTestFunction = 
 
     let testDirectory = Path.Combine(__SOURCE_DIRECTORY__, "TestFiles")
@@ -106,7 +104,6 @@ let testAssayTestFunction =
     |> testSequenced
 
 
-[<Tests>]
 let testAssayRegister = 
 
     testList "AssayRegisterTests" [
@@ -344,7 +341,6 @@ let testAssayRegister =
     ]
     |> testSequenced
 
-[<Tests>]
 let testAssayUpdate = 
 
     testList "AssayUpdateTests" [
@@ -469,7 +465,6 @@ let testAssayUpdate =
     ]
     |> testSequenced
 
-[<Tests>]
 let testAssayUnregister = 
 
     testList "AssayUnregisterTests" [
@@ -573,7 +568,7 @@ let testAssayUnregister =
     ]
     |> testSequenced
 
-[<Tests>]
+
 let testAssayMove = 
 
     testList "AssayMoveTests" [
@@ -708,3 +703,212 @@ let testAssayMove =
         )
     ]
     |> testSequenced
+
+
+
+let testAssayPerformers = 
+
+    testList "AssayPerfomerTests" [
+
+        testCase "RegisterSimple" (fun () -> 
+
+            let configuration = createConfigFromDir "AssayPerformerTests" "Register"
+            setupArc configuration
+
+            let assayIdentifier = "TestAssay"
+            let measurementType = "TestMeasurementType"
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
+
+            let assayAddArgs : AssayAddArgs list = [
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType measurementType
+            ]
+            let personRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName personFirstName
+                AssayContacts.PersonRegisterArgs.LastName personLastName
+                AssayContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let testPerson = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
+
+            processCommand configuration AssayAPI.add     assayAddArgs
+            processCommand configuration AssayAPI.Contacts.register personRegisterArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            let assay = isa.GetAssay assayIdentifier
+            Expect.equal assay.Performers.Length 1 "Person was not added to assay"
+            Expect.equal assay.Performers.[0] testPerson "Person was not correctly added to assay"
+        )
+
+        testCase "RegisterSecond" (fun () ->
+            
+            let configuration = createConfigFromDir "AssayPerformerTests" "RegisterSecond"
+            setupArc configuration
+
+            let assayIdentifier = "TestAssay"
+            let measurementType = "TestMeasurementType"
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
+
+            let secondPersonFirstName = "Testy2"
+            let secondPersonLastName = "McTestface2"
+            let secondPersonOrcid = "0000-0000-0000-0001"
+
+            let assayAddArgs : AssayAddArgs list = [
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType measurementType
+            ]
+            let personRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName personFirstName
+                AssayContacts.PersonRegisterArgs.LastName personLastName
+                AssayContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let secondPersonRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName secondPersonFirstName
+                AssayContacts.PersonRegisterArgs.LastName secondPersonLastName
+                AssayContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
+            ]
+
+            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+
+            processCommand configuration AssayAPI.add     assayAddArgs
+            processCommand configuration AssayAPI.Contacts.register personRegisterArgs
+            processCommand configuration AssayAPI.Contacts.register secondPersonRegisterArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            let assay = isa.GetAssay assayIdentifier
+            Expect.equal assay.Performers.Length 2 "Person was not added to assay"
+            Expect.equal assay.Performers.[1] testPerson "Person was not correctly added to assay"       
+        
+        )
+        testCase "DontRegisterEqual" (fun () ->
+            
+            let configuration = createConfigFromDir "AssayPerformerTests" "DontRegisterEqual"
+            setupArc configuration
+
+            let assayIdentifier = "TestAssay"
+            let measurementType = "TestMeasurementType"
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
+
+            let secondPersonFirstName = "Testy2"
+            let secondPersonLastName = "McTestface2"
+            let secondPersonOrcid = "0000-0000-0000-0001"
+
+            let assayAddArgs : AssayAddArgs list = [
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType measurementType
+            ]
+            let personRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName personFirstName
+                AssayContacts.PersonRegisterArgs.LastName personLastName
+                AssayContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let secondPersonRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName secondPersonFirstName
+                AssayContacts.PersonRegisterArgs.LastName secondPersonLastName
+                AssayContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
+            ]
+
+            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+
+            processCommand configuration AssayAPI.add     assayAddArgs
+            processCommand configuration AssayAPI.Contacts.register personRegisterArgs
+            processCommand configuration AssayAPI.Contacts.register secondPersonRegisterArgs
+            processCommand configuration AssayAPI.Contacts.register secondPersonRegisterArgs
+
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            let assay = isa.GetAssay assayIdentifier
+            Expect.equal assay.Performers.Length 2 "Identical person was added to assay"
+            Expect.equal assay.Performers.[1] testPerson "Person was modified"       
+        
+        )
+        testCase "Update" (fun () ->
+            
+            let configuration = createConfigFromDir "AssayPerformerTests" "Update"
+            setupArc configuration
+
+            let assayIdentifier = "TestAssay"
+            let measurementType = "TestMeasurementType"
+            let personFirstName = "Testy"
+            let personLastName = "McTestface"
+            let personOrcid = "0000-0000-0000-0000"
+
+            let secondPersonFirstName = "Testy2"
+            let secondPersonLastName = "McTestface2"
+            let secondPersonOrcid = "0000-0000-0000-0001"
+
+            let secondPersonNewOrcid = "0000-0000-0000-0002"
+            let secondPersonNewEmail = "testy2@testmail.com"
+
+            let assayAddArgs : AssayAddArgs list = [
+                AssayAddArgs.AssayIdentifier assayIdentifier
+                AssayAddArgs.MeasurementType measurementType
+            ]
+            let personRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName personFirstName
+                AssayContacts.PersonRegisterArgs.LastName personLastName
+                AssayContacts.PersonRegisterArgs.ORCID personOrcid
+            ]
+            let secondPersonRegisterArgs : AssayContacts.PersonRegisterArgs list = [
+                AssayContacts.PersonRegisterArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonRegisterArgs.FirstName secondPersonFirstName
+                AssayContacts.PersonRegisterArgs.LastName secondPersonLastName
+                AssayContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
+            ]
+
+            let secondPersonUpdateArgs : AssayContacts.PersonUpdateArgs list = [
+                AssayContacts.PersonUpdateArgs.AssayIdentifier assayIdentifier
+                AssayContacts.PersonUpdateArgs.FirstName secondPersonFirstName
+                AssayContacts.PersonUpdateArgs.LastName secondPersonLastName
+                AssayContacts.PersonUpdateArgs.ORCID secondPersonNewOrcid
+                AssayContacts.PersonUpdateArgs.Email secondPersonNewEmail
+            ]
+
+            let testPerson1 = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
+            let testPerson2 = Person.create(ORCID = secondPersonNewOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName, Email = secondPersonNewEmail)
+
+            processCommand configuration AssayAPI.add     assayAddArgs
+            processCommand configuration AssayAPI.Contacts.register personRegisterArgs
+            processCommand configuration AssayAPI.Contacts.register secondPersonRegisterArgs
+            processCommand configuration AssayAPI.Contacts.register secondPersonRegisterArgs
+            processCommand configuration AssayAPI.Contacts.update secondPersonUpdateArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            let assay = isa.GetAssay assayIdentifier
+            Expect.equal assay.Performers.Length 2 "Identical person was added to assay"
+            Expect.equal assay.Performers.[0] testPerson1 "Person was modified"       
+            Expect.equal assay.Performers.[1] testPerson2 "Person was not correctly updated"   
+        )
+
+    ]
+    |> testSequenced
+
+[<Tests>]
+let assayTests = 
+    testList "Assay" [
+        testAssayPerformers
+        testAssayMove
+        testAssayRegister
+        testAssayTestFunction
+        testAssayUnregister
+        testAssayUpdate    
+    ]

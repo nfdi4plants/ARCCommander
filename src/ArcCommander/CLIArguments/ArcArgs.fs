@@ -32,7 +32,7 @@ type ArcInitArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Identifier          _ ->  "Identifier of the ARC. This value is used as the investigation identier."
+            | Identifier          _ ->  "Identifier of the ARC. This value is used as the investigation identifier. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
             | Branch              _ ->  "Name of the git branch to be created"
             | RepositoryAddress   _ ->  "Git repository address"
             | EditorPath          _ ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"

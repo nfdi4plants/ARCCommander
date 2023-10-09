@@ -2,14 +2,12 @@
 
 open Expecto
 open TestingUtils
+open Fake.IO
+open Fake.IO.Globbing.Operators
 
+    
 [<PTests>]
-let testConfiguration = 
-
-    let testDirectory = __SOURCE_DIRECTORY__ + @"/TestFiles/"
-    let referenceInvestigationFilePath = System.IO.Path.Combine(testDirectory,"isa.investigation.xlsx")
-    let outputInvestigationFilePath = System.IO.Path.Combine(testDirectory,"new.isa.investigation.xlsx")
-
-    testCase "Empty" (fun () -> 
-        Expect.isTrue true ""
-    )
+let configuration =
+    testList "Configuration" [
+        //cleanup
+    ]
