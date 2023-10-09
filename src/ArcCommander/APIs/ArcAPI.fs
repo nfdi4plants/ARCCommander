@@ -13,9 +13,19 @@ open ARCtrl.ISA
 [<AutoOpen>]
 module ARCExtensions = 
     type ARC with
-        member this.Write(arcPath) =
+        member this.Write(arcPath, ?NoOverWrite : bool) =
+            let log = Logging.createLogger "ArcWriteLog"
+            let overWrite = Option.defaultValue false NoOverWrite |> not
             this.GetWriteContracts()
-            |> Array.iter (Contract.fulfillWriteContract arcPath)
+            |> Array.iter (fun contract ->
+                let p = Path.Combine(arcPath, contract.Path)
+                if not (System.IO.File.Exists p) || overWrite then
+                    Contract.fulfillWriteContract arcPath contract
+                else
+                    log.Error $"File {arcPath} already exists. Use the flag to overwrite it."
+            )
+
+
 
 module API =
     
@@ -68,7 +78,7 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         let isa = ArcInvestigation.create(identifier)
-        ARC(isa).Write(workDir)     
+        ARC(isa).Write(workDir,true)     
 
         log.Trace("Set configuration")
 

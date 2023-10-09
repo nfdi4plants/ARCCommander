@@ -37,30 +37,10 @@ type ArcStudy with
         |> Seq.tryFindIndex((=) assayIdentifier)
         |> Option.bind this.TryGetRegisteredAssayAt
 
-let standardISAArgs = 
-    Map.ofList 
-        [
-            "investigationfilename" , "isa.investigation.xlsx"
-            "studiesfilename"       , "isa.study.xlsx"
-            "assayfilename"         , "isa.assay.xlsx"
-        ]
-
-let processCommand (arcConfiguration : ArcConfiguration)  (commandF : _ -> ArcParseResults<'T> -> _) (r : 'T list when 'T :> IArgParserTemplate) =
-
-    let g = groupArguments r
-    Prompt.deannotateArguments g 
-    |> commandF arcConfiguration
-
 let setupArc (arcConfiguration : ArcConfiguration) =
     let arcArgs : ArcInitArgs list = [ArcInitArgs.Identifier "TestInvestigation"] 
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
-
-let createConfigFromDir testListName testCaseName =
-    let dir = Path.Combine(__SOURCE_DIRECTORY__, "TestResult", testListName, testCaseName)
-    ArcConfiguration.GetDefault()
-    |> ArcConfiguration.ofIniData
-    |> fun c -> {c with General = (Map.ofList ["workdir", dir; "verbosity", "2"]) }
 
 let testAssayTestFunction = 
 

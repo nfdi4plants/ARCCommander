@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="ArcTests.fs" />
     <Compile Include="InvestigationTests.fs" />
     <Compile Include="StudyTests.fs" />
     <Compile Include="AssayTests.fs" />

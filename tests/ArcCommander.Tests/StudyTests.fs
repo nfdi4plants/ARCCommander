@@ -2,6 +2,7 @@
 
 open Argu
 open Expecto
+open TestingUtils
 open ARCtrl
 open ARCtrl.ISA
 open ARCtrl.ISA.Spreadsheet
@@ -24,20 +25,6 @@ type ArcInvestigation with
 
     member this.DeregisterStudy(studyIdentifier : string) =
         this.RegisteredStudyIdentifiers.Remove(studyIdentifier)
-
-let standardISAArgs = 
-    Map.ofList 
-        [
-            "investigationfilename","isa.investigation.xlsx";
-            "studyfilename","isa.study.xlsx";
-            "assayfilename","isa.assay.xlsx"
-        ]
-
-let processCommand (arcConfiguration:ArcConfiguration) (commandF : _ -> ArcParseResults<'T> -> _) (r : 'T list when 'T :> IArgParserTemplate) =
-
-    let g = groupArguments r
-    Prompt.deannotateArguments g 
-    |> commandF arcConfiguration
 
 let setupArc (arcConfiguration:ArcConfiguration) =
     let arcArgs : ArcInitArgs list =  [ArcInitArgs.Identifier "TestInvestigation"] 
