@@ -7,24 +7,28 @@
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Remove="ArcCommander\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Utils.fs" />
-    <Compile Include="ArcCommander\InvestigationTests.fs" />
-    <Compile Include="ArcCommander\StudyTests.fs" />
-    <Compile Include="ArcCommander\AssayTests.fs" />
-    <Compile Include="ArcCommander\ConfigurationTests.fs" />
+    <Compile Include="ArcTests.fs" />
+    <Compile Include="InvestigationTests.fs" />
+    <Compile Include="StudyTests.fs" />
+    <Compile Include="AssayTests.fs" />
+    <Compile Include="ConfigurationTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AltCover" Version="7.1.778" />
-    <PackageReference Include="Expecto" Version="9.*" />
+    <PackageReference Include="Expecto" Version="10.1.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
-    <PackageReference Update="FSharp.Core" Version="7.0.300-beta.23114.3" />
+    <PackageReference Update="FSharp.Core" Version="7.0.400" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ArcCommander\TestFiles\" />
+    <Folder Include="TestFiles\" />
     <ProjectReference Include="..\..\src\ArcCommander\ArcCommander.fsproj" />
   </ItemGroup>
 </Project>

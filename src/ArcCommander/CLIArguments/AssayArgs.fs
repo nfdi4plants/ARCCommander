@@ -39,7 +39,6 @@ type AssayDeleteArgs =
 
 /// CLI arguments for updating existing assay metadata.
 type AssayUpdateArgs =  
-    | [<AltCommandLine("-s")>][<Unique>][<FileName>]                StudyIdentifier                     of string
     | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]   AssayIdentifier                     of string
     | [<Unique>]                                                    MeasurementType                     of measurement_type             : string
     | [<Unique>]                                                    MeasurementTypeTermAccessionNumber  of measurement_type_accession   : string
@@ -54,7 +53,6 @@ type AssayUpdateArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | StudyIdentifier                       _ -> "Name of the study in which the assay is situated"
             | AssayIdentifier                       _ -> "Name of the assay of interest"
             | MeasurementType                       _ -> "A term to qualify the endpoint, or what is being measured (e.g. gene expression profiling or protein identification). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used, the Term Accession Number (TAN) and Term Source REF fields below are required."
             | MeasurementTypeTermAccessionNumber    _ -> "The accession number from the Term Source associated with the selected term"
@@ -68,13 +66,11 @@ type AssayUpdateArgs =
 
 /// CLI arguments for interactively editing existing assay metadata.
 type AssayEditArgs = 
-    | [<AltCommandLine("-s")>][<Unique>][<FileName>]               StudyIdentifier of study_identifier : string
     | [<Mandatory>][<AltCommandLine("-a")>][<Unique>][<FileName>]  AssayIdentifier of assay_identifier : string
 
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | StudyIdentifier   _ -> "Identifier of the study in which the assay is registered"
             | AssayIdentifier   _ -> "Identifier of the assay of interest"
 
 /// CLI arguments for registering existing assay metadata.
@@ -89,7 +85,7 @@ type AssayRegisterArgs =
             | AssayIdentifier                       _ -> "Name of the assay of interest"
 
 /// CLI arguments for unregistering existing assay metadata from investigation file.
-type AssayUnregisterArgs = AssayEditArgs
+type AssayUnregisterArgs = AssayRegisterArgs
 
 /// CLI arguments for initializing and subsequently registering assay metadata.
 // Same arguments as `register` because all metadata fields that can be updated can also be set while registering a new assay
@@ -138,7 +134,6 @@ type AssayShowArgs = AssayEditArgs
 
 /// CLI arguments for exporting a specific assay to json.
 type AssayExportArgs = 
-    | [<AltCommandLine("-s")>][<Unique>]    StudyIdentifier of study_identifier : string
     | [<AltCommandLine("-a")>][<Unique>]    AssayIdentifier of assay_identifier : string
     | [<AltCommandLine("-o")>][<Unique>]    Output          of output           : string
     | [<AltCommandLine("-ps")>][<Unique>]   ProcessSequence
@@ -146,7 +141,6 @@ type AssayExportArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | StudyIdentifier   _ -> "Identifier of the study in which the assay is registered"
             | AssayIdentifier   _ -> "Identifier of the assay of interest"
             | Output            _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
             | ProcessSequence   _ -> "If this flag is set, the return value of this assay will be its list of processes"
@@ -156,7 +150,7 @@ module AssayContacts =
 
     /// CLI arguments for updating existing person metadata.
     type PersonUpdateArgs =  
-        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>]   AssayIdentifier             of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier             of string
         | [<Mandatory>][<AltCommandLine("-l")>][<Unique>]   LastName                    of last_name                    : string
         | [<Mandatory>][<AltCommandLine("-f")>][<Unique>]   FirstName                   of first_name                   : string
         | [<AltCommandLine("-m")>][<Unique>]                MidInitials                 of mid_initials                 : string
@@ -193,7 +187,7 @@ module AssayContacts =
 
     /// CLI arguments for interactively editing existing person metadata.
     type PersonEditArgs = 
-        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>]   StudyIdentifier of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier of string
         | [<Mandatory>][<AltCommandLine("-l")>][<Unique>]   LastName        of last_name    : string
         | [<Mandatory>][<AltCommandLine("-f")>][<Unique>]   FirstName       of first_name   : string
         | [<AltCommandLine("-m")>][<Unique>]                MidInitials     of mid_initials : string
@@ -201,14 +195,14 @@ module AssayContacts =
         interface IArgParserTemplate with
             member this.Usage =
                 match this with
-                | StudyIdentifier           _ -> "Identifier of the assay the person is associated with"
+                | AssayIdentifier           _ -> "Identifier of the assay the person is associated with"
                 | LastName                  _ -> "The last name of a person associated with the assay"
                 | FirstName                 _ -> "The first name of a person associated with the assay"
                 | MidInitials               _ -> "The middle initials of a person associated with the assay"
 
     /// CLI arguments for registering person metadata.
     type PersonRegisterArgs = 
-        | [<Mandatory>][<AltCommandLine("-s")>][<Unique>]   AssayIdentifier             of string
+        | [<Mandatory>][<AltCommandLine("-a")>][<Unique>]   AssayIdentifier             of string
         | [<Mandatory>][<AltCommandLine("-l")>][<Unique>]   LastName                    of last_name                    : string
         | [<Mandatory>][<AltCommandLine("-f")>][<Unique>]   FirstName                   of first_name                   : string
         | [<AltCommandLine("-m")>][<Unique>]                MidInitials                 of mid_initials                 : string

@@ -7,7 +7,8 @@ open System.IO
 open System.IO.Compression
 open ArcCommander
 open ArcCommander.APIs
-open ISADotNet
+open ARCtrl.ISA.Json
+open ARCtrl
 
 /// 
 let isaJsonToARCHandler : HttpHandler =
@@ -62,9 +63,9 @@ let arcImportHandler : HttpHandler =
             let tmpDir = Path.Combine(Path.GetTempPath(), "tmpArc")
             let tmpZip = Path.Combine(Path.GetTempPath(), "tmpArc.zip")
 
-            ISADotNet.Json.Investigation.fromString isaJsonString
-            |> fun i -> {i with Remarks = []}
-            |> arcIO.NET.Arc.importFromInvestigation tmpDir
+            ArcInvestigation.fromJsonString isaJsonString
+            //|> fun i -> {i with Remarks = []}
+            |> fun i -> ARC(i).Write(tmpDir)
 
             System.IO.Compression.ZipFile.CreateFromDirectory(tmpDir,tmpZip )
 

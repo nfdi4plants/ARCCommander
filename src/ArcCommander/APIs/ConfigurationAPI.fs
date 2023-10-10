@@ -2,13 +2,14 @@
 
 open ArcCommander
 open ArgumentProcessing
-open arcIO.NET
+open ARCtrl.NET
 
+open ArcCommander.CLIArguments
 /// ArcCommander Configuration API functions that get executed by the configuration focused subcommand verbs
 module ConfigurationAPI =
     
     /// Opens the configuration file specified with (global or local) with the text editor set in globalArgs.
-    let edit (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+    let edit (arcConfiguration : ArcConfiguration) (configurationArgs : ArcParseResults<ConfigurationEditArgs>) =
 
         let log = Logging.createLogger "ConfigurationEditLog"
 
@@ -25,7 +26,7 @@ module ConfigurationAPI =
                 | None -> IniData.addValue n v iniData            
             ) iniData
 
-        match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
+        match configurationArgs.ContainsFlag ConfigurationEditArgs.Global, configurationArgs.ContainsFlag ConfigurationEditArgs.Local with
         // If only global flag is set, open prompt only with global settings and apply changes on global settings
         | true,false ->
             let path = IniData.tryGetGlobalConfigPath()
@@ -89,11 +90,11 @@ module ConfigurationAPI =
                 log.Error("No folder for global config file known for this environment. Config file settings cannot be saved.")
 
     /// Lists all current settings specified in the configuration.
-    let list (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+    let list (arcConfiguration : ArcConfiguration) (configurationArgs : ArcParseResults<ConfigurationListArgs>) =
 
         let log = Logging.createLogger "ConfigurationListLog"
 
-        match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
+        match configurationArgs.ContainsFlag ConfigurationListArgs.Global, configurationArgs.ContainsFlag ConfigurationListArgs.Local with
         // If only global flag is set, only global settings are listed
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
@@ -114,16 +115,16 @@ module ConfigurationAPI =
         |> Seq.iter (fun (n,v) -> log.Debug($"{n}:{v}"))
 
     /// Set the given name-value pair for the called config.
-    let set (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+    let set (arcConfiguration : ArcConfiguration) (configurationArgs : ArcParseResults<ConfigurationSetArgs>) =
 
         let log = Logging.createLogger "ConfigurationSetLog"
 
-        let name = getFieldValueByName "Name" configurationArgs
-        let value = getFieldValueByName "Value" configurationArgs
+        let name = configurationArgs.GetFieldValue ConfigurationSetArgs.Name
+        let value = configurationArgs.GetFieldValue ConfigurationSetArgs.Value
 
         let setValueInIniPath path = IniData.setValueInIniPath path name value
 
-        match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
+        match configurationArgs.ContainsFlag ConfigurationSetArgs.Global, configurationArgs.ContainsFlag ConfigurationSetArgs.Local with
         // If only global flag is set, the setting is set globally
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
@@ -144,11 +145,11 @@ module ConfigurationAPI =
             |> setValueInIniPath
 
     /// Set the given name-value pair for the called config.
-    let unset (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+    let unset (arcConfiguration : ArcConfiguration) (configurationArgs : ArcParseResults<ConfigurationUnsetArgs>) =
 
         let log = Logging.createLogger "ConfigurationUnsetLog"
 
-        let name = getFieldValueByName "Name" configurationArgs
+        let name = configurationArgs.GetFieldValue ConfigurationUnsetArgs.Name
 
         let unsetValueInIniPath path = 
             path 
@@ -156,7 +157,7 @@ module ConfigurationAPI =
             |> IniData.removeValue name
             |> IniData.toFile path
 
-        match containsFlag "Global" configurationArgs, containsFlag "Local" configurationArgs with
+        match configurationArgs.ContainsFlag ConfigurationUnsetArgs.Global, configurationArgs.ContainsFlag ConfigurationUnsetArgs.Local with
         // If only global flag is set, the setting is unset globally
         | true,false ->
             match IniData.tryGetGlobalConfigPath () with
@@ -178,14 +179,14 @@ module ConfigurationAPI =
 
 
     /// Transfer git user metadata from arc config to git config.
-    let setGitUser (arcConfiguration : ArcConfiguration) (configurationArgs : Map<string,Argument>) =
+    let setGitUser (arcConfiguration : ArcConfiguration) (configurationArgs : ArcParseResults<ConfigurationSetGitUserArgs>) =
 
         let log = Logging.createLogger "ConfigurationSetGitUserLog"
 
         log.Info("Start Config SetGitUser")
 
         let nameOption = 
-            match tryGetFieldValueByName "Name" configurationArgs with
+            match configurationArgs.TryGetFieldValue ConfigurationSetGitUserArgs.Name with
             | Some name -> 
                 log.Trace("Retrieved user name from given argument.")
                 Some name
@@ -194,7 +195,7 @@ module ConfigurationAPI =
                 GeneralConfiguration.tryGetGitName arcConfiguration
             
         let emailOption = 
-            match tryGetFieldValueByName "Email" configurationArgs with
+            match configurationArgs.TryGetFieldValue ConfigurationSetGitUserArgs.Email with
             | Some name -> 
                 log.Trace("Retrieved user email from given argument.")
                 Some name
@@ -205,11 +206,11 @@ module ConfigurationAPI =
         match nameOption, emailOption with
         | Some name, Some email ->
 
-            if containsFlag "Global" configurationArgs then 
+            if configurationArgs.ContainsFlag ConfigurationSetGitUserArgs.Global then 
                 GitHelper.setGlobalName name
                 GitHelper.setGlobalEmail email
                 
-            if (containsFlag "Global" configurationArgs |> not) || containsFlag "Local" configurationArgs then
+            if (configurationArgs.ContainsFlag ConfigurationSetGitUserArgs.Global |> not) || configurationArgs.ContainsFlag ConfigurationSetGitUserArgs.Local then
                 let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
                 GitHelper.setLocalName workDir name
                 GitHelper.setLocalEmail workDir email

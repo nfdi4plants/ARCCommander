@@ -2,30 +2,20 @@
 
 open BlackFox.Fake
 
+open Fake.DotNet
 open ProjectInfo
 open BasicTasks
 open Helpers
 open System.IO
 
 let runTests = BuildTask.createFn "RunTests" [clean; cleanTestResults; build; copyBinaries] (fun config ->
-    let isWatch = 
-        config.Context.Arguments
-        |> List.exists (fun x -> x.ToLower() = "watch")
 
-    let singleRunTestsCommand = $"run --project tests{Path.DirectorySeparatorChar}ArcCommander.Tests.NetCore"
-    let watchRunTestsCommand = "watch " + singleRunTestsCommand
-
-    if isWatch then
-        run dotnet watchRunTestsCommand ""
-    else
-        run dotnet singleRunTestsCommand ""
-    //let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-    //Fake.DotNet.DotNet.test(fun testParams ->
-    //    {
-    //        testParams with
-    //            Logger = Some "console;verbosity=detailed"
-    //            Configuration = DotNet.BuildConfiguration.fromString configuration
-    //            NoBuild = true
-    //    }
-    //) testProject
+    Fake.DotNet.DotNet.test(fun testParams ->
+        {
+            testParams with
+                Logger = Some "console;verbosity=detailed"
+                Configuration = DotNet.BuildConfiguration.fromString configuration
+                NoBuild = true
+        }
+    ) testProject
 )

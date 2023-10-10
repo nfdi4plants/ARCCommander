@@ -8,10 +8,10 @@ open InvestigationPublications
 
 type InvestigationCommand = 
     
-    | [<CliPrefix(CliPrefix.None)>]                     Create      of create_args          : ParseResults<InvestigationCreateArgs>
+    //| [<CliPrefix(CliPrefix.None)>]                     Create      of create_args          : ParseResults<InvestigationCreateArgs>
     | [<CliPrefix(CliPrefix.None)>]                     Update      of update_args          : ParseResults<InvestigationUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>]    Edit 
-    | [<CliPrefix(CliPrefix.None)>]                     Delete      of delete_args          : ParseResults<InvestigationDeleteArgs>
+    //| [<CliPrefix(CliPrefix.None)>]                     Delete      of delete_args          : ParseResults<InvestigationDeleteArgs>
     | [<CliPrefix(CliPrefix.None)>]                     Person      of person_verbs         : ParseResults<InvestigationPersonCommand>
     | [<CliPrefix(CliPrefix.None)>]                     Publication of publication_verbs    : ParseResults<InvestigationPublicationCommand>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>]    Show
@@ -19,10 +19,10 @@ type InvestigationCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Create        _ -> "Create a new investigation with the given Metadata"
+            //| Create        _ -> "Create a new investigation with the given Metadata"
             | Update        _ -> "Update the ARC's investigation with the given Metdadata"
             | Edit          _ -> "Open an editor window to directly edit the ARC's investigation file"
-            | Delete        _ -> "Delete the ARC's investigation file (DANGER ZONE!)"
+            //| Delete        _ -> "Delete the ARC's investigation file (DANGER ZONE!)"
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
             | Show          _ -> "Get the values of the ARC's investigation"

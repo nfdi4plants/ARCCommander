@@ -29,8 +29,8 @@ type StudyCommand =
     | [<CliPrefix(CliPrefix.None)>] Person      of person_verbs         : ParseResults<StudyPersonCommand>
     | [<CliPrefix(CliPrefix.None)>] Publication of publication_verbs    : ParseResults<StudyPublicationCommand>
     | [<CliPrefix(CliPrefix.None)>] Design      of design_verbs         : ParseResults<StudyDesignCommand>
-    | [<CliPrefix(CliPrefix.None)>] Factor      of factor_verbs         : ParseResults<StudyFactorCommand>
-    | [<CliPrefix(CliPrefix.None)>] Protocol    of protocol_verbs       : ParseResults<StudyProtocolCommand>
+    //| [<CliPrefix(CliPrefix.None)>] Factor      of factor_verbs         : ParseResults<StudyFactorCommand>
+    //| [<CliPrefix(CliPrefix.None)>] Protocol    of protocol_verbs       : ParseResults<StudyProtocolCommand>
 
     interface IArgParserTemplate with
         member this.Usage =
@@ -48,8 +48,8 @@ type StudyCommand =
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
             | Design        _ -> "Design functions"
-            | Factor        _ -> "Factor functions"
-            | Protocol      _ -> "Protocol functions"
+            //| Factor        _ -> "Factor functions"
+            //| Protocol      _ -> "Protocol functions"
 
 and StudyPersonCommand =
 

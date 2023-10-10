@@ -3,7 +3,7 @@
 open System.Diagnostics
 open System.Runtime.InteropServices
 open System.IO
-open arcIO.NET
+open ARCtrl.NET
 
 module GitHelper =
 
@@ -65,8 +65,8 @@ module GitHelper =
         let comb = username + ":" + pass + "@"
         url.Replace("https://","https://" + comb)
 
-    let formatRepoToken (token : Authentication.IdentityToken) (url : string) = 
-        formatRepoString token.UserName token.GitAccessToken url
+    //let formatRepoToken (token : Authentication.IdentityToken) (url : string) = 
+    //    formatRepoString token.UserName token.GitAccessToken url
 
     let setLocalEmail (dir : string) (email : string) =
         executeGitCommand dir (sprintf "config user.email \"%s\"" email)
@@ -76,8 +76,8 @@ module GitHelper =
         if r.Count = 0 then None
         else Some r.[0]
 
-    let setLocalEmailToken (dir : string) (token : Authentication.IdentityToken) =
-        setLocalEmail dir token.Email
+    //let setLocalEmailToken (dir : string) (token : Authentication.IdentityToken) =
+    //    setLocalEmail dir token.Email
 
     let setGlobalEmail (email : string) =
         executeGitCommand "" (sprintf "config --global user.email \"%s\"" email)
@@ -95,8 +95,8 @@ module GitHelper =
         if r.Count = 0 then None
         else Some r.[0]
 
-    let setLocalNameToken (dir : string) (token : Authentication.IdentityToken) =
-        setLocalName dir (token.FirstName + " " + token.LastName)
+    //let setLocalNameToken (dir : string) (token : Authentication.IdentityToken) =
+    //    setLocalName dir (token.FirstName + " " + token.LastName)
 
     let setGlobalName (name : string) =
         executeGitCommand "" (sprintf "config --global user.name \"%s\"" name)
@@ -114,9 +114,9 @@ module GitHelper =
     let cloneNoLFS dir url =
         executeGitCommand dir (sprintf "clone %s %s" noLFSConfig url)        
 
-    let cloneWithToken dir token url  =
-        let url = formatRepoToken token url
-        clone dir url 
+    //let cloneWithToken dir token url  =
+    //    let url = formatRepoToken token url
+    //    clone dir url 
 
     let add dir = 
         executeGitCommand dir "add ."
@@ -210,9 +210,9 @@ module GitHelper =
 
         errors.Count = 0
 
-    /// Stores git credentials to a git host using the git credential interface
-    let storeCredentialsToken (log : NLog.Logger) (token : Authentication.IdentityToken) =
-        storeCredentials log token.GitHost token.UserName token.GitAccessToken
+    ///// Stores git credentials to a git host using the git credential interface
+    //let storeCredentialsToken (log : NLog.Logger) (token : Authentication.IdentityToken) =
+    //    storeCredentials log token.GitHost token.UserName token.GitAccessToken
 
     /// Checks whether the user metadata stored in the arcCommander global config matches the user metadata of the local and global git config
     let checkUserMetadataConsistency workdir (log : NLog.Logger) =

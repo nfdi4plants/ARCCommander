@@ -2,7 +2,7 @@
 
 open System.IO
 open IniData
-open arcIO.NET
+open ARCtrl.NET
 
 /// Contains settings about the arc
 type ArcConfiguration =
@@ -416,3 +416,15 @@ module StudyConfiguration =
                 Path.Combine([|r; v|])
             )
         | _ -> Array.empty
+
+open ARCtrl
+open ARCtrl.NET
+
+[<AutoOpen>]
+module ARCExtensions = 
+    type ARC with
+        static member load(config : ArcConfiguration) = 
+            ARC.load(GeneralConfiguration.getWorkDirectory config)
+
+        member this.Write(config : ArcConfiguration) = 
+            this.Write(GeneralConfiguration.getWorkDirectory config)

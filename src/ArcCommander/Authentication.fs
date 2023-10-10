@@ -24,29 +24,29 @@ module Authentication =
     //    |> fun b -> b.Decode(response)
 
     /// Fields returned by the token service
-    type IdentityToken =    
-        {
-            [<JsonPropertyName(@"exp")>]
-            Id : int
-            [<JsonPropertyName(@"git-access-token")>]
-            GitAccessToken : string
-            [<JsonPropertyName(@"git-host")>]
-            GitHost : string
-            [<JsonPropertyName(@"given_name")>]
-            FirstName : string
-            [<JsonPropertyName(@"family_name")>]
-            LastName : string
-            [<JsonPropertyName(@"preferred_username")>]
-            UserName : string
-            [<JsonPropertyName(@"email")>]
-            Email : string
-            [<JsonPropertyName(@"email_verified")>]
-            EmailVerified : bool
-            //RefreshToken : string
-        }
+    //type IdentityToken =    
+    //    {
+    //        [<JsonPropertyName(@"exp")>]
+    //        Id : int
+    //        [<JsonPropertyName(@"git-access-token")>]
+    //        GitAccessToken : string
+    //        [<JsonPropertyName(@"git-host")>]
+    //        GitHost : string
+    //        [<JsonPropertyName(@"given_name")>]
+    //        FirstName : string
+    //        [<JsonPropertyName(@"family_name")>]
+    //        LastName : string
+    //        [<JsonPropertyName(@"preferred_username")>]
+    //        UserName : string
+    //        [<JsonPropertyName(@"email")>]
+    //        Email : string
+    //        [<JsonPropertyName(@"email_verified")>]
+    //        EmailVerified : bool
+    //        //RefreshToken : string
+    //    }
 
-        static member ofJson (jsonString : string) =
-            ISADotNet.JsonExtensions.fromString<IdentityToken> jsonString
+    //    static member ofJson (jsonString : string) =
+    //        ISADotNet.JsonExtensions.fromString<IdentityToken> jsonString
 
         //static member ofJwt (jwtResponse : string) =
         //    decodeResponse jwtResponse

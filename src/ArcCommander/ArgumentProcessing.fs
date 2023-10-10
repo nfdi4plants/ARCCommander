@@ -2,29 +2,111 @@
 
 open System.Diagnostics
 open Microsoft.FSharp.Reflection
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
 open System
 open System.IO
 open System.Diagnostics
 open System.Text
 open System.Text.Json
 open Argu
-open arcIO.NET
+open ARCtrl.NET
+
+/// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValueByName' to access the value.
+type Argument<'Template> =
+    | Field of string
+    | Flag
+
+    member this.Cast<'NewTemplate>() : Argument<'NewTemplate> =
+        match this with
+        | Field v -> Field v
+        | Flag -> Flag
+
+type ArcParseResults<'Template>(arguments : Map<string, Argument<'Template>>) = 
+
+    let expr2Uci (e : Expr) =
+        let (|Vars|_|) (exprs : Expr list) =
+            let vars = exprs |> List.choose (|Var|_|)
+            if vars.Length = exprs.Length then Some vars
+            else None
+
+        let rec aux (tupledArg : Var option) vars (e : Expr) =
+            match tupledArg, e with
+            | None, Lambda(arg, b) -> aux (Some arg) vars b
+            | Some arg, Let(x, TupleGet(Var varg, _), b) when arg = varg -> aux tupledArg (x :: vars) b
+            | None, NewUnionCase(u, []) -> u
+            | Some a, NewUnionCase(u, [Var x]) when a = x -> u
+            | Some _, NewUnionCase(u, Vars args) when vars.Length > 0 && List.rev vars = args -> u
+            | _ -> invalidArg "expr" "Only union constructors are permitted in expression based queries."
+
+        aux None [] e
+
+    
+    /// Returns true if the argument flag of name k was given by the user.
+    let containsFlag ([<ReflectedDefinition>] k : Expr<'Template>) (arguments : Map<string,Argument<'Template>>) =
+        let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
+        let uci = expr2Uci k
+        match Map.tryFind uci.Name arguments with
+        | Some (Field _ )   -> 
+            log.Fatal($"Argument {k} is not a flag, but a field.")
+            raise (Exception(""))
+        | Some (Flag)       -> true
+        | None              -> false
+
+    /// Returns the value given by the user for name k.
+    let tryGetFieldValueByName (n : string) (arguments : Map<string,Argument<'Template>>) = 
+        match Map.tryFind n arguments with
+        | Some (Field "") -> None
+        | Some (Field v) -> Some v
+        | Some Flag -> None
+        | None -> None
+
+    /// Returns the value given by the user for name k.
+    let tryGetFieldValue ([<ReflectedDefinition>] k : Expr<'Fields -> 'Template>) (arguments : Map<string,Argument<'Template>>) = 
+        let uci = expr2Uci k
+        tryGetFieldValueByName (uci.Name) arguments
+
+    /// Returns the value given by the user for name k.
+    let getFieldValue ([<ReflectedDefinition>] k : Expr<'Fields -> 'Template>) (arguments : Map<string,Argument<'Template>>) = 
+        let log = Logging.createLogger "ArgumentProcessingGetFieldValueByNameLog"
+        let uci = expr2Uci k
+        match Map.find uci.Name arguments with
+        | Field v -> v
+        | Flag -> 
+            log.Fatal($"Argument {k} is not a field, but a flag.")
+            raise (Exception(""))
+
+    member this.Cast<'NewTemplate>() =
+        arguments
+        |> Map.map (fun _ a -> a.Cast<'NewTemplate>())
+        |> ArcParseResults<'NewTemplate>
+
+    member this.AsMap = arguments
+
+    member this.GetFieldValue ([<ReflectedDefinition>] expr : Expr<'Field -> 'Template>) =
+        getFieldValue expr arguments
+
+    member this.TryGetFieldValue ([<ReflectedDefinition>] expr : Expr<'Field -> 'Template>) =
+        tryGetFieldValue expr arguments
+
+    member this.TryGetFieldValueByName (n : string) =
+        tryGetFieldValueByName n arguments
+
+    member this.ContainsFlag ([<ReflectedDefinition>] expr : Expr<'Template>) =
+        containsFlag expr arguments
 
 /// Functions for processing arguments.
 module ArgumentProcessing = 
 
-    /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValueByName' to access the value.
-    type Argument =
-        | Field of string
-        | Flag
+    
 
     /// Used for marking filenames to later check for unpermitted chars.
     type FileNameAttribute() = inherit Attribute()
 
     /// Argument with additional information.
-    type AnnotatedArgument = 
+    type AnnotatedArgument<'Template> = 
         {
-            Arg         : Argument Option
+            Arg         : Argument<'Template> Option
             Tooltip     : string
             IsMandatory : bool
             IsFlag      : bool
@@ -86,32 +168,7 @@ module ArgumentProcessing =
         if seq str |> Seq.length |> (<) 31 then
             log.Warn $"Identifier/filename \"{str}\" is longer than 31 characters, which might cause problems in excel sheets."
         
-    /// Returns true if the argument flag of name k was given by the user.
-    let containsFlag k (arguments : Map<string,Argument>) =
-        let log = Logging.createLogger "ArgumentProcessingContainsFlagLog"
-        match Map.tryFind k arguments with
-        | Some (Field _ )   -> 
-            log.Fatal($"Argument {k} is not a flag, but a field.")
-            raise (Exception(""))
-        | Some (Flag)       -> true
-        | None              -> false
-
-    /// Returns the value given by the user for name k.
-    let tryGetFieldValueByName k (arguments : Map<string,Argument>) = 
-        match Map.tryFind k arguments with
-        | Some (Field "") -> None
-        | Some (Field v) -> Some v
-        | Some Flag -> None
-        | None -> None
-
-    /// Returns the value given by the user for name k.
-    let getFieldValueByName k (arguments : Map<string,Argument>) = 
-        let log = Logging.createLogger "ArgumentProcessingGetFieldValueByNameLog"
-        match Map.find k arguments with
-        | Field v -> v
-        | Flag -> 
-            log.Fatal($"Argument {k} is not a field, but a flag.")
-            raise (Exception(""))
+    
 
     /// For a given discriminated union value, returns the field name and the value.
     let private splitUnion (x : 'a) = 
@@ -131,31 +188,31 @@ module ArgumentProcessing =
         | _ -> true
    
     /// Returns true if a value in the array contains the Mandatory attribute but is empty.
-    let containsMissingMandatoryAttribute (arguments : (string * AnnotatedArgument) []) =
+    let containsMissingMandatoryAttribute (arguments : (string * AnnotatedArgument<'Template>) []) =
         arguments
         |> Seq.exists (fun (k,v) ->
             v.Arg.IsNone && v.IsMandatory
         )
 
-    /// Adds all union cases of 'T which are missing to the list.
-    let groupArguments (args : 'T list when 'T :> IArgParserTemplate) =
+    /// Adds all union cases of 'Template which are missing to the list.
+    let groupArguments (args : 'Template list when 'Template :> IArgParserTemplate) : (string * AnnotatedArgument<'Template>) [] =
         let log = Logging.createLogger "ArgumentProcessingGroupArgumentsLog"
         let m = 
             args 
             |> List.map splitUnion
             |> Map.ofList
-        FSharpType.GetUnionCases(typeof<'T>)
+        FSharpType.GetUnionCases(typeof<'Template>)
         |> Array.map (fun unionCase ->
             let isMandatory = containsCustomAttribute<MandatoryAttribute>(unionCase) 
             let isFileAttribute = containsCustomAttribute<FileNameAttribute> unionCase
             let fields = unionCase.GetFields()
             match fields with 
             | [||] -> 
-                let toolTip = (FSharpValue.MakeUnion (unionCase, [||]) :?> 'T).Usage
+                let toolTip = (FSharpValue.MakeUnion (unionCase, [||]) :?> 'Template).Usage
                 let value,isFlag = if Map.containsKey unionCase.Name m then Some Flag,true else None,true
                 unionCase.Name,createAnnotatedArgument value toolTip isMandatory isFlag isFileAttribute
             | [|c|] when c.PropertyType.Name = "String" -> 
-                let toolTip = (FSharpValue.MakeUnion (unionCase, [|box ""|]) :?> 'T).Usage
+                let toolTip = (FSharpValue.MakeUnion (unionCase, [|box ""|]) :?> 'Template).Usage
                 let value, isFlag = 
                     match Map.tryFind unionCase.Name m with
                     | Some value -> 
@@ -176,19 +233,6 @@ module ArgumentProcessing =
                 log.Fatal($"Cannot parse argument {unionCase.Name} because its parsing rules were not yet implemented.")
                 raise (Exception(""))
         )
-
-    ///// Creates an isa item used in the investigation file
-    //let isaItemOfArguments (item:#InvestigationFile.ISAItem) (parameters : Map<string,Argument>) = 
-    //    parameters
-    //    |> Map.iter (fun k v -> 
-    //        match v with
-    //        | Field s -> 
-    //            InvestigationFile.setKeyValue (System.Collections.Generic.KeyValuePair(k,s)) item
-    //            |> ignore
-    //        | Flag ->
-    //            ()
-    //    )
-    //    item
 
     /// Functions for asking the user to input values via an editor prompt.
     module Prompt = 
@@ -221,7 +265,7 @@ module ArgumentProcessing =
             w.Flush()
             w.Close()
         
-        /// Writes a text string to a path, Creates the directory if it doesn't exist yet.
+        /// Writes a text string to a path, Creates the directory if it doesn'Template exist yet.
         let private writeForce (path : string) (text : string) = 
             delete path
             FileInfo(path).Directory.Create()
@@ -235,7 +279,7 @@ module ArgumentProcessing =
         /// Serializes annotated argument in yaml format (key:value).
         ///
         /// For each value, a comment is created and put above the line using the given commentF function.
-        let private serializeAnnotatedArguments (arguments : (string * AnnotatedArgument) []) =
+        let private serializeAnnotatedArguments (arguments : (string * AnnotatedArgument<'Template>) []) =
             let header = 
                 """# Not all mandatory input arguments were given
 # Please fill out at least all mandatory fields by providing a value to the key in the form of "key:value"
@@ -324,26 +368,35 @@ module ArgumentProcessing =
                 raise (Exception(""))
 
         /// Opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
-        let createArgumentQuery editorPath (arguments : (string * AnnotatedArgument) []) = 
+        let createArgumentQuery editorPath (arguments : (string * AnnotatedArgument<'Template>) []) : ArcParseResults<'Template> =
             arguments
             |> createQuery editorPath serializeAnnotatedArguments deserializeArguments 
             |> Map.ofArray
+            |> ArcParseResults
+
+        /// Returns the value given by the user for name k.
+        let private tryGetFieldValueByName k (arguments : Map<string,Argument<'Template>>) = 
+            match Map.tryFind k arguments with
+            | Some (Field "") -> None
+            | Some (Field v) -> Some v
+            | Some Flag -> None
+            | None -> None
 
         /// If parameters are missing a mandatory field, opens a textprompt containing the result of the serialized input parameters. Returns the deserialized user input.
-        let createMissingArgumentQuery editorPath (arguments : (string * AnnotatedArgument) []) = 
+        let createMissingArgumentQuery editorPath (arguments : (string * AnnotatedArgument<'Template>) []) = 
             let mandatoryArgs = arguments |> Array.choose (fun (key,arg) -> if arg.IsMandatory then Some key else None)
             let queryResults = createArgumentQuery editorPath arguments
             let stillMissingMandatoryArgs =
                 mandatoryArgs
                 |> Array.map (fun k -> 
-                    let field = tryGetFieldValueByName k queryResults
+                    let field = queryResults.TryGetFieldValueByName k
                     field = None || field = Some ""
                 )
                 |> Array.reduce ((||))
             stillMissingMandatoryArgs,queryResults
             
         /// Removes additional annotation (isMandatory and tooltip) from argument.
-        let deannotateArguments (arguments : (string * AnnotatedArgument) []) =
+        let deannotateArguments (arguments : (string * AnnotatedArgument<'Template>) []) : ArcParseResults<'Template> =
             arguments
             |> Array.choose (fun (k,v) -> 
                 match v.Arg with 
@@ -351,21 +404,22 @@ module ArgumentProcessing =
                 | None when v.IsFlag -> None
                 | None -> Some (k,Field ""))
             |> Map.ofArray
+            |> ArcParseResults
 
         /// Serializes the output of a writer and converts it into a string.
-        let serializeXSLXWriterOutput (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>) (inp : 'A) = 
+        let serializeXSLXWriterOutput (writeF : 'A -> seq<ARCtrl.ISA.Spreadsheet.SparseRow>) (inp : 'A) = 
             writeF inp
             |> Seq.map (fun r -> 
                 sprintf "%s:%s"
-                    (ISADotNet.XLSX.SparseRow.tryGetValueAt 0 r |> Option.get |> fun s -> s.TrimStart())
-                    (ISADotNet.XLSX.SparseRow.tryGetValueAt 1 r |> Option.get)
+                    (ARCtrl.ISA.Spreadsheet.SparseRow.tryGetValueAt 0 r |> Option.get |> fun s -> s.TrimStart())
+                    (ARCtrl.ISA.Spreadsheet.SparseRow.tryGetValueAt 1 r |> Option.get)
             )
             |> Seq.reduce (fun a b -> a + "\n" + b)
 
         /// Opens a textprompt containing the serialized input item. Returns item updated with the deserialized user input.
         let createIsaItemQuery editorPath
-            (writeF : 'A -> seq<ISADotNet.XLSX.SparseRow>)
-            (readF : System.Collections.Generic.IEnumerator<ISADotNet.XLSX.SparseRow> -> 'A)
+            (writeF : 'A -> seq<ARCtrl.ISA.Spreadsheet.SparseRow>)
+            (readF : System.Collections.Generic.IEnumerator<ARCtrl.ISA.Spreadsheet.SparseRow> -> 'A)
             (isaItem : 'A) = 
 
             let log = Logging.createLogger "ArgumentProcessingPromptCreateIsaItemQueryLog"
@@ -387,7 +441,7 @@ module ArgumentProcessing =
                             Some (
                                 match splitAtFirst ':' x with
                                 | k, Field v ->
-                                    ISADotNet.XLSX.SparseRow.fromValues [k;v]
+                                    ARCtrl.ISA.Spreadsheet.SparseRow.fromValues [k;v]
                                 | _ -> log.Fatal("File was corrupted in Editor."); raise (Exception(""))
                             )
                 )
@@ -411,11 +465,12 @@ module ArgumentProcessing =
                 |> IniData.fromNameValuePairs
             createQuery editorPath serializeF deserializeF iniData
 
-    /// Serializes a JSON item into a string.
-    let serializeToString (item : 'A) =
-        JsonSerializer.Serialize(item, ISADotNet.JsonExtensions.options)
+    /////// Serializes a JSON item into a string.
+    ////let serializeToString (item : 'A) =
+    ////    ARCtrl.ISA.Json.
+    ////    JsonSerializer.Serialize(item, ISADotNet.JsonExtensions.options)
 
-    /// Serializes a JSON item into a file.
-    let serializeToFile (p : string) (item : 'A) =
-        JsonSerializer.Serialize(item, ISADotNet.JsonExtensions.options)
-        |> fun s -> File.WriteAllText(p, s)
+    ///// Serializes a JSON item into a file.
+    //let serializeToFile (p : string) (item : 'A) =
+    //    serializeToString item
+    //    |> fun s -> File.WriteAllText(p, s)
