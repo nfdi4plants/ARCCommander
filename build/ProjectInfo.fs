@@ -6,7 +6,7 @@ open Fake.IO
 // run this here to make sure a RELEASE_NOTES.md exists, otherwise "let release = ReleaseNotes.load "RELEASE_NOTES.md" will fail.
 Fake.Extensions.Release.ReleaseNotes.ensure()
 
-let project = "ArcCommander"
+let project = "src/ArcCommander/ArcCommander.fsproj"
 
 let testProject = Path.getFullName "tests/ArcCommander.Tests/ArcCommander.Tests.fsproj"
 

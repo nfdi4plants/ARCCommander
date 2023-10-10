@@ -195,7 +195,7 @@ module ArgumentProcessing =
         )
 
     /// Adds all union cases of 'Template which are missing to the list.
-    let groupArguments (args : 'Template list when 'Template :> IArgParserTemplate) =
+    let groupArguments (args : 'Template list when 'Template :> IArgParserTemplate) : (string * AnnotatedArgument<'Template>) [] =
         let log = Logging.createLogger "ArgumentProcessingGroupArgumentsLog"
         let m = 
             args 

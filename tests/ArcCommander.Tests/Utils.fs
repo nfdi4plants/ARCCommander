@@ -4,11 +4,37 @@ open Expecto
 open System.IO
 
 open ARCtrl
+open ARCtrl.ISA
 open ARCtrl.ISA.Spreadsheet
 open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
 open Argu
+
+type ArcInvestigation with
+
+    member this.ContainsStudy(studyIdentifier : string) =
+        this.StudyIdentifiers |> Seq.contains studyIdentifier
+
+    member this.TryGetStudy(studyIdentifier : string) =
+        if this.ContainsStudy studyIdentifier then 
+            Some (this.GetStudy studyIdentifier)
+        else
+            None
+
+    member this.DeregisterStudy(studyIdentifier : string) =
+        this.RegisteredStudyIdentifiers.Remove(studyIdentifier)
+
+type ArcStudy with
+    member this.TryGetRegisteredAssayAt(index : int) = 
+        this.RegisteredAssays
+        |> Seq.tryItem index
+
+    member this.TryGetRegisteredAssay(assayIdentifier : string) =
+        this.RegisteredAssayIdentifiers 
+        |> Seq.tryFindIndex((=) assayIdentifier)
+        |> Option.bind this.TryGetRegisteredAssayAt
+
 
     ///
 let floatsClose accuracy (seq1:seq<float>) (seq2:seq<float>) = 

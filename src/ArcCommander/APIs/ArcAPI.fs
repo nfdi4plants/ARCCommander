@@ -126,7 +126,12 @@ module ArcAPI =
         
         log.Info("Start Arc Update")
 
-        ARC.load(arcConfiguration).Write(arcConfiguration)
+        let arc = ARC.load(arcConfiguration)
+        arc.ISA
+        |> Option.iter (fun isa -> 
+            isa.UpdateIOTypeByEntityID()
+        )
+        arc.Write(arcConfiguration)
 
     /// Export the complete ARC as a JSON object.
     let export (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcExportArgs>) =
@@ -148,7 +153,9 @@ module ArcAPI =
                 |> ARCtrl.ISA.Json.ArcInvestigation.toJsonString
 
         match arcArgs.TryGetFieldValue Output with
-        | Some p -> System.IO.File.WriteAllText(p, output)
+        | Some p -> 
+            let absolutePath = FileInfo(p).FullName
+            File.WriteAllText(absolutePath, output)
         | None -> ()
 
         log.Debug(output)

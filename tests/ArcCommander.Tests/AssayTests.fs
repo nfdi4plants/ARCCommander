@@ -13,30 +13,6 @@ open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
-type ArcInvestigation with
-
-    member this.ContainsStudy(studyIdentifier : string) =
-        this.StudyIdentifiers |> Seq.contains studyIdentifier
-
-    member this.TryGetStudy(studyIdentifier : string) =
-        if this.ContainsStudy studyIdentifier then 
-            Some (this.GetStudy studyIdentifier)
-        else
-            None
-
-    member this.DeregisterStudy(studyIdentifier : string) =
-        this.RegisteredStudyIdentifiers.Remove(studyIdentifier)
-
-type ArcStudy with
-    member this.TryGetRegisteredAssayAt(index : int) = 
-        this.RegisteredAssays
-        |> Seq.tryItem index
-
-    member this.TryGetRegisteredAssay(assayIdentifier : string) =
-        this.RegisteredAssayIdentifiers 
-        |> Seq.tryFindIndex((=) assayIdentifier)
-        |> Option.bind this.TryGetRegisteredAssayAt
-
 let setupArc (arcConfiguration : ArcConfiguration) =
     let arcArgs : ArcInitArgs list = [ArcInitArgs.Identifier "TestInvestigation"] 
 

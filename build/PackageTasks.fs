@@ -62,7 +62,7 @@ let packPrerelease = BuildTask.create "PackPrerelease" [setPrereleaseTag; clean;
 
 let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
     let outputPath = sprintf "%s/win-x64" publishDir
-    solutionFile
+    "src/ArcCommander/ArcCommander.fsproj"
     |> DotNet.publish (fun p ->
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         {
@@ -85,7 +85,7 @@ let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; 
 
 let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
     let outputPath = sprintf "%s/linux-x64" publishDir
-    solutionFile
+    project
     |> DotNet.publish (fun p ->
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         {
@@ -108,7 +108,7 @@ let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeed
 
 let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
     let outputPath = sprintf "%s/osx-x64" publishDir
-    solutionFile
+    project
     |> DotNet.publish (fun p ->
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         {
@@ -131,7 +131,7 @@ let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; 
 
 let publishBinariesMacARM = BuildTask.create "PublishBinariesMacARM" [clean.IfNeeded; build.IfNeeded] {
     let outputPath = sprintf "%s/osx-arm64" publishDir
-    solutionFile
+    project
     |> DotNet.publish (fun p ->
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         {
