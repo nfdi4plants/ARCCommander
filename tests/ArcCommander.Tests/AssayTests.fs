@@ -62,11 +62,12 @@ let testAssayTestFunction =
 
 let testAssayRegister = 
 
-    testList "AssayRegisterTests" [
+    let testListName = "AssayRegister"
+    testList testListName [
 
         testCase "AddToExistingStudy" (fun () -> 
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "AddToExistingStudy"
+            let configuration = createConfigFromDir testListName "AddToExistingStudy"
             setupArc configuration
 
             let assayIdentifier = "TestAssay"
@@ -100,7 +101,7 @@ let testAssayRegister =
         )
         testCase "DoNothingIfAssayExisting" (fun () -> 
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "DoNothingIfAssayExisting"
+            let configuration = createConfigFromDir testListName "DoNothingIfAssayExisting"
             setupArc configuration
 
             let assayIdentifier = "TestAssay"
@@ -142,7 +143,7 @@ let testAssayRegister =
         )
         testCase "AddSecondAssayToExistingStudy" (fun () -> 
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "AddSecondAssayToExistingStudy"
+            let configuration = createConfigFromDir testListName "AddSecondAssayToExistingStudy"
             setupArc configuration
 
             let oldAssayIdentifier = "TestAssay"
@@ -191,7 +192,7 @@ let testAssayRegister =
         )
         testCase "CreateStudyIfNotExisting" (fun () -> 
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "CreateStudyIfNotExisting"
+            let configuration = createConfigFromDir testListName "CreateStudyIfNotExisting"
             setupArc configuration
 
             let assayIdentifier = "TestAssay"
@@ -219,7 +220,7 @@ let testAssayRegister =
         )
         testCase "StudyNameNotGivenUseAssayName" (fun () -> 
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "StudyNameNotGivenUseAssayName"
+            let configuration = createConfigFromDir testListName "StudyNameNotGivenUseAssayName"
             setupArc configuration
 
             let assayIdentifier = "TestAssayWithoutStudyName"
@@ -246,7 +247,7 @@ let testAssayRegister =
         // This case checks if no duplicate study gets created when the user adds an assay with an identifier (and no given study identifier) that equals a previously added study's identifier.
         testCase "StudyNameNotGivenUseAssayNameNoDuplicateStudy" (fun () -> 
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "StudyNameNotGivenUseAssayNameNoDuplicateStudy"
+            let configuration = createConfigFromDir testListName "StudyNameNotGivenUseAssayNameNoDuplicateStudy"
             setupArc configuration
 
             let studyIdentifier = "TestAssayWithoutStudyName"
@@ -272,7 +273,7 @@ let testAssayRegister =
         )
         testCase "StudyNameNotGivenUseAssayNameNoDuplicateAssay" (fun () ->
 
-            let configuration = createConfigFromDir "AssayRegisterTests" "StudyNameNotGivenUseAssayNameNoDuplicateAssay"
+            let configuration = createConfigFromDir testListName "StudyNameNotGivenUseAssayNameNoDuplicateAssay"
             setupArc configuration
 
             let assayIdentifier = "StudyCreatedByAssayRegister"
@@ -294,8 +295,62 @@ let testAssayRegister =
             let assay = study.GetRegisteredAssay assayIdentifier
             Expect.equal study.RegisteredAssayCount 1 "Duplicate Assay added"
         )
+        //testCase "StudyNameNotGivenUseAssayNameDuplicateAssay" (fun () ->
+        //    let config = createConfigFromDir testListName "StudyNameNotGivenUseAssayNameDuplicateAssay"
+        //    setupArc config
+
+        //    let testStudyIdentifier = "TestStudy"
+        //    let studyAddArgs = [StudyAddArgs.Identifier testStudyIdentifier]
+        //    processCommand config StudyAPI.add studyAddArgs
+
+        //    let testAssayIdentifier = "TestAssay"
+        //    let assayAddArgs = [AssayAddArgs.StudyIdentifier testStudyIdentifier; AssayAddArgs.AssayIdentifier testAssayIdentifier]
+        //    processCommand config AssayAPI.add assayAddArgs
+
+        //    let assayRegisterArgs = [AssayRegisterArgs.AssayIdentifier testAssayIdentifier]
+        //    Expect.throws (fun () -> processCommand config AssayAPI.register assayRegisterArgs) "trying to register an assay with an identifier that is already in use by a study which shall NOT work"
+
+        //    let arc = ARC.load(config)
+        //    let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+        //    Expect.equal isa.StudyCount 1 "Duplicate study was added"
+
+        //    let study = Expect.wantSome (isa.TryGetStudy testStudyIdentifier) "Study was not added to the investigation"
+
+        //    Expect.equal study.RegisteredAssayCount 1 "Duplicate Assay added"
+        //)
     ]
     |> testSequenced
+
+let testAssayRemove = 
+    
+    let testListName = "AssayRemove"
+
+    testList testListName [
+        testCase "Simple" (fun () ->
+            let config = createConfigFromDir testListName "Simple"
+            setupArc config
+
+            let studyIdentifier = "MyStudy"
+            let studyAddArgs = [StudyAddArgs.Identifier studyIdentifier]
+            processCommand config StudyAPI.add studyAddArgs
+
+            let assayIdentifier = "MyAssay"
+            let assayAddArgs = [AssayAddArgs.StudyIdentifier studyIdentifier; AssayAddArgs.AssayIdentifier assayIdentifier]
+            processCommand config AssayAPI.add assayAddArgs
+
+            let assayRemoveArgs = [AssayRemoveArgs.AssayIdentifier assayIdentifier]
+            processCommand config AssayAPI.remove assayRemoveArgs
+
+            let arc = ARC.load(config)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa.AssayCount 0 "Assay was not deleted"
+            let study = Expect.wantSome (isa.TryGetStudy studyIdentifier) "Study was removed from the investigation"
+            Expect.equal study.RegisteredAssayIdentifiers.Count 0 "Assay was not unregistered from study"
+        )
+    
+    ]
 
 let testAssayUpdate = 
 
@@ -866,5 +921,6 @@ let assayTests =
         testAssayRegister
         testAssayTestFunction
         testAssayUnregister
-        testAssayUpdate    
+        testAssayUpdate
+        testAssayRemove
     ]

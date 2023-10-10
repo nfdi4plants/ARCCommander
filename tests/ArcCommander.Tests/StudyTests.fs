@@ -17,6 +17,29 @@ let setupArc (arcConfiguration:ArcConfiguration) =
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
+let testStudyInit = 
+    
+    let testListName = "StudyInitTests"
+
+    testList testListName [
+        testCase "DoesNotRegister" (fun () ->
+            let config = createConfigFromDir testListName "DoesNotRegister"
+
+            setupArc config
+
+            let studyIdentifier = "TestStudy"
+            let studyArgs = [StudyInitArgs.Identifier studyIdentifier]
+            processCommand config StudyAPI.init studyArgs
+
+            let arc = ARC.load(config)
+            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            Expect.equal isa.Studies.Count 1 "Study was not initialized in ARC"
+            Expect.equal isa.RegisteredStudies.Count 0 "Study was registered to ISA, even though it should not have been"   
+        )
+    
+    
+    ]
+
 let testStudyAdd =
     
     let testListName = "StudyAddTests"
@@ -293,6 +316,7 @@ let testStudyContacts =
 [<Tests>]
 let studyTests = 
     testList "Study" [
+        testStudyInit
         testStudyAdd
         testStudyContacts
     ]

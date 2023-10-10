@@ -274,7 +274,22 @@ module AssayAPI =
 
     /// Remove an assay from the ARC by both unregistering it from the investigation file and removing its folder with the underlying file structure.
     let remove (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayRemoveArgs>) =
-        unregister arcConfiguration (assayArgs.Cast<AssayUnregisterArgs>())
+
+        let log = Logging.createLogger "AssayUnregisterLog"
+        
+        log.Info("Start Assay Unregister")
+
+        let assayIdentifier = assayArgs.GetFieldValue AssayRemoveArgs.AssayIdentifier
+
+        let arc = ARC.load(arcConfiguration)
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+
+        isa.RegisteredStudies
+        |> Seq.iter (fun s -> s.DeregisterAssay assayIdentifier)
+
+        arc.ISA <- Some isa
+        arc.Write(arcConfiguration)
+
         delete arcConfiguration (assayArgs.Cast<AssayDeleteArgs>())
 
     /// Moves an assay file from one study group to another (provided by assayArgs).
