@@ -136,9 +136,17 @@ module GeneralConfiguration =
     let tryGetEditor configuration = 
         Map.tryFind "editor" configuration.General
 
-     /// Returns the path to the text editor used for querying user input.
+    /// Returns the path to the text editor used for querying user input.
     let getEditor configuration = 
         Map.find "editor" configuration.General
+
+    /// Returns the path to the text editor used for querying user input.
+    let tryGetRootfolder configuration = 
+        Map.tryFind "rootfolder" configuration.General
+
+    /// Returns the path to the text editor used for querying user input.
+    let getRootfolder configuration = 
+        Map.find "rootfolder" configuration.General
 
     /// Returns the path to the ARC if it exists. Else returns None.
     let tryGetWorkDirectory configuration = 

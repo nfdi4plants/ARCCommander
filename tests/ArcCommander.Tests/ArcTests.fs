@@ -133,40 +133,40 @@ let testArcExport =
             Expect.sequenceEqual study.RegisteredAssayIdentifiers [assayIdentifier] "Assay was not exported"
 
         )
-        //testCase "OnlyExportRegistered" (fun () ->
-        //    let config = createConfigFromDir testListName "OnlyExportRegistered"
+        testCase "OnlyExportRegistered" (fun () ->
+            let config = createConfigFromDir testListName "OnlyExportRegistered"
 
-        //    let identifier = "MyInvestigation"
-        //    let investigationArgs = [ArcInitArgs.Identifier identifier]
-        //    processCommand config ArcAPI.init investigationArgs
+            let identifier = "MyInvestigation"
+            let investigationArgs = [ArcInitArgs.Identifier identifier]
+            processCommand config ArcAPI.init investigationArgs
 
-        //    let registeredAssayIdentifier =  "RegisteredAssay"
-        //    let assayArgs = [AssayAddArgs.AssayIdentifier registeredAssayIdentifier]
-        //    processCommand config AssayAPI.add assayArgs
+            let registeredAssayIdentifier =  "RegisteredAssay"
+            let assayArgs = [AssayAddArgs.AssayIdentifier registeredAssayIdentifier]
+            processCommand config AssayAPI.add assayArgs
 
-        //    let unregisteredAssayIdentifier = "UnregisteredAssay"
-        //    let assayArgs = [AssayInitArgs.AssayIdentifier unregisteredAssayIdentifier]
-        //    processCommand config AssayAPI.init assayArgs
+            let unregisteredAssayIdentifier = "UnregisteredAssay"
+            let assayArgs = [AssayInitArgs.AssayIdentifier unregisteredAssayIdentifier]
+            processCommand config AssayAPI.init assayArgs
 
-        //    let unregisteredStudyIdentifier = "UnregisteredStudy"
-        //    let studyArgs = [StudyInitArgs.Identifier unregisteredStudyIdentifier]
-        //    processCommand config StudyAPI.init studyArgs
+            let unregisteredStudyIdentifier = "UnregisteredStudy"
+            let studyArgs = [StudyInitArgs.Identifier unregisteredStudyIdentifier]
+            processCommand config StudyAPI.init studyArgs
 
-        //    let exportPath = Path.Combine(GeneralConfiguration.getWorkDirectory config, "export.json")
-        //    let exportArgs = [ArcExportArgs.Output exportPath]
-        //    processCommand config ArcAPI.export exportArgs
+            let exportPath = Path.Combine(GeneralConfiguration.getWorkDirectory config, "export.json")
+            let exportArgs = [ArcExportArgs.Output exportPath]
+            processCommand config ArcAPI.export exportArgs
 
-        //    Expect.isTrue (System.IO.File.Exists exportPath) "Export was not created"
+            Expect.isTrue (System.IO.File.Exists exportPath) "Export was not created"
 
-        //    let isa = Json.ArcInvestigation.fromJsonString (System.IO.File.ReadAllText exportPath)
+            let isa = Json.ArcInvestigation.fromJsonString (System.IO.File.ReadAllText exportPath)
 
-        //    Expect.equal isa.Identifier identifier "Identifier was not set correctly in exported json"
-        //    Expect.equal isa.Studies.Count 1 "Only one study should be exported"
-        //    let study = Expect.wantSome (isa.TryGetStudy registeredAssayIdentifier) "Study was not exported"
+            Expect.equal isa.Identifier identifier "Identifier was not set correctly in exported json"
+            Expect.equal isa.Studies.Count 1 "Only one study should be exported"
+            let study = Expect.wantSome (isa.TryGetStudy registeredAssayIdentifier) "Study was not exported"
 
-        //    Expect.equal isa.AssayCount 1 "Only one assay should be exported"
-        //    Expect.sequenceEqual study.RegisteredAssayIdentifiers [registeredAssayIdentifier] "Assay was not exported"            
-        //)
+            Expect.equal isa.AssayCount 1 "Only one assay should be exported"
+            Expect.sequenceEqual study.RegisteredAssayIdentifiers [registeredAssayIdentifier] "Assay was not exported"            
+        )
     ]
     |> testSequenced
 

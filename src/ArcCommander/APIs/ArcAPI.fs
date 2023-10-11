@@ -65,7 +65,7 @@ module ArcAPI =
 
         let editor              = arcArgs.TryGetFieldValue ArcInitArgs.EditorPath
         let gitLFSThreshold     = arcArgs.TryGetFieldValue ArcInitArgs.GitLFSByteThreshold 
-        let branch              = arcArgs.TryGetFieldValue ArcInitArgs.Branch
+        let branch              = arcArgs.TryGetFieldValue ArcInitArgs.Branch |> Option.defaultValue GitHelper.defaultBranch
         let repositoryAddress   = arcArgs.TryGetFieldValue ArcInitArgs.RepositoryAddress 
         let identifier =    
             arcArgs.TryGetFieldValue ArcInitArgs.Identifier
@@ -79,6 +79,14 @@ module ArcAPI =
 
         let isa = ArcInvestigation.create(identifier)
         ARC(isa).Write(workDir,true)     
+
+        GeneralConfiguration.tryGetRootfolder arcConfiguration
+        |> Option.iter (fun p -> 
+            let dir = Path.Combine(workDir,p)
+            Directory.CreateDirectory dir |> ignore
+            let p = Path.Combine(dir,".gitkeep")
+            File.WriteAllText(p,"")
+        )       
 
         log.Trace("Set configuration")
 

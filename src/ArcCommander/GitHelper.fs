@@ -7,6 +7,9 @@ open ARCtrl.NET
 
 module GitHelper =
 
+    [<Literal>]
+    let defaultBranch = "main"
+
     /// Executes Git command and returns git output.
     let executeGitCommandWithResponse (repoDir : string) (command : string) =
 
@@ -67,6 +70,11 @@ module GitHelper =
 
     //let formatRepoToken (token : Authentication.IdentityToken) (url : string) = 
     //    formatRepoString token.UserName token.GitAccessToken url
+
+    let tryGetBranch (dir : string) =
+        let r = executeGitCommandWithResponse dir "branch --show-current"
+        if r.Count = 0 then None
+        else Some r.[0]
 
     let setLocalEmail (dir : string) (email : string) =
         executeGitCommand dir (sprintf "config user.email \"%s\"" email)
