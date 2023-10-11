@@ -5,9 +5,17 @@ open TestingUtils
 open Fake.IO
 open Fake.IO.Globbing.Operators
 
+  
+let arguments =  
+    testList "ArgumentHandling" [
+        testCase "Structure" (fun () ->
+            Argu.ArgumentParser<ArcCommander.Commands.ArcCommand>.CheckStructure()
+        )   
     
-[<PTests>]
+    ]
+
+[<Tests>]
 let configuration =
     testList "Configuration" [
-        //cleanup
+        arguments
     ]
