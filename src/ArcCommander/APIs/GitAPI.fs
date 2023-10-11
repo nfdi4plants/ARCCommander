@@ -87,9 +87,9 @@ module GitAPI =
 
             let allFilesPlusSizes = allFiles |> List.map( fun x -> x, System.IO.FileInfo(x).Length )
 
-            let trackWithAdd (file : string) =
+            //let trackWithAdd (file : string) =
 
-                executeGitCommand repoDir $"add \"{file}\"" |> ignore
+            //    executeGitCommand repoDir $"add \"{file}\"" |> ignore
 
             let trackWithLFS (file : string) =
 
@@ -98,7 +98,7 @@ module GitAPI =
                 if GitHelper.containsLFSRule ruleSet lfsPath |> not then
                     executeGitCommand repoDir $"lfs track \"{lfsPath}\"" |> ignore
 
-                trackWithAdd file
+                //trackWithAdd file
 
         
             let gitLfsRules = GeneralConfiguration.getGitLfsRules arcConfiguration
@@ -119,17 +119,18 @@ module GitAPI =
                     // Track files larger than the git lfs threshold with git lfs. If no threshold is set, track no files with git lfs
                     match gitLfsThreshold with
                     | Some thr when size > thr -> trackWithLFS file
-                    | _ -> trackWithAdd file
+                    | _ -> () //trackWithAdd file
             )
 
+            //executeGitCommand repoDir $"add \"{file}\""
 
-            executeGitCommand repoDir ("add -u") |> ignore
+            executeGitCommand repoDir ("add .") |> ignore
             printfn "-----------------------------"
 
             // commit all changes
             let commitMessage =
                 match arcArgs.TryGetFieldValue ArcSyncArgs.CommitMessage with
-                | None -> "Update"
+                | None -> "sync changes via ARCCommander"
                 | Some s -> s
 
             // print git status if verbose
@@ -140,7 +141,7 @@ module GitAPI =
 
             Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
-            let branch = arcArgs.TryGetFieldValue ArcSyncArgs.Branch |> Option.defaultValue "main"
+            let branch = arcArgs.TryGetFieldValue ArcSyncArgs.Branch |> Option.defaultValue GitHelper.defaultBranch
 
             executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
