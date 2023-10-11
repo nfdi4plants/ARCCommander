@@ -194,7 +194,7 @@ module IniData =
             |> Option.bind (tryGetValue key)
         with 
         | err -> 
-            log.Error($"Could not retrieve value with given name.\n {err.ToString()}")
+            log.Info($"Could not retrieve value with given name.\n {err.ToString()}")
             None
 
     /// Returns true if the name (section+key) is set in the iniData.
@@ -216,7 +216,7 @@ module IniData =
             iniData.[section].[key] <- value
             Some iniData
         else
-            log.Error($"Name {name} does not exist in the config.")
+            log.Info($"Name {name} does not exist in the config.")
             None
 
     /// If the name is already set in the config, assigns a new value to it.
@@ -237,7 +237,7 @@ module IniData =
             iniData.[section].RemoveKey key |> ignore
             Some iniData
         else
-            log.Error($"Name {name} does not exist in the config.")
+            log.Info($"Name {name} does not exist in the config.")
             None
 
     /// If the name is set in the config, removes it.
@@ -254,7 +254,7 @@ module IniData =
     let tryAddValue (name : string) (value : string) (iniData : IniData) =
         let log = Logging.createLogger "IniDataTryAddValueLog"
         if nameExists (name : string) (iniData : IniData) then
-            log.Error($"Name {name} already exists in the config.")
+            log.Info($"Name {name} already exists in the config.")
             Some iniData
         else
             let section,key = splitName name 
