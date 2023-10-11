@@ -148,6 +148,7 @@ module IniData =
     /// Writes the iniData as an ini file to the given location
     let toFile path iniData =
         let parser = Parser.IniDataParser(defaultParserConfiguration) |> FileIniDataParser
+        Directory.CreateDirectory(FileInfo(path).DirectoryName) |> ignore
         parser.WriteFile(path, iniData)
 
     /// If a section with the given name exists in the iniData, returns its keyValue pairs c
