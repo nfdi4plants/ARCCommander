@@ -7,6 +7,9 @@ open ARCtrl.NET
 
 module GitHelper =
 
+    [<Literal>]
+    let defaultBranch = "main"
+
     /// Executes Git command and returns git output.
     let executeGitCommandWithResponse (repoDir : string) (command : string) =
 
