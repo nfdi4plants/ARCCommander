@@ -25,7 +25,7 @@ open ArcCommander.ArgumentProcessing
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 
-    | [<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
+    | [<AltCommandLine("-i")>][<Unique>][<FileName>] InvestigationIdentifier of investigation_identifier:string
     | [<Unique>] Title of title:string
     | [<Unique>] Description of description:string
     | [<Unique>] SubmissionDate of submission_date:string
@@ -35,7 +35,7 @@ type InvestigationUpdateArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Identifier                _ -> "A identifier or an accession number provided by a repository. This SHOULD be locally unique."
+            | InvestigationIdentifier   _ -> "A identifier or an accession number provided by a repository. This SHOULD be locally unique."
             | Title                     _ -> "A concise name given to the investigation"
             | Description               _ -> "A textual description of the investigation"
             | SubmissionDate            _ -> "The date on which the investigation was reported to the repository"

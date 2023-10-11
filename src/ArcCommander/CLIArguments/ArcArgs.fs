@@ -21,7 +21,7 @@ type ArcConvertArgs =
 
 type ArcInitArgs = 
 
-    | [<AltCommandLine("-i")>][<Unique>] Identifier of identifier : string
+    | [<AltCommandLine("-i")>][<Unique>] InvestigationIdentifier of identifier : string
     | [<AltCommandLine("-b")>][<Unique>] Branch of branch_name : string
     // --repositoryadress is obsolete (previous spelling mistake)
     | [<AltCommandLine("--repositoryadress")>][<AltCommandLine("-r")>][<Unique>] RepositoryAddress of repository_address : string
@@ -32,12 +32,12 @@ type ArcInitArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Identifier          _ ->  "Identifier of the ARC. This value is used as the investigation identifier. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
-            | Branch              _ ->  "Name of the git branch to be created"
-            | RepositoryAddress   _ ->  "Git repository address"
-            | EditorPath          _ ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"
-            | GitLFSByteThreshold _ ->  "The git LFS file size threshold in bytes. File larger than this threshold will be tracked by git LFS (Default Value is 150000000 Bytes ~ 150 MB)."
-            | Gitignore           _ ->  "Use this flag if you want a default .gitignore to be added to the initialized repo"
+            | InvestigationIdentifier   _ ->  "Identifier of the ARC. This value is used as the investigation identifier. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
+            | Branch                    _ ->  "Name of the git branch to be created"
+            | RepositoryAddress         _ ->  "Git repository address"
+            | EditorPath                _ ->  "The path leading to the editor used for text prompts (Default in Windows is Notepad; Default in Unix systems is Nano)"
+            | GitLFSByteThreshold       _ ->  "The git LFS file size threshold in bytes. File larger than this threshold will be tracked by git LFS (Default Value is 150000000 Bytes ~ 150 MB)."
+            | Gitignore                 _ ->  "Use this flag if you want a default .gitignore to be added to the initialized repo"
 
 type ArcExportArgs = 
 

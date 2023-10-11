@@ -29,13 +29,13 @@ let testInvestigationUpdate =
             let config = createConfigFromDir testListName "UpdateStandard"
 
             let investigationName = "TestInvestigation"
-            let initArgs = [ArcInitArgs.Identifier investigationName]
+            let initArgs = [ArcInitArgs.InvestigationIdentifier investigationName]
             processCommand config ArcAPI.init initArgs
 
             let newIdentifier = "BestInvestigation"
             let newTitle = "newTitle"
             let newSubmissionDate = "newSubmissionDate"
-            let investigationArgs = [InvestigationUpdateArgs.Identifier newIdentifier;InvestigationUpdateArgs.Title newTitle; InvestigationUpdateArgs.SubmissionDate newSubmissionDate]
+            let investigationArgs = [InvestigationUpdateArgs.InvestigationIdentifier newIdentifier;InvestigationUpdateArgs.Title newTitle; InvestigationUpdateArgs.SubmissionDate newSubmissionDate]
 
             processCommand config InvestigationAPI.update investigationArgs
 
@@ -54,13 +54,13 @@ let testInvestigationUpdate =
             let config = createConfigFromDir testListName "UpdateStandard"
 
             let investigationName = "TestInvestigation"
-            let initArgs = [ArcInitArgs.Identifier investigationName]
+            let initArgs = [ArcInitArgs.InvestigationIdentifier investigationName]
             processCommand config ArcAPI.init initArgs
 
             let newIdentifier = "BestInvestigation"
             let newTitle = "newTitle"
             let newSubmissionDate = "newSubmissionDate"
-            let investigationArgs = [InvestigationUpdateArgs.Identifier newIdentifier;InvestigationUpdateArgs.Title newTitle; InvestigationUpdateArgs.SubmissionDate newSubmissionDate]
+            let investigationArgs = [InvestigationUpdateArgs.InvestigationIdentifier newIdentifier;InvestigationUpdateArgs.Title newTitle; InvestigationUpdateArgs.SubmissionDate newSubmissionDate]
 
             processCommand config InvestigationAPI.update investigationArgs
 

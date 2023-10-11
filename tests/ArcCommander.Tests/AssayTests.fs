@@ -14,7 +14,7 @@ open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
 let setupArc (arcConfiguration : ArcConfiguration) =
-    let arcArgs : ArcInitArgs list = [ArcInitArgs.Identifier "TestInvestigation"] 
+    let arcArgs : ArcInitArgs list = [ArcInitArgs.InvestigationIdentifier "TestInvestigation"] 
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
@@ -74,7 +74,7 @@ let testAssayRegister =
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
             
-            let studyArgs : StudyAddArgs list = [StudyAddArgs.Identifier studyIdentifier]
+            let studyArgs : StudyAddArgs list = [StudyAddArgs.StudyIdentifier studyIdentifier]
             let assayInitArgs : AssayInitArgs list = [
                 AssayInitArgs.AssayIdentifier assayIdentifier
                 AssayInitArgs.MeasurementType measurementType
@@ -108,7 +108,7 @@ let testAssayRegister =
             let measurementType = "TestMeasurementType"
             let studyIdentifier = "TestStudy"
 
-            let studyArgs : StudyAddArgs list = [StudyAddArgs.Identifier studyIdentifier]
+            let studyArgs : StudyAddArgs list = [StudyAddArgs.StudyIdentifier studyIdentifier]
 
             processCommand configuration StudyAPI.add studyArgs
             
@@ -251,7 +251,7 @@ let testAssayRegister =
             setupArc configuration
 
             let studyIdentifier = "TestAssayWithoutStudyName"
-            processCommand configuration StudyAPI.add [StudyAddArgs.Identifier studyIdentifier]
+            processCommand configuration StudyAPI.add [StudyAddArgs.StudyIdentifier studyIdentifier]
 
             let assayIdentifier = studyIdentifier
             processCommand configuration AssayAPI.add [AssayAddArgs.AssayIdentifier assayIdentifier]
@@ -332,7 +332,7 @@ let testAssayRemove =
             setupArc config
 
             let studyIdentifier = "MyStudy"
-            let studyAddArgs = [StudyAddArgs.Identifier studyIdentifier]
+            let studyAddArgs = [StudyAddArgs.StudyIdentifier studyIdentifier]
             processCommand config StudyAPI.add studyAddArgs
 
             let assayIdentifier = "MyAssay"

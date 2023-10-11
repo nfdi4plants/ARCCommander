@@ -13,7 +13,7 @@ open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
 let setupArc (arcConfiguration:ArcConfiguration) =
-    let arcArgs : ArcInitArgs list =  [ArcInitArgs.Identifier "TestInvestigation"] 
+    let arcArgs : ArcInitArgs list =  [ArcInitArgs.InvestigationIdentifier "TestInvestigation"] 
 
     processCommand arcConfiguration ArcAPI.init             arcArgs
 
@@ -28,7 +28,7 @@ let testStudyInit =
             setupArc config
 
             let studyIdentifier = "TestStudy"
-            let studyArgs = [StudyInitArgs.Identifier studyIdentifier]
+            let studyArgs = [StudyInitArgs.StudyIdentifier studyIdentifier]
             processCommand config StudyAPI.init studyArgs
 
             let arc = ARC.load(config)
@@ -55,7 +55,7 @@ let testStudyAdd =
             let studyIdentifier = "TestStudy"
             let studyDescription = "TestStudyDescription"
 
-            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
             let arc = ARC.load(config)
             let isa = Expect.wantSome arc.ISA "ISA was not created" 
@@ -74,13 +74,13 @@ let testStudyAdd =
             let studyIdentifier = "TestStudy"
             let studyDescription = "TestStudyDescription"
 
-            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
 
             let studyIdentifier = "TestStudy2"
             let studyDescription = "TestStudyDescription2"
 
-            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
             let arc = ARC.load(config)
             let isa = Expect.wantSome arc.ISA "ISA was not created"
@@ -99,19 +99,19 @@ let testStudyAdd =
             let studyIdentifier = "TestStudy"
             let studyDescription = "TestStudyDescription"
 
-            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
 
             let studyIdentifier = "TestStudy2"
             let studyDescription = "TestStudyDescription2"
 
-            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
 
             let studyIdentifier = "TestStudy2"
             let studyDescription = "TestStudyDescription2"
 
-            let studyArgs = [StudyAddArgs.Identifier studyIdentifier;StudyAddArgs.Description studyDescription]
+            let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             Expect.throws (fun () -> processCommand config StudyAPI.add studyArgs) "Study was added to ISA, even though it already existed"
             let arc = ARC.load(config)
             let isa = Expect.wantSome arc.ISA "ISA was not created"

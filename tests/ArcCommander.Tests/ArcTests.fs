@@ -20,7 +20,7 @@ let testArcInit =
         testCase "Simple" (fun () -> 
             let config = createConfigFromDir testListName "Simple"
             let identifier = "MyInvestigation"
-            let investigationArgs = [ArcInitArgs.Identifier identifier]
+            let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
 
             processCommand config ArcAPI.init investigationArgs
 
@@ -44,10 +44,10 @@ let testArcInit =
         testCase "ShouldNotOverwrite" (fun () -> 
             let config = createConfigFromDir testListName "Simple"
             let identifier = "MyInvestigation"
-            let investigationArgs = [ArcInitArgs.Identifier identifier]
+            let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
 
             let secondIdentifier = "MySecondInvestigation"
-            let secondInvestigationArgs = [ArcInitArgs.Identifier secondIdentifier]
+            let secondInvestigationArgs = [ArcInitArgs.InvestigationIdentifier secondIdentifier]
 
             processCommand config ArcAPI.init investigationArgs
             processCommand config ArcAPI.init secondInvestigationArgs
@@ -78,7 +78,7 @@ let testArcUpdate =
             let config = createConfigFromDir testListName "DontPutAssayPerformerIntoStudy"
 
             let identifier = "MyInvestigation"
-            let investigationArgs = [ArcInitArgs.Identifier identifier]
+            let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
             processCommand config ArcAPI.init investigationArgs
 
             let assayIdentifier = "MyAssay"
@@ -112,7 +112,7 @@ let testArcExport =
             let config = createConfigFromDir testListName "Simple"
 
             let identifier = "MyInvestigation"
-            let investigationArgs = [ArcInitArgs.Identifier identifier]
+            let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
             processCommand config ArcAPI.init investigationArgs
 
             let assayIdentifier = "MyAssay"
@@ -137,7 +137,7 @@ let testArcExport =
             let config = createConfigFromDir testListName "OnlyExportRegistered"
 
             let identifier = "MyInvestigation"
-            let investigationArgs = [ArcInitArgs.Identifier identifier]
+            let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
             processCommand config ArcAPI.init investigationArgs
 
             let registeredAssayIdentifier =  "RegisteredAssay"
@@ -149,7 +149,7 @@ let testArcExport =
             processCommand config AssayAPI.init assayArgs
 
             let unregisteredStudyIdentifier = "UnregisteredStudy"
-            let studyArgs = [StudyInitArgs.Identifier unregisteredStudyIdentifier]
+            let studyArgs = [StudyInitArgs.StudyIdentifier unregisteredStudyIdentifier]
             processCommand config StudyAPI.init studyArgs
 
             let exportPath = Path.Combine(GeneralConfiguration.getWorkDirectory config, "export.json")
