@@ -141,7 +141,12 @@ module GitAPI =
 
             Fake.Tools.Git.Commit.exec repoDir commitMessage |> ignore
         
-            let branch = arcArgs.TryGetFieldValue ArcSyncArgs.Branch |> Option.defaultValue GitHelper.defaultBranch
+            let branch = 
+                match arcArgs.TryGetFieldValue ArcSyncArgs.Branch with
+                | Some b -> b
+                | None -> 
+                    GitHelper.tryGetBranch repoDir
+                    |> Option.defaultValue GitHelper.defaultBranch
 
             executeGitCommand repoDir $"branch -M {branch}" |> ignore
 
