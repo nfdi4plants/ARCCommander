@@ -56,6 +56,7 @@ type ArcSyncArgs =
     | [<Unique>][<AltCommandLine("-r")>] RepositoryAddress  of repository_address:string
     | [<Unique>][<AltCommandLine("-m")>] CommitMessage      of commit_message:string
     | [<Unique>][<AltCommandLine("-b")>] Branch             of branch:string
+    | [<Unique>][<AltCommandLine("-n")>] NoLFS
     | [<Unique>][<AltCommandLine("-f")>] Force
 
 
@@ -65,6 +66,7 @@ type ArcSyncArgs =
             | RepositoryAddress _ -> "Git remote address with which to sync the ARC. If no address is either given here or set previously when initing or getting the ARC, changes are only committed but not synced."
             | CommitMessage     _ -> "Descriptive title for the changes made (e.g. add new assay). If none is given, default commit message is used."
             | Branch            _ -> "Name of the branch to which the changes should be pushed. If none is given, defaults to \"main\""
+            | NoLFS             _ -> "Does download only the pointers of LFS files, not the file content itself. Ideal for when you're only interested in the experimental metadata, not the data itself."
             | Force             _ -> "When a remote is set, but does not exist online, tries to create it."
 
 /// TO-DO: Argumente anpassen
