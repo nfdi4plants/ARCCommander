@@ -230,7 +230,7 @@ let handleCommand arcConfiguration command =
 let main argv =
 
     try
-        let parser = ArgumentParser.Create<ArcCommand>()
+        let parser = ArgumentParser.Create<ArcCommand>(checkStructure = false)
         
         // Failsafe parsing of all correct argument information
         let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true, ignoreUnrecognized = true)
