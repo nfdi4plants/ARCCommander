@@ -183,6 +183,7 @@ module GitAPI =
 
                 if remoteExists() then
                     log.Trace("Pull")
+                    if arcArgs.ContainsFlag ArcSyncArgs.NoLFS then GitHelper.setNoLFSConfig repoDir
                     executeGitCommand repoDir ("fetch origin") |> ignore
                     executeGitCommand repoDir ($"pull --rebase origin {branch}") |> ignore
 

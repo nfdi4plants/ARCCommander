@@ -68,7 +68,7 @@ module ArcAPI =
         let branch              = arcArgs.TryGetFieldValue ArcInitArgs.Branch |> Option.defaultValue GitHelper.defaultBranch
         let repositoryAddress   = arcArgs.TryGetFieldValue ArcInitArgs.RepositoryAddress 
         let identifier =    
-            arcArgs.TryGetFieldValue ArcInitArgs.Identifier
+            arcArgs.TryGetFieldValue ArcInitArgs.InvestigationIdentifier
             |> Option.defaultValue (DirectoryInfo(workDir).Name)       
 
         log.Trace("Create Directory")

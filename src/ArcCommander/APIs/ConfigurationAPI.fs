@@ -191,7 +191,7 @@ module ConfigurationAPI =
                 log.Trace("Retrieved user name from given argument.")
                 Some name
             | None -> 
-                log.Trace("Could not retrieve user name from argument. Try to retrieve it from ARC config.")
+                log.Info("Could not retrieve user name from argument. Try to retrieve it from ARC config.")
                 GeneralConfiguration.tryGetGitName arcConfiguration
             
         let emailOption = 
@@ -200,7 +200,7 @@ module ConfigurationAPI =
                 log.Trace("Retrieved user email from given argument.")
                 Some name
             | None -> 
-                log.Trace("Could not retrieve user email from argument. Try to retrieve it from ARC config.")
+                log.Info("Could not retrieve user email from argument. Try to retrieve it from ARC config.")
                 GeneralConfiguration.tryGetGitEmail arcConfiguration  
 
         match nameOption, emailOption with

@@ -42,7 +42,7 @@ module StudyAPI =
         
         log.Info("Start Study Init")
 
-        let identifier = studyArgs.GetFieldValue StudyInitArgs.Identifier
+        let identifier = studyArgs.GetFieldValue StudyInitArgs.StudyIdentifier
 
         let study = 
             ArcStudy.create(
@@ -73,7 +73,7 @@ module StudyAPI =
         let replaceWithEmptyValues = studyArgs.ContainsFlag StudyUpdateArgs.ReplaceWithEmptyValues |> not
         let addIfMissing = studyArgs.ContainsFlag StudyUpdateArgs.AddIfMissing
 
-        let identifier = studyArgs.GetFieldValue StudyUpdateArgs.Identifier
+        let identifier = studyArgs.GetFieldValue StudyUpdateArgs.StudyIdentifier
 
         let study = 
             ArcStudy.create(
@@ -113,7 +113,7 @@ module StudyAPI =
 
         let editor = GeneralConfiguration.getEditor arcConfiguration
 
-        let studyIdentifier = studyArgs.GetFieldValue StudyEditArgs.Identifier
+        let studyIdentifier = studyArgs.GetFieldValue StudyEditArgs.StudyIdentifier
         
         let getNewStudy oldStudy =
             ArgumentProcessing.Prompt.createIsaItemQuery 
@@ -142,7 +142,7 @@ module StudyAPI =
         
         log.Info("Start Study Register")
 
-        let identifier = studyArgs.GetFieldValue StudyRegisterArgs.Identifier
+        let identifier = studyArgs.GetFieldValue StudyRegisterArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
         let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
@@ -168,7 +168,7 @@ module StudyAPI =
 
         let isForced = studyArgs.ContainsFlag StudyDeleteArgs.Force
 
-        let identifier = studyArgs.GetFieldValue StudyDeleteArgs.Identifier
+        let identifier = studyArgs.GetFieldValue StudyDeleteArgs.StudyIdentifier
 
         let studyFolderPath = StudyConfiguration.getFolderPath identifier arcConfiguration
 
@@ -212,7 +212,7 @@ module StudyAPI =
         
         log.Info("Start Study Unregister")
 
-        let identifier = studyArgs.GetFieldValue StudyUnregisterArgs.Identifier
+        let identifier = studyArgs.GetFieldValue StudyUnregisterArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
         let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
@@ -237,7 +237,7 @@ module StudyAPI =
         
         log.Info("Start Study Show")
         
-        let identifier = studyArgs.GetFieldValue StudyShowArgs.Identifier
+        let identifier = studyArgs.GetFieldValue StudyShowArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
         let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))

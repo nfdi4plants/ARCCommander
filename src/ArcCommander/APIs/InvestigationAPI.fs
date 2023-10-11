@@ -69,7 +69,7 @@ module InvestigationAPI =
         let replaceWithEmptyValues = investigationArgs.ContainsFlag InvestigationUpdateArgs.ReplaceWithEmptyValues
         
         let identifier = 
-            investigationArgs.TryGetFieldValue InvestigationUpdateArgs.Identifier
+            investigationArgs.TryGetFieldValue InvestigationUpdateArgs.InvestigationIdentifier
             |> Option.defaultValue (Identifier.createMissingIdentifier())
 
         let investigation = 
