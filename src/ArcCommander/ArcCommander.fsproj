@@ -70,13 +70,12 @@
 
   <!--References-->
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="7.0.400" />
-    <PackageReference Include="ARCtrl.NET" Version="1.0.0-alpha4" />
+    <PackageReference Update="FSharp.Core" Version="7.0.401" />
+    <PackageReference Include="ARCtrl.NET" Version="1.0.0-beta.1" />
     <PackageReference Include="Argu" Version="6.1.1" />
     <PackageReference Include="Fake.IO.FileSystem" Version="6.0.0" />
     <PackageReference Include="Fake.Tools.Git" Version="6.0.0" />
     <PackageReference Include="FSharp.Data" Version="5.0.2" />
-    <PackageReference Include="FsSpreadsheet.CsvIO" Version="4.1.0" />
     <PackageReference Include="IdentityModel.OidcClient" Version="5.2.1" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
     <PackageReference Include="Giraffe" Version="6.0.0" />
