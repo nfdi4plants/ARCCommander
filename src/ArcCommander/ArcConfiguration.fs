@@ -430,7 +430,37 @@ open ARCtrl.NET
 
 [<AutoOpen>]
 module ARCExtensions = 
+
+    open Contract
+    open FsSpreadsheet
+    open FsSpreadsheet.ExcelIO
+
+    let myWrite basePath (c : Contract) = 
+        let log = Logging.createLogger("WriteContractHandler")
+        match c.DTO with
+        | Some (DTO.Spreadsheet wb) ->
+            let path = System.IO.Path.Combine(basePath, c.Path)
+            Path.ensureDirectory path
+            FsWorkbook.toFile path (wb :?> FsWorkbook)
+        | Some (DTO.Text t) ->
+            let path = System.IO.Path.Combine(basePath, c.Path)
+            Path.ensureDirectory path
+            if System.IO.File.Exists path |> not then
+                System.IO.File.WriteAllText(path,t)
+        | None -> 
+            let path = System.IO.Path.Combine(basePath, c.Path)
+            Path.ensureDirectory path
+            if System.IO.File.Exists path |> not then
+                System.IO.File.Create(path).Close()
+        | _ -> 
+            log.Info(sprintf "Contract %s is not an ISA contract" c.Path)
+
     type ARC with
+
+        member this.Write(arcPath) = 
+            this.GetWriteContracts()
+            |> Array.iter (myWrite arcPath)
+
         static member load(config : ArcConfiguration) = 
             ARC.load(GeneralConfiguration.getWorkDirectory config)
 
