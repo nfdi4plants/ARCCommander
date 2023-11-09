@@ -50,9 +50,15 @@ module ArcAPI =
 
         log.Info($"Start Arc Version")
         
-        let ver = Reflection.Assembly.GetExecutingAssembly().GetName().Version
+        let assembly = Reflection.Assembly.GetExecutingAssembly()
+            
+        let productVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion
         
-        log.Debug($"v{ver.Major}.{ver.Minor}.{ver.Build}")
+        if productVersion.Contains "-" then 
+            log.Debug($"v{productVersion}")
+        else 
+            let fv = assembly.GetName().Version
+            log.Debug($"v{fv.Major}.{fv.Minor}.{fv.Build}")
 
     /// Initializes the ARC-specific folder structure.
     let init (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcInitArgs>) =

@@ -16,7 +16,7 @@ type ArcCommand =
     | [<CliPrefix(CliPrefix.None)>]                             Get             of get_args     : ParseResults<ArcGetArgs>
     | [<CliPrefix(CliPrefix.None)>]                             Server          of server_args  : ParseResults<ArcServerArgs>
     | [<CliPrefix(CliPrefix.None)>][<SubCommand()>]             Update
-    | [<CliPrefix(CliPrefix.DoubleDash)>][<SubCommand()>]       Version
+    | [<AltCommandLine("--version")>][<CliPrefix(CliPrefix.None)>][<SubCommand()>] Version
     ///Subcommands
     | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>]      Investigation   of verb_and_args : ParseResults<InvestigationCommand>
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>]      Study           of verb_and_args : ParseResults<StudyCommand>
