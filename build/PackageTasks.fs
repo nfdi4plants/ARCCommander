@@ -12,149 +12,120 @@ open Helpers
 open BasicTasks
 open TestTasks
 
-let pack = BuildTask.create "Pack" [clean; build; runTests; copyBinaries] {
-    if promptYesNo (sprintf "creating stable package with version %s OK?" stableVersionTag ) 
-        then
-            !! "src/**/*.*proj"
-            |> Seq.iter (Fake.DotNet.DotNet.pack (fun p ->
-                let msBuildParams =
-                    {p.MSBuildParams with 
-                        Properties = ([
-                            "Version",stableVersionTag
-                            "PackageReleaseNotes",  (release.Notes |> String.concat "\r\n")
-                        ] @ p.MSBuildParams.Properties)
-                    }
-                {
-                    p with 
-                        MSBuildParams = msBuildParams
-                        OutputPath = Some pkgDir
-                        NoBuild = true
-                        Configuration = DotNet.BuildConfiguration.fromString configuration
-                }
-            ))
-    else failwith "aborted"
-}
+type RunTime = 
+    | Win
+    | Linux
+    | Mac
+    | MacARM
 
-let packPrerelease = BuildTask.create "PackPrerelease" [setPrereleaseTag; clean; build; runTests; copyBinaries] {
-    if promptYesNo (sprintf "package tag will be %s OK?" prereleaseTag )
-        then 
-            !! "src/**/*.*proj"
-            //-- "src/**/Plotly.NET.Interactive.fsproj"
-            |> Seq.iter (Fake.DotNet.DotNet.pack (fun p ->
-                        let msBuildParams =
-                            {p.MSBuildParams with 
-                                Properties = ([
-                                    "Version", prereleaseTag
-                                    "PackageReleaseNotes",  (release.Notes |> String.toLines )
-                                ] @ p.MSBuildParams.Properties)
-                            }
-                        {
-                            p with 
-                                VersionSuffix = Some prereleaseSuffix
-                                OutputPath = Some pkgDir
-                                NoBuild = true
-                                Configuration = DotNet.BuildConfiguration.fromString configuration
-                        }
-            ))
-    else
-        failwith "aborted"
-}
+    member this.GetRuntime() =
+        match this with
+        | Win -> "win-x64"
+        | Linux -> "linux-x64"
+        | Mac -> "osx-x64"
+        | MacARM -> "osx-arm64"
 
-let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
-    let outputPath = sprintf "%s/win-x64" publishDir
-    "src/ArcCommander/ArcCommander.fsproj"
+    member this.GetRuntimeFolder() =
+        match this with
+        | Win -> "win-x64"
+        | Linux -> "linux-x64"
+        | Mac -> "osx-x64"
+        | MacARM -> "osx-arm64"
+
+    member this.GetPlatform() =
+        match this with
+        | Win -> "x64"
+        | Linux -> "x64"
+        | Mac -> "x64"
+        | MacARM -> "arm64"
+
+
+let publishBinaryInPath (path : string) (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
+    project
     |> DotNet.publish (fun p ->
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
         {
             p with
-                Runtime = Some "win-x64"
+                Runtime = Some (runtime.GetRuntime())
                 Configuration = DotNet.BuildConfiguration.fromString configuration
-                OutputPath = Some outputPath
+                OutputPath = Some path
                 MSBuildParams = {
                     standardParams with
                         Properties = [
-                            "Version", stableVersionTag
-                            "Platform", "x64"
+                            "VersionPrefix", version
+                            if versionSuffix.IsSome then "VersionSuffix", versionSuffix.Value
+                            "Platform", runtime.GetPlatform()
                             "PublishSingleFile", "true"
                         ]
-                };
-        }
+                }               
+        }        
     )
-    printfn "Beware that assemblyName differs from projectName!"
+
+let publishBinary (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
+    let runTimeFolder = runtime.GetRuntimeFolder()
+    let outputFolder = sprintf "%s/%s" publishDir runTimeFolder
+    publishBinaryInPath outputFolder version versionSuffix runtime
+   
+let publishBinaryForFat (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
+    let versionString = if versionSuffix.IsSome then sprintf "%s-%s" version versionSuffix.Value else version
+    let outputFolder = sprintf "%s/%s" publishDir versionString
+    let initialFileName = 
+        if runtime = RunTime.Win then 
+            sprintf "%s/%s.exe" outputFolder "arc"
+        else 
+            sprintf "%s/%s" outputFolder "arc"
+    let newFileName = 
+        if runtime = RunTime.Win then 
+            sprintf "%s/%s_%s.exe" outputFolder "arc" (runtime.GetRuntime())
+        else
+            sprintf "%s/%s_%s" outputFolder "arc" (runtime.GetRuntime())
+    publishBinaryInPath outputFolder version versionSuffix runtime  
+    System.IO.File.Move(initialFileName, newFileName) |> ignore
+
+let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
+    publishBinary stableVersionTag None RunTime.Win
 }
 
 let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
-    let outputPath = sprintf "%s/linux-x64" publishDir
-    project
-    |> DotNet.publish (fun p ->
-        let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-        {
-            p with
-                Runtime = Some "linux-x64"
-                Configuration = DotNet.BuildConfiguration.fromString configuration
-                OutputPath = Some outputPath
-                MSBuildParams = {
-                    standardParams with
-                        Properties = [
-                            "Version", stableVersionTag
-                            "Platform", "x64"
-                            "PublishSingleFile", "true"
-                        ]
-                }
-        }
-    )
-    printfn "Beware that assemblyName differs from projectName!"
+    publishBinary stableVersionTag None RunTime.Linux
 }
 
 let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
-    let outputPath = sprintf "%s/osx-x64" publishDir
-    project
-    |> DotNet.publish (fun p ->
-        let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-        {
-            p with
-                Runtime = Some "osx-x64"
-                Configuration = DotNet.BuildConfiguration.fromString configuration
-                OutputPath = Some outputPath
-                MSBuildParams = {
-                    standardParams with
-                        Properties = [
-                            "Version", stableVersionTag
-                            "Platform", "x64"
-                            "PublishSingleFile", "true"
-                        ]
-                }
-        }
-    )
-    printfn "Beware that assemblyName differs from projectName!"
+    publishBinary stableVersionTag None RunTime.Mac
 }
 
 let publishBinariesMacARM = BuildTask.create "PublishBinariesMacARM" [clean.IfNeeded; build.IfNeeded] {
-    let outputPath = sprintf "%s/osx-arm64" publishDir
-    project
-    |> DotNet.publish (fun p ->
-        let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
-        {
-            p with
-                Runtime = Some "osx.12-arm64"
-                Configuration = DotNet.BuildConfiguration.fromString configuration
-                OutputPath = Some outputPath
-                MSBuildParams = {
-                    standardParams with
-                        Properties = [
-                            "Version", stableVersionTag
-                            //"Platform", "arm64"   // throws MSBuild Error although it should work: error MSB4126: The specified solution configuration "Release|ARM64" is invalid. Please specify a valid solution configuration using the Configuration and Platform properties (e.g. MSBuild.exe Solution.sln /p:Configuration=Debug /p:Platform="Any CPU") or leave those properties blank to use the default solution configuration. [C:\Repos\omaus\arcCommander\ArcCommander.sln]
-                            "PublishSingleFile", "true"
-                        ]
-                }
-        }
-    )
-    printfn "Beware that assemblyName differs from projectName!"
+    publishBinary stableVersionTag None RunTime.MacARM
 }
 
 let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac; publishBinariesMacARM]
 
-let publishBinariesMacBoth = BuildTask.createEmpty "PublishBinariesMacBoth" [clean; build; publishBinariesMac; publishBinariesMacARM]
+let publishBinariesWinPrerelease = BuildTask.create "PublishBinariesWinPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.Win
+}
+
+let publishBinariesLinuxPrerelease = BuildTask.create "PublishBinariesLinuxPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.Linux
+}
+
+let publishBinariesMacPrerelease = BuildTask.create "PublishBinariesMacPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.Mac
+}
+
+let publishBinariesMacARMPrerelease = BuildTask.create "PublishBinariesMacARMPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.MacARM
+}
+
+let publishBinariesAllPrerelease = BuildTask.createEmpty "PublishBinariesAllPrerelease" [clean; build; setPrereleaseTag; publishBinariesWinPrerelease; publishBinariesLinuxPrerelease; publishBinariesMacPrerelease; publishBinariesMacARMPrerelease]
+
+let publishBinariesFatPrerelease = BuildTask.create "PublishBinariesFatPrerelease" [clean; build; setPrereleaseTag] {
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Win
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Linux
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Mac
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.MacARM
+}
+
+
 
 // as of now (july 2022), it seems there is now possibility to run lipo on Windows
 //let packMacBinaries = BuildTask.create "PackMacBinaries" [publishBinariesMacBoth] {

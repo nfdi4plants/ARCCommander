@@ -18,13 +18,13 @@ DockerTasks.dockerPublish |> ignore
 let _release = 
     BuildTask.createEmpty 
         "Release" 
-        [clean; build; copyBinaries; runTests; pack; createTag; publishNuget]
+        [clean; build; copyBinaries; runTests; publishBinariesAll]
 
 /// Full release of nuget package, git tag, and documentation for the prerelease version.
 let _preRelease = 
     BuildTask.createEmpty 
         "PreRelease" 
-        [setPrereleaseTag; clean; build; copyBinaries; runTests; packPrerelease; createPrereleaseTag; publishNugetPrerelease]
+        [setPrereleaseTag; clean; build; copyBinaries; runTests; publishBinariesAllPrerelease]
 
 [<EntryPoint>]
 let main args = runOrDefault args
