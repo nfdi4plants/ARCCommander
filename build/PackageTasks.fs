@@ -40,10 +40,7 @@ type RunTime =
         | MacARM -> "arm64"
 
 
-let publishBinaries (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
-    printfn "Published version %s and runtime %O" version runtime
-    let outputFolder = runtime.GetRuntimeFolder()
-    let outputPath = sprintf "%s/%s" publishDir outputFolder
+let publishBinaryInPath (path : string) (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
     project
     |> DotNet.publish (fun p ->
         let standardParams = Fake.DotNet.MSBuild.CliArguments.Create ()
@@ -51,7 +48,7 @@ let publishBinaries (version : string) (versionSuffix : string Option) (runtime 
             p with
                 Runtime = Some (runtime.GetRuntime())
                 Configuration = DotNet.BuildConfiguration.fromString configuration
-                OutputPath = Some outputPath
+                OutputPath = Some path
                 MSBuildParams = {
                     standardParams with
                         Properties = [
@@ -61,47 +58,72 @@ let publishBinaries (version : string) (versionSuffix : string Option) (runtime 
                             "PublishSingleFile", "true"
                         ]
                 }               
-        }
-        
+        }        
     )
 
-
+let publishBinary (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
+    let runTimeFolder = runtime.GetRuntimeFolder()
+    let outputFolder = sprintf "%s/%s" publishDir runTimeFolder
+    publishBinaryInPath outputFolder version versionSuffix runtime
+   
+let publishBinaryForFat (version : string) (versionSuffix : string Option) (runtime : RunTime) = 
+    let versionString = if versionSuffix.IsSome then sprintf "%s-%s" version versionSuffix.Value else version
+    let outputFolder = sprintf "%s/%s" publishDir versionString
+    let initialFileName = 
+        if runtime = RunTime.Win then 
+            sprintf "%s/%s.exe" outputFolder "arc"
+        else 
+            sprintf "%s/%s" outputFolder "arc"
+    let newFileName = 
+        if runtime = RunTime.Win then 
+            sprintf "%s/%s_%s.exe" outputFolder "arc" (runtime.GetRuntime())
+        else
+            sprintf "%s/%s_%s" outputFolder "arc" (runtime.GetRuntime())
+    publishBinaryInPath outputFolder version versionSuffix runtime  
+    System.IO.File.Move(initialFileName, newFileName) |> ignore
 
 let publishBinariesWin = BuildTask.create "PublishBinariesWin" [clean.IfNeeded; build.IfNeeded] {
-    publishBinaries stableVersionTag None RunTime.Win
+    publishBinary stableVersionTag None RunTime.Win
 }
 
 let publishBinariesLinux = BuildTask.create "PublishBinariesLinux" [clean.IfNeeded; build.IfNeeded] {
-    publishBinaries stableVersionTag None RunTime.Linux
+    publishBinary stableVersionTag None RunTime.Linux
 }
 
 let publishBinariesMac = BuildTask.create "PublishBinariesMac" [clean.IfNeeded; build.IfNeeded] {
-    publishBinaries stableVersionTag None RunTime.Mac
+    publishBinary stableVersionTag None RunTime.Mac
 }
 
 let publishBinariesMacARM = BuildTask.create "PublishBinariesMacARM" [clean.IfNeeded; build.IfNeeded] {
-    publishBinaries stableVersionTag None RunTime.MacARM
+    publishBinary stableVersionTag None RunTime.MacARM
 }
 
 let publishBinariesAll = BuildTask.createEmpty "PublishBinariesAll" [clean; build; publishBinariesWin; publishBinariesLinux; publishBinariesMac; publishBinariesMacARM]
 
 let publishBinariesWinPrerelease = BuildTask.create "PublishBinariesWinPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
-    publishBinaries stableVersionTag (Some prereleaseSuffix) RunTime.Win
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.Win
 }
 
 let publishBinariesLinuxPrerelease = BuildTask.create "PublishBinariesLinuxPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
-    publishBinaries stableVersionTag (Some prereleaseSuffix) RunTime.Linux
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.Linux
 }
 
 let publishBinariesMacPrerelease = BuildTask.create "PublishBinariesMacPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
-    publishBinaries stableVersionTag (Some prereleaseSuffix) RunTime.Mac
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.Mac
 }
 
 let publishBinariesMacARMPrerelease = BuildTask.create "PublishBinariesMacARMPrerelease" [clean.IfNeeded; build.IfNeeded; setPrereleaseTag] {
-    publishBinaries stableVersionTag (Some prereleaseSuffix) RunTime.MacARM
+    publishBinary stableVersionTag (Some prereleaseSuffix) RunTime.MacARM
 }
 
 let publishBinariesAllPrerelease = BuildTask.createEmpty "PublishBinariesAllPrerelease" [clean; build; setPrereleaseTag; publishBinariesWinPrerelease; publishBinariesLinuxPrerelease; publishBinariesMacPrerelease; publishBinariesMacARMPrerelease]
+
+let publishBinariesFatPrerelease = BuildTask.create "PublishBinariesFatPrerelease" [clean; build; setPrereleaseTag] {
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Win
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Linux
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Mac
+    publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.MacARM
+}
 
 
 
