@@ -1,4 +1,47 @@
-﻿### 0.5.0+59f219b (Released 2023-4-12)
+﻿### 1.0.0+e90e38b (Released 2023-11-9)
+* Additions:
+    * [[#e90e38b](https://github.com/nfdi4plants/arcCommander/commit/e90e38beb53535c81cf5490c01a9ed0773f76b17)] add helper task for fat release
+    * [[#c4366a4](https://github.com/nfdi4plants/arcCommander/commit/c4366a48df00730b45f3c57d4f4be72f3dd070ab)] update arctrl.net dependency
+    * [[#790e713](https://github.com/nfdi4plants/arcCommander/commit/790e713d409ef60d58110c88c05259807f503363)] standardize identifier argument names #192
+    * [[#a824bd6](https://github.com/nfdi4plants/arcCommander/commit/a824bd685b7ea3395939782ebb0138681548e790)] add --no-lfs flag to arc sync #173
+    * [[#06c4d2a](https://github.com/nfdi4plants/arcCommander/commit/06c4d2ab97c2706d71868e0d0d1c95274613942b)] increase visibility of information of setgituser #162
+    * [[#cbf1dc0](https://github.com/nfdi4plants/arcCommander/commit/cbf1dc0cdb153ed10b747ab75881d1ed250e8b8d)] increase argu speed
+    * [[#03f4f4b](https://github.com/nfdi4plants/arcCommander/commit/03f4f4b589832348e15daae8b4da7146c3546a76)] add tests
+    * [[#d538b1e](https://github.com/nfdi4plants/arcCommander/commit/d538b1e8169a0a6bb8846a4a0b04383f9545be7d)] small adjustments
+    * [[#76adcd3](https://github.com/nfdi4plants/arcCommander/commit/76adcd3586438bc8507313ecfa4d6712b614885a)] update investigation tests
+    * [[#0080eb5](https://github.com/nfdi4plants/arcCommander/commit/0080eb5cedf66d2b2c0446aeb0f9fb8e9470a605)] add arc init tests
+    * [[#1eae09a](https://github.com/nfdi4plants/arcCommander/commit/1eae09ad3adda12c3061cc70ce1e31908757cd9e)] add assay performer tests
+    * [[#4a467f6](https://github.com/nfdi4plants/arcCommander/commit/4a467f68c5fdfbda8a146840059d1a0b76f1444b)] restructure test project
+    * [[#dee2ba1](https://github.com/nfdi4plants/arcCommander/commit/dee2ba163f4f9704847790ebd06b189069f4a06c)] update arctrl.net dependency
+    * [[#a3e4994](https://github.com/nfdi4plants/arcCommander/commit/a3e49949ddd096f0c7330557342bcfde3abb7f60)] rework assay tests
+    * [[#fd5e321](https://github.com/nfdi4plants/arcCommander/commit/fd5e3216aa246d2d5da656f3a75142afc333c781)] start reworking assay tests
+    * [[#9ec9d96](https://github.com/nfdi4plants/arcCommander/commit/9ec9d96e1907443f764351cac1269811172b0008)] update ARCAPI to ARCtrl reference
+    * [[#63d365a](https://github.com/nfdi4plants/arcCommander/commit/63d365a282be2aa078eac28277bdda8a3212d5ee)] update helper files to ARCtrl reference
+    * [[#8d94a93](https://github.com/nfdi4plants/arcCommander/commit/8d94a93fcbde6f59af3b2ba71b06566dba821796)] update investigation api and commands
+    * [[#6a685f0](https://github.com/nfdi4plants/arcCommander/commit/6a685f00a2994c331140733ba8b147b7c7263b32)] update Study API
+    * [[#872cd67](https://github.com/nfdi4plants/arcCommander/commit/872cd67e4493af290dcc1ae1ea7d9dbaa49e6ae2)] add helper functions and ARCtrl reference
+    * [[#8d53fe6](https://github.com/nfdi4plants/arcCommander/commit/8d53fe625bc4be2da02b2638da2fc0414cd82bdf)] update assay api to ARCtrl
+    * [[#ed0fcbe](https://github.com/nfdi4plants/arcCommander/commit/ed0fcbe0bbb2c63b2b02ec6ce85680e220828895)] update gitAPI to new argument parsing
+    * [[#5fe38d3](https://github.com/nfdi4plants/arcCommander/commit/5fe38d3f75b25232ae18b1e24866b2a11c5645f8)] move to type save argument processing
+    * [[#30e0c45](https://github.com/nfdi4plants/arcCommander/commit/30e0c45f9d567558e734030ba53e618b61e45741)] Improve arc i create help text #205
+    * [[#26b97f7](https://github.com/nfdi4plants/arcCommander/commit/26b97f7fa0fbc6366b4ce105cab533883333a98f)] Improve arc i create help text #205 #204
+    * [[#3ff8697](https://github.com/nfdi4plants/arcCommander/commit/3ff8697f09677b0c8fe0865cf70935c9695b1fc3)] add merge flag to arc get
+    * [[#700a028](https://github.com/nfdi4plants/arcCommander/commit/700a0287a048b9bd134254354e7bd1a374a0588e)] Update README.md
+    * [[#d9b60fe](https://github.com/nfdi4plants/arcCommander/commit/d9b60fe6db9497d59075f62708dab76de74e3c0d)] update version
+* Deletions:
+    * [[#39413b5](https://github.com/nfdi4plants/arcCommander/commit/39413b56ecff257a22faf341193cfeaa0ea2032a)] refine executable publish commands
+* Bugfixes:
+    * [[#2a001e1](https://github.com/nfdi4plants/arcCommander/commit/2a001e17a3b0b092e0e21ef0493a28f32c08d881)] improve version command to inclune version suffix
+    * [[#a259bdb](https://github.com/nfdi4plants/arcCommander/commit/a259bdb66eda4705a9fba6205ef5842eebc33607)] hotfix write issue
+    * [[#3946ce5](https://github.com/nfdi4plants/arcCommander/commit/3946ce575176bdfa2bc7fe3376f89360185dad95)] fix arc sync always assuming "main" branch #147 #177
+    * [[#06f606b](https://github.com/nfdi4plants/arcCommander/commit/06f606b53e274cad71e3f45c8fb9f5f2fe5be63c)] fix arc sync spamming gitignored files #209 #97
+    * [[#eda5f90](https://github.com/nfdi4plants/arcCommander/commit/eda5f90883cc3620a1dd39b901640afb5f7e2055)] fix arc init
+    * [[#a7a0eab](https://github.com/nfdi4plants/arcCommander/commit/a7a0eabdf61b96032fd6e42704999551c785efcd)] fix config edit failing when no .arc folder exists
+    * [[#791f440](https://github.com/nfdi4plants/arcCommander/commit/791f44039d5cf1031f5ec42fb82ceb09b198f183)] fix config logger reporting unnecessary error
+    * [[#4f3fb3e](https://github.com/nfdi4plants/arcCommander/commit/4f3fb3ef57e035e9a23af4a6c9deefe87c632d56)] fix tests
+    * [[#3f7eb0c](https://github.com/nfdi4plants/arcCommander/commit/3f7eb0c2ba4e3ef7f4222a5f5610e333ffc41516)] fix study publication tan and tsr swapped
+
+### 0.5.0+59f219b (Released 2023-4-12)
 * Additions:
     * [[#ea33a5f](https://github.com/nfdi4plants/arcCommander/commit/ea33a5fbc688f880f0ae733843d8c40a43bea74d)] Merge pull request #174 from Freymaurer/developer
     * [[#fc698ce](https://github.com/nfdi4plants/arcCommander/commit/fc698ce40f00468fc0fbd8c55c9f7ab73630e436)] Move GitHub workflows to meta folder
