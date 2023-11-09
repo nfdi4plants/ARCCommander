@@ -91,7 +91,7 @@ module ConfigurationAPI =
 
     /// Lists all current settings specified in the configuration.
     let list (arcConfiguration : ArcConfiguration) (configurationArgs : ArcParseResults<ConfigurationListArgs>) =
-
+        
         let log = Logging.createLogger "ConfigurationListLog"
 
         match configurationArgs.ContainsFlag ConfigurationListArgs.Global, configurationArgs.ContainsFlag ConfigurationListArgs.Local with
