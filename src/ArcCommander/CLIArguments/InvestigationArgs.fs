@@ -3,25 +3,27 @@
 open Argu 
 open ArcCommander.ArgumentProcessing
 
-///// CLI arguments for creating a new investigation file for the arc
-//// in the case of investigations 'empty' does not mean empty file but rather an 
-//// investigation without studies/assays. To reflect the need for metadata here,
-//// this command is called `create` instead of `init`
-//type InvestigationCreateArgs = 
-//    | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
-//    | [<Unique>] Title of title:string
-//    | [<Unique>] Description of description:string
-//    | [<Unique>] SubmissionDate of submission_date:string
-//    | [<Unique>] PublicReleaseDate of public_release_date:string
+/// CLI arguments for creating a new investigation file for the arc
+// in the case of investigations 'empty' does not mean empty file but rather an 
+// investigation without studies/assays. To reflect the need for metadata here,
+// this command is called `create` instead of `init`
+type InvestigationCreateArgs = 
+   | [<Mandatory>][<AltCommandLine("-i")>][<Unique>][<FileName>] Identifier of investigation_identifier:string
+   | [<Unique>] Title of title:string
+   | [<Unique>] Description of description:string
+   | [<Unique>] SubmissionDate of submission_date:string
+   | [<Unique>] PublicReleaseDate of public_release_date:string
 
-//    interface IArgParserTemplate with
-//        member this.Usage =
-//            match this with
-//            | Identifier        _-> "An identifier or an accession number provided by a repository. This SHOULD be locally unique. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
-//            | Title             _-> "A concise name given to the investigation"
-//            | Description       _-> "A textual description of the investigation"
-//            | SubmissionDate    _-> "The date on which the investigation was reported to the repository"
-//            | PublicReleaseDate _-> "The date on which the investigation was released publicly"
+   static member deprecationWarning = "DEPRECATED: isa.investigation.xlsx is now created during \"arc init\". To update isa.investigation top-level metadata, please use  \"arc i update\""
+
+   interface IArgParserTemplate with
+       member this.Usage =
+           match this with
+           | Identifier        _-> "An identifier or an accession number provided by a repository. This SHOULD be locally unique. Hint: If you're unsure about this, you can use the name of the ARC or any name that roughly hints to what your experiment is about."
+           | Title             _-> "A concise name given to the investigation"
+           | Description       _-> "A textual description of the investigation"
+           | SubmissionDate    _-> "The date on which the investigation was reported to the repository"
+           | PublicReleaseDate _-> "The date on which the investigation was released publicly"
 
 /// CLI arguments updating the arc's existing investigation file
 type InvestigationUpdateArgs = 

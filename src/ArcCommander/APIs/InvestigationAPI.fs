@@ -22,7 +22,7 @@ module InvestigationAPI =
             if other.SubmissionDate.IsSome || replaceWithEmptyValues then this.SubmissionDate <- other.SubmissionDate
             if other.PublicReleaseDate.IsSome || replaceWithEmptyValues then this.PublicReleaseDate <- other.PublicReleaseDate
 
-         
+    
          
 
     module InvestigationFile =
@@ -31,33 +31,12 @@ module InvestigationAPI =
             IsaModelConfiguration.getInvestigationFilePath arcConfiguration
             |> System.IO.File.Exists
 
-    ///// Creates an investigation file in the ARC from the given investigation metadata contained in cliArgs that contains no studies or assays.
-    //let create (arcConfiguration : ArcConfiguration) (investigationArgs : Map<string,Argument>) =
+    /// Creates an investigation file in the ARC from the given investigation metadata contained in cliArgs that contains no studies or assays.
+    let create (arcConfiguration : ArcConfiguration) (investigationArgs : ArcParseResults<InvestigationCreateArgs>) =
            
-    //    let log = Logging.createLogger "InvestigationCreateLog"
-        
-    //    log.Info("Start Investigation Create")
+        let log = Logging.createLogger "InvestigationCreateLog"
 
-    //    if InvestigationFile.exists arcConfiguration then
-    //        log.Error("Investigation file does already exist.")
-
-    //    else 
-    //        let investigation = 
-                
-    //            let info =
-    //                ArcInvestigation(getFieldValueByName "Identifier" investigationArgs)
-    //                Investigation.InvestigationInfo.create
-    //                    ()
-    //                    (getFieldValueByName "Title" investigationArgs)
-    //                    (getFieldValueByName "Description" investigationArgs)
-    //                    (getFieldValueByName "SubmissionDate" investigationArgs)
-    //                    (getFieldValueByName "PublicReleaseDate" investigationArgs)
-    //                    []
-    //            Investigation.fromParts info [] [] [] [] [] 
-
-    //        let investigationFilePath = IsaModelConfiguration.tryGetInvestigationFilePath arcConfiguration |> Option.get
-                          
-    //        Investigation.toFile investigationFilePath investigation
+        log.Error InvestigationCreateArgs.deprecationWarning
 
     /// Updates the existing investigation file in the ARC with the given investigation metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (investigationArgs : ArcParseResults<InvestigationUpdateArgs>) = 
