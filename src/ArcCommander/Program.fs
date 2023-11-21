@@ -150,7 +150,7 @@ let handleInvestigationPublicationsSubCommands arcConfiguration publicationVerb 
 
 let handleInvestigationSubCommands arcConfiguration investigationVerb =
     match investigationVerb with
-    //| InvestigationCommand.Create r                 -> processCommand arcConfiguration InvestigationAPI.create   r
+    | InvestigationCommand.Create r                 -> processCommand arcConfiguration InvestigationAPI.create   r
     | InvestigationCommand.Update r                 -> processCommand arcConfiguration InvestigationAPI.update   r
     | InvestigationCommand.Edit                     -> processCommandWithoutArgs arcConfiguration InvestigationAPI.edit
     //| InvestigationCommand.Delete r                 -> processCommand arcConfiguration InvestigationAPI.delete   r

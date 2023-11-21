@@ -8,7 +8,7 @@ open InvestigationPublications
 
 type InvestigationCommand = 
     
-    //| [<CliPrefix(CliPrefix.None)>]                     Create      of create_args          : ParseResults<InvestigationCreateArgs>
+    | [<CliPrefix(CliPrefix.None)>]                     Create      of create_args          : ParseResults<InvestigationCreateArgs>
     | [<CliPrefix(CliPrefix.None)>]                     Update      of update_args          : ParseResults<InvestigationUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>]    Edit 
     //| [<CliPrefix(CliPrefix.None)>]                     Delete      of delete_args          : ParseResults<InvestigationDeleteArgs>
@@ -19,7 +19,7 @@ type InvestigationCommand =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            //| Create        _ -> "Create a new investigation with the given Metadata"
+            | Create        _ -> InvestigationCreateArgs.deprecationWarning
             | Update        _ -> "Update the ARC's investigation with the given Metdadata"
             | Edit          _ -> "Open an editor window to directly edit the ARC's investigation file"
             //| Delete        _ -> "Delete the ARC's investigation file (DANGER ZONE!)"
