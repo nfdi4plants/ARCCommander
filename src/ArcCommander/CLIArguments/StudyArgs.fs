@@ -167,8 +167,8 @@ module StudyContacts =
                 | Affiliation               _ -> "The organization affiliation for a person associated with the study"
                 | ORCID                     _ -> "The ORCID ID of the person"
                 | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the study, which means that the roles reported here do not need to correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number and Term Source REF fields below are required."
-                | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term"
-                | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
+                | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term. If multiple role terms are defined, multiple accession numbers have to be defined accordingly, separated by a semicolon (“;”)."
+                | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section. If multiple role terms are defined, multiple source REFs have to be defined accordingly, separated by a semicolon (“;”)."
 
 
     /// CLI arguments for person removal.
