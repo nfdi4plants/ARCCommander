@@ -736,13 +736,13 @@ module StudyAPI =
                 |> List.toArray
 
             let existsByName name publications =               
-                OntologyAnnotation.existsByName (AnnotationValue.Text name) (publications |> Array.toList)
+                OntologyAnnotation.existsByName name (publications |> Array.toList)
 
             let tryGetByName name publications =
-                OntologyAnnotation.tryGetByName (AnnotationValue.Text name) (publications |> Array.toList)
+                OntologyAnnotation.tryGetByName name (publications |> Array.toList)
 
             let removeByName name publications =
-                OntologyAnnotation.removeByName (AnnotationValue.Text name) (publications |> Array.toList)
+                OntologyAnnotation.removeByName name (publications |> Array.toList)
                 |> List.toArray
 
         /// Updates an existing design in the ARC investigation study with the given design metadata contained in cliArgs.

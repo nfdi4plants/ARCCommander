@@ -256,11 +256,16 @@ let testStudyContacts =
     let investigationFilePath = System.IO.Path.Combine([|GeneralConfiguration.getWorkDirectory config;investigationFileName|])         
     let studyIdentifier = "BII-S-1"
 
+    let studyToCopy = System.IO.Path.Combine([|source;"TestFiles";"studies"|])
+    let studyFilePath = System.IO.Path.Combine([|GeneralConfiguration.getWorkDirectory config;"studies"|])      
     
 
     setupArc config
+
     //Copy testInvestigation
     System.IO.File.Copy(investigationToCopy,investigationFilePath,true)
+    //Copy testStudy
+    directoryCopy studyToCopy studyFilePath true
 
     let arc = ARC.load(config)
 
