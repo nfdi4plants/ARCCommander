@@ -118,14 +118,19 @@ let publishBinariesMacARMPrerelease = BuildTask.create "PublishBinariesMacARMPre
 
 let publishBinariesAllPrerelease = BuildTask.createEmpty "PublishBinariesAllPrerelease" [clean; build; setPrereleaseTag; publishBinariesWinPrerelease; publishBinariesLinuxPrerelease; publishBinariesMacPrerelease; publishBinariesMacARMPrerelease]
 
-let publishBinariesFatPrerelease = BuildTask.create "PublishBinariesFatPrerelease" [clean; build; setPrereleaseTag] {
+let publishBinariesFatPrerelease = BuildTask.create "PublishBinariesFatPrerelease" [clean; build; setPrereleaseTag; runTests] {
     publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Win
     publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Linux
     publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.Mac
     publishBinaryForFat stableVersionTag (Some prereleaseSuffix) RunTime.MacARM
 }
 
-
+let publishBinariesFat = BuildTask.create "PublishBinariesFat" [clean; build; runTests] {
+    publishBinaryForFat stableVersionTag None RunTime.Win
+    publishBinaryForFat stableVersionTag None RunTime.Linux
+    publishBinaryForFat stableVersionTag None RunTime.Mac
+    publishBinaryForFat stableVersionTag None RunTime.MacARM
+}
 
 // as of now (july 2022), it seems there is now possibility to run lipo on Windows
 //let packMacBinaries = BuildTask.create "PackMacBinaries" [publishBinariesMacBoth] {
