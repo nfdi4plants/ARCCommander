@@ -458,7 +458,7 @@ module ARCExtensions =
     type ARC with
 
         member this.Write(arcPath) = 
-            this.GetWriteContracts()
+            this.GetWriteContracts(false)
             |> Array.iter (myWrite arcPath)
 
         static member load(config : ArcConfiguration) = 

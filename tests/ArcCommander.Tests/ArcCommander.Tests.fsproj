@@ -23,8 +23,7 @@
     <PackageReference Include="Expecto" Version="10.1.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
-    <PackageReference Update="FSharp.Core" Version="7.0.401" />
-    <PackageReference Include="Argu" Version="6.1.1" />
+    <PackageReference Update="FSharp.Core" Version="8.0.101" />
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
   </ItemGroup>
   <ItemGroup>
