@@ -76,7 +76,8 @@ let publishBinaryForFat (version : string) (versionSuffix : string Option) (runt
             sprintf "%s/%s" outputFolder "arc"
     let newFileName = 
         if runtime = RunTime.Win then 
-            sprintf "%s/%s_%s.exe" outputFolder "arc" (runtime.GetRuntime())
+            //sprintf "%s/%s_%s.exe" outputFolder "arc" (runtime.GetRuntime())
+            sprintf "%s/%s.exe" outputFolder "arc"
         else
             sprintf "%s/%s_%s" outputFolder "arc" (runtime.GetRuntime())
     publishBinaryInPath outputFolder version versionSuffix runtime  
