@@ -1,4 +1,21 @@
-﻿### 1.0.0+e90e38b (Released 2023-11-9)
+﻿### 1.0.1+b545b82 (Released 2024-1-26)
+* Additions:
+    * [[#b44bb07](https://github.com/nfdi4plants/arcCommander/commit/b44bb07d44ca766db2a899fbd24836244970f764)] bump to 1.0.0-preview.2
+    * [[#5d2a908](https://github.com/nfdi4plants/arcCommander/commit/5d2a908863d0f0971d122bf09a186c4ef540c1e7)] Merge pull request #226 from nfdi4plants/packagingAndVersioning
+    * [[#23c0b88](https://github.com/nfdi4plants/arcCommander/commit/23c0b882b22383b1e121731863bc542b2555c004)] add "arc i create" deprecation warning
+    * [[#f303265](https://github.com/nfdi4plants/arcCommander/commit/f303265d21bc0dc6a7c0602dba20e776d71a5135)] Merge pull request #230 from nfdi4plants/i-create
+    * [[#a1484eb](https://github.com/nfdi4plants/arcCommander/commit/a1484ebfeb4c62b36004ef4948c52a20325501c8)] modified CLI arguments help in IArgParserTemplate
+    * [[#3662ce2](https://github.com/nfdi4plants/arcCommander/commit/3662ce212465f0edb3208acfa780707a922118dd)] modified CLI arguments help in StudyArgs and InvestigationArgs
+    * [[#8a4bf16](https://github.com/nfdi4plants/arcCommander/commit/8a4bf16c24f624a00da45d559f9c6eed8ddb3f0b)] Merge pull request #231 from cmohl2013/study_docstring
+    * [[#752fe15](https://github.com/nfdi4plants/arcCommander/commit/752fe150b1574d93b63803ab4e3c0d09ef3ba450)] update to arctrl.net 1.0.1
+    * [[#3897ff8](https://github.com/nfdi4plants/arcCommander/commit/3897ff83f52b824a5d75b72e5f16f864be612465)] update arctrl and fsspreadsheet references
+    * [[#f416507](https://github.com/nfdi4plants/arcCommander/commit/f416507c552972415ce0280d8d36eb51a416c23f)] Merge pull request #237 from nfdi4plants/update_arctrl
+    * [[#01783ac](https://github.com/nfdi4plants/arcCommander/commit/01783ac159ea88b4df59ff9b9747415630e7fdc2)] add publishbinariesfat target
+    * [[#b545b82](https://github.com/nfdi4plants/arcCommander/commit/b545b82318e0c620286551222728aca437b74e42)] update references
+* Deletions:
+    * [[#4756f9c](https://github.com/nfdi4plants/arcCommander/commit/4756f9c8710e0bfa161dbbd9848178f373630dbb)] windows executable in fat release is just arc.exe https://github.com/nfdi4plants/ARCCommander/issues/238
+
+### 1.0.0+e90e38b (Released 2023-11-9)
 * Additions:
     * [[#e90e38b](https://github.com/nfdi4plants/arcCommander/commit/e90e38beb53535c81cf5490c01a9ed0773f76b17)] add helper task for fat release
     * [[#c4366a4](https://github.com/nfdi4plants/arcCommander/commit/c4366a48df00730b45f3c57d4f4be72f3dd070ab)] update arctrl.net dependency
