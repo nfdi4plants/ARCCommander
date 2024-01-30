@@ -170,9 +170,8 @@ module ArcAPI =
         | Some p -> 
             let absolutePath = FileInfo(p).FullName
             File.WriteAllText(absolutePath, output)
-        | None -> ()
-
-        log.Debug(output)
+        | None -> 
+            log.Debug(output)
         
     /// Convert the complete ARC to a target format.
     let convert (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcConvertArgs>) =
