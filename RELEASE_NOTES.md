@@ -1,4 +1,12 @@
-﻿### 1.0.1+b545b82 (Released 2024-1-26)
+﻿### 1.0.2+4cc4fcb (Released 2024-1-30)
+* Additions:
+    * [[#1716bb9](https://github.com/nfdi4plants/arcCommander/commit/1716bb9a4c642f8f39060d12eeb7055ba06a36be)] update references
+    * [[#bfec1bb](https://github.com/nfdi4plants/arcCommander/commit/bfec1bb30f538f0bce4ea050d51500735aac65dd)] bump to 1.0.1
+* Bugfixes:
+    * [[#4cc4fcb](https://github.com/nfdi4plants/arcCommander/commit/4cc4fcb1e8803f52c8bb7d25d125c55453ecc3e7)] Merge pull request #239 from nfdi4plants/smallFixes
+    * [[#17c2d39](https://github.com/nfdi4plants/arcCommander/commit/17c2d39677726dbac9fff5824fcd42b4d7402014)] fix export always writing to log, regardless of output flag being set
+
+### 1.0.1+b545b82 (Released 2024-1-26)
 * Additions:
     * [[#b44bb07](https://github.com/nfdi4plants/arcCommander/commit/b44bb07d44ca766db2a899fbd24836244970f764)] bump to 1.0.0-preview.2
     * [[#5d2a908](https://github.com/nfdi4plants/arcCommander/commit/5d2a908863d0f0971d122bf09a186c4ef540c1e7)] Merge pull request #226 from nfdi4plants/packagingAndVersioning
