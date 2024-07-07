@@ -71,7 +71,7 @@ module AssayAPI =
             ArcAssay.create(assayIdentifier, ?measurementType = mt,?technologyType = tt, ?technologyPlatform = tp)
         
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         if isa.AssayIdentifiers |> Array.contains assayIdentifier then
             log.Error($"Assay with identifier {assayIdentifier} already exists.")
@@ -107,7 +107,7 @@ module AssayAPI =
                 [||]
    
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         let msg = $"Assay with the identifier {assayIdentifier} does not exist."
         try 
@@ -144,7 +144,7 @@ module AssayAPI =
                 oldAssay
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         try 
             let assay = isa.GetAssay assayIdentifier
@@ -168,7 +168,7 @@ module AssayAPI =
         let assayIdentifier = assayArgs.GetFieldValue AssayRegisterArgs.AssayIdentifier
                 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         let studyIdentifier = 
             match assayArgs.TryGetFieldValue AssayRegisterArgs.StudyIdentifier with
@@ -214,7 +214,7 @@ module AssayAPI =
             | Some s -> s
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
 
         if isa.StudyIdentifiers |> Seq.contains studyIdentifier then
@@ -282,7 +282,7 @@ module AssayAPI =
         let assayIdentifier = assayArgs.GetFieldValue AssayRemoveArgs.AssayIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         isa.RegisteredStudies
         |> Seq.iter (fun s -> s.DeregisterAssay assayIdentifier)
@@ -305,7 +305,7 @@ module AssayAPI =
         let targetStudyIdentifer = assayArgs.GetFieldValue AssayMoveArgs.TargetStudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         
         if isa.StudyIdentifiers |> Seq.contains studyIdentifier then
@@ -342,7 +342,7 @@ module AssayAPI =
         let assayIdentifier = assayArgs.GetFieldValue AssayShowArgs.AssayIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         try 
             isa.GetAssay assayIdentifier 
@@ -361,7 +361,7 @@ module AssayAPI =
         log.Info("Start Assay List")
         
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         let studies = 
             isa.RegisteredStudies
@@ -391,7 +391,7 @@ module AssayAPI =
         let assayIdentifier = assayArgs.GetFieldValue AssayExportArgs.AssayIdentifier
         
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         if isa.ContainsAssay assayIdentifier then
             
@@ -424,7 +424,7 @@ module AssayAPI =
         log.Info("Start exporting all assays")
         
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         if isa.AssayCount > 0 then
             
@@ -508,7 +508,7 @@ module AssayAPI =
             let assayIdentifier = personArgs.GetFieldValue PersonUpdateArgs.AssayIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             if isa.ContainsAssay assayIdentifier then
                 let a = isa.GetAssay assayIdentifier
@@ -549,7 +549,7 @@ module AssayAPI =
             let assayIdentifier = personArgs.GetFieldValue PersonEditArgs.AssayIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             if isa.ContainsAssay assayIdentifier then
                 let a = isa.GetAssay assayIdentifier
@@ -603,7 +603,7 @@ module AssayAPI =
                 |> fun c -> {c with ORCID = orcid}
                        
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             if isa.ContainsAssay assayIdentifier then
                 let a = isa.GetAssay assayIdentifier
@@ -633,7 +633,7 @@ module AssayAPI =
             let midInitials = personArgs.TryGetFieldValue PersonUnregisterArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             if isa.ContainsAssay assayIdentifier then
                 let a = isa.GetAssay assayIdentifier
@@ -663,7 +663,7 @@ module AssayAPI =
             let midInitials = personArgs.TryGetFieldValue PersonShowArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             if isa.ContainsAssay assayIdentifier then
                 let a = isa.GetAssay assayIdentifier
@@ -686,7 +686,7 @@ module AssayAPI =
             log.Info("Start Person List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             isa.Assays
             |> Seq.iter (fun a ->
