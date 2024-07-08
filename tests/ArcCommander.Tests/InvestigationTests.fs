@@ -3,7 +3,6 @@
 open Argu
 open Expecto
 open ARCtrl
-open ARCtrl.ISA
 open TestingUtils 
 open ARCtrl.NET
 open ArcCommander
@@ -102,14 +101,14 @@ let testInvestigationContacts =
                 InvestigationContacts.PersonRegisterArgs.LastName personLastName
                 InvestigationContacts.PersonRegisterArgs.ORCID personOrcid
             ]
-            let testPerson = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
+            let testPerson = Person.create(orcid = personOrcid, firstName = personFirstName, lastName = personLastName)
 
             processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
 
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
-            Expect.equal isa.Contacts.Length 1 "Person was not added to assay"
+            Expect.equal isa.Contacts.Count 1 "Person was not added to assay"
             Expect.equal isa.Contacts.[0] testPerson "Person was not correctly added to assay"
         )
 
@@ -137,7 +136,7 @@ let testInvestigationContacts =
                 InvestigationContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
             ]
 
-            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+            let testPerson = Person.create(orcid = secondPersonOrcid, firstName = secondPersonFirstName, lastName = secondPersonLastName)
 
             processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
             processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
@@ -145,7 +144,7 @@ let testInvestigationContacts =
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
-            Expect.equal isa.Contacts.Length 2 "Person was not added to assay"
+            Expect.equal isa.Contacts.Count 2 "Person was not added to assay"
             Expect.equal isa.Contacts.[1] testPerson "Person was not correctly added to assay"       
         
         )
@@ -173,7 +172,7 @@ let testInvestigationContacts =
                 InvestigationContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
             ]
 
-            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+            let testPerson = Person.create(orcid = secondPersonOrcid, firstName = secondPersonFirstName, lastName = secondPersonLastName)
 
             processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
             processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
@@ -183,7 +182,7 @@ let testInvestigationContacts =
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
-            Expect.equal isa.Contacts.Length 2 "Identical person was added to assay"
+            Expect.equal isa.Contacts.Count 2 "Identical person was added to assay"
             Expect.equal isa.Contacts.[1] testPerson "Person was modified"       
         
         )
@@ -221,8 +220,8 @@ let testInvestigationContacts =
                 InvestigationContacts.PersonUpdateArgs.Email secondPersonNewEmail
             ]
 
-            let testPerson1 = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
-            let testPerson2 = Person.create(ORCID = secondPersonNewOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName, Email = secondPersonNewEmail)
+            let testPerson1 = Person.create(orcid = personOrcid, firstName = personFirstName, lastName = personLastName)
+            let testPerson2 = Person.create(orcid = secondPersonNewOrcid, firstName = secondPersonFirstName, lastName = secondPersonLastName, email = secondPersonNewEmail)
 
             processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
             processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
@@ -232,7 +231,7 @@ let testInvestigationContacts =
             let arc = ARC.load(configuration)
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
-            Expect.equal isa.Contacts.Length 2 "Identical person was added to assay"
+            Expect.equal isa.Contacts.Count 2 "Identical person was added to assay"
             Expect.equal isa.Contacts.[0] testPerson1 "Person was modified"       
             Expect.equal isa.Contacts.[1] testPerson2 "Person was not correctly updated"   
         )

@@ -5,8 +5,7 @@ open Argu
 open Expecto
 open TestingUtils
 open ARCtrl
-open ARCtrl.ISA
-open ARCtrl.ISA.Spreadsheet
+open ARCtrl.Spreadsheet
 open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
@@ -25,9 +24,9 @@ let testAssayTestFunction =
     testList "AssayTestFunctionTests" [
         testCase "MatchesAssayValues" (fun () ->
             let assayIdentifier = "a_proteome"
-            let mt = OntologyAnnotation.fromString("protein expression profiling","OBI","http://purl.obolibrary.org/obo/OBI_0000615")
-            let tt = OntologyAnnotation.fromString("mass spectrometry","OBI")
-            let tp = OntologyAnnotation.fromString "iTRAQ"
+            let mt = OntologyAnnotation("protein expression profiling","OBI","http://purl.obolibrary.org/obo/OBI_0000615")
+            let tt = OntologyAnnotation("mass spectrometry","OBI")
+            let tp = OntologyAnnotation "iTRAQ"
 
             let testAssay = ArcAssay.create(assayIdentifier,mt,tt,tp)
 
@@ -83,7 +82,7 @@ let testAssayRegister =
                 AssayRegisterArgs.StudyIdentifier studyIdentifier
                 AssayRegisterArgs.AssayIdentifier assayIdentifier
             ]
-            let testAssay = ArcAssay.create (assayIdentifier,measurementType = OntologyAnnotation.fromString(measurementType))
+            let testAssay = ArcAssay.create (assayIdentifier,measurementType = OntologyAnnotation(measurementType))
             
             processCommand configuration StudyAPI.add studyArgs
             processCommand configuration AssayAPI.init     assayInitArgs
@@ -122,7 +121,7 @@ let testAssayRegister =
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 AssayAddArgs.MeasurementType "failedTestMeasurementType"
             ]
-            let testMT = OntologyAnnotation.fromString(measurementType)
+            let testMT = OntologyAnnotation(measurementType)
             let testAssay = ArcAssay.create (assayIdentifier,measurementType = testMT)
             
             processCommand configuration AssayAPI.add assay1Args
@@ -171,7 +170,7 @@ let testAssayRegister =
                     AssayRegisterArgs.AssayIdentifier newAssayIdentifier
                 ]
 
-            let testMT = OntologyAnnotation.fromString(newMeasurementType)
+            let testMT = OntologyAnnotation(newMeasurementType)
             let testAssay = ArcAssay.create (newAssayIdentifier,measurementType = testMT)
             
             
@@ -204,7 +203,7 @@ let testAssayRegister =
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 MeasurementType "MeasurementTypeOfStudyCreatedByAssayRegister"
             ]
-            let testMT = OntologyAnnotation.fromString(measurementType)
+            let testMT = OntologyAnnotation(measurementType)
             let testAssay = ArcAssay.create (assayIdentifier,measurementType = testMT)
             
             processCommand configuration AssayAPI.add assayArgs
@@ -230,7 +229,7 @@ let testAssayRegister =
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 TechnologyType technologyType
             ]
-            let tt = OntologyAnnotation.fromString(technologyType)
+            let tt = OntologyAnnotation(technologyType)
             let testAssay = ArcAssay(assayIdentifier,technologyType = tt)
             
             processCommand configuration AssayAPI.add assayArgs
@@ -386,8 +385,8 @@ let testAssayUpdate =
             processCommand configuration AssayAPI.add assay3Args
 
             let measurementType = "NewMeasurementType"
-            let mt = OntologyAnnotation.fromString(measurementType)
-            let tt = OntologyAnnotation.fromString("Assay2Tech")
+            let mt = OntologyAnnotation(measurementType)
+            let tt = OntologyAnnotation("Assay2Tech")
             let testAssay = ArcAssay.create(assayIdentifier,mt,tt)
 
             let assayUpdateArgs : AssayUpdateArgs list = [
@@ -446,7 +445,7 @@ let testAssayUpdate =
             processCommand configuration AssayAPI.add assay2AddArgs
 
             let newMeasurementType = "NewMeasurementType"
-            let mt = OntologyAnnotation.fromString(newMeasurementType)
+            let mt = OntologyAnnotation(newMeasurementType)
             let testAssay = ArcAssay.create(assayIdentifier2,mt)
 
             let assayUpdateArgs : AssayUpdateArgs list = [
@@ -742,7 +741,7 @@ let testAssayPerformers =
                 AssayContacts.PersonRegisterArgs.LastName personLastName
                 AssayContacts.PersonRegisterArgs.ORCID personOrcid
             ]
-            let testPerson = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
+            let testPerson = Person.create(orcid = personOrcid, firstName = personFirstName, lastName = personLastName)
 
             processCommand configuration AssayAPI.add     assayAddArgs
             processCommand configuration AssayAPI.Contacts.register personRegisterArgs
@@ -751,7 +750,7 @@ let testAssayPerformers =
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
-            Expect.equal assay.Performers.Length 1 "Person was not added to assay"
+            Expect.equal assay.Performers.Count 1 "Person was not added to assay"
             Expect.equal assay.Performers.[0] testPerson "Person was not correctly added to assay"
         )
 
@@ -787,7 +786,7 @@ let testAssayPerformers =
                 AssayContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
             ]
 
-            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+            let testPerson = Person.create(orcid = secondPersonOrcid, firstName = secondPersonFirstName, lastName = secondPersonLastName)
 
             processCommand configuration AssayAPI.add     assayAddArgs
             processCommand configuration AssayAPI.Contacts.register personRegisterArgs
@@ -797,7 +796,7 @@ let testAssayPerformers =
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
-            Expect.equal assay.Performers.Length 2 "Person was not added to assay"
+            Expect.equal assay.Performers.Count 2 "Person was not added to assay"
             Expect.equal assay.Performers.[1] testPerson "Person was not correctly added to assay"       
         
         )
@@ -833,7 +832,7 @@ let testAssayPerformers =
                 AssayContacts.PersonRegisterArgs.ORCID secondPersonOrcid                
             ]
 
-            let testPerson = Person.create(ORCID = secondPersonOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName)
+            let testPerson = Person.create(orcid = secondPersonOrcid, firstName = secondPersonFirstName, lastName = secondPersonLastName)
 
             processCommand configuration AssayAPI.add     assayAddArgs
             processCommand configuration AssayAPI.Contacts.register personRegisterArgs
@@ -845,7 +844,7 @@ let testAssayPerformers =
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
-            Expect.equal assay.Performers.Length 2 "Identical person was added to assay"
+            Expect.equal assay.Performers.Count 2 "Identical person was added to assay"
             Expect.equal assay.Performers.[1] testPerson "Person was modified"       
         
         )
@@ -892,8 +891,8 @@ let testAssayPerformers =
                 AssayContacts.PersonUpdateArgs.Email secondPersonNewEmail
             ]
 
-            let testPerson1 = Person.create(ORCID = personOrcid, FirstName = personFirstName, LastName = personLastName)
-            let testPerson2 = Person.create(ORCID = secondPersonNewOrcid, FirstName = secondPersonFirstName, LastName = secondPersonLastName, Email = secondPersonNewEmail)
+            let testPerson1 = Person.create(orcid = personOrcid, firstName = personFirstName, lastName = personLastName)
+            let testPerson2 = Person.create(orcid = secondPersonNewOrcid, firstName = secondPersonFirstName, lastName = secondPersonLastName, email = secondPersonNewEmail)
 
             processCommand configuration AssayAPI.add     assayAddArgs
             processCommand configuration AssayAPI.Contacts.register personRegisterArgs
@@ -905,7 +904,7 @@ let testAssayPerformers =
             let isa = Expect.wantSome arc.ISA "Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
-            Expect.equal assay.Performers.Length 2 "Identical person was added to assay"
+            Expect.equal assay.Performers.Count 2 "Identical person was added to assay"
             Expect.equal assay.Performers.[0] testPerson1 "Person was modified"       
             Expect.equal assay.Performers.[1] testPerson2 "Person was not correctly updated"   
         )

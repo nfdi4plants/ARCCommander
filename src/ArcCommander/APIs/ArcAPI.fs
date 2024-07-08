@@ -7,8 +7,8 @@ open ArcCommander
 open ArcCommander.CLIArguments
 
 open ARCtrl
+open ARCtrl.Json
 open ARCtrl.NET
-open ARCtrl.ISA
 
 [<AutoOpen>]
 module ARCExtensions = 
@@ -31,14 +31,23 @@ module API =
     
     module ARC = 
         
+        open ARCtrl.Process.Conversion
+
         let getProcesses (arc : ARC) =
-            arc.ISA.Value.ToInvestigation().Studies 
-            |> Option.defaultValue [] |> List.collect (fun s -> 
-                s.Assays
-                |> Option.defaultValue [] |> List.collect (fun a -> 
-                    a.ProcessSequence |> Option.defaultValue []
-                )
-            )
+            match arc.ISA with
+            | Some inv ->
+
+                let studyProcs = 
+                    inv.Studies
+                    |> Seq.collect (fun s -> s.GetProcesses())
+                let assayProcs =
+                    inv.Assays
+                    |> Seq.collect (fun a -> a.GetProcesses())
+                Seq.append studyProcs assayProcs
+                |> Seq.toList
+
+            | None -> []
+            
 
 
 /// ArcCommander API functions that get executed by top level subcommand verbs.
@@ -159,12 +168,11 @@ module ArcAPI =
         let arc = ARC.load workDir
 
         let output =
-            if arcArgs.ContainsFlag ProcessSequence then
+            if arcArgs.ContainsFlag ArcExportArgs.ProcessSequence then
                 API.ARC.getProcesses arc
-                |> ARCtrl.ISA.Json.ProcessSequence.toJsonString
+                |> ARCtrl.Json.ProcessSequence.toISAJsonString(2)
             else 
-                arc.ISA.Value
-                |> ARCtrl.ISA.Json.ArcInvestigation.toJsonString
+                arc.ISA.Value.ToISAJsonString(2)
 
         match arcArgs.TryGetFieldValue Output with
         | Some p -> 

@@ -4,8 +4,7 @@ open Expecto
 open System.IO
 
 open ARCtrl
-open ARCtrl.ISA
-open ARCtrl.ISA.Spreadsheet
+open ARCtrl.Spreadsheet
 open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
