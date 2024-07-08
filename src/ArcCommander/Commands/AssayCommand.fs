@@ -41,7 +41,7 @@ type AssayCommand =
             | Move              _ -> "Move an assay from one study to another"
 
             | Show              _ -> "Gets the values of an existing assay"
-            | List              _ -> "List all assays registered in the ARC"
+            | List                -> "List all assays registered in the ARC"
             | Export            _ -> "Export a specific assay to json"
 
             | Person            _ -> "Person functions"
@@ -63,4 +63,4 @@ and AssayPersonCommand =
             | Register          _ -> "Register a person in this assay study with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation study. The person is identified by the full name (first name, last name, mid initials)."
             | Show              _ -> "Get the metadata of a person registered in this assay"
-            | List              _ -> "List all persons registered in this assay"
+            | List                -> "List all persons registered in this assay"

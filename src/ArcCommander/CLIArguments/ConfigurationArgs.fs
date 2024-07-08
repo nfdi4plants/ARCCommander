@@ -9,8 +9,8 @@ type ConfigurationListArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Local   _ -> "Lists the local settings for this Arc"
-            | Global   _ -> "Lists the global settings of the ArcCommander"
+            | Local  -> "Lists the local settings for this Arc"
+            | Global -> "Lists the global settings of the ArcCommander"
 
 /// CLI arguments for configuration editing
 type ConfigurationEditArgs = 
@@ -20,8 +20,8 @@ type ConfigurationEditArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Local   _ -> "Edit the local settings for this ARC"
-            | Global   _ -> "Edit the global settings of the ArcCommander"
+            | Local  -> "Edit the local settings for this ARC"
+            | Global -> "Edit the global settings of the ArcCommander"
 
 /// CLI arguments for setting a configuration setting
 type ConfigurationSetArgs = 
@@ -33,8 +33,8 @@ type ConfigurationSetArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Local _   -> "Set the the value of the name locally for this ARC"
-            | Global _  -> "Set the the value of the name globally for the ArcCommander"
+            | Local     -> "Set the the value of the name locally for this ARC"
+            | Global    -> "Set the the value of the name globally for the ArcCommander"
             | Name _    -> "The name of the setting in 'Section.Key' format"
             | Value _   -> "The new value of the setting"
 
@@ -47,8 +47,8 @@ type ConfigurationUnsetArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Local _   -> "Unset the the value of the name locally for this ARC"
-            | Global _  -> "Unset the the value of the name globally for the ArcCommander"
+            | Local     -> "Unset the the value of the name locally for this ARC"
+            | Global    -> "Unset the the value of the name globally for the ArcCommander"
             | Name _    -> "The name of the setting in 'Section.Key' format"
 
 /// CLI arguments for transferring the git user metadata from the arc config to the git config
@@ -61,7 +61,7 @@ type ConfigurationSetGitUserArgs =
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Local  _ -> "Set the git user metadata locally for this arc repository"
-            | Global _ -> "Set the git user metadata globally for the git installation"
+            | Local    -> "Set the git user metadata locally for this arc repository"
+            | Global   -> "Set the git user metadata globally for the git installation"
             | Name   _ -> "The name of the user"
             | Email  _ -> "The e-mail of the user"

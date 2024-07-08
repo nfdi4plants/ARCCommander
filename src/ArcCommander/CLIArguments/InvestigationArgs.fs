@@ -42,7 +42,7 @@ type InvestigationUpdateArgs =
             | Description               _ -> "A textual description of the investigation"
             | SubmissionDate            _ -> "The date on which the investigation was reported to the repository"
             | PublicReleaseDate         _ -> "The date on which the investigation was released publicly"
-            | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the investigation. If this flag is not set, only these fields for which a value was given will be updated."
+            | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the investigation. If this flag is not set, only these fields for which a value was given will be updated."
 
 
 ///// CLI arguments for deleting the arc's investigation file (danger zone!)
@@ -90,8 +90,8 @@ module InvestigationContacts =
                 | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the investigation, which means that the roles reported here do not need to correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
                 | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term. If multiple role terms are defined, multiple accession numbers have to be defined accordingly, separated by a semicolon (“;”)."
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section. If multiple role terms are defined, multiple source REFs have to be defined accordingly, separated by a semicolon (“;”)."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the person. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the person. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing person metadata 
     type PersonEditArgs = 
@@ -171,8 +171,8 @@ module InvestigationPublications =
                 | Status                    _ -> "A term describing the status of that publication (i.e. submitted, in preparation, published)"
                 | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term"
                 | StatusTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one the Term Source Name declared in the in the Ontology Source Reference section."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the publication. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new publication will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the publication. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new publication will be registered with the given parameters, if it did not previously exist"
 
 
     /// CLI arguments for interactively editing existing publication metadata 

@@ -407,19 +407,19 @@ module ArgumentProcessing =
             |> ArcParseResults
 
         /// Serializes the output of a writer and converts it into a string.
-        let serializeXSLXWriterOutput (writeF : 'A -> seq<ARCtrl.ISA.Spreadsheet.SparseRow>) (inp : 'A) = 
+        let serializeXSLXWriterOutput (writeF : 'A -> seq<ARCtrl.Spreadsheet.SparseRow>) (inp : 'A) = 
             writeF inp
             |> Seq.map (fun r -> 
                 sprintf "%s:%s"
-                    (ARCtrl.ISA.Spreadsheet.SparseRow.tryGetValueAt 0 r |> Option.get |> fun s -> s.TrimStart())
-                    (ARCtrl.ISA.Spreadsheet.SparseRow.tryGetValueAt 1 r |> Option.get)
+                    (ARCtrl.Spreadsheet.SparseRow.tryGetValueAt 0 r |> Option.get |> fun s -> s.TrimStart())
+                    (ARCtrl.Spreadsheet.SparseRow.tryGetValueAt 1 r |> Option.get)
             )
             |> Seq.reduce (fun a b -> a + "\n" + b)
 
         /// Opens a textprompt containing the serialized input item. Returns item updated with the deserialized user input.
         let createIsaItemQuery editorPath
-            (writeF : 'A -> seq<ARCtrl.ISA.Spreadsheet.SparseRow>)
-            (readF : System.Collections.Generic.IEnumerator<ARCtrl.ISA.Spreadsheet.SparseRow> -> 'A)
+            (writeF : 'A -> seq<ARCtrl.Spreadsheet.SparseRow>)
+            (readF : System.Collections.Generic.IEnumerator<ARCtrl.Spreadsheet.SparseRow> -> 'A)
             (isaItem : 'A) = 
 
             let log = Logging.createLogger "ArgumentProcessingPromptCreateIsaItemQueryLog"
@@ -441,7 +441,7 @@ module ArgumentProcessing =
                             Some (
                                 match splitAtFirst ':' x with
                                 | k, Field v ->
-                                    ARCtrl.ISA.Spreadsheet.SparseRow.fromValues [k;v]
+                                    ARCtrl.Spreadsheet.SparseRow.fromValues [k;v]
                                 | _ -> log.Fatal("File was corrupted in Editor."); raise (Exception(""))
                             )
                 )

@@ -433,7 +433,7 @@ module ARCExtensions =
 
     open Contract
     open FsSpreadsheet
-    open FsSpreadsheet.ExcelIO
+    open FsSpreadsheet.Net
 
     let myWrite basePath (c : Contract) = 
         let log = Logging.createLogger("WriteContractHandler")
@@ -441,7 +441,7 @@ module ARCExtensions =
         | Some (DTO.Spreadsheet wb) ->
             let path = System.IO.Path.Combine(basePath, c.Path)
             Path.ensureDirectory path
-            FsWorkbook.toFile path (wb :?> FsWorkbook)
+            FsWorkbook.toXlsxFile path (wb :?> FsWorkbook)
         | Some (DTO.Text t) ->
             let path = System.IO.Path.Combine(basePath, c.Path)
             Path.ensureDirectory path
@@ -458,7 +458,7 @@ module ARCExtensions =
     type ARC with
 
         member this.Write(arcPath) = 
-            this.GetWriteContracts(false)
+            this.GetWriteContracts()
             |> Array.iter (myWrite arcPath)
 
         static member load(config : ArcConfiguration) = 
