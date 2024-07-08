@@ -7,13 +7,14 @@ open ArcCommander
 open ArcCommander.ArgumentProcessing
 
 open ARCtrl
+open ARCtrl.Helper
 open ARCtrl.NET
-open ARCtrl.ISA
-open ARCtrl.ISA.Spreadsheet
+open ARCtrl.Spreadsheet
 open ArcCommander.CLIArguments
+open ARCtrl.Json
+open ARCtrl.Process.Conversion
 
-
-open FsSpreadsheet.ExcelIO
+open FsSpreadsheet.Net
 
 
 
@@ -50,22 +51,22 @@ module AssayAPI =
         let assayFileName = Identifier.Assay.fileNameFromIdentifier assayIdentifier
 
         let mt = 
-            OntologyAnnotation.fromString(
-                ?termName = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementType),
+            OntologyAnnotation(
+                ?name = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementType),
                 ?tan = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementTypeTermAccessionNumber),
                 ?tsr = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementTypeTermSourceREF)
                     )
-            |> Aux.Option.fromValueWithDefault OntologyAnnotation.empty
+            |> Option.fromValueWithDefault (OntologyAnnotation())
         let tt = 
-            OntologyAnnotation.fromString(
-                ?termName = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyType),
+            OntologyAnnotation(
+                ?name = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyType),
                 ?tan = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyTypeTermAccessionNumber),
                 ?tsr = (assayArgs.TryGetFieldValue AssayInitArgs.TechnologyTypeTermSourceREF)
                     )
-            |> Aux.Option.fromValueWithDefault OntologyAnnotation.empty
+            |> Option.fromValueWithDefault (OntologyAnnotation())
         let tp = 
             assayArgs.TryGetFieldValue AssayInitArgs.TechnologyPlatform
-            |> Option.map ArcAssay.decomposeTechnologyPlatform
+            |> Option.map Process.Conversion.JsonTypes.decomposeTechnologyPlatform
             
         let assay = 
             ArcAssay.create(assayIdentifier, ?measurementType = mt,?technologyType = tt, ?technologyPlatform = tp)
@@ -104,7 +105,7 @@ module AssayAPI =
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyTypeTermSourceREF)
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyPlatform)
                 assayFileName
-                [||]
+                (ResizeArray())
    
         let arc = ARC.load(arcConfiguration)
         let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
@@ -399,13 +400,12 @@ module AssayAPI =
 
             let output = 
 
-                if assayArgs.ContainsFlag AssayExportArgs.ProcessSequence then               
-                    a.Tables |> Seq.collect (fun t -> t.GetProcesses())
-                    |> Seq.toList
-                    |> ARCtrl.ISA.Json.ProcessSequence.toJsonString
+                if assayArgs.ContainsFlag AssayExportArgs.ProcessSequence then       
+                    a.GetProcesses()
+                    |> ProcessSequence.toISAJsonString(2)                  
                 else 
-                    Study.create(Contacts = (a.Performers |> Array.toList),Assays = [a.ToAssay()])
-                    |> ARCtrl.ISA.Json.Study.toJsonString
+                    ArcStudy(identifier = "ExportedAssay", contacts = a.Performers, registeredAssayIdentifiers = ResizeArray[a.Identifier])
+                    |> ArcStudy.toISAJsonString([a],2) 
 
             match assayArgs.TryGetFieldValue AssayExportArgs.Output with
             | Some p -> System.IO.File.WriteAllText(p, output)
@@ -434,19 +434,13 @@ module AssayAPI =
 
                 if assayArgs.ContainsFlag AssayExportArgs.ProcessSequence then               
                     ass
-                    |> Seq.collect (fun a -> a.Tables |> Seq.collect (fun t -> t.GetProcesses()))
+                    |> Seq.collect (fun a -> a.GetProcesses())
                     |> Seq.toList
-                    |> ARCtrl.ISA.Json.ProcessSequence.toJsonString
+                    |> ProcessSequence.toISAJsonString(2)
                 else 
-                    ass
-                    |> Seq.map (fun a -> 
-                        Study.create(Contacts = (a.Performers |> Array.toList),Assays = [a.ToAssay()])
-                        |> ARCtrl.ISA.Json.Study.encoder (ARCtrl.ISA.Json.ConverterOptions())
-                        
-                    )
-                    |> Seq.toArray
-                    |> Thoth.Json.Net.Encode.array
-                    |> Thoth.Json.Net.Encode.toString 2
+                    let contacts = ass |> ResizeArray.collect (fun a -> a.Performers)                       
+                    ArcStudy(identifier="ExportedAssays",contacts = contacts)
+                    |> ArcStudy.toISAJsonString(ass |> Seq.toList,2) 
 
             match assayArgs.TryGetFieldValue AssayExportArgs.Output with
             | Some p -> System.IO.File.WriteAllText(p, output)
@@ -472,6 +466,8 @@ module AssayAPI =
     /// Functions for altering investigation contacts
     module Contacts =
 
+        open InvestigationAPI.Contacts
+
         open ArcCommander.CLIArguments.AssayContacts
 
         /// Updates an existing person in this assay with the given person metadata contained in cliArgs.
@@ -481,7 +477,7 @@ module AssayAPI =
 
             log.Info("Start Person Update")
 
-            let updateOption = if personArgs.ContainsFlag PersonUpdateArgs.ReplaceWithEmptyValues then Aux.Update.UpdateAll else Aux.Update.UpdateByExisting            
+            let onlyReplaceExisting = personArgs.ContainsFlag PersonUpdateArgs.ReplaceWithEmptyValues |> not        
 
             let lastName    = personArgs.GetFieldValue PersonUpdateArgs.LastName
             let firstName   = personArgs.GetFieldValue PersonUpdateArgs.FirstName
@@ -502,33 +498,32 @@ module AssayAPI =
                     (personArgs.TryGetFieldValue PersonUpdateArgs.Roles                    |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonUpdateArgs.RolesTermAccessionNumber |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonUpdateArgs.RolesTermSourceREF       |> Option.defaultValue "")
-                    [||]
-                |> fun c -> {c with ORCID = orcid}
+                    (ResizeArray())
+
+            person.ORCID <- orcid
 
             let assayIdentifier = personArgs.GetFieldValue PersonUpdateArgs.AssayIdentifier
 
             let arc = ARC.load(arcConfiguration)
             let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsAssay assayIdentifier then
-                let a = isa.GetAssay assayIdentifier
-                let newPersons = 
-                    if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Performers then
-                        Person.updateByFullName updateOption person a.Performers                   
-                    else
-                        let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}."
-                        if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
-                            log.Warn($"{msg}")
-                            log.Info("Registering person as AddIfMissing Flag was set.")
-                            Array.append a.Performers [|person|]
-                        else 
-                            log.Error(msg)
-                            a.Performers
-                a.Performers <- newPersons               
-            else 
+
+            match isa.TryGetAssay(assayIdentifier) with
+            | Some a ->
+                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq a.Performers) with
+                | Some p ->
+                    p.UpdateBy(person, onlyReplaceExisting = onlyReplaceExisting)
+                | None ->
+                let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}."
+                if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
+                    log.Warn($"{msg}")
+                    log.Info("Registering person as AddIfMissing Flag was set.")
+                    isa.Contacts.Add person
+                else 
+                    log.Error(msg)           
+            | None ->
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
 
@@ -551,24 +546,22 @@ module AssayAPI =
             let arc = ARC.load(arcConfiguration)
             let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsAssay assayIdentifier then
-                let a = isa.GetAssay assayIdentifier
+            match isa.TryGetAssay(assayIdentifier) with
+            | Some a ->
 
-                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Performers with
+                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq a.Performers) with
                 | Some person ->
                     ArgumentProcessing.Prompt.createIsaItemQuery editor
                         (List.singleton >> Contacts.toRows None) 
                         (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
                         person
                     |> fun p -> 
-                        let newPersons = Person.updateByFullName Aux.Update.UpdateAll p a.Performers
-                        a.Performers <- newPersons     
+                        person.UpdateBy(p)
                 | None ->
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
             
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Registers a person in this assay with the given person metadata contained in personArgs.
@@ -599,23 +592,23 @@ module AssayAPI =
                     (personArgs.TryGetFieldValue PersonRegisterArgs.Roles                    |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonRegisterArgs.RolesTermAccessionNumber |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonRegisterArgs.RolesTermSourceREF       |> Option.defaultValue "")
-                    [||]
-                |> fun c -> {c with ORCID = orcid}
+                    (ResizeArray())
+
+            person.ORCID <- orcid
                        
             let arc = ARC.load(arcConfiguration)
             let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsAssay assayIdentifier then
-                let a = isa.GetAssay assayIdentifier
-                if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Performers then
+            match isa.TryGetAssay(assayIdentifier) with
+            | Some a ->
+                if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName (Seq.toArray
+                 a.Performers) then
                     log.Error $"Person with the name {firstName} {midInitials} {lastName} does already exist in the assay with the identifier {assayIdentifier}."
                 else
-                    let newPersons = Array.append a.Performers [|person|]
-                    a.Performers <- newPersons               
-            else 
+                    a.Performers.Add person
+            | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
 
@@ -635,18 +628,24 @@ module AssayAPI =
             let arc = ARC.load(arcConfiguration)
             let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsAssay assayIdentifier then
-                let a = isa.GetAssay assayIdentifier
-                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Performers with
-                | Some person ->               
-                    let newPersons = Person.removeByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Performers
-                    a.Performers <- newPersons     
-                | None ->
+            let tryGetIndex (persons : Person seq) =
+                persons
+                |> Seq.tryFindIndex (fun p -> 
+                    p.FirstName = Some firstName 
+                    && p.MidInitials = midInitials 
+                    && p.LastName = Some lastName
+                )
+
+            match isa.TryGetAssay(assayIdentifier) with
+            | Some a ->
+                match tryGetIndex a.Performers with
+                | Some index ->
+                    a.Performers.RemoveAt index
+                | None -> 
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
@@ -665,16 +664,16 @@ module AssayAPI =
             let arc = ARC.load(arcConfiguration)
             let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsAssay assayIdentifier then
-                let a = isa.GetAssay assayIdentifier
-                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Performers with
+            match isa.TryGetAssay(assayIdentifier) with
+            | Some a ->
+                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq a.Performers) with
                 | Some person ->
                     [person]
                     |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                     |> log.Debug
                 | None ->
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the assay with the identifier {assayIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
 
