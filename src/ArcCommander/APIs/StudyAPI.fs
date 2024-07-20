@@ -322,13 +322,13 @@ module StudyAPI =
                 | Some p ->
                     p.UpdateBy(person, onlyReplaceExisting = onlyReplaceExisting)
                 | None ->
-                let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
-                if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
-                    log.Warn($"{msg}")
-                    log.Info("Registering person as AddIfMissing Flag was set.")
-                    isa.Contacts.Add person
-                else 
-                    log.Error(msg)           
+                    let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
+                    if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
+                        log.Warn($"{msg}")
+                        log.Info("Registering person as AddIfMissing Flag was set.")
+                        isa.Contacts.Add person
+                    else 
+                        log.Error(msg)          
                 arc.Write(arcConfiguration)
             | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
