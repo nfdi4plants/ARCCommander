@@ -5,11 +5,11 @@ open ArcCommander.ArgumentProcessing
 
 open System
 open System.IO
-open ARCtrl.ISA
 open ARCtrl.NET
 open ArcCommander.CLIArguments
 open ARCtrl
-open ARCtrl.ISA.Spreadsheet
+open ARCtrl.Spreadsheet
+open ARCtrl.Helper
 
 /// ArcCommander Study API functions that get executed by the study focused subcommand verbs.
 module StudyAPI =    
@@ -54,7 +54,7 @@ module StudyAPI =
                 )
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         if isa.StudyIdentifiers |> Seq.contains identifier then
             log.Error($"Study with identifier {identifier} already exists.")
@@ -85,7 +85,7 @@ module StudyAPI =
                 )
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         let msg = $"Study with the identifier {identifier} does not exist."
         match isa.TryGetStudy identifier with
@@ -118,12 +118,12 @@ module StudyAPI =
         let getNewStudy oldStudy =
             ArgumentProcessing.Prompt.createIsaItemQuery 
                 editor 
-                (ISA.Spreadsheet.Studies.StudyInfo.toRows) 
-                (ISA.Spreadsheet.Studies.fromRows 1 >> fun (_,_,_,items) -> items.Value |> fst) 
+                (Studies.StudyInfo.toRows) 
+                (Studies.fromRows 1 >> fun (_,_,_,items) -> items.Value |> fst) 
                 oldStudy
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         match isa.TryGetStudy studyIdentifier with 
         | Some study ->
@@ -145,7 +145,7 @@ module StudyAPI =
         let identifier = studyArgs.GetFieldValue StudyRegisterArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
             log.Error($"Study with identifier {identifier} is already registered.")
@@ -215,7 +215,7 @@ module StudyAPI =
         let identifier = studyArgs.GetFieldValue StudyUnregisterArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
             isa.DeregisterStudy(identifier) |> ignore
@@ -240,12 +240,12 @@ module StudyAPI =
         let identifier = studyArgs.GetFieldValue StudyShowArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         match isa.TryGetStudy identifier with
         | Some study -> 
             study
-            |> Prompt.serializeXSLXWriterOutput ISA.Spreadsheet.Studies.StudyInfo.toRows
+            |> Prompt.serializeXSLXWriterOutput Spreadsheet.Studies.StudyInfo.toRows
             |> log.Debug       
         | None -> 
             log.Error($"Study with identifier {identifier} does not exist.")
@@ -256,7 +256,7 @@ module StudyAPI =
         let log = Logging.createLogger "StudyListLog"
         
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         let registered = 
             isa.RegisteredStudyIdentifiers
@@ -276,6 +276,7 @@ module StudyAPI =
     /// Functions for altering investigation contacts
     module Contacts =
 
+        open InvestigationAPI.Contacts
         open ArcCommander.CLIArguments.StudyContacts
 
         /// Updates an existing person in this study with the given person metadata contained in cliArgs.
@@ -285,7 +286,7 @@ module StudyAPI =
 
             log.Info("Start Person Update")
 
-            let updateOption = if personArgs.ContainsFlag PersonUpdateArgs.ReplaceWithEmptyValues then Aux.Update.UpdateAll else Aux.Update.UpdateByExisting            
+            let onlyReplaceExisting = personArgs.ContainsFlag PersonUpdateArgs.ReplaceWithEmptyValues |> not             
 
             let lastName    = personArgs.GetFieldValue PersonUpdateArgs.LastName
             let firstName   = personArgs.GetFieldValue PersonUpdateArgs.FirstName
@@ -306,34 +307,32 @@ module StudyAPI =
                     (personArgs.TryGetFieldValue PersonUpdateArgs.Roles                    |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonUpdateArgs.RolesTermAccessionNumber |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonUpdateArgs.RolesTermSourceREF       |> Option.defaultValue "")
-                    [||]
-                |> fun c -> {c with ORCID = orcid}
+                    (ResizeArray())
+
+            person.ORCID <- orcid
 
             let studyIdentifier = personArgs.GetFieldValue PersonUpdateArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let a = isa.GetStudy studyIdentifier
-                let newPersons = 
-                    if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Contacts then
-                        Person.updateByFullName updateOption person a.Contacts                   
-                    else
-                        let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
-                        if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
-                            log.Warn($"{msg}")
-                            log.Info("Registering person as AddIfMissing Flag was set.")
-                            Array.append a.Contacts [|person|]
-                        else 
-                            log.Error(msg)
-                            a.Contacts
-                a.Contacts <- newPersons               
-            else 
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
+                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq s.Contacts) with
+                | Some p ->
+                    p.UpdateBy(person, onlyReplaceExisting = onlyReplaceExisting)
+                | None ->
+                    let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}."
+                    if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
+                        log.Warn($"{msg}")
+                        log.Info("Registering person as AddIfMissing Flag was set.")
+                        isa.Contacts.Add person
+                    else 
+                        log.Error(msg)          
+                arc.Write(arcConfiguration)
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
 
 
         /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the study investigation sheet with the text editor set in globalArgs.
@@ -353,27 +352,25 @@ module StudyAPI =
             let studyIdentifier = personArgs.GetFieldValue PersonEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let a = isa.GetStudy studyIdentifier
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
 
-                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Contacts with
+                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq s.Contacts) with
                 | Some person ->
                     ArgumentProcessing.Prompt.createIsaItemQuery editor
                         (List.singleton >> Contacts.toRows None) 
                         (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
                         person
                     |> fun p -> 
-                        let newPersons = Person.updateByFullName Aux.Update.UpdateAll p a.Contacts
-                        a.Contacts <- newPersons     
+                        person.UpdateBy(p)  
+                    arc.Write(arcConfiguration)
                 | None ->
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
             
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
 
         /// Registers a person in this study with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonRegisterArgs>) =
@@ -403,24 +400,24 @@ module StudyAPI =
                     (personArgs.TryGetFieldValue PersonRegisterArgs.Roles                    |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonRegisterArgs.RolesTermAccessionNumber |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonRegisterArgs.RolesTermSourceREF       |> Option.defaultValue "")
-                    [||]
-                |> fun c -> {c with ORCID = orcid}
+                    (ResizeArray())
+
+            person.ORCID <- orcid
                        
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let a = isa.GetStudy studyIdentifier
-                if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Contacts then
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
+                if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName (Seq.toArray
+                 s.Contacts) then
                     log.Error $"Person with the name {firstName} {midInitials} {lastName} does already exist in the study with the identifier {studyIdentifier}."
                 else
-                    let newPersons = Array.append a.Contacts [|person|]
-                    a.Contacts <- newPersons               
-            else 
+                    s.Contacts.Add person
+                    arc.Write(arcConfiguration)
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
 
 
         /// Removes an existing person by fullname (lastName, firstName, MidInitials) from this study with the text editor set in globalArgs.
@@ -437,21 +434,27 @@ module StudyAPI =
             let midInitials = personArgs.TryGetFieldValue PersonUnregisterArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let a = isa.GetStudy studyIdentifier
-                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Contacts with
-                | Some person ->               
-                    let newPersons = Person.removeByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Contacts
-                    a.Contacts <- newPersons     
-                | None ->
+            let tryGetIndex (persons : Person seq) =
+                persons
+                |> Seq.tryFindIndex (fun p -> 
+                    p.FirstName = Some firstName 
+                    && p.MidInitials = midInitials 
+                    && p.LastName = Some lastName
+                )
+
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
+                match tryGetIndex s.Contacts with
+                | Some index ->
+                    s.Contacts.RemoveAt index
+                    arc.Write(arcConfiguration)
+                | None -> 
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
         let show (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonShowArgs>) =
@@ -467,18 +470,18 @@ module StudyAPI =
             let midInitials = personArgs.TryGetFieldValue PersonShowArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let a = isa.GetStudy studyIdentifier
-                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName a.Contacts with
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
+                match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq s.Contacts) with
                 | Some person ->
                     [person]
                     |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
                     |> log.Debug
                 | None ->
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
 
@@ -490,7 +493,7 @@ module StudyAPI =
             log.Info("Start Person List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             isa.Studies
             |> Seq.iter (fun a ->
@@ -512,20 +515,7 @@ module StudyAPI =
 
         open ArcCommander.CLIArguments.StudyPublications
 
-        module Publication =
-            let updateByDOI updateOption publication publications =
-                Publication.updateByDOI updateOption publication (publications |> Array.toList)
-                |> List.toArray
-
-            let existsByDOI doi publications =               
-                Publication.existsByDoi doi (publications |> Array.toList)
-
-            let tryGetByDOI doi publications =
-                Publication.tryGetByDoi doi (publications |> Array.toList)
-
-            let removeByDOI doi publications =
-                Publication.removeByDoi doi (publications |> Array.toList)
-                |> List.toArray
+        open InvestigationAPI.Publications
 
         /// Updates an existing publication in the ARC investigation study with the given publication metadata contained in cliArgs.
         let update (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationUpdateArgs>) =
@@ -534,7 +524,7 @@ module StudyAPI =
             
             log.Info("Start Publication update")
 
-            let updateOption = if publicationArgs.ContainsFlag PublicationUpdateArgs.ReplaceWithEmptyValues then Aux.Update.UpdateAll else Aux.Update.UpdateByExisting
+            let onlyReplaceExisting = publicationArgs.ContainsFlag PublicationUpdateArgs.ReplaceWithEmptyValues |> not
 
             let doi = publicationArgs.GetFieldValue PublicationUpdateArgs.DOI
 
@@ -547,33 +537,32 @@ module StudyAPI =
                      (publicationArgs.TryGetFieldValue PublicationUpdateArgs.Status)
                      (publicationArgs.TryGetFieldValue PublicationUpdateArgs.StatusTermSourceREF)
                      (publicationArgs.TryGetFieldValue PublicationUpdateArgs.StatusTermAccessionNumber)
-                     [||]
+                     (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = publicationArgs.GetFieldValue PublicationUpdateArgs.StudyIdentifier
 
-            if isa.ContainsStudy studyIdentifier then
-                let a = isa.GetStudy studyIdentifier
-                let newPublications = 
-                    if Publication.existsByDOI doi a.Publications then
-                        Publication.updateByDOI updateOption publication a.Publications           
-                    else
-                        let msg = $"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}."
-                        if publicationArgs.ContainsFlag PublicationUpdateArgs.AddIfMissing then
-                            log.Warn($"{msg}")
-                            log.Info("Registering publciation as AddIfMissing Flag was set.")
-                            Array.append a.Publications [|publication|]
-                        else 
-                            log.Error(msg)
-                            a.Publications
-                a.Publications <- newPublications               
-            else 
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
+                
+                match Publication.tryGetByDOI doi s.Publications with
+                | Some p ->
+                    p.UpdateBy(publication, onlyReplaceExisting = onlyReplaceExisting)
+                | None ->
+                    let msg = $"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}."
+                    if publicationArgs.ContainsFlag PublicationUpdateArgs.AddIfMissing then
+                        log.Warn($"{msg}")
+                        log.Info("Registering publciation as AddIfMissing Flag was set.")
+                        s.Publications.Add publication
+                    else 
+                        log.Error(msg) 
+                
+                arc.Write(arcConfiguration)
+            | None ->
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
         
         /// Opens an existing publication by DOI in the ARC investigation study with the text editor set in globalArgs.
         let edit (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationEditArgs>) =
@@ -589,10 +578,10 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
 
                 match Publication.tryGetByDOI doi s.Publications with
                 | Some publication ->
@@ -601,16 +590,14 @@ module StudyAPI =
                         (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
                         publication
                     |> fun p -> 
-                        let newPublications = Publication.updateByDOI Aux.Update.UpdateAll p s.Publications
-                        s.Publications <- newPublications 
+                        publication.UpdateBy(p)
+                    arc.Write(arcConfiguration)
                 | None ->
                     log.Error($"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
             
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
-
+            
         /// Registers a publication in the ARC investigation study with the given publication metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationRegisterArgs>) =
 
@@ -620,37 +607,33 @@ module StudyAPI =
 
             let doi = publicationArgs.GetFieldValue PublicationRegisterArgs.DOI
 
-            let publication =
-                 Publications.fromString
-                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.PubMedID)
-                     (Some doi)
-                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.AuthorList)
-                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.Title)
-                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.Status)
-                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.StatusTermSourceREF)
-                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.StatusTermAccessionNumber)
-                     [||]
+            let publication = 
+                Publications.fromString
+                    (publicationArgs.TryGetFieldValue PublicationRegisterArgs.PubMedID)
+                    (Some doi)
+                    (publicationArgs.TryGetFieldValue PublicationRegisterArgs.AuthorList)
+                    (publicationArgs.TryGetFieldValue PublicationRegisterArgs.Title)
+                    (publicationArgs.TryGetFieldValue PublicationRegisterArgs.Status)
+                    (publicationArgs.TryGetFieldValue PublicationRegisterArgs.StatusTermSourceREF)
+                    (publicationArgs.TryGetFieldValue PublicationRegisterArgs.StatusTermAccessionNumber)
+                    (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = publicationArgs.GetFieldValue PublicationRegisterArgs.StudyIdentifier
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
-                let newPublications = 
-                    if Publication.existsByDOI doi s.Publications then
-                        let msg = $"Publication with the doi {doi} already exists in the study with the identifier {studyIdentifier}."                       
-                        log.Error(msg)
-                        s.Publications
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->             
+                if Publication.existsByDOI doi s.Publications then
+                    let msg = $"Publication with the doi {doi} already exists in the study with the identifier {studyIdentifier}."                       
+                    log.Error(msg)
                     else
-                        Array.append s.Publications [|publication|]
-                s.Publications <- newPublications               
-            else 
+                        s.Publications.Add publication    
+                        arc.Write(arcConfiguration)
+            | None ->
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
-            arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
 
         /// Opens an existing publication by DOI in the ARC investigation study with the text editor set in globalArgs.
         let unregister (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationUnregisterArgs>) =
@@ -664,18 +647,20 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationUnregisterArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
-                if Publication.existsByDOI doi s.Publications then
-                    let newPublications = Publication.removeByDOI doi s.Publications
-                    s.Publications <- newPublications 
-                else
-                    log.Error($"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}.")      
-            else 
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
+                match Publication.tryFindIndexByDOI doi s.Publications with
+                | Some index ->
+                    s.Publications.RemoveAt index
+                    arc.Write(arcConfiguration)
+                | None ->   
+                    log.Error($"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}.")             
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
+            
 
         /// Gets an existing publication by DOI from the ARC investigation study and prints its metadata.
         let show (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationShowArgs>) =
@@ -689,10 +674,10 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationShowArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
+            match isa.TryGetStudy(studyIdentifier) with
+            | Some s ->
                 match Publication.tryGetByDOI doi s.Publications with
                 | Some publication ->
                     [publication]
@@ -700,7 +685,7 @@ module StudyAPI =
                     |> log.Debug
                 | None ->
                     log.Error($"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}.")      
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
         /// Lists the DOIs of all publications included in the investigation study.
@@ -711,12 +696,12 @@ module StudyAPI =
             log.Info("Start Publication List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             isa.Studies
             |> Seq.iter (fun study ->
                 match study.Publications with
-                | [||] -> 
+                | publications when Seq.isEmpty publications -> 
                     ()
                 | publications -> 
                     log.Debug(sprintf "Study: %s" study.Identifier)
@@ -729,21 +714,33 @@ module StudyAPI =
 
         open CLIArguments.StudyDesignDescriptors
 
-        module OntologyAnnotation = 
+        type OntologyAnnotation with 
+            
+            member this.UpdateBy(oa : OntologyAnnotation, ?onlyReplaceExisting : bool,?appendSequences : bool) =
+                let onlyReplaceExisting = defaultArg onlyReplaceExisting false
+                let appendSequences = defaultArg appendSequences false
+                let updateAlways = onlyReplaceExisting |> not
+                if oa.Name.IsSome || updateAlways then
+                    this.Name <- oa.Name
+                if oa.TermAccessionNumber.IsSome || updateAlways then
+                    this.TermAccessionNumber <- oa.TermAccessionNumber
+                if oa.TermSourceREF.IsSome || updateAlways then
+                    this.TermSourceREF <- oa.TermSourceREF
+                if oa.Comments.Count <> 0 || updateAlways then
+                    let s = ArcTypesAux.updateAppendResizeArray appendSequences this.Comments oa.Comments
+                    this.Comments <- s
 
-            let updateByName updateOption publication publications =
-                OntologyAnnotation.updateByName updateOption publication (publications |> Array.toList)
-                |> List.toArray
+            static member existsByName name (oas : OntologyAnnotation seq) =  
+                oas
+                |> Seq.exists (fun p -> p.Name = Some name)
 
-            let existsByName name publications =               
-                OntologyAnnotation.existsByName name (publications |> Array.toList)
+            static member tryGetByName name (oas : OntologyAnnotation seq) =
+                oas
+                |> Seq.tryFind (fun p -> p.Name = Some name)
 
-            let tryGetByName name publications =
-                OntologyAnnotation.tryGetByName name (publications |> Array.toList)
-
-            let removeByName name publications =
-                OntologyAnnotation.removeByName name (publications |> Array.toList)
-                |> List.toArray
+            static member tryFindIndexByName name (oas : OntologyAnnotation seq) =
+                oas
+                |> Seq.tryFindIndex (fun p -> p.Name = Some name)
 
         /// Updates an existing design in the ARC investigation study with the given design metadata contained in cliArgs.
         let update (arcConfiguration : ArcConfiguration) (designArgs : ArcParseResults<DesignUpdateArgs>) =
@@ -752,40 +749,39 @@ module StudyAPI =
             
             log.Info("Start Design Update")
 
-            let updateOption = if designArgs.ContainsFlag DesignUpdateArgs.ReplaceWithEmptyValues then Aux.Update.UpdateAll else Aux.Update.UpdateByExisting
+            let onlyReplaceExisting = designArgs.ContainsFlag DesignUpdateArgs.ReplaceWithEmptyValues |> not
 
             let name = designArgs.GetFieldValue DesignUpdateArgs.DesignType
 
             let design = 
-                 OntologyAnnotation.fromString(
+                 OntologyAnnotation(
                      name,
                      ?tan = (designArgs.TryGetFieldValue DesignUpdateArgs.TypeTermAccessionNumber),
                      ?tsr = (designArgs.TryGetFieldValue DesignUpdateArgs.TypeTermSourceREF)
                     )
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = designArgs.GetFieldValue DesignUpdateArgs.StudyIdentifier
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
-                let newDesigns = 
-                    if OntologyAnnotation.existsByName name s.StudyDesignDescriptors then
-                        OntologyAnnotation.updateByName updateOption design s.StudyDesignDescriptors
-                    else
-                        let msg = $"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}."
-                        if designArgs.ContainsFlag DesignUpdateArgs.AddIfMissing then
-                            log.Warn($"{msg}")
-                            log.Info("Registering design as AddIfMissing Flag was set.")
-                            Array.append s.StudyDesignDescriptors [|design|]
-                        else 
-                            log.Error($"{msg}")
-                            s.StudyDesignDescriptors
-                s.StudyDesignDescriptors <- newDesigns
-                arc.ISA <- Some isa
+            match isa.TryGetStudy studyIdentifier with
+            | Some s ->
+
+                match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
+                | Some design ->
+                    design.UpdateBy(design, onlyReplaceExisting = onlyReplaceExisting)
+                | None ->
+                    let msg = $"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}."
+                    if designArgs.ContainsFlag DesignUpdateArgs.AddIfMissing then
+                        log.Warn($"{msg}")
+                        log.Info("Registering design as AddIfMissing Flag was set.")
+                        s.StudyDesignDescriptors.Add design
+                    else 
+                        log.Error(msg)
                 arc.Write(arcConfiguration)
-            else 
+
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
         
         /// Opens an existing design by design type in the ARC investigation study with the text editor set in globalArgs.
@@ -802,23 +798,22 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
+            
+            match isa.TryGetStudy studyIdentifier with
+            | Some s ->
                 match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
                 | Some design ->
                     ArgumentProcessing.Prompt.createIsaItemQuery editor
                         (List.singleton >> DesignDescriptors.toRows None) 
                         (DesignDescriptors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         design
-                    |> fun d -> OntologyAnnotation.updateByName (Aux.Update.UpdateAll) d s.StudyDesignDescriptors
-                    |> fun newDesigns -> s.StudyDesignDescriptors <- newDesigns
-                    arc.ISA <- Some isa
+                    |> fun d -> design.UpdateBy(d)
                     arc.Write(arcConfiguration)
                 | None ->
                     log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
         /// Registers a design in the ARC investigation study with the given publication metadata contained in personArgs.
@@ -833,28 +828,23 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignRegisterArgs.StudyIdentifier
 
             let design = 
-                 OntologyAnnotation.fromString(
+                 OntologyAnnotation(
                      name,
                      ?tan = (designArgs.TryGetFieldValue DesignRegisterArgs.TypeTermAccessionNumber),
                      ?tsr = (designArgs.TryGetFieldValue DesignRegisterArgs.TypeTermSourceREF)
                     )
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
-                let newDesigns = 
-                    if OntologyAnnotation.existsByName name s.StudyDesignDescriptors then
-                        let msg = $"Design with the name {name} already exists in the study with the identifier {studyIdentifier}."                        
-                        log.Error($"{msg}")
-                        s.StudyDesignDescriptors
-                    else
-                        Array.append s.StudyDesignDescriptors [|design|]
-                s.StudyDesignDescriptors <- newDesigns
-                arc.ISA <- Some isa
-                arc.Write(arcConfiguration)
-            else 
+            match isa.TryGetStudy studyIdentifier with
+            | Some s ->
+                if OntologyAnnotation.existsByName name s.StudyDesignDescriptors then
+                    log.Error($"Design with the name {name} already exists in the study with the identifier {studyIdentifier}.")
+                else
+                    s.StudyDesignDescriptors.Add design                  
+                    arc.Write(arcConfiguration)
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
         /// Opens an existing design by design type in the ARC investigation study with the text editor set in globalArgs.
@@ -869,19 +859,17 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignUnregisterArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
-                match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
-                | Some design ->
-                    let newDesigns = OntologyAnnotation.removeByName name s.StudyDesignDescriptors
-                    s.StudyDesignDescriptors <- newDesigns
-                    arc.ISA <- Some isa
+            match isa.TryGetStudy studyIdentifier with
+            | Some s ->
+                match OntologyAnnotation.tryFindIndexByName name s.StudyDesignDescriptors with
+                | Some index ->
+                    s.StudyDesignDescriptors.RemoveAt index
                     arc.Write(arcConfiguration)
                 | None ->
                     log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
         /// Gets an existing design by design type from the ARC investigation study and prints its metadata.
@@ -892,9 +880,10 @@ module StudyAPI =
             let name = designArgs.GetFieldValue DesignShowArgs.DesignType
             let studyIdentifier = designArgs.GetFieldValue DesignShowArgs.StudyIdentifier
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
-            if isa.ContainsStudy studyIdentifier then
-                let s = isa.GetStudy studyIdentifier
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+
+            match isa.TryGetStudy studyIdentifier with
+            | Some s ->
                 match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
                 | Some design ->
                     [design]
@@ -902,7 +891,7 @@ module StudyAPI =
                     |> log.Debug
                 | None ->
                     log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
-            else 
+            | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
         
         
@@ -913,12 +902,12 @@ module StudyAPI =
             
             log.Info("Start Design List")
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             isa.Studies
             |> Seq.iter (fun study ->
                 match study.StudyDesignDescriptors with
-                | [||] -> 
+                | designs when Seq.isEmpty designs -> 
                     ()
                 | designs -> 
                     log.Debug(sprintf "Study: %s" study.Identifier)

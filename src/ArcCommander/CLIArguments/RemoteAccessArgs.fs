@@ -15,8 +15,8 @@ module AccessToken =
             member this.Usage =
                 match this with
                 | Server    _ -> "URL of the service for which you want to receive an access token. If no url is given, \"git.nfdi4plants.org\" is used as default."
-                | OAuth2    _ -> "Use OAuth2 authorization protocol. E.g. used by GitHub."
-                | OpenID    _ -> "Use OpenID connect authorization protocol. E.g. used by DataPlant GitLab instances."
+                | OAuth2      -> "Use OAuth2 authorization protocol. E.g. used by GitHub."
+                | OpenID      -> "Use OpenID connect authorization protocol. E.g. used by DataPlant GitLab instances."
 
     /// CLI arguments for receiving access tokens
     type AccessTokenStoreArgs = 

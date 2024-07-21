@@ -21,11 +21,11 @@ type InvestigationCommand =
             match this with
             | Create        _ -> InvestigationCreateArgs.deprecationWarning
             | Update        _ -> "Update the ARC's investigation with the given Metdadata"
-            | Edit          _ -> "Open an editor window to directly edit the ARC's investigation file"
+            | Edit            -> "Open an editor window to directly edit the ARC's investigation file"
             //| Delete        _ -> "Delete the ARC's investigation file (DANGER ZONE!)"
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
-            | Show          _ -> "Get the values of the ARC's investigation"
+            | Show            -> "Get the values of the ARC's investigation"
 
 and InvestigationPersonCommand =
 
@@ -44,7 +44,7 @@ and InvestigationPersonCommand =
             | Register      _ -> "Register a person in the ARC investigation with the given assay metadata"
             | Unregister    _ -> "Unregister a person from the given investigation. The person is identified by the full name (first name, last name, mid initials)."
             | Show          _ -> "Get the metadata of a person registered in the ARC investigation"
-            | List          _ -> "List all persons registered in the ARC investigation"
+            | List            -> "List all persons registered in the ARC investigation"
 
 and InvestigationPublicationCommand =
 
@@ -63,4 +63,4 @@ and InvestigationPublicationCommand =
             | Register      _ -> "Register a publication in the ARC investigation with the given assay metadata"
             | Unregister    _ -> "Unregister a publication from the given investigation. The publication is identified by the DOI."
             | Show          _ -> "Get the metadata of a publication registered in the ARC investigation"
-            | List          _ -> "List all publication registered in the ARC investigation"
+            | List            -> "List all publication registered in the ARC investigation"

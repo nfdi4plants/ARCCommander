@@ -7,7 +7,7 @@ open System.IO
 open System.IO.Compression
 open ArcCommander
 open ArcCommander.APIs
-open ARCtrl.ISA.Json
+open ARCtrl.Json
 open ARCtrl
 
 /// 

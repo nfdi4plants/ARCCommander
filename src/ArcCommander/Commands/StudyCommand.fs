@@ -44,7 +44,7 @@ type StudyCommand =
             | Update        _ -> "Update an existing study in the ARC with the given study metadata"
             | Edit          _ -> "Open and edit an existing study in the ARC with a text editor. Arguments passed for this command will be pre-set in the editor."
             | Show          _ -> "Get the values of a study"
-            | List          _ -> "List all studies registered in the ARC"
+            | List            -> "List all studies registered in the ARC"
             | Person        _ -> "Person functions"
             | Publication   _ -> "Publication functions"
             | Design        _ -> "Design functions"
@@ -68,7 +68,7 @@ and StudyPersonCommand =
             | Register          _ -> "Register a person in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a person from the given investigation study. The person is identified by the full name (first name, last name, mid initials)."
             | Show              _ -> "Get the metadata of a person registered in the ARC investigation study"
-            | List              _ -> "List all persons registered in the ARC investigation"
+            | List                -> "List all persons registered in the ARC investigation"
 
 and StudyPublicationCommand =
 
@@ -87,7 +87,7 @@ and StudyPublicationCommand =
             | Register          _ -> "Register a publication in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a publication from the given investigation study. The publication is identified by the DOI."
             | Show              _ -> "Get the metadata of a publication registered in the ARC investigation study"
-            | List              _ -> "List all publication registered in the ARC investigation study"
+            | List                -> "List all publication registered in the ARC investigation study"
 
 and StudyDesignCommand =
 
@@ -106,7 +106,7 @@ and StudyDesignCommand =
             | Register          _ -> "Register a design in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a design from the given investigation study. The design is identified by the design type."
             | Show              _ -> "Get the metadata of a design registered in the ARC investigation study"
-            | List              _ -> "List all designs registered in the ARC investigation study"
+            | List                -> "List all designs registered in the ARC investigation study"
 
 and StudyFactorCommand =
 
@@ -125,7 +125,7 @@ and StudyFactorCommand =
             | Register          _ -> "Register a factor in the ARC investigation study with the given assay metadata"
             | Unregister        _ -> "Unregister a factor from the given investigation study. The factor is identified by name."
             | Show              _ -> "Get the metadata of a factor registered in the ARC investigation study"
-            | List              _ -> "List all factor registered in the ARC investigation study"
+            | List                -> "List all factor registered in the ARC investigation study"
 
 and StudyProtocolCommand =
 
@@ -146,4 +146,4 @@ and StudyProtocolCommand =
             | Unregister        _ -> "Unregister a protocol from the given investigation study. The protocol is identified by name."
             | Load              _ -> "Load a protocol from an ISA JSON file and add it to the study"
             | Show              _ -> "Get the metadata of a protocol registered in the arc investigation study"
-            | List              _ -> "List all protocol registered in the ARC investigation study"
+            | List                -> "List all protocol registered in the ARC investigation study"

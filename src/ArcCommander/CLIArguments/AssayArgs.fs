@@ -61,8 +61,8 @@ type AssayUpdateArgs =
             | TechnologyTypeTermAccessionNumber     _ -> "The accession number from the Term Source associated with the selected term."
             | TechnologyTypeTermSourceREF           _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
             | TechnologyPlatform                    _ -> "Manufacturer and platform name, e.g. Bruker AVANCE"
-            | ReplaceWithEmptyValues                _ -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
-            | AddIfMissing                          _ -> "If this flag is set, a new assay will be registered with the given parameters, if it did not previously exist"
+            | ReplaceWithEmptyValues                  -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
+            | AddIfMissing                            -> "If this flag is set, a new assay will be registered with the given parameters, if it did not previously exist"
 
 /// CLI arguments for interactively editing existing assay metadata.
 type AssayEditArgs = 
@@ -143,7 +143,7 @@ type AssayExportArgs =
             match this with
             | AssayIdentifier   _ -> "Identifier of the assay of interest"
             | Output            _ -> "Path to which the json should be exported. Only written to the cli output if no path given"
-            | ProcessSequence   _ -> "If this flag is set, the return value of this assay will be its list of processes"
+            | ProcessSequence     -> "If this flag is set, the return value of this assay will be its list of processes"
 
 /// CLI arguments for assay contacts.
 module AssayContacts = 
@@ -182,8 +182,8 @@ module AssayContacts =
                 | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the assay, which means that the roles reported here do not need to correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used, the Term Accession Number (TAN) and Term Source REF fields below are required."
                 | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term"
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing person metadata.
     type PersonEditArgs = 

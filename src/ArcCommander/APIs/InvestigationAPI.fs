@@ -5,16 +5,16 @@ open ArcCommander.CLIArguments
 open ArcCommander.ArgumentProcessing
 
 open ARCtrl
-open ARCtrl.ISA
+open ARCtrl
 open ARCtrl.NET
-open ARCtrl.ISA.Spreadsheet
+open ARCtrl.Spreadsheet
 
 /// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs.
 module InvestigationAPI =
 
     type ArcInvestigation with
         member this.UpdateTopLevelInfo(other : ArcInvestigation, replaceWithEmptyValues : bool) =   
-            if not (Identifier.isMissingIdentifier other.Identifier) then 
+            if not (Helper.Identifier.isMissingIdentifier other.Identifier) then 
                 IdentifierSetters.setInvestigationIdentifier other.Identifier this
                 |> ignore
             if other.Title.IsSome || replaceWithEmptyValues then this.Title <- other.Title
@@ -49,7 +49,7 @@ module InvestigationAPI =
         
         let identifier = 
             investigationArgs.TryGetFieldValue InvestigationUpdateArgs.InvestigationIdentifier
-            |> Option.defaultValue (Identifier.createMissingIdentifier())
+            |> Option.defaultValue (Helper.Identifier.createMissingIdentifier())
 
         let investigation = 
             ArcInvestigation.create(
@@ -61,7 +61,7 @@ module InvestigationAPI =
             )
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         isa.UpdateTopLevelInfo(investigation, replaceWithEmptyValues)
 
@@ -78,7 +78,7 @@ module InvestigationAPI =
         let editor = GeneralConfiguration.getEditor arcConfiguration
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
         let editedInvestigation =
             ArgumentProcessing.Prompt.createIsaItemQuery editor ArcInvestigation.InvestigationInfo.toRows
@@ -116,7 +116,7 @@ module InvestigationAPI =
         log.Info("Start Investigation Show")
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
         
         Prompt.serializeXSLXWriterOutput ArcInvestigation.InvestigationInfo.toRows isa
         |> log.Debug
@@ -126,6 +126,37 @@ module InvestigationAPI =
 
         open CLIArguments.InvestigationContacts
 
+        type Person with
+             
+             member this.UpdateBy(p : Person, ?onlyReplaceExisting : bool,?appendSequences : bool) =
+                let onlyReplaceExisting = defaultArg onlyReplaceExisting false
+                let appendSequences = defaultArg appendSequences false
+                let updateAlways = onlyReplaceExisting |> not
+                if p.ORCID.IsSome || updateAlways then 
+                    this.ORCID <- p.ORCID
+                if p.LastName.IsSome || updateAlways then
+                    this.LastName <- p.LastName
+                if p.FirstName.IsSome || updateAlways then
+                    this.FirstName <- p.FirstName
+                if p.MidInitials.IsSome || updateAlways then
+                    this.MidInitials <- p.MidInitials
+                if p.EMail.IsSome || updateAlways then
+                    this.EMail <- p.EMail
+                if p.Phone.IsSome || updateAlways then
+                    this.Phone <- p.Phone
+                if p.Fax.IsSome || updateAlways then
+                    this.Fax <- p.Fax
+                if p.Address.IsSome || updateAlways then
+                    this.Address <- p.Address
+                if p.Affiliation.IsSome || updateAlways then
+                    this.Affiliation <- p.Affiliation
+                if p.Roles.Count <> 0 || updateAlways then
+                    let r = ArcTypesAux.updateAppendResizeArray appendSequences this.Roles p.Roles
+                    this.Roles <- r
+                if p.Comments.Count <> 0 || updateAlways then
+                    let s = ArcTypesAux.updateAppendResizeArray appendSequences this.Comments p.Comments
+                    this.Comments <- s
+
         /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
         let update (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonUpdateArgs>) =
 
@@ -133,7 +164,7 @@ module InvestigationAPI =
 
             log.Info("Start Person Update")
 
-            let updateOption = if personArgs.ContainsFlag PersonUpdateArgs.ReplaceWithEmptyValues then Aux.Update.UpdateAll else Aux.Update.UpdateByExisting            
+            let onlyReplaceExisting = personArgs.ContainsFlag PersonUpdateArgs.ReplaceWithEmptyValues |> not                   
 
             let lastName    = personArgs.GetFieldValue PersonUpdateArgs.LastName
             let firstName   = personArgs.GetFieldValue PersonUpdateArgs.FirstName
@@ -154,27 +185,25 @@ module InvestigationAPI =
                     (personArgs.TryGetFieldValue PersonUpdateArgs.Roles                    |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonUpdateArgs.RolesTermAccessionNumber |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonUpdateArgs.RolesTermSourceREF       |> Option.defaultValue "")
-                    [||]
-                |> fun c -> {c with ORCID = orcid}
+                    (ResizeArray())
+            
+            person.ORCID <- orcid
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
            
-            let newPersons = 
-                if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName isa.Contacts then
-                    Person.updateByFullName updateOption person isa.Contacts               
-                else
-                    let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation."
-                    if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
-                        log.Warn($"{msg}")
-                        log.Info("Registering person as AddIfMissing Flag was set.")
-                        Array.append isa.Contacts [|person|]
-                    else 
-                        log.Error(msg)
-                        isa.Contacts
-            isa.Contacts <- newPersons               
+            match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq isa.Contacts) with
+            | Some p ->
+                p.UpdateBy(person, onlyReplaceExisting = onlyReplaceExisting)
+             | None ->
+                let msg = $"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation."
+                if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
+                    log.Warn($"{msg}")
+                    log.Info("Registering person as AddIfMissing Flag was set.")
+                    isa.Contacts.Add person
+                else 
+                    log.Error(msg)
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
@@ -184,25 +213,23 @@ module InvestigationAPI =
             log.Info("Start Person Edit")
             let editor = GeneralConfiguration.getEditor arcConfiguration
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             let lastName    = personArgs.GetFieldValue PersonEditArgs.LastName
             let firstName   = personArgs.GetFieldValue PersonEditArgs.FirstName
             let midInitials = personArgs.TryGetFieldValue PersonEditArgs.MidInitials
 
-            match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName isa.Contacts with
-                | Some person ->
-                    ArgumentProcessing.Prompt.createIsaItemQuery editor
-                        (List.singleton >> Contacts.toRows None) 
-                        (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
-                        person
-                    |> fun p -> 
-                        let newPersons = Person.updateByFullName Aux.Update.UpdateAll p isa.Contacts
-                        isa.Contacts <- newPersons     
-                | None ->
-                    log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation.")      
+            match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq isa.Contacts) with
+            | Some person ->
+                ArgumentProcessing.Prompt.createIsaItemQuery editor
+                    (List.singleton >> Contacts.toRows None) 
+                    (Contacts.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
+                    person
+                |> fun p -> 
+                    person.UpdateBy(p) 
+            | None ->
+                log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation.")      
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Registers a person in the ARC's investigation file with the given person metadata contained in personArgs.
@@ -231,19 +258,18 @@ module InvestigationAPI =
                     (personArgs.TryGetFieldValue PersonRegisterArgs.Roles                    |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonRegisterArgs.RolesTermAccessionNumber |> Option.defaultValue "")
                     (personArgs.TryGetFieldValue PersonRegisterArgs.RolesTermSourceREF       |> Option.defaultValue "")
-                    [||]
-                |> fun c -> {c with ORCID = orcid}
+                    (ResizeArray())
+            
+            person.ORCID <- orcid
                        
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName isa.Contacts then
+            if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq isa.Contacts) then
                 log.Error $"Person with the name {firstName} {midInitials} {lastName} does already exist in the investigation."
             else
-                let newPersons = Array.append isa.Contacts [|person|]
-                isa.Contacts <- newPersons               
+                isa.Contacts.Add person         
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
@@ -258,15 +284,22 @@ module InvestigationAPI =
             let midInitials = personArgs.TryGetFieldValue PersonUnregisterArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName isa.Contacts then
-                let newPersons = Person.removeByFullName firstName (midInitials |> Option.defaultValue "") lastName isa.Contacts
-                isa.Contacts <- newPersons
-            else
+            let tryGetIndex (persons : Person seq) =
+                persons
+                |> Seq.tryFindIndex (fun p -> 
+                    p.FirstName = Some firstName 
+                    && p.MidInitials = midInitials 
+                    && p.LastName = Some lastName
+                )
+
+            match tryGetIndex isa.Contacts with
+            | Some index ->
+                isa.Contacts.RemoveAt index
+            | None -> 
                 log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation.")
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Gets an existing person by fullname (LastName, FirstName, MidInitials) and prints their metadata.
@@ -281,9 +314,9 @@ module InvestigationAPI =
             let midInitials = personArgs.TryGetFieldValue PersonShowArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName isa.Contacts with
+            match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq isa.Contacts) with
             | Some person ->
                 [person]
                 |> Prompt.serializeXSLXWriterOutput (Contacts.toRows None)
@@ -299,7 +332,7 @@ module InvestigationAPI =
             log.Info("Start Person List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             isa.Contacts
             |> Seq.iter (
@@ -317,20 +350,37 @@ module InvestigationAPI =
 
         open ArcCommander.CLIArguments.InvestigationPublications
 
-        module Publication =
-            let updateByDOI updateOption publication publications =
-                Publication.updateByDOI updateOption publication (publications |> Array.toList)
-                |> List.toArray
+        type Publication with 
+            
+            member this.UpdateBy(p : Publication, ?onlyReplaceExisting : bool,?appendSequences : bool) =
+                let onlyReplaceExisting = defaultArg onlyReplaceExisting false
+                let appendSequences = defaultArg appendSequences false
+                let updateAlways = onlyReplaceExisting |> not
+                if p.PubMedID.IsSome || updateAlways then 
+                    this.PubMedID <- p.PubMedID
+                if p.DOI.IsSome || updateAlways then
+                    this.DOI <- p.DOI
+                if p.Authors.IsSome || updateAlways then
+                    this.Authors <- p.Authors
+                if p.Title.IsSome || updateAlways then
+                    this.Title <- p.Title
+                if p.Status.IsSome || updateAlways then
+                    this.Status <- p.Status                
+                if p.Comments.Count <> 0 || updateAlways then
+                    let s = ArcTypesAux.updateAppendResizeArray appendSequences this.Comments p.Comments
+                    this.Comments <- s
 
-            let existsByDOI doi publications =               
-                Publication.existsByDoi doi (publications |> Array.toList)
+            static member existsByDOI doi (publications : Publication seq) =  
+                publications
+                |> Seq.exists (fun p -> p.DOI = Some doi)
 
-            let tryGetByDOI doi publications =
-                Publication.tryGetByDoi doi (publications |> Array.toList)
+            static member tryGetByDOI doi (publications : Publication seq) =
+                publications
+                |> Seq.tryFind (fun p -> p.DOI = Some doi)
 
-            let removeByDOI doi publications =
-                Publication.removeByDoi doi (publications |> Array.toList)
-                |> List.toArray
+            static member tryFindIndexByDOI doi (publications : Publication seq) =
+                publications
+                |> Seq.tryFindIndex (fun p -> p.DOI = Some doi)
 
         /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
         let update (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationUpdateArgs>) =
@@ -339,7 +389,7 @@ module InvestigationAPI =
             
             log.Info("Start Publication Update")
 
-            let updateOption = if publicationArgs.ContainsFlag PublicationUpdateArgs.ReplaceWithEmptyValues then Aux.Update.UpdateAll else Aux.Update.UpdateByExisting
+            let onlyReplaceExisting = publicationArgs.ContainsFlag PublicationUpdateArgs.ReplaceWithEmptyValues |> not
 
             let doi = publicationArgs.GetFieldValue PublicationUpdateArgs.DOI
 
@@ -352,26 +402,23 @@ module InvestigationAPI =
                      (publicationArgs.TryGetFieldValue PublicationUpdateArgs.Status)
                      (publicationArgs.TryGetFieldValue PublicationUpdateArgs.StatusTermSourceREF)
                      (publicationArgs.TryGetFieldValue PublicationUpdateArgs.StatusTermAccessionNumber)
-                     [||]
+                     (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            let newPublications = 
-                if Publication.existsByDOI doi isa.Publications then
-                    Publication.updateByDOI updateOption publication isa.Publications           
-                else
-                    let msg = $"Publication with the doi {doi} does not exist in the investigation."
-                    if publicationArgs.ContainsFlag PublicationUpdateArgs.AddIfMissing then
-                        log.Warn($"{msg}")
-                        log.Info("Registering publciation as AddIfMissing Flag was set.")
-                        Array.append isa.Publications [|publication|]
-                    else 
-                        log.Error(msg)
-                        isa.Publications
-            isa.Publications <- newPublications       
+            match Publication.tryGetByDOI doi isa.Publications with
+            | Some p ->
+                p.UpdateBy(publication, onlyReplaceExisting = onlyReplaceExisting)
+            | None ->
+                let msg = $"Publication with the doi {doi} does not exist in the investigation."
+                if publicationArgs.ContainsFlag PublicationUpdateArgs.AddIfMissing then
+                    log.Warn($"{msg}")
+                    log.Info("Registering publciation as AddIfMissing Flag was set.")
+                    isa.Publications.Add publication
+                else 
+                    log.Error(msg)
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         
@@ -386,7 +433,7 @@ module InvestigationAPI =
             let doi = publicationArgs.GetFieldValue PublicationEditArgs.DOI
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             match Publication.tryGetByDOI doi isa.Publications with
             | Some publication ->
@@ -395,12 +442,10 @@ module InvestigationAPI =
                         (Publications.fromRows None 1 >> fun (_,_,_,items) -> items.Head)
                         publication
                 |> fun p -> 
-                    let newPublications = Publication.updateByDOI Aux.Update.UpdateAll p isa.Publications
-                    isa.Publications <- newPublications 
+                    publication.UpdateBy(p)
             | None ->
                 log.Error($"Publication with the doi {doi} does not exist in the investigation.")
 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Registers a person in the ARC's investigation file with the given person metadata contained in personArgs.
@@ -421,21 +466,17 @@ module InvestigationAPI =
                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.Status)
                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.StatusTermSourceREF)
                     (publicationArgs.TryGetFieldValue PublicationRegisterArgs.StatusTermAccessionNumber)
-                    [||]
+                    (ResizeArray())
 
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            let newPublications = 
-                if Publication.existsByDOI doi isa.Publications then
-                    log.Warn($"Publication with the doi {doi} already exists in the investigation.")
-                    isa.Publications
-                else
-                    Array.append isa.Publications [|publication|]
+            if Publication.existsByDOI doi isa.Publications then
+                log.Warn($"Publication with the doi {doi} already exists in the investigation.")
+            else
+                isa.Publications.Add publication
 
-            isa.Publications <- newPublications 
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
@@ -448,17 +489,14 @@ module InvestigationAPI =
             let doi = publicationArgs.GetFieldValue PublicationUnregisterArgs.DOI
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
-            let newPublications = 
-                if Publication.existsByDOI doi isa.Publications then
-                    Publication.removeByDOI doi isa.Publications
-                else
-                    log.Warn($"Publication with the doi {doi} does not exist in the investigation.")
-                    isa.Publications
+            match Publication.tryFindIndexByDOI doi isa.Publications with
+            | Some index ->
+                isa.Publications.RemoveAt index
+            | None ->   
+                log.Warn($"Publication with the doi {doi} does not exist in the investigation.")
 
-            isa.Publications <- newPublications
-            arc.ISA <- Some isa
             arc.Write(arcConfiguration)
 
         /// Gets an existing publication by its doi and prints its metadata.
@@ -471,7 +509,7 @@ module InvestigationAPI =
             let doi = publicationArgs.GetFieldValue PublicationShowArgs.DOI
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             match Publication.tryGetByDOI doi isa.Publications with
             | Some publication ->
@@ -489,10 +527,10 @@ module InvestigationAPI =
             log.Info("Start Publication List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Identifier.createMissingIdentifier()))
+            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             match isa.Publications with
-            | [||] ->
+            | publications when Seq.isEmpty publications ->
                 log.Warn("The investigation does not contain any publications.")
             | publications ->
                publications

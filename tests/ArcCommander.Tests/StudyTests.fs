@@ -4,8 +4,7 @@ open Argu
 open Expecto
 open TestingUtils
 open ARCtrl
-open ARCtrl.ISA
-open ARCtrl.ISA.Spreadsheet
+open ARCtrl.Spreadsheet
 open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
@@ -291,8 +290,12 @@ let testStudyContacts =
 
             let personBeforeUpdating = 
                 studyBeforeChangingIt.Contacts
+                |> Array.ofSeq
                 |> Person.tryGetByFullName firstName midInitials lastName
                 |> Option.get 
+                |> fun p -> p.Copy()
+
+            personBeforeUpdating.Address <- Some newAddress
 
             processCommand config StudyAPI.Contacts.update contactArgs
             
@@ -303,7 +306,7 @@ let testStudyContacts =
 
             Expect.isSome study "Study missing after updating person"
 
-            let person = Person.tryGetByFullName firstName midInitials lastName study.Value.Contacts
+            let person = Person.tryGetByFullName firstName midInitials lastName (Array.ofSeq study.Value.Contacts)
 
             Expect.isSome person "Person missing after updating person"
 
@@ -311,7 +314,7 @@ let testStudyContacts =
 
             Expect.isSome adress "Adress missing after updating person"
             Expect.equal adress.Value newAddress "Adress was not updated with new value"
-            Expect.equal person.Value {personBeforeUpdating with Address = Some newAddress} "Other values of person were changed even though only the Address should have been updated"
+            Expect.equal person.Value personBeforeUpdating "Other values of person were changed even though only the Address should have been updated"
 
         )
 

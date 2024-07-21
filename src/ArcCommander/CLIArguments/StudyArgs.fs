@@ -30,8 +30,8 @@ type StudyUpdateArgs =
             | Description               _ -> "A textual description of the study, with components such as objective or goals"
             | SubmissionDate            _ -> "The date on which the study is submitted to an archive"
             | PublicReleaseDate         _ -> "The date on which the study SHOULD be released publicly"
-            | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the study. If this flag is not set, only these fields for which a value was given will be updated."
-            | AddIfMissing              _ -> "If this flag is set, a new study will be registered with the given parameters, if it did not previously exist"
+            | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the study. If this flag is not set, only these fields for which a value was given will be updated."
+            | AddIfMissing                -> "If this flag is set, a new study will be registered with the given parameters, if it did not previously exist"
 
 
 /// CLI arguments for registering existing study metadata.
@@ -119,8 +119,8 @@ module StudyContacts =
                 | Roles                     _ -> "Term to classify the role(s) performed by this person in the context of the study, which means that the roles reported here do not need to correspond to roles held withing their affiliated organization. Multiple annotations or values attached to one person can be provided by using a semicolon (“;”) Unicode (U0003+B) as a separator (e.g.: submitter;funder;sponsor). The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used, the Term Accession Number (TAN) and Term Source REF fields below are required."
                 | RolesTermAccessionNumber  _ -> "The accession number from the Term Source associated with the selected term"
                 | RolesTermSourceREF        _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the assay. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new person will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing person metadata.
     type PersonEditArgs = 
@@ -206,8 +206,8 @@ module StudyPublications =
                 | Status                    _ -> "A term describing the status of that publication (i.e. submitted, in preparation, published)"
                 | StatusTermAccessionNumber _ -> "The accession number from the Term Source associated with the selected term"
                 | StatusTermSourceREF       _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one the Term Source Names declared in the in the Ontology Source Reference section."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the publication. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new publication will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the publication. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new publication will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing publication metadata.
     type PublicationEditArgs = 
@@ -271,8 +271,8 @@ module StudyDesignDescriptors =
                 | DesignType                _ -> "A term allowing the classification of the study based on the overall experimental design, e.g cross-over design or parallel group design. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
                 | TypeTermAccessionNumber   _ -> "The accession number from the Term Source associated with the selected term."
                 | TypeTermSourceREF         _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Study Design Term Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the design. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new design will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the design. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new design will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing design metadata.
     type DesignEditArgs = 
@@ -330,8 +330,8 @@ module StudyFactors =
                 | FactorType                _ -> "A term allowing the classification of this factor into categories. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
                 | TypeTermAccessionNumber   _ -> "The accession number from the Term Source associated with the selected term."
                 | TypeTermSourceREF         _ -> "Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match one of the Term Source Names declared in the Ontology Source Reference section."
-                | ReplaceWithEmptyValues    _ -> "This flag can be used to delete fields from the factor. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing              _ -> "If this flag is set, a new factor will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues      -> "This flag can be used to delete fields from the factor. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                -> "If this flag is set, a new factor will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing factor metadata.
     type FactorEditArgs = 
@@ -410,8 +410,8 @@ module StudyProtocols =
                 | ComponentsType                    _ -> "A semicolon-delimited (“;”) list of terms to classify the protocol components listed for example, instrument, software, detector or reagent. The term can be free text or from, for example, a controlled vocabulary or an ontology. If the latter source is used the Term Accession Number (TAN) and Term Source REF fields below are required."
                 | ComponentsTypeTermAccessionNumber _ -> "A semicolon-delimited (“;”) list of accession numbers from the Source associated to the selected terms"
                 | ComponentsTypeTermSourceREF       _ -> "A semicolon-delimited (“;”) list of Source REFs. Identifies the controlled vocabulary or ontology that this term comes from. The Source REF has to match a Term Source Name previously declared in the ontology section."
-                | ReplaceWithEmptyValues            _ -> "This flag can be used to delete fields from the protocol. If this flag is not set, only these fields for which a value was given will be updated."
-                | AddIfMissing                      _ -> "If this flag is set, a new protocol will be registered with the given parameters, if it did not previously exist"
+                | ReplaceWithEmptyValues              -> "This flag can be used to delete fields from the protocol. If this flag is not set, only these fields for which a value was given will be updated."
+                | AddIfMissing                        -> "If this flag is set, a new protocol will be registered with the given parameters, if it did not previously exist"
 
     /// CLI arguments for interactively editing existing protocol metadata.
     type ProtocolEditArgs = 
@@ -478,8 +478,8 @@ module StudyProtocols =
                 match this with
                 | StudyIdentifier   _ -> "The identifier of the study the protocol should be added to"
                 | InputPath         _ -> "The Path of the ISA JSON file which should loaded"
-                | IsProcessFile     _ -> "If this flag is set, the reader will assume the input file is a process file, from which the protocol will be extracted"
-                | UpdateExisting    _ -> "If set, if a protocol with the same name as the one given in the file already exists in the investigation. Its values will get overwritten by the ones in the file"
+                | IsProcessFile       -> "If this flag is set, the reader will assume the input file is a process file, from which the protocol will be extracted"
+                | UpdateExisting      -> "If set, if a protocol with the same name as the one given in the file already exists in the investigation. Its values will get overwritten by the ones in the file"
 
     /// CLI arguments for getting protocol.
     // Same arguments as `edit` because all metadata fields needed for identifying the publication also have to be used when editing
