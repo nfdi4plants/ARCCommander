@@ -1,4 +1,16 @@
-﻿### 1.0.2+4cc4fcb (Released 2024-1-30)
+﻿### 2.0.0+823aca1 (Released 2024-7-21)
+* Additions:
+    * [[#c3c638c](https://github.com/nfdi4plants/arcCommander/commit/c3c638c2f6e1bef6a83313989d64364ae687b0d6)] finish up transition to ARCtrl 2.0.0
+    * [[#f5f2db9](https://github.com/nfdi4plants/arcCommander/commit/f5f2db9f7e84467e0f348e9dea15d6fcd9333aef)] update study API for ARCtrl 2.0.0
+    * [[#69bdbf6](https://github.com/nfdi4plants/arcCommander/commit/69bdbf6a16fdb30c264c94f04aed6bcf5501d55c)] update assay API vor ARCtrl v2.0.0
+    * [[#467bdc7](https://github.com/nfdi4plants/arcCommander/commit/467bdc747f7c638b92abc686a39cf99049462a04)] update investigation API for ARCtrl 2.0.0 changes
+    * [[#e950fed](https://github.com/nfdi4plants/arcCommander/commit/e950fed93a82e72d18584ddc6e09cbc16eec1f52)] update ARCtrl dependency to 2.0.0 and start adjusting functionality
+    * [[#f17aa01](https://github.com/nfdi4plants/arcCommander/commit/f17aa013c8f3dca2ee7c0ca816d4e9633a82af89)] Create manage-issues.yml
+* Bugfixes:
+    * [[#02bdae8](https://github.com/nfdi4plants/arcCommander/commit/02bdae874623ebd643797e6aaeffb4783b85bc42)] fix study contact update bug
+    * [[#558c215](https://github.com/nfdi4plants/arcCommander/commit/558c215e01bc7c8bd4416d725615f9ec6105e814)] various small fixes and updates for v2.0.0
+
+### 1.0.2+4cc4fcb (Released 2024-1-30)
 * Additions:
     * [[#1716bb9](https://github.com/nfdi4plants/arcCommander/commit/1716bb9a4c642f8f39060d12eeb7055ba06a36be)] update references
     * [[#bfec1bb](https://github.com/nfdi4plants/arcCommander/commit/bfec1bb30f538f0bce4ea050d51500735aac65dd)] bump to 1.0.1
