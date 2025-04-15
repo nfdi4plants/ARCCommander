@@ -5,8 +5,6 @@ open ArcCommander.CLIArguments
 open ArcCommander.ArgumentProcessing
 
 open ARCtrl
-open ARCtrl
-open ARCtrl.NET
 open ARCtrl.Spreadsheet
 
 /// ArcCommander Investigation API functions that get executed by the investigation focused subcommand verbs.
@@ -66,7 +64,7 @@ module InvestigationAPI =
         isa.UpdateTopLevelInfo(investigation, replaceWithEmptyValues)
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Opens the existing investigation info in the ARC with the text editor set in globalArgs.
     let edit (arcConfiguration : ArcConfiguration) =
@@ -88,7 +86,7 @@ module InvestigationAPI =
         isa.UpdateTopLevelInfo(editedInvestigation, true)
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
 
     ///// Deletes the existing investigation file in the ARC if the given identifier matches the identifier set in the investigation file.
@@ -204,7 +202,7 @@ module InvestigationAPI =
                 else 
                     log.Error(msg)
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Opens an existing person by fullname (lastName,firstName,MidInitials) in the arc with the text editor set in globalArgs.
         let edit (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonEditArgs>) =
@@ -230,7 +228,7 @@ module InvestigationAPI =
             | None ->
                 log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation.")      
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Registers a person in the ARC's investigation file with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonRegisterArgs>) =
@@ -270,7 +268,7 @@ module InvestigationAPI =
             else
                 isa.Contacts.Add person         
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
         let unregister (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonUnregisterArgs>) =
@@ -300,7 +298,7 @@ module InvestigationAPI =
             | None -> 
                 log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the investigation.")
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Gets an existing person by fullname (LastName, FirstName, MidInitials) and prints their metadata.
         let show (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonShowArgs>) =
@@ -419,7 +417,7 @@ module InvestigationAPI =
                 else 
                     log.Error(msg)
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         
         /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
@@ -446,7 +444,7 @@ module InvestigationAPI =
             | None ->
                 log.Error($"Publication with the doi {doi} does not exist in the investigation.")
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Registers a person in the ARC's investigation file with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationRegisterArgs>) =
@@ -477,7 +475,7 @@ module InvestigationAPI =
             else
                 isa.Publications.Add publication
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Opens an existing person by fullname (LastName, FirstName, MidInitials) in the ARC with the text editor set in globalArgs.
         let unregister (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationUnregisterArgs>) =
@@ -497,7 +495,7 @@ module InvestigationAPI =
             | None ->   
                 log.Warn($"Publication with the doi {doi} does not exist in the investigation.")
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Gets an existing publication by its doi and prints its metadata.
         let show (arcConfiguration : ArcConfiguration) (publicationArgs : ArcParseResults<PublicationShowArgs>) =

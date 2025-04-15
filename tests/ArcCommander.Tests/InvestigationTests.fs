@@ -4,7 +4,6 @@ open Argu
 open Expecto
 open ARCtrl
 open TestingUtils 
-open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments

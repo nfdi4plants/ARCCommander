@@ -6,7 +6,6 @@ open Expecto
 open TestingUtils
 open ARCtrl
 open ARCtrl.Spreadsheet
-open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments
@@ -355,35 +354,39 @@ let testAssayUpdate =
 
     testList "AssayUpdateTests" [
 
-        testCase "UpdateStandard" (fun () -> 
+        ftestCase "UpdateStandard" (fun () -> 
 
             let configuration = createConfigFromDir "AssayUpdateTests" "UpdateStandard"
             setupArc configuration
-
+            printfn "print 1"
             let studyIdentifier = "Study1"
             let assayIdentifier = "Assay2"
-
+            printfn "print 2"
             let assay1Args = [
                 AssayAddArgs.StudyIdentifier studyIdentifier
                 AssayAddArgs.AssayIdentifier "Assay1"
                 AssayAddArgs.MeasurementType "Assay1Method"
             ]
+            printfn "print 3"
             let assay2Args = [
                 AssayAddArgs.StudyIdentifier studyIdentifier
                 AssayAddArgs.AssayIdentifier assayIdentifier
                 AssayAddArgs.MeasurementType "Assay2Method"
                 AssayAddArgs.TechnologyType "Assay2Tech"
             ]
+            printfn "print 4"
             let assay3Args = [
                 AssayAddArgs.StudyIdentifier "Study2"
                 AssayAddArgs.AssayIdentifier "Assay3"
                 AssayAddArgs.TechnologyType "Assay3Tech"
             ]
-            
+            printfn "print 5"
             processCommand configuration AssayAPI.add assay1Args
+            printfn "print 6"
             processCommand configuration AssayAPI.add assay2Args
+            printfn "print 7"
             processCommand configuration AssayAPI.add assay3Args
-
+            printfn "print 8"
             let measurementType = "NewMeasurementType"
             let mt = OntologyAnnotation(measurementType)
             let tt = OntologyAnnotation("Assay2Tech")

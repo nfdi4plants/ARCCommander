@@ -2,7 +2,7 @@
 
 open ArcCommander
 open ArgumentProcessing
-open ARCtrl.NET
+open ARCtrl
 
 open ArcCommander.CLIArguments
 /// ArcCommander Configuration API functions that get executed by the configuration focused subcommand verbs

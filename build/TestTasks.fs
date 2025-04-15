@@ -11,11 +11,16 @@ open System.IO
 let runTests = BuildTask.createFn "RunTests" [clean; cleanTestResults; build; copyBinaries] (fun config ->
 
     Fake.DotNet.DotNet.test(fun testParams ->
+        let msBuildParams =
+            {testParams.MSBuildParams with 
+                DisableInternalBinLog = true
+            }
         {
             testParams with
                 Logger = Some "console;verbosity=detailed"
                 Configuration = DotNet.BuildConfiguration.fromString configuration
                 NoBuild = true
+                MSBuildParams = msBuildParams
         }
     ) testProject
 )

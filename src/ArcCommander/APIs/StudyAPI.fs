@@ -5,7 +5,6 @@ open ArcCommander.ArgumentProcessing
 
 open System
 open System.IO
-open ARCtrl.NET
 open ArcCommander.CLIArguments
 open ARCtrl
 open ARCtrl.Spreadsheet
@@ -61,7 +60,7 @@ module StudyAPI =
         
         isa.AddStudy(study)
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (studyArgs : ArcParseResults<StudyUpdateArgs>) =
@@ -101,7 +100,7 @@ module StudyAPI =
             log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)        
+        arc.Update(arcConfiguration)        
 
     // /// Opens an existing study file in the ARC with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
     /// Opens the existing study info in the ARC with the text editor set in globalArgs.
@@ -133,7 +132,7 @@ module StudyAPI =
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Registers an existing study in the ARC's investigation file with the given study metadata contained in cliArgs.
     let register (arcConfiguration : ArcConfiguration) (studyArgs : ArcParseResults<StudyRegisterArgs>) =
@@ -152,7 +151,7 @@ module StudyAPI =
         else
         isa.RegisterStudy(identifier)
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Creates a new study file in the ARC and registers it in the ARC's investigation file with the given study metadata contained in cliArgs.
     let add (arcConfiguration : ArcConfiguration) (studyArgs : ArcParseResults<StudyAddArgs>) = 
@@ -220,7 +219,7 @@ module StudyAPI =
         if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
             isa.DeregisterStudy(identifier) |> ignore
             arc.ISA <- Some isa
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
         else
             log.Error($"Study with identifier {identifier} is not registered.")
         
@@ -329,7 +328,7 @@ module StudyAPI =
                         isa.Contacts.Add person
                     else 
                         log.Error(msg)          
-                arc.Write(arcConfiguration)
+                arc.Update(arcConfiguration)
             | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
@@ -365,7 +364,7 @@ module StudyAPI =
                         person
                     |> fun p -> 
                         person.UpdateBy(p)  
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
                 | None ->
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")      
             | None -> 
@@ -414,7 +413,7 @@ module StudyAPI =
                     log.Error $"Person with the name {firstName} {midInitials} {lastName} does already exist in the study with the identifier {studyIdentifier}."
                 else
                     s.Contacts.Add person
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
             | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
@@ -449,7 +448,7 @@ module StudyAPI =
                 match tryGetIndex s.Contacts with
                 | Some index ->
                     s.Contacts.RemoveAt index
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
                 | None -> 
                     log.Error($"Person with the name {firstName} {midInitials} {lastName} does not exist in the study with the identifier {studyIdentifier}.")      
             | None -> 
@@ -559,7 +558,7 @@ module StudyAPI =
                     else 
                         log.Error(msg) 
                 
-                arc.Write(arcConfiguration)
+                arc.Update(arcConfiguration)
             | None ->
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
@@ -591,7 +590,7 @@ module StudyAPI =
                         publication
                     |> fun p -> 
                         publication.UpdateBy(p)
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
                 | None ->
                     log.Error($"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}.")      
             | None -> 
@@ -630,7 +629,7 @@ module StudyAPI =
                     log.Error(msg)
                     else
                         s.Publications.Add publication    
-                        arc.Write(arcConfiguration)
+                        arc.Update(arcConfiguration)
             | None ->
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
@@ -654,7 +653,7 @@ module StudyAPI =
                 match Publication.tryFindIndexByDOI doi s.Publications with
                 | Some index ->
                     s.Publications.RemoveAt index
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
                 | None ->   
                     log.Error($"Publication with the doi {doi} does not exist in the study with the identifier {studyIdentifier}.")             
             | None -> 
@@ -779,7 +778,7 @@ module StudyAPI =
                         s.StudyDesignDescriptors.Add design
                     else 
                         log.Error(msg)
-                arc.Write(arcConfiguration)
+                arc.Update(arcConfiguration)
 
             | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
@@ -810,7 +809,7 @@ module StudyAPI =
                         (DesignDescriptors.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                         design
                     |> fun d -> design.UpdateBy(d)
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
                 | None ->
                     log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
             | None -> 
@@ -843,7 +842,7 @@ module StudyAPI =
                     log.Error($"Design with the name {name} already exists in the study with the identifier {studyIdentifier}.")
                 else
                     s.StudyDesignDescriptors.Add design                  
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
             | None -> 
                 log.Error($"Study with identifier {studyIdentifier} does not exist in the arc")
 
@@ -866,7 +865,7 @@ module StudyAPI =
                 match OntologyAnnotation.tryFindIndexByName name s.StudyDesignDescriptors with
                 | Some index ->
                     s.StudyDesignDescriptors.RemoveAt index
-                    arc.Write(arcConfiguration)
+                    arc.Update(arcConfiguration)
                 | None ->
                     log.Error($"Design with the name {name} does not exist in the study with the identifier {studyIdentifier}.")
             | None -> 

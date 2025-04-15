@@ -2,7 +2,7 @@
 
 open System.IO
 open IniData
-open ARCtrl.NET
+
 
 /// Contains settings about the arc
 type ArcConfiguration =
@@ -426,7 +426,7 @@ module StudyConfiguration =
         | _ -> Array.empty
 
 open ARCtrl
-open ARCtrl.NET
+open ARCtrl.FileSystemHelper
 
 [<AutoOpen>]
 module ARCExtensions = 
@@ -435,34 +435,27 @@ module ARCExtensions =
     open FsSpreadsheet
     open FsSpreadsheet.Net
 
-    let myWrite basePath (c : Contract) = 
-        let log = Logging.createLogger("WriteContractHandler")
-        match c.DTO with
-        | Some (DTO.Spreadsheet wb) ->
-            let path = System.IO.Path.Combine(basePath, c.Path)
-            Path.ensureDirectory path
-            FsWorkbook.toXlsxFile path (wb :?> FsWorkbook)
-        | Some (DTO.Text t) ->
-            let path = System.IO.Path.Combine(basePath, c.Path)
-            Path.ensureDirectory path
-            if System.IO.File.Exists path |> not then
-                System.IO.File.WriteAllText(path,t)
-        | None -> 
-            let path = System.IO.Path.Combine(basePath, c.Path)
-            Path.ensureDirectory path
-            if System.IO.File.Exists path |> not then
-                System.IO.File.Create(path).Close()
-        | _ -> 
-            log.Info(sprintf "Contract %s is not an ISA contract" c.Path)
+    let handleWriteContractNoOverride (basePath : string) (c : Contract) =
+        let path = ArcPathHelper.combine basePath c.Path
+        if System.IO.File.Exists path then 
+            ()
+        else 
+            Contract.fulfillWriteContractAsync basePath c
+            |> Async.RunSynchronously
+            |> ignore
 
     type ARC with
-
-        member this.Write(arcPath) = 
-            this.GetWriteContracts()
-            |> Array.iter (myWrite arcPath)
 
         static member load(config : ArcConfiguration) = 
             ARC.load(GeneralConfiguration.getWorkDirectory config)
 
         member this.Write(config : ArcConfiguration) = 
-            this.Write(GeneralConfiguration.getWorkDirectory config)
+            this.GetWriteContracts()
+            |> Seq.iter (fun c -> 
+                let basePath = GeneralConfiguration.getWorkDirectory config
+                handleWriteContractNoOverride basePath c
+            )
+            //this.Write(GeneralConfiguration.getWorkDirectory config)
+
+        member this.Update(config : ArcConfiguration) = 
+            this.Update(GeneralConfiguration.getWorkDirectory config)

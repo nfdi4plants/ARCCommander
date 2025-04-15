@@ -2,7 +2,7 @@
 
 open ArcCommander
 open ArcCommander.ArgumentProcessing
-open ARCtrl.NET
+open ARCtrl
 
 open ArcCommander.CLIArguments.AccessToken
 
