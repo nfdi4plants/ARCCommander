@@ -73,7 +73,7 @@ type ArcSyncArgs =
 type ArcGetArgs =
     | [<Mandatory>][<Unique>][<AltCommandLine("-r")>] RepositoryAddress of repository_address:string
     | [<Unique>][<AltCommandLine("-b")>] BranchName         of branch_name:string
-    | [<Unique>][<AltCommandLine("-n")>] NoLFS
+    | [<Unique>][<AltCommandLine("-l")>] LFS
     | [<Unique>][<AltCommandLine("-m")>] Merge
 
     interface IArgParserTemplate with
@@ -81,7 +81,7 @@ type ArcGetArgs =
             match this with
             | RepositoryAddress _ -> "Git remote address from which to pull the ARC"
             | BranchName        _ -> "Branch of the remote address which should be used. If none is given, uses \"main\""
-            | NoLFS               -> "Does download only the pointers of LFS files, not the file content itself. Ideal for when you're only interested in the experimental metadata, not the data itself."
+            | LFS                 -> "Downloads not only the pointers of LFS files, but also the file content itself. Leaving this flag away is ideal for when you are only interested in experimental metadata, not the data itself. You should use this flag when you want to actually work with the data."
             | Merge               -> "Merges the repository into the current folder. Fails, if the current folder isn't empty."
 
 type ArcServerArgs =

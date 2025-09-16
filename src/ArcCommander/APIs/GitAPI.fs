@@ -38,10 +38,10 @@ module GitAPI =
             | None -> ""
 
         let lfsConfig = 
-            if arcArgs.ContainsFlag ArcGetArgs.NoLFS then
-                $" {GitHelper.noLFSConfig}"
-            else
+            if arcArgs.ContainsFlag ArcGetArgs.LFS then
                 ""
+            else
+                $" {GitHelper.noLFSConfig}"
 
         if merge then
             log.Trace("Downloading into current folder.")
