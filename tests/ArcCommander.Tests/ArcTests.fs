@@ -5,7 +5,6 @@ open Expecto
 open TestingUtils
 open ARCtrl
 open ARCtrl.Spreadsheet
-open ARCtrl.NET
 open ARCtrl.Json
 open ArcCommander
 open ArcCommander.CLIArguments

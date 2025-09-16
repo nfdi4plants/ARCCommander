@@ -10,7 +10,7 @@ open System.Diagnostics
 open System.Text
 open System.Text.Json
 open Argu
-open ARCtrl.NET
+open ARCtrl
 
 /// Carries the argument value to the ArcCommander API functions, use 'containsFlag' and 'getFieldValueByName' to access the value.
 type Argument<'Template> =
@@ -247,10 +247,9 @@ module ArgumentProcessing =
             |> Seq.reduce (+)
     
         /// Starts a program at the given path with the given arguments.
-        let private runProcess rootPath arg =
+        let private runProcess (rootPath : string) (arg : string) =
             let p = 
-                new ProcessStartInfo
-                    (rootPath,arg) 
+                new ProcessStartInfo(rootPath,arg) 
                 |> Process.Start
             p.WaitForExit()
 

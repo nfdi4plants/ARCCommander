@@ -4,7 +4,7 @@ open ArcCommander
 open ArgumentProcessing
 open Fake.IO
 open System.IO
-open ARCtrl.NET
+open ARCtrl
 open ArcCommander.CLIArguments
 
 module GitAPI =

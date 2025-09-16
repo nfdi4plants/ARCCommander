@@ -5,7 +5,6 @@ open System.IO
 
 open ARCtrl
 open ARCtrl.Spreadsheet
-open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
 open Argu

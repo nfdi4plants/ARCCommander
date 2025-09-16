@@ -6,7 +6,6 @@ open Expecto
 open TestingUtils
 open ARCtrl
 open ARCtrl.Spreadsheet
-open ARCtrl.NET
 open ArcCommander
 open ArgumentProcessing
 open ArcCommander.CLIArguments
@@ -359,7 +358,6 @@ let testAssayUpdate =
 
             let configuration = createConfigFromDir "AssayUpdateTests" "UpdateStandard"
             setupArc configuration
-
             let studyIdentifier = "Study1"
             let assayIdentifier = "Assay2"
 
@@ -379,7 +377,7 @@ let testAssayUpdate =
                 AssayAddArgs.AssayIdentifier "Assay3"
                 AssayAddArgs.TechnologyType "Assay3Tech"
             ]
-            
+
             processCommand configuration AssayAPI.add assay1Args
             processCommand configuration AssayAPI.add assay2Args
             processCommand configuration AssayAPI.add assay3Args

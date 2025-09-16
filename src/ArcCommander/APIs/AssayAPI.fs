@@ -8,7 +8,6 @@ open ArcCommander.ArgumentProcessing
 
 open ARCtrl
 open ARCtrl.Helper
-open ARCtrl.NET
 open ARCtrl.Spreadsheet
 open ArcCommander.CLIArguments
 open ARCtrl.Json
@@ -48,8 +47,6 @@ module AssayAPI =
 
         let assayIdentifier = assayArgs.GetFieldValue  AssayInitArgs.AssayIdentifier
         
-        let assayFileName = Identifier.Assay.fileNameFromIdentifier assayIdentifier
-
         let mt = 
             OntologyAnnotation(
                 ?name = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementType),
@@ -79,7 +76,7 @@ module AssayAPI =
         else
         isa.AddAssay(assay)
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayUpdateArgs>) =
@@ -93,8 +90,6 @@ module AssayAPI =
         
         let assayIdentifier = assayArgs.GetFieldValue  AssayUpdateArgs.AssayIdentifier
         
-        let assayFileName = Identifier.Assay.fileNameFromIdentifier assayIdentifier
-
         let assay = 
             Assays.fromString
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.MeasurementType)
@@ -104,7 +99,7 @@ module AssayAPI =
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyTypeTermAccessionNumber)
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyTypeTermSourceREF)
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyPlatform)
-                assayFileName
+                assayIdentifier
                 (ResizeArray())
    
         let arc = ARC.load(arcConfiguration)
@@ -124,7 +119,7 @@ module AssayAPI =
             log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Opens an existing assay file in the ARC with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
     let edit (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayEditArgs>) =
@@ -156,7 +151,7 @@ module AssayAPI =
             log.Error($"Assay with the identifier {assayIdentifier} does not exist.")
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
 
     /// Registers an existing assay in the ARC's investigation file with the given assay metadata contained in the assay file's investigation sheet.
@@ -189,7 +184,7 @@ module AssayAPI =
         s.RegisterAssay assayIdentifier
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
     
     /// Creates a new assay file and associated folder structure in the ARC and registers it in the ARC's investigation file with the given assay metadata contained in assayArgs.
     let add (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayAddArgs>) =
@@ -225,7 +220,7 @@ module AssayAPI =
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
         
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
     
     /// Deletes an assay's folder and underlying file structure from the ARC.
     let delete (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayDeleteArgs>) =
@@ -289,7 +284,7 @@ module AssayAPI =
         |> Seq.iter (fun s -> s.DeregisterAssay assayIdentifier)
 
         arc.ISA <- Some isa
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
         delete arcConfiguration (assayArgs.Cast<AssayDeleteArgs>())
 
@@ -325,7 +320,7 @@ module AssayAPI =
                 targetStudy.RegisterAssay assayIdentifier
 
                 arc.ISA <- Some isa
-                arc.Write(arcConfiguration)
+                arc.Update(arcConfiguration)
 
             else 
                 log.Error($"Assay with the identifier {assayIdentifier} does not exist in the study with the identifier {studyIdentifier}.")
@@ -524,7 +519,7 @@ module AssayAPI =
             | None ->
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
 
         /// Opens an existing person by fullname (lastName, firstName, MidInitials) in the assay investigation sheet with the text editor set in globalArgs.
@@ -562,7 +557,7 @@ module AssayAPI =
             | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
             
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Registers a person in this assay with the given person metadata contained in personArgs.
         let register (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonRegisterArgs>) =
@@ -609,7 +604,7 @@ module AssayAPI =
             | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
 
         /// Removes an existing person by fullname (lastName, firstName, MidInitials) from this assay with the text editor set in globalArgs.
@@ -646,7 +641,7 @@ module AssayAPI =
             | None -> 
                 log.Error($"Assay with identifier {assayIdentifier} does not exist in the arc")
 
-            arc.Write(arcConfiguration)
+            arc.Update(arcConfiguration)
 
         /// Gets an existing person by fullname (lastName, firstName, MidInitials) and prints their metadata.
         let show (arcConfiguration : ArcConfiguration) (personArgs : ArcParseResults<PersonShowArgs>) =

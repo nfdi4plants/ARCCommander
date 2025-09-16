@@ -8,24 +8,6 @@ open ArcCommander.CLIArguments
 
 open ARCtrl
 open ARCtrl.Json
-open ARCtrl.NET
-
-[<AutoOpen>]
-module ARCExtensions = 
-    type ARC with
-        member this.Write(arcPath, ?NoOverWrite : bool) =
-            let log = Logging.createLogger "ArcWriteLog"
-            let overWrite = Option.defaultValue false NoOverWrite |> not
-            this.GetWriteContracts()
-            |> Array.iter (fun contract ->
-                let p = Path.Combine(arcPath, contract.Path)
-                if not (System.IO.File.Exists p) || overWrite then
-                    Contract.fulfillWriteContract arcPath contract
-                else
-                    log.Error $"File {arcPath} already exists. Use the flag to overwrite it."
-            )
-
-
 
 module API =
     
@@ -93,7 +75,7 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         let isa = ArcInvestigation.create(identifier)
-        ARC(isa).Write(workDir,true)     
+        ARC(isa).Write(arcConfiguration)     
 
         GeneralConfiguration.tryGetRootfolder arcConfiguration
         |> Option.iter (fun p -> 
@@ -154,7 +136,7 @@ module ArcAPI =
         |> Option.iter (fun isa -> 
             isa.UpdateIOTypeByEntityID()
         )
-        arc.Write(arcConfiguration)
+        arc.Update(arcConfiguration)
 
     /// Export the complete ARC as a JSON object.
     let export (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcExportArgs>) =
