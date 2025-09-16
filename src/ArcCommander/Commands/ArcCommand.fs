@@ -6,7 +6,7 @@ open ArcCommander.CLIArguments
 [<HelpFlags([|"--help"; "-h"|])>]
 type ArcCommand =
     ///Parameters
-    | [<AltCommandLine("-p")>][<Unique>]                        WorkingDir  of working_directory : string
+    | [<AltCommandLine("-p")>][<Unique>]                        WorkingDir      of working_directory : string
     | [<AltCommandLine("-v")>][<Unique>]                        Verbosity       of verbosity : int
     ///Commands
     | [<CliPrefix(CliPrefix.None)>]                             Init            of init_args    : ParseResults<ArcInitArgs>
