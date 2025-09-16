@@ -78,6 +78,20 @@ type StudyUnregisterArgs = StudyEditArgs
 // same as `init` because both commands only need to be passed a study identifier
 type StudyRemoveArgs = StudyDeleteArgs
 
+/// CLI arguments for renaming study.
+type StudyRenameArgs =
+    | [<Mandatory>][<AltCommandLine("-s")>][<Unique>] StudyIdentifier of study_identifier : string
+    | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] NewStudyIdentifier of new_study_identifier : string
+        
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | StudyIdentifier     _ -> "Name of the study that should be renamed."
+                | NewStudyIdentifier  _ -> "The new unique identifier for the study."
+        
+    
+
+
 /// CLI arguments for getting a study.
 // same as `init` because both commands only need to be passed a study identifier
 type StudyShowArgs = StudyEditArgs

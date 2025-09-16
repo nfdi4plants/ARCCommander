@@ -229,6 +229,27 @@ module StudyAPI =
         delete arcConfiguration (studyArgs.Cast<StudyDeleteArgs>())
         unregister arcConfiguration (studyArgs.Cast<StudyUnregisterArgs>())
 
+    let rename (arcConfiguration : ArcConfiguration) (studyArgs : ArcParseResults<StudyRenameArgs>) = 
+        
+        let log = Logging.createLogger "StudyRenameLog"
+
+        log.Info("Start Study Rename")
+
+        let oldIdentifier = studyArgs.GetFieldValue StudyRenameArgs.StudyIdentifier
+        let newIdentifier = studyArgs.GetFieldValue StudyRenameArgs.NewStudyIdentifier
+
+        let arc = ARC.load(arcConfiguration)
+        let arcPath = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+
+        if isa.StudyIdentifiers |> Seq.contains oldIdentifier then
+            if isa.StudyIdentifiers |> Seq.contains newIdentifier then
+                log.Error($"Study with identifier {newIdentifier} already exists.")
+            else
+                arc.RenameStudy(arcPath, oldIdentifier, newIdentifier)
+        else 
+            log.Error($"Study with identifier {oldIdentifier} does not exist.")
+
     /// Lists all study identifiers registered in this ARC's investigation file.
     let show (arcConfiguration : ArcConfiguration) (studyArgs : ArcParseResults<StudyShowArgs>) =
 

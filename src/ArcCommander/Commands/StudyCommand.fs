@@ -22,6 +22,7 @@ type StudyCommand =
 
     | [<CliPrefix(CliPrefix.None)>] Update      of update_args          : ParseResults<StudyUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args            : ParseResults<StudyEditArgs>
+    | [<CliPrefix(CliPrefix.None)>] Rename      of rename_args          : ParseResults<StudyRenameArgs>
 
     | [<CliPrefix(CliPrefix.None)>] Show        of show_args            : ParseResults<StudyShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List 
@@ -43,6 +44,7 @@ type StudyCommand =
             | Remove        _ -> "Remove a study from the ARC (delete the study and unregister it from the investigation file)"
             | Update        _ -> "Update an existing study in the ARC with the given study metadata"
             | Edit          _ -> "Open and edit an existing study in the ARC with a text editor. Arguments passed for this command will be pre-set in the editor."
+            | Rename        _ -> "Rename an existing study in the ARC"
             | Show          _ -> "Get the values of a study"
             | List            -> "List all studies registered in the ARC"
             | Person        _ -> "Person functions"
