@@ -15,8 +15,30 @@ open NLog.Conditions
 /// Functions for working with the NLog logger.
 module Logging =
 
+    let toDarkOutputColor (consoleTarget : ColoredConsoleTarget) consoleColor =
+        match (consoleColor : ConsoleColor) with
+        | ConsoleColor.White
+        | ConsoleColor.Cyan
+        | ConsoleColor.Yellow
+        | ConsoleColor.Gray ->
+            let debugColorRule = new ConsoleRowHighlightingRule()
+            debugColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Debug")
+            debugColorRule.ForegroundColor <- ConsoleOutputColor.Black
+            consoleTarget.RowHighlightingRules.Add(debugColorRule)
+
+            let traceColorRule = new ConsoleRowHighlightingRule()
+            traceColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Trace")
+            traceColorRule.ForegroundColor <- ConsoleOutputColor.Black
+            consoleTarget.RowHighlightingRules.Add(traceColorRule)
+
+            let infoColorRule = new ConsoleRowHighlightingRule()
+            infoColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Info")
+            infoColorRule.ForegroundColor <- ConsoleOutputColor.Black
+            consoleTarget.RowHighlightingRules.Add(infoColorRule)
+        | _ -> ()
+
     /// Generates an NLog config with `folderPath` being the output folder for the log file.
-    let generateConfig (folderPath : string) verbosity = 
+    let generateConfig (folderPath : string) consoleColor verbosity = 
         // initialize base configuration class, can be modified
         let config = new LoggingConfiguration()
 
@@ -63,6 +85,9 @@ module Logging =
         consoleTarget2.RowHighlightingRules.Add(errorColorRule)
         consoleTarget2.RowHighlightingRules.Add(fatalColorRule)
         consoleTarget3.RowHighlightingRules.Add(warnColorRule)
+
+        // define and add color rules if terminal background is (rather) bright
+        toDarkOutputColor consoleTarget1 consoleColor
 
         // declare which results in a log in which target
         if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Info, consoleTarget1) // info results shall be used for verbosity 1
