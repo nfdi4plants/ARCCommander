@@ -47,8 +47,6 @@ module AssayAPI =
 
         let assayIdentifier = assayArgs.GetFieldValue  AssayInitArgs.AssayIdentifier
         
-        let assayFileName = Identifier.Assay.fileNameFromIdentifier assayIdentifier
-
         let mt = 
             OntologyAnnotation(
                 ?name = (assayArgs.TryGetFieldValue AssayInitArgs.MeasurementType),
@@ -92,8 +90,6 @@ module AssayAPI =
         
         let assayIdentifier = assayArgs.GetFieldValue  AssayUpdateArgs.AssayIdentifier
         
-        let assayFileName = Identifier.Assay.fileNameFromIdentifier assayIdentifier
-
         let assay = 
             Assays.fromString
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.MeasurementType)
@@ -103,7 +99,7 @@ module AssayAPI =
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyTypeTermAccessionNumber)
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyTypeTermSourceREF)
                 (assayArgs.TryGetFieldValue  AssayUpdateArgs.TechnologyPlatform)
-                assayFileName
+                assayIdentifier
                 (ResizeArray())
    
         let arc = ARC.load(arcConfiguration)
