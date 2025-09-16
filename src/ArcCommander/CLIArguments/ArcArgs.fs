@@ -81,7 +81,7 @@ type ArcGetArgs =
             match this with
             | RepositoryAddress _ -> "Git remote address from which to pull the ARC"
             | BranchName        _ -> "Branch of the remote address which should be used. If none is given, uses \"main\""
-            | LFS                 -> "Does download not only the pointers of LFS files, but also the file content itself. Leaving this flag away is ideal for when you're only interested in the experimental metadata, not the data itself. You should use this flag when you want to actually do analysis or just explore the data."
+            | LFS                 -> "Downloads not only the pointers of LFS files, but also the file content itself. Leaving this flag away is ideal for when you are only interested in experimental metadata, not the data itself. You should use this flag when you want to actually work with the data."
             | Merge               -> "Merges the repository into the current folder. Fails, if the current folder isn't empty."
 
 type ArcServerArgs =
