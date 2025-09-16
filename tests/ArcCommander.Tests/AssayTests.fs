@@ -712,7 +712,108 @@ let testAssayMove =
     ]
     |> testSequenced
 
+let testAssayRename = 
+    testList "AssayRenameTests" [
 
+        testCase "Standard" (fun () ->
+        
+            let configuration = createConfigFromDir "AssayRenameTests" "Standard"
+            setupArc configuration
+
+            let assayIdentifier = "MyAssay"
+            let measurementType = "MyMeasurementType"
+            let targetAssayIdentifier = "NewAssayName"
+        
+            let assayInitArgs : AssayInitArgs list = [
+                AssayInitArgs.AssayIdentifier assayIdentifier
+                AssayInitArgs.MeasurementType measurementType
+            ]
+
+            processCommand configuration AssayAPI.init assayInitArgs
+
+            let assayRenameArgs : AssayRenameArgs list = [
+                AssayRenameArgs.AssayIdentifier assayIdentifier
+                AssayRenameArgs.NewAssayIdentifier targetAssayIdentifier
+            ]
+
+            processCommand configuration AssayAPI.rename assayRenameArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa.AssayCount 1 "Assay count is incorrect after renaming assay"
+
+            let assay = Expect.wantSome (isa.TryGetAssay targetAssayIdentifier) "Renamed assay could not be found with new identifier"
+
+            Expect.equal assay.Identifier targetAssayIdentifier "Assay identifier was not updated correctly"
+
+            let mt = Expect.wantSome assay.MeasurementType "Assay measurement type was removed during renaming"
+
+            Expect.equal mt.NameText measurementType "Assay measurement type was changed during renaming"
+        )
+
+        testCase "TargetAlreadyExists" (fun () ->
+        
+            let configuration = createConfigFromDir "AssayRenameTests" "TargetAlreadyExists"
+            setupArc configuration
+
+            let assayIdentifier = "MyAssay"
+            let targetAssayIdentifier = "NewAssayName"
+        
+            let assayInitArgs1 : AssayInitArgs list = [
+                AssayInitArgs.AssayIdentifier assayIdentifier
+            ]
+
+            let assayInitArgs2 : AssayInitArgs list = [
+                AssayInitArgs.AssayIdentifier targetAssayIdentifier
+            ]
+
+            processCommand configuration AssayAPI.init assayInitArgs1
+            processCommand configuration AssayAPI.init assayInitArgs2
+
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
+            Expect.equal isaBeforeUpdate.AssayCount 2 "Assay count is incorrect before renaming assay"
+
+            let assayRenameArgs : AssayRenameArgs list = [
+                AssayRenameArgs.AssayIdentifier assayIdentifier
+                AssayRenameArgs.NewAssayIdentifier targetAssayIdentifier
+            ]
+
+            processCommand configuration AssayAPI.rename assayRenameArgs          
+            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the target assay identifier already exists and no renaming should have happened"
+        )
+
+        testCase "AssayDoesNotExist" (fun () ->
+            let configuration = createConfigFromDir "AssayRenameTests" "AssayDoesNotExist"
+            setupArc configuration
+
+            let assayIdentifier = "NonExistingAssay"
+            let targetAssayIdentifier = "NewAssayName"
+
+            let assayArgs : AssayRenameArgs list = [
+                AssayRenameArgs.AssayIdentifier assayIdentifier
+                AssayRenameArgs.NewAssayIdentifier targetAssayIdentifier
+            ]
+
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
+            processCommand configuration AssayAPI.rename assayArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been renamed"
+                    
+        )
+    
+    ]
 
 let testAssayPerformers = 
 
@@ -920,4 +1021,5 @@ let assayTests =
         testAssayUnregister
         testAssayUpdate
         testAssayRemove
+        testAssayRename
     ]

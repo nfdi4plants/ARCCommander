@@ -129,6 +129,18 @@ type AssayMoveArgs =
             | AssayIdentifier       _ -> "Name of the assay of interest"
             | TargetStudyIdentifier _ -> "Target study to which the assay should be moved"
 
+/// CLI arguments for renaming assay.
+type AssayRenameArgs = 
+    | [<Mandatory>][<AltCommandLine("-a")>][<Unique>] AssayIdentifier    of assay_identifier     : string
+    | [<Mandatory>][<AltCommandLine("-n")>][<Unique>] NewAssayIdentifier of new_assay_identifier : string
+
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | AssayIdentifier     _ -> "Name of the assay that should be renamed."
+                | NewAssayIdentifier  _ -> "The new unique identifier for the assay."
+
+
 /// CLI arguments for getting the values of a specific assay.
 type AssayShowArgs = AssayEditArgs
 

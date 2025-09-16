@@ -18,6 +18,7 @@ type AssayCommand =
     | [<CliPrefix(CliPrefix.None)>] Update      of update_args :        ParseResults<AssayUpdateArgs>
     | [<CliPrefix(CliPrefix.None)>] Edit        of edit_args :          ParseResults<AssayEditArgs>
     | [<CliPrefix(CliPrefix.None)>] Move        of move_args :          ParseResults<AssayMoveArgs>
+    | [<CliPrefix(CliPrefix.None)>] Rename      of rename_args :        ParseResults<AssayRenameArgs>
     //Retrievals
     | [<CliPrefix(CliPrefix.None)>] Show        of show_args :          ParseResults<AssayShowArgs>
     | [<CliPrefix(CliPrefix.None)>] [<SubCommand()>] List
@@ -39,6 +40,7 @@ type AssayCommand =
             | Update            _ -> "Update an existing assay in the ARC with the given assay metadata"
             | Edit              _ -> "Open and edit an existing assay in the ARC with a text editor. Arguments passed for this command will be pre-set in the editor."
             | Move              _ -> "Move an assay from one study to another"
+            | Rename            _ -> "Rename an existing assay in the ARC. This will rename the assay folder and update the assay name in the investigation file."
 
             | Show              _ -> "Gets the values of an existing assay"
             | List                -> "List all assays registered in the ARC"

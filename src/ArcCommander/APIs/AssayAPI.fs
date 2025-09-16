@@ -328,6 +328,29 @@ module AssayAPI =
         else 
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
 
+
+    let rename (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayRenameArgs>) =
+
+        let log = Logging.createLogger "AssayRenameLog"
+
+        log.Info("Start Assay Rename")
+
+        let assayIdentifier = assayArgs.GetFieldValue AssayRenameArgs.AssayIdentifier
+        let newAssayIdentifier = assayArgs.GetFieldValue AssayRenameArgs.NewAssayIdentifier
+
+        let arc = ARC.load(arcConfiguration)
+        let arcPath = GeneralConfiguration.getWorkDirectory arcConfiguration
+        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+
+        if isa.AssayIdentifiers |> Seq.contains assayIdentifier then
+            if isa.AssayIdentifiers |> Seq.contains newAssayIdentifier then
+                log.Error($"Assay with the identifier {newAssayIdentifier} already exists.")
+            else
+                arc.RenameAssay(arcPath, assayIdentifier, newAssayIdentifier)
+        else 
+            log.Error($"Assay with the identifier {assayIdentifier} does not exist.")
+
+
     /// Moves an assay file from one study group to another (provided by assayArgs).
     let show (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayShowArgs>) =
      
@@ -680,6 +703,7 @@ module AssayAPI =
             log.Info("Start Person List")
 
             let arc = ARC.load(arcConfiguration)
+            
             let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
 
             isa.Assays

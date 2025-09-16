@@ -241,6 +241,108 @@ let testStudyAdd =
     //]
     //|> testSequenced
 
+let testStudyRename = 
+    testList "StudyRenameTests" [
+
+        testCase "Standard" (fun () ->
+        
+            let configuration = createConfigFromDir "StudyRenameTests" "Standard"
+            setupArc configuration
+
+            let studyIdentifier = "MyStudy"
+            let description = "MyDescription"
+            let targetStudyIdentifier = "NewStudyName"
+        
+            let studyInitArgs : StudyInitArgs list = [
+                StudyInitArgs.StudyIdentifier studyIdentifier
+                StudyInitArgs.Description description
+            ]
+
+            processCommand configuration StudyAPI.init studyInitArgs
+
+            let studyRenameArgs : StudyRenameArgs list = [
+                StudyRenameArgs.StudyIdentifier studyIdentifier
+                StudyRenameArgs.NewStudyIdentifier targetStudyIdentifier
+            ]
+
+            processCommand configuration StudyAPI.rename studyRenameArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa.StudyCount 1 "Study count is incorrect after renaming study"
+
+            let study = Expect.wantSome (isa.TryGetStudy targetStudyIdentifier) "Renamed study could not be found with new identifier"
+
+            Expect.equal study.Identifier targetStudyIdentifier "Study identifier was not updated correctly"
+
+            let d = Expect.wantSome study.Description "Study description was removed during renaming"
+
+            Expect.equal d description "Study description was changed during renaming"
+        )
+
+        testCase "TargetAlreadyExists" (fun () ->
+        
+            let configuration = createConfigFromDir "StudyRenameTests" "TargetAlreadyExists"
+            setupArc configuration
+
+            let studyIdentifier = "MyStudy"
+            let targetStudyIdentifier = "NewStudyName"
+        
+            let studyInitArgs1 : StudyInitArgs list = [
+                StudyInitArgs.StudyIdentifier studyIdentifier
+            ]
+
+            let studyInitArgs2 : StudyInitArgs list = [
+                StudyInitArgs.StudyIdentifier targetStudyIdentifier
+            ]
+
+            processCommand configuration StudyAPI.init studyInitArgs1
+            processCommand configuration StudyAPI.init studyInitArgs2
+
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
+            Expect.equal isaBeforeUpdate.StudyCount 2 "Study count is incorrect before renaming study"
+
+            let studyRenameArgs : StudyRenameArgs list = [
+                StudyRenameArgs.StudyIdentifier studyIdentifier
+                StudyRenameArgs.NewStudyIdentifier targetStudyIdentifier
+            ]
+
+            processCommand configuration StudyAPI.rename studyRenameArgs          
+            
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the target study identifier already exists and no renaming should have happened"
+        )
+
+        testCase "StudyDoesNotExist" (fun () ->
+            let configuration = createConfigFromDir "StudyRenameTests" "StudyDoesNotExist"
+            setupArc configuration
+
+            let studyIdentifier = "NonExistingStudy"
+            let targetStudyIdentifier = "NewStudyName"
+
+            let studyArgs : StudyRenameArgs list = [
+                StudyRenameArgs.StudyIdentifier studyIdentifier
+                StudyRenameArgs.NewStudyIdentifier targetStudyIdentifier
+            ]
+
+            let arcBeforeUpdate = ARC.load(configuration)
+            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+
+            processCommand configuration StudyAPI.rename studyArgs
+
+            let arc = ARC.load(configuration)
+            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+
+            Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given study does not exist and none should have been renamed"
+                    
+        )
+    
+    ]    
 
 let testStudyContacts = 
 
@@ -325,5 +427,6 @@ let studyTests =
     testList "Study" [
         testStudyInit
         testStudyAdd
+        testStudyRename
         testStudyContacts
     ]
