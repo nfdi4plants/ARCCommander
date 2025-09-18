@@ -15,28 +15,6 @@ open NLog.Conditions
 /// Functions for working with the NLog logger.
 module Logging =
 
-    let toDarkOutputColor (consoleTarget : ColoredConsoleTarget) consoleColor =
-        match (consoleColor : ConsoleColor) with
-        | ConsoleColor.White
-        | ConsoleColor.Cyan
-        | ConsoleColor.Yellow
-        | ConsoleColor.Gray ->
-            let debugColorRule = new ConsoleRowHighlightingRule()
-            debugColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Debug")
-            debugColorRule.ForegroundColor <- ConsoleOutputColor.Black
-            consoleTarget.RowHighlightingRules.Add(debugColorRule)
-
-            let traceColorRule = new ConsoleRowHighlightingRule()
-            traceColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Trace")
-            traceColorRule.ForegroundColor <- ConsoleOutputColor.Black
-            consoleTarget.RowHighlightingRules.Add(traceColorRule)
-
-            let infoColorRule = new ConsoleRowHighlightingRule()
-            infoColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Info")
-            infoColorRule.ForegroundColor <- ConsoleOutputColor.Black
-            consoleTarget.RowHighlightingRules.Add(infoColorRule)
-        | _ -> ()
-
     /// Generates an NLog config with `folderPath` being the output folder for the log file.
     let generateConfig (folderPath : string) consoleColor verbosity = 
         // initialize base configuration class, can be modified
@@ -70,6 +48,15 @@ module Logging =
         config.AddTarget(fileTarget)
 
         // define rules for colors that shall differ from the default color theme
+        let debugColorRule = new ConsoleRowHighlightingRule()
+        debugColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Debug")
+        debugColorRule.ForegroundColor <- ConsoleOutputColor.Black
+        let traceColorRule = new ConsoleRowHighlightingRule()
+        traceColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Trace")
+        traceColorRule.ForegroundColor <- ConsoleOutputColor.Black
+        let infoColorRule = new ConsoleRowHighlightingRule()
+        infoColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Info")
+        infoColorRule.ForegroundColor <- ConsoleOutputColor.Black
         let warnColorRule = new ConsoleRowHighlightingRule()
         warnColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Warn")
         warnColorRule.ForegroundColor <- ConsoleOutputColor.Yellow
@@ -82,12 +69,12 @@ module Logging =
         fatalColorRule.BackgroundColor <- ConsoleOutputColor.DarkYellow
 
         // add the newly defined rules to the console target
+        consoleTarget1.RowHighlightingRules.Add(infoColorRule)
+        consoleTarget1.RowHighlightingRules.Add(traceColorRule)
+        consoleTarget1.RowHighlightingRules.Add(debugColorRule)
         consoleTarget2.RowHighlightingRules.Add(errorColorRule)
         consoleTarget2.RowHighlightingRules.Add(fatalColorRule)
         consoleTarget3.RowHighlightingRules.Add(warnColorRule)
-
-        // define and add color rules if terminal background is (rather) bright
-        toDarkOutputColor consoleTarget1 consoleColor
 
         // declare which results in a log in which target
         if verbosity >= 1 then config.AddRuleForOneLevel(LogLevel.Info, consoleTarget1) // info results shall be used for verbosity 1
