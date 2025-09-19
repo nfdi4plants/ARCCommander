@@ -89,7 +89,7 @@ module Logging =
         config.AddRuleForOneLevel(LogLevel.Error, fileTarget)
         config.AddRuleForOneLevel(LogLevel.Fatal, consoleTarget2) // fatal errors shall be used for critical events that cause ArcCommander exceptions leading to an unsuccessful termination
         config.AddRuleForOneLevel(LogLevel.Fatal, fileTarget) // impairing the ARC structure
-   
+
         // activate config for logger
         LogManager.Configuration <- config
 
@@ -98,10 +98,10 @@ module Logging =
         if output = null then ""
         elif output.EndsWith('\n') then reviseOutput (output.[0 .. output.Length - 2])
         else output
-    
+
     /// Checks if an error message coming from CMD not being able to call a program with the given name.
     let matchCmdErrMsg (errMsg : string) = errMsg.Contains("is not recognized as an internal or external command")
-    
+
     /// Checks if an error message coming from Bash not being able to call a program with the given name.
     let matchBashErrMsg (errMsg : string) = errMsg.Contains("bash: ") && errMsg.Contains("command not found") || errMsg.Contains("No such file or directory")
 
@@ -131,6 +131,6 @@ module Logging =
         | true,false,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
         | false,false,true -> () // empty error message
         | _ -> log.Error(exn) // everything else will be a non-empty error message
-    
+
     /// Checks if a message (string) is empty and if it is not, applies a logging function to it.
     let checkNonLog s (logging : string -> unit) = if s <> "" then logging s
