@@ -2,7 +2,7 @@
 rootfolder=.arc
 editor=notepad
 verbosity=1
-gitlfsbytethreshold=150000000
+gitlfsbytethreshold=25000000
 gitlfsrules=**/dataset/**
 authclientid = 80f4fbff13c3a27713860b6e71755fb3cba7adf644cf71a7cfcc9c1f67ac3680
 authscope = openid email profile read_repository write_repository
