@@ -6,7 +6,7 @@ open ArcCommander.CLIArguments
 [<HelpFlags([|"--help"; "-h"|])>]
 type ArcCommand =
     ///Parameters
-    | [<AltCommandLine("-p")>][<Unique>]                        WorkingDir  of working_directory : string
+    | [<AltCommandLine("-p")>][<Unique>]                        WorkingDir      of working_directory : string
     | [<AltCommandLine("-v")>][<Unique>]                        Verbosity       of verbosity : int
     ///Commands
     | [<CliPrefix(CliPrefix.None)>]                             Init            of init_args    : ParseResults<ArcInitArgs>
@@ -17,6 +17,7 @@ type ArcCommand =
     | [<CliPrefix(CliPrefix.None)>]                             Server          of server_args  : ParseResults<ArcServerArgs>
     | [<CliPrefix(CliPrefix.None)>][<SubCommand()>]             Update
     | [<AltCommandLine("--version")>][<CliPrefix(CliPrefix.None)>][<SubCommand()>] Version
+    | [<AltCommandLine("--testmessage")>][<CliPrefix(CliPrefix.None)>][<SubCommand()>] TestMessage
     ///Subcommands
     | [<AltCommandLine("i")>][<CliPrefix(CliPrefix.None)>]      Investigation   of verb_and_args : ParseResults<InvestigationCommand>
     | [<AltCommandLine("s")>][<CliPrefix(CliPrefix.None)>]      Study           of verb_and_args : ParseResults<StudyCommand>
@@ -41,4 +42,5 @@ type ArcCommand =
             | Assay         _   -> "Assay functions"
             | Configuration _   -> "Configuration editing"
             | Version           -> "Get the ArcCommander's current version"
+            | TestMessage       -> "Display a test message to check for correct coloring"
             | Server        _   -> "Start the ArcCommander as a local server"

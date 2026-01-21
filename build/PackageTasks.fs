@@ -57,8 +57,9 @@ let publishBinaryInPath (path : string) (version : string) (versionSuffix : stri
                             "Platform", runtime.GetPlatform()
                             "PublishSingleFile", "true"
                         ]
-                }               
-        }        
+                        DisableInternalBinLog = true
+                }
+        }
     )
 
 let publishBinary (version : string) (versionSuffix : string Option) (runtime : RunTime) = 

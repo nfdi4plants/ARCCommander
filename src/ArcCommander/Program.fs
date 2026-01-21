@@ -218,6 +218,7 @@ let handleCommand arcConfiguration command =
     | Server r                  -> processCommand                   arcConfiguration Server.start r
     | Update                    -> processCommandWithoutArgs        arcConfiguration ArcAPI.update
     | Version                   -> processCommandWithoutArgs        arcConfiguration ArcAPI.version
+    | TestMessage               -> processCommandWithoutArgs        arcConfiguration ArcAPI.testMessage
     // Git Verbs
     | Sync r                    -> processCommand                   arcConfiguration GitAPI.sync r
     | Get r                     -> processCommand                   arcConfiguration GitAPI.get r
@@ -228,9 +229,11 @@ let handleCommand arcConfiguration command =
 [<EntryPoint>]
 let main argv =
 
+    let consoleBgColor = Console.BackgroundColor
+
     try
         let parser = ArgumentParser.Create<ArcCommand>(checkStructure = false)
-        
+
         // Failsafe parsing of all correct argument information
         let safeParseResults = parser.ParseCommandLine(inputs = argv, ignoreMissing = true, ignoreUnrecognized = true)
 
@@ -251,12 +254,12 @@ let main argv =
             |> IniData.fromNameValuePairs
             |> ArcConfiguration.load
         // <-----
-        
+
         let arcCommanderDataFolder = IniData.createDataFolder ()
         let arcDataFolder = 
             tryGetArcDataFolderPath workingDir arcCommanderDataFolder
             |> Option.defaultValue arcCommanderDataFolder
-        Logging.generateConfig arcDataFolder (GeneralConfiguration.getVerbosity arcConfiguration)
+        Logging.generateConfig arcDataFolder consoleBgColor (GeneralConfiguration.getVerbosity arcConfiguration)
         let log = Logging.createLogger "ArcCommanderMainLog"
 
         log.Trace("Start ArcCommander")
@@ -279,7 +282,7 @@ let main argv =
             1
 
     with e1 ->
-        
+
         let currDir = Directory.GetCurrentDirectory()
 
         // check for existence of an ARC-specific log file:
@@ -288,13 +291,13 @@ let main argv =
             let arcDataFolder = 
                 tryGetArcDataFolderPath currDir arcCommanderDataFolder
                 |> Option.defaultValue arcCommanderDataFolder
-            Logging.generateConfig arcDataFolder 0
+            Logging.generateConfig arcDataFolder consoleBgColor 0
 
         // create logging config, create .arc folder if not already existing:
         with _ ->
             let arcFolder = Path.Combine(currDir, ".arc")
             Directory.CreateDirectory(arcFolder) |> ignore
-            Logging.generateConfig arcFolder 0 
+            Logging.generateConfig arcFolder consoleBgColor 0 
         
         let log = Logging.createLogger "ArcCommanderMainLog"
 

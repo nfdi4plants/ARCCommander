@@ -35,27 +35,44 @@ module API =
 /// ArcCommander API functions that get executed by top level subcommand verbs.
 module ArcAPI = 
 
+    /// Gets the ArcCommander's current version and displays it.
     let version _ =
-        
+
         let log = Logging.createLogger "ArcVersionLog"
 
-        log.Info($"Start Arc Version")
-        
+        log.Info("Start Arc Version")
+
         let assembly = Reflection.Assembly.GetExecutingAssembly()
-            
+
         let productVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion
-        
+
         if productVersion.Contains "-" then 
             log.Debug($"v{productVersion}")
         else 
             let fv = assembly.GetName().Version
             log.Debug($"v{fv.Major}.{fv.Minor}.{fv.Build}")
 
+
+    /// Displays test messages at different log levels.
+    let testMessage _ =
+
+        let log = Logging.createLogger "ArcTestMessageLog"
+
+        //log.Info("Start Arc TestMessage")
+
+        log.Info("This is an Info message")
+        log.Trace("This is a Trace message")
+        log.Debug("This is a Debug message")
+        log.Warn("This is a Warning message")
+        log.Error("This is an Error message")
+        log.Fatal("This is a Fatal Error message")
+
+
     /// Initializes the ARC-specific folder structure.
     let init (arcConfiguration : ArcConfiguration) (arcArgs : ArcParseResults<ArcInitArgs>) =
 
         let log = Logging.createLogger "ArcInitLog"
-        
+
         log.Info("Start Arc Init")
 
         let workDir = GeneralConfiguration.getWorkDirectory arcConfiguration
@@ -64,9 +81,9 @@ module ArcAPI =
         let gitLFSThreshold     = arcArgs.TryGetFieldValue ArcInitArgs.GitLFSByteThreshold 
         let branch              = arcArgs.TryGetFieldValue ArcInitArgs.Branch |> Option.defaultValue GitHelper.defaultBranch
         let repositoryAddress   = arcArgs.TryGetFieldValue ArcInitArgs.RepositoryAddress 
-        let identifier =    
+        let identifier =
             arcArgs.TryGetFieldValue ArcInitArgs.InvestigationIdentifier
-            |> Option.defaultValue (DirectoryInfo(workDir).Name)       
+            |> Option.defaultValue (DirectoryInfo(workDir).Name)
 
         log.Trace("Create Directory")
 
@@ -75,7 +92,7 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         let isa = ArcInvestigation.create(identifier)
-        ARC(isa).Write(arcConfiguration)     
+        ARC(isa).Write(arcConfiguration)
 
         GeneralConfiguration.tryGetRootfolder arcConfiguration
         |> Option.iter (fun p -> 
@@ -83,7 +100,7 @@ module ArcAPI =
             Directory.CreateDirectory dir |> ignore
             let p = Path.Combine(dir,".gitkeep")
             File.WriteAllText(p,"")
-        )       
+        )
 
         log.Trace("Set configuration")
 

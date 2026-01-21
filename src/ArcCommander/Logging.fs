@@ -16,7 +16,7 @@ open NLog.Conditions
 module Logging =
 
     /// Generates an NLog config with `folderPath` being the output folder for the log file.
-    let generateConfig (folderPath : string) verbosity = 
+    let generateConfig (folderPath : string) consoleColor verbosity = 
         // initialize base configuration class, can be modified
         let config = new LoggingConfiguration()
 
@@ -48,6 +48,15 @@ module Logging =
         config.AddTarget(fileTarget)
 
         // define rules for colors that shall differ from the default color theme
+        let debugColorRule = new ConsoleRowHighlightingRule()
+        debugColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Debug")
+        debugColorRule.ForegroundColor <- ConsoleOutputColor.Black
+        let traceColorRule = new ConsoleRowHighlightingRule()
+        traceColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Trace")
+        traceColorRule.ForegroundColor <- ConsoleOutputColor.Black
+        let infoColorRule = new ConsoleRowHighlightingRule()
+        infoColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Info")
+        infoColorRule.ForegroundColor <- ConsoleOutputColor.Black
         let warnColorRule = new ConsoleRowHighlightingRule()
         warnColorRule.Condition <- ConditionParser.ParseExpression("level == LogLevel.Warn")
         warnColorRule.ForegroundColor <- ConsoleOutputColor.Yellow
@@ -60,6 +69,9 @@ module Logging =
         fatalColorRule.BackgroundColor <- ConsoleOutputColor.DarkYellow
 
         // add the newly defined rules to the console target
+        consoleTarget1.RowHighlightingRules.Add(infoColorRule)
+        consoleTarget1.RowHighlightingRules.Add(traceColorRule)
+        consoleTarget1.RowHighlightingRules.Add(debugColorRule)
         consoleTarget2.RowHighlightingRules.Add(errorColorRule)
         consoleTarget2.RowHighlightingRules.Add(fatalColorRule)
         consoleTarget3.RowHighlightingRules.Add(warnColorRule)
@@ -77,7 +89,7 @@ module Logging =
         config.AddRuleForOneLevel(LogLevel.Error, fileTarget)
         config.AddRuleForOneLevel(LogLevel.Fatal, consoleTarget2) // fatal errors shall be used for critical events that cause ArcCommander exceptions leading to an unsuccessful termination
         config.AddRuleForOneLevel(LogLevel.Fatal, fileTarget) // impairing the ARC structure
-   
+
         // activate config for logger
         LogManager.Configuration <- config
 
@@ -86,10 +98,10 @@ module Logging =
         if output = null then ""
         elif output.EndsWith('\n') then reviseOutput (output.[0 .. output.Length - 2])
         else output
-    
+
     /// Checks if an error message coming from CMD not being able to call a program with the given name.
     let matchCmdErrMsg (errMsg : string) = errMsg.Contains("is not recognized as an internal or external command")
-    
+
     /// Checks if an error message coming from Bash not being able to call a program with the given name.
     let matchBashErrMsg (errMsg : string) = errMsg.Contains("bash: ") && errMsg.Contains("command not found") || errMsg.Contains("No such file or directory")
 
@@ -119,6 +131,6 @@ module Logging =
         | true,false,false -> printfn "%s" exn.Message // exception message contains usage message but NO error message
         | false,false,true -> () // empty error message
         | _ -> log.Error(exn) // everything else will be a non-empty error message
-    
+
     /// Checks if a message (string) is empty and if it is not, applies a logging function to it.
     let checkNonLog s (logging : string -> unit) = if s <> "" then logging s
