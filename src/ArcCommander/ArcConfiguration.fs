@@ -440,7 +440,7 @@ module ARCExtensions =
         if System.IO.File.Exists path then 
             ()
         else 
-            Contract.fulfillWriteContractAsync basePath c
+            Contract.fulfillWriteContractAsync false basePath c //false means do not override existing files
             |> Async.RunSynchronously
             |> ignore
 

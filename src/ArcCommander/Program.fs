@@ -1,4 +1,4 @@
-﻿module ArcCommander.Program
+﻿module ArcCommander.Program 
 
 // Learn more about F# at http://fsharp.org
 open ArcCommander
@@ -162,16 +162,18 @@ let handleStudySubCommands arcConfiguration studyVerb =
     | StudyCommand.Init r                   -> processCommand arcConfiguration StudyAPI.init        r
     | StudyCommand.Register r               -> processCommand arcConfiguration StudyAPI.register    r
     | StudyCommand.Add r                    -> processCommand arcConfiguration StudyAPI.add         r
+    | StudyCommand.Delete r                 -> processCommand arcConfiguration StudyAPI.delete      r    
+    | StudyCommand.Unregister r             -> processCommand arcConfiguration StudyAPI.unregister  r    
     | StudyCommand.Remove r                 -> processCommand arcConfiguration StudyAPI.remove      r
-    | StudyCommand.Unregister r             -> processCommand arcConfiguration StudyAPI.unregister  r
-    | StudyCommand.Delete r                 -> processCommand arcConfiguration StudyAPI.delete      r
     | StudyCommand.Update r                 -> processCommand arcConfiguration StudyAPI.update      r
     | StudyCommand.Edit r                   -> processCommand arcConfiguration StudyAPI.edit        r
+    | StudyCommand.Rename r                 -> processCommand arcConfiguration StudyAPI.rename      r
     | StudyCommand.Show r                   -> processCommand arcConfiguration StudyAPI.show        r
     | StudyCommand.List                     -> processCommandWithoutArgs arcConfiguration StudyAPI.list
     | StudyCommand.Person subCommand        -> handleStudyContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
     | StudyCommand.Publication subCommand   -> handleStudyPublicationsSubCommands arcConfiguration (subCommand.GetSubCommand())
     | StudyCommand.Design subCommand        -> handleStudyDesignSubCommands arcConfiguration (subCommand.GetSubCommand())
+
     //| StudyCommand.Factor subCommand        -> handleStudyFactorSubCommands arcConfiguration (subCommand.GetSubCommand())
     //| StudyCommand.Protocol subCommand      -> handleStudyProtocolSubCommands arcConfiguration (subCommand.GetSubCommand())
 
@@ -186,9 +188,10 @@ let handleAssaySubCommands arcConfiguration assayVerb =
     | AssayCommand.Update             r -> processCommand arcConfiguration AssayAPI.update        r
     | AssayCommand.Edit               r -> processCommand arcConfiguration AssayAPI.edit          r
     | AssayCommand.Move               r -> processCommand arcConfiguration AssayAPI.move          r
+    | AssayCommand.Rename             r -> processCommand arcConfiguration AssayAPI.rename r
     | AssayCommand.Show               r -> processCommand arcConfiguration AssayAPI.show          r
+    | AssayCommand.List                 -> processCommandWithoutArgs arcConfiguration AssayAPI.list    
     | AssayCommand.Export             r -> processCommand arcConfiguration AssayAPI.export        r
-    | AssayCommand.List                 -> processCommandWithoutArgs arcConfiguration AssayAPI.list
     | AssayCommand.Person subCommand    -> handleAssayContactsSubCommands arcConfiguration (subCommand.GetSubCommand())
 
 let handleConfigurationSubCommands arcConfiguration configurationVerb =

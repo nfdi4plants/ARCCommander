@@ -15,20 +15,16 @@ module API =
         
         open ARCtrl.Process.Conversion
 
-        let getProcesses (arc : ARC) =
-            match arc.ISA with
-            | Some inv ->
+        let getProcesses (arc : ARC) = //updated
+            let studyProcs = 
+                arc.Studies
+                |> Seq.collect (fun s -> s.GetProcesses())
+            let assayProcs = 
+                arc.Assays
+                |> Seq.collect (fun a -> a.GetProcesses())
+            Seq.append studyProcs assayProcs
+            |> Seq.toList
 
-                let studyProcs = 
-                    inv.Studies
-                    |> Seq.collect (fun s -> s.GetProcesses())
-                let assayProcs =
-                    inv.Assays
-                    |> Seq.collect (fun a -> a.GetProcesses())
-                Seq.append studyProcs assayProcs
-                |> Seq.toList
-
-            | None -> []
             
 
 
@@ -75,7 +71,7 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         let isa = ArcInvestigation.create(identifier)
-        ARC(isa).Write(arcConfiguration)     
+        ARC(isa.Identifier).Write(arcConfiguration)     
 
         GeneralConfiguration.tryGetRootfolder arcConfiguration
         |> Option.iter (fun p -> 
@@ -132,10 +128,7 @@ module ArcAPI =
         log.Info("Start Arc Update")
 
         let arc = ARC.load(arcConfiguration)
-        arc.ISA
-        |> Option.iter (fun isa -> 
-            isa.UpdateIOTypeByEntityID()
-        )
+        arc.UpdateIOTypeByEntityID() //simplified
         arc.Update(arcConfiguration)
 
     /// Export the complete ARC as a JSON object.
@@ -154,7 +147,7 @@ module ArcAPI =
                 API.ARC.getProcesses arc
                 |> ARCtrl.Json.ProcessSequence.toISAJsonString(2)
             else 
-                arc.ISA.Value.ToISAJsonString(2)
+                arc.ToISAJsonString(2)
 
         match arcArgs.TryGetFieldValue Output with
         | Some p -> 

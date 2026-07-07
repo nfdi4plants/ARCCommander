@@ -24,7 +24,7 @@ let testArcInit =
             processCommand config ArcAPI.init investigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
 
             Expect.equal isa.Identifier identifier "Identifier was not set correctly"
         )
@@ -36,7 +36,7 @@ let testArcInit =
             processCommand config ArcAPI.init investigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
 
             Expect.equal isa.Identifier workdirName "Identifier was not set correctly"
         )
@@ -52,7 +52,7 @@ let testArcInit =
             processCommand config ArcAPI.init secondInvestigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
 
             Expect.equal isa.Identifier identifier "Identifier was overwritten"
         )
@@ -92,7 +92,7 @@ let testArcUpdate =
             processCommand config AssayAPI.Contacts.register personArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
             let study = Expect.wantSome (isa.TryGetStudy assayIdentifier) "Study was not created"
             Expect.equal study.Contacts.Count 0 "Study should not have any contacts"
             let assay = Expect.wantSome (study.TryGetRegisteredAssay assayIdentifier) "Assay was not created"

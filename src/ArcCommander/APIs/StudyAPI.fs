@@ -52,14 +52,14 @@ module StudyAPI =
                 ?publicReleaseDate = studyArgs.TryGetFieldValue StudyInitArgs.PublicReleaseDate
                 )
 
-        let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let mutable arc = ARC.load(arcConfiguration)
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         if isa.StudyIdentifiers |> Seq.contains identifier then
             log.Error($"Study with identifier {identifier} already exists.")
         
         isa.AddStudy(study)
-        arc.ISA <- Some isa
+        arc <- isa
         arc.Update(arcConfiguration)
 
     /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
@@ -83,8 +83,8 @@ module StudyAPI =
                 ?publicReleaseDate = studyArgs.TryGetFieldValue StudyUpdateArgs.PublicReleaseDate
                 )
 
-        let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let mutable arc = ARC.load(arcConfiguration)
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         let msg = $"Study with the identifier {identifier} does not exist."
         match isa.TryGetStudy identifier with
@@ -99,7 +99,7 @@ module StudyAPI =
             log.Error($"{msg}")
             log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
 
-        arc.ISA <- Some isa
+        arc <- isa
         arc.Update(arcConfiguration)        
 
     // /// Opens an existing study file in the ARC with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
@@ -121,8 +121,8 @@ module StudyAPI =
                 (Studies.fromRows 1 >> fun (_,_,_,items) -> items.Value |> fst) 
                 oldStudy
 
-        let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let mutable arc = ARC.load(arcConfiguration)
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         match isa.TryGetStudy studyIdentifier with 
         | Some study ->
@@ -131,7 +131,7 @@ module StudyAPI =
         | None ->
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
 
-        arc.ISA <- Some isa
+        arc <- isa
         arc.Update(arcConfiguration)
 
     /// Registers an existing study in the ARC's investigation file with the given study metadata contained in cliArgs.
@@ -143,14 +143,14 @@ module StudyAPI =
 
         let identifier = studyArgs.GetFieldValue StudyRegisterArgs.StudyIdentifier
 
-        let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let mutable arc = ARC.load(arcConfiguration)
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
             log.Error($"Study with identifier {identifier} is already registered.")
         else
         isa.RegisterStudy(identifier)
-        arc.ISA <- Some isa
+        arc <- isa
         arc.Update(arcConfiguration)
 
     /// Creates a new study file in the ARC and registers it in the ARC's investigation file with the given study metadata contained in cliArgs.
@@ -213,12 +213,12 @@ module StudyAPI =
 
         let identifier = studyArgs.GetFieldValue StudyUnregisterArgs.StudyIdentifier
 
-        let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let mutable arc = ARC.load(arcConfiguration)
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
             isa.DeregisterStudy(identifier) |> ignore
-            arc.ISA <- Some isa
+            arc <- isa
             arc.Update(arcConfiguration)
         else
             log.Error($"Study with identifier {identifier} is not registered.")
@@ -240,7 +240,7 @@ module StudyAPI =
 
         let arc = ARC.load(arcConfiguration)
         let arcPath = GeneralConfiguration.getWorkDirectory arcConfiguration
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         if isa.StudyIdentifiers |> Seq.contains oldIdentifier then
             if isa.StudyIdentifiers |> Seq.contains newIdentifier then
@@ -260,7 +260,7 @@ module StudyAPI =
         let identifier = studyArgs.GetFieldValue StudyShowArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         match isa.TryGetStudy identifier with
         | Some study -> 
@@ -276,7 +276,7 @@ module StudyAPI =
         let log = Logging.createLogger "StudyListLog"
         
         let arc = ARC.load(arcConfiguration)
-        let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         let registered = 
             isa.RegisteredStudyIdentifiers
@@ -334,7 +334,7 @@ module StudyAPI =
             let studyIdentifier = personArgs.GetFieldValue PersonUpdateArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -372,7 +372,7 @@ module StudyAPI =
             let studyIdentifier = personArgs.GetFieldValue PersonEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -425,7 +425,7 @@ module StudyAPI =
             person.ORCID <- orcid
                        
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -454,7 +454,7 @@ module StudyAPI =
             let midInitials = personArgs.TryGetFieldValue PersonUnregisterArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let tryGetIndex (persons : Person seq) =
                 persons
@@ -490,7 +490,7 @@ module StudyAPI =
             let midInitials = personArgs.TryGetFieldValue PersonShowArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -513,7 +513,7 @@ module StudyAPI =
             log.Info("Start Person List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             isa.Studies
             |> Seq.iter (fun a ->
@@ -560,7 +560,7 @@ module StudyAPI =
                      (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = publicationArgs.GetFieldValue PublicationUpdateArgs.StudyIdentifier
 
@@ -598,7 +598,7 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -639,7 +639,7 @@ module StudyAPI =
                     (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = publicationArgs.GetFieldValue PublicationRegisterArgs.StudyIdentifier
 
@@ -667,7 +667,7 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationUnregisterArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -694,7 +694,7 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationShowArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy(studyIdentifier) with
             | Some s ->
@@ -716,7 +716,7 @@ module StudyAPI =
             log.Info("Start Publication List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             isa.Studies
             |> Seq.iter (fun study ->
@@ -781,7 +781,7 @@ module StudyAPI =
                     )
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = designArgs.GetFieldValue DesignUpdateArgs.StudyIdentifier
 
@@ -818,8 +818,7 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
-
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
             
             match isa.TryGetStudy studyIdentifier with
             | Some s ->
@@ -855,7 +854,7 @@ module StudyAPI =
                     )
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy studyIdentifier with
             | Some s ->
@@ -879,7 +878,7 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignUnregisterArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy studyIdentifier with
             | Some s ->
@@ -900,7 +899,7 @@ module StudyAPI =
             let name = designArgs.GetFieldValue DesignShowArgs.DesignType
             let studyIdentifier = designArgs.GetFieldValue DesignShowArgs.StudyIdentifier
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             match isa.TryGetStudy studyIdentifier with
             | Some s ->
@@ -922,7 +921,7 @@ module StudyAPI =
             
             log.Info("Start Design List")
             let arc = ARC.load(arcConfiguration)
-            let isa = arc.ISA |> Option.defaultValue (ArcInvestigation(Helper.Identifier.createMissingIdentifier()))
+            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             isa.Studies
             |> Seq.iter (fun study ->
