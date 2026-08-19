@@ -631,19 +631,24 @@ let testAssayMove =
 
             let arcBeforeUpdate = ARC.load(configuration)
             let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate)"Investigation was not created"
-            let testAssay = isaBeforeUpdate.GetStudyAt(0).RegisteredAssays[1]
+            let sourceStudyBeforeUpdate = isaBeforeUpdate.GetStudy studyIdentifier
+            let testAssay = sourceStudyBeforeUpdate.GetRegisteredAssay assayIdentifier
 
             processCommand configuration AssayAPI.move assayMovArgs
 
-            
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome (Some arc)"Investigation was not created"  
+            let isa =
+                Expect.wantSome (Some arc) "Investigation was not created"
 
-            Expect.equal (isa.GetStudyAt(0).RegisteredAssayCount) (isaBeforeUpdate.GetStudyAt(0).RegisteredAssayCount - 1) "Assay was not removed from source study"
+            let sourceStudy = isa.GetStudy studyIdentifier
+            let targetStudy = isa.GetStudy targetStudyIdentfier
 
-            let assay = isa.GetStudyAt(1).GetRegisteredAssay assayIdentifier
+            Expect.equal
+                sourceStudy.RegisteredAssayCount
+                (sourceStudyBeforeUpdate.RegisteredAssayCount - 1)
+                "Assay was not removed from source study"
 
-            //Expect.isSome assay "Assay was not added to target study"
+            let assay = targetStudy.GetRegisteredAssay assayIdentifier
 
             Expect.equal assay testAssay "Assay was moved but some values are not correct"
             
