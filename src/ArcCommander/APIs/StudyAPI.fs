@@ -1197,7 +1197,7 @@ module StudyAPI =
     //        | None -> 
     //            log.Error("The investigation does not contain any studies.")
 
-    /// Functions for altering investigation protocols.
+    // Functions for altering investigation protocols.
     //module Protocols =
         
     //    open CLIArguments.StudyProtocols

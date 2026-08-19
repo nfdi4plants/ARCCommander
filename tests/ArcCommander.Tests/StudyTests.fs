@@ -10,11 +10,6 @@ open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
-let setupArc (arcConfiguration:ArcConfiguration) =
-    let arcArgs : ArcInitArgs list =  [ArcInitArgs.InvestigationIdentifier "TestInvestigation"] 
-
-    processCommand arcConfiguration ArcAPI.init             arcArgs
-
 let testStudyInit = 
     
     let testListName = "StudyInitTests"

@@ -11,13 +11,6 @@ open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
-let setupArc (arcConfiguration : ArcConfiguration) =
-    let testDir = arcConfiguration.General.["workdir"]
-    if System.IO.Directory.Exists(testDir) then
-        System.IO.Directory.Delete(testDir, true)
-    
-    let arcArgs : ArcInitArgs list = [ArcInitArgs.InvestigationIdentifier "TestInvestigation"] 
-    processCommand arcConfiguration ArcAPI.init arcArgs
 
 let testAssayTestFunction = 
 
