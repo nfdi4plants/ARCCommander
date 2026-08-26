@@ -10,11 +10,6 @@ open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
-let setupArc (arcConfiguration:ArcConfiguration) =
-    let arcArgs : ArcInitArgs list =  [ArcInitArgs.InvestigationIdentifier "TestInvestigation"] 
-
-    processCommand arcConfiguration ArcAPI.init             arcArgs
-
 let testStudyInit = 
     
     let testListName = "StudyInitTests"
@@ -30,7 +25,7 @@ let testStudyInit =
             processCommand config StudyAPI.init studyArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
             Expect.equal isa.Studies.Count 1 "Study was not initialized in ARC"
             Expect.equal isa.RegisteredStudies.Count 0 "Study was registered to ISA, even though it should not have been"   
         )
@@ -56,7 +51,7 @@ let testStudyAdd =
             let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created" 
+            let isa = Expect.wantSome (Some arc)"ISA was not created" 
             Expect.equal isa.Studies.Count 1 "Study was not initialized in ARC"
             Expect.equal isa.RegisteredStudies.Count 1 "Study was not registetered to ISA"
             Expect.equal isa.RegisteredStudies.[0].Identifier studyIdentifier "Study was not registetered to ISA with correct identifier"
@@ -81,7 +76,7 @@ let testStudyAdd =
             let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             processCommand config StudyAPI.add studyArgs
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc)"ISA was not created"
             Expect.equal isa.Studies.Count 2 "Second study was not added to ISA"
             Expect.equal isa.RegisteredStudies.Count 2 "Second study was not registetered to ISA"
             Expect.equal isa.RegisteredStudies.[1].Identifier studyIdentifier "Second study was not registetered to ISA with correct identifier"
@@ -112,7 +107,7 @@ let testStudyAdd =
             let studyArgs = [StudyAddArgs.StudyIdentifier studyIdentifier;StudyAddArgs.Description studyDescription]
             Expect.throws (fun () -> processCommand config StudyAPI.add studyArgs) "Study was added to ISA, even though it already existed"
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc)"ISA was not created"
             Expect.equal isa.Studies.Count 2 "Second study was added to ISA, even though it already existed"
             Expect.equal isa.RegisteredStudies.Count 2 "Second study was added to ISA, even though it already existed"
         )
@@ -268,7 +263,7 @@ let testStudyRename =
             processCommand configuration StudyAPI.rename studyRenameArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc) "Investigation was not created"
 
             Expect.equal isa.StudyCount 1 "Study count is incorrect after renaming study"
 
@@ -301,7 +296,7 @@ let testStudyRename =
             processCommand configuration StudyAPI.init studyInitArgs2
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             Expect.equal isaBeforeUpdate.StudyCount 2 "Study count is incorrect before renaming study"
 
@@ -313,7 +308,7 @@ let testStudyRename =
             processCommand configuration StudyAPI.rename studyRenameArgs          
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the target study identifier already exists and no renaming should have happened"
         )
@@ -331,12 +326,12 @@ let testStudyRename =
             ]
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate)"Investigation was not created"
 
             processCommand configuration StudyAPI.rename studyArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc) "Investigation was not created"
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given study does not exist and none should have been renamed"
                     
@@ -370,7 +365,7 @@ let testStudyContacts =
     let arc = ARC.load(config)
 
     let studyBeforeChangingIt = 
-        arc.ISA.Value.GetStudy studyIdentifier
+        arc.GetStudy studyIdentifier
 
     testList testListName [
         testCase "Update" (fun () -> 
@@ -401,9 +396,9 @@ let testStudyContacts =
             processCommand config StudyAPI.Contacts.update contactArgs
             
             let arc = ARC.load(config)
-            let investigation = arc.ISA.Value
+            // let investigation = arc.ISA.Value
 
-            let study = investigation.TryGetStudy studyIdentifier
+            let study = arc.TryGetStudy studyIdentifier
 
             Expect.isSome study "Study missing after updating person"
 

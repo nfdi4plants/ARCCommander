@@ -65,7 +65,7 @@ let arcImportHandler : HttpHandler =
 
             ArcInvestigation.fromJsonString isaJsonString
             //|> fun i -> {i with Remarks = []}
-            |> fun i -> ARC(i).Write(tmpDir)
+            |> fun i -> ARC(i.Identifier).Write(tmpDir)
 
             System.IO.Compression.ZipFile.CreateFromDirectory(tmpDir,tmpZip )
 

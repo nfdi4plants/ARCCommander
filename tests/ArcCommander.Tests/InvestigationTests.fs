@@ -38,7 +38,7 @@ let testInvestigationUpdate =
             processCommand config InvestigationAPI.update investigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc)"ISA was not created"
 
             Expect.equal isa.Identifier newIdentifier "Identifier was not set correctly"
 
@@ -69,7 +69,7 @@ let testInvestigationUpdate =
             processCommand config InvestigationAPI.update investigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc)"ISA was not created"
 
             Expect.equal isa.Identifier newIdentifier "Identifier should not be overwritten by empty identifier, even if \"overwrite by empty\" is set."
 
@@ -105,7 +105,7 @@ let testInvestigationContacts =
             processCommand configuration InvestigationAPI.Contacts.register personRegisterArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa.Contacts.Count 1 "Person was not added to assay"
             Expect.equal isa.Contacts.[0] testPerson "Person was not correctly added to assay"
@@ -141,7 +141,7 @@ let testInvestigationContacts =
             processCommand configuration InvestigationAPI.Contacts.register secondPersonRegisterArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa.Contacts.Count 2 "Person was not added to assay"
             Expect.equal isa.Contacts.[1] testPerson "Person was not correctly added to assay"       
@@ -179,7 +179,7 @@ let testInvestigationContacts =
 
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc) "Investigation was not created"
 
             Expect.equal isa.Contacts.Count 2 "Identical person was added to assay"
             Expect.equal isa.Contacts.[1] testPerson "Person was modified"       
@@ -228,7 +228,7 @@ let testInvestigationContacts =
             processCommand configuration InvestigationAPI.Contacts.update secondPersonUpdateArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa.Contacts.Count 2 "Identical person was added to assay"
             Expect.equal isa.Contacts.[0] testPerson1 "Person was modified"       

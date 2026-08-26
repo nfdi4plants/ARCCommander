@@ -18,30 +18,33 @@ let testArcInit =
     testList testListName [
         testCase "Simple" (fun () -> 
             let config = createConfigFromDir testListName "Simple"
+            resetArc config
             let identifier = "MyInvestigation"
             let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
 
             processCommand config ArcAPI.init investigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
 
             Expect.equal isa.Identifier identifier "Identifier was not set correctly"
         )
         testCase "NoIdentifierGiven" (fun () -> 
             let workdirName = "NoIdentifierGiven"
             let config = createConfigFromDir testListName workdirName
+            resetArc config
             let investigationArgs : ArcInitArgs list = []
 
             processCommand config ArcAPI.init investigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
 
             Expect.equal isa.Identifier workdirName "Identifier was not set correctly"
         )
         testCase "ShouldNotOverwrite" (fun () -> 
             let config = createConfigFromDir testListName "Simple"
+            resetArc config
             let identifier = "MyInvestigation"
             let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
 
@@ -52,12 +55,13 @@ let testArcInit =
             processCommand config ArcAPI.init secondInvestigationArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
 
             Expect.equal isa.Identifier identifier "Identifier was overwritten"
         )
         testCase "CreateGitIgnore" (fun () ->
             let config = createConfigFromDir testListName "CreateGitIgnore"
+            setupArc config
             let investigationArgs = [ArcInitArgs.Gitignore]
         
             processCommand config ArcAPI.init investigationArgs
@@ -75,6 +79,7 @@ let testArcUpdate =
     testList testListName [
         testCase "DontPutAssayPerformerIntoStudy" (fun () -> 
             let config = createConfigFromDir testListName "DontPutAssayPerformerIntoStudy"
+            setupArc config
 
             let identifier = "MyInvestigation"
             let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
@@ -92,7 +97,7 @@ let testArcUpdate =
             processCommand config AssayAPI.Contacts.register personArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "ISA was not created"
+            let isa = Expect.wantSome (Some arc) "ISA was not created"
             let study = Expect.wantSome (isa.TryGetStudy assayIdentifier) "Study was not created"
             Expect.equal study.Contacts.Count 0 "Study should not have any contacts"
             let assay = Expect.wantSome (study.TryGetRegisteredAssay assayIdentifier) "Assay was not created"
@@ -109,6 +114,7 @@ let testArcExport =
     testList testListName [
         testCase "Simple" (fun () -> 
             let config = createConfigFromDir testListName "Simple"
+            resetArc config
 
             let identifier = "MyInvestigation"
             let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
@@ -132,8 +138,9 @@ let testArcExport =
             Expect.sequenceEqual study.RegisteredAssayIdentifiers [assayIdentifier] "Assay was not exported"
 
         )
-        ptestCase "OnlyExportRegistered" (fun () ->
+        testCase "ExportsStudiesAndRegisteredAssays" (fun () -> // is ptestCase
             let config = createConfigFromDir testListName "OnlyExportRegistered"
+            resetArc config
 
             let identifier = "MyInvestigation"
             let investigationArgs = [ArcInitArgs.InvestigationIdentifier identifier]
@@ -160,7 +167,7 @@ let testArcExport =
             let isa = ArcInvestigation.fromISAJsonString (System.IO.File.ReadAllText exportPath)
 
             Expect.equal isa.Identifier identifier "Identifier was not set correctly in exported json"
-            Expect.equal isa.Studies.Count 1 "Only one study should be exported"
+            Expect.equal isa.Studies.Count 2 "Both studies should be exported"
             let study = Expect.wantSome (isa.TryGetStudy registeredAssayIdentifier) "Study was not exported"
 
             Expect.equal isa.AssayCount 1 "Only one assay should be exported"

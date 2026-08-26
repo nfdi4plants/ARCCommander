@@ -11,10 +11,6 @@ open ArgumentProcessing
 open ArcCommander.CLIArguments
 open ArcCommander.APIs
 
-let setupArc (arcConfiguration : ArcConfiguration) =
-    let arcArgs : ArcInitArgs list = [ArcInitArgs.InvestigationIdentifier "TestInvestigation"] 
-
-    processCommand arcConfiguration ArcAPI.init             arcArgs
 
 let testAssayTestFunction = 
 
@@ -27,14 +23,14 @@ let testAssayTestFunction =
             let tt = OntologyAnnotation("mass spectrometry","OBI")
             let tp = OntologyAnnotation "iTRAQ"
 
-            let testAssay = ArcAssay.create(assayIdentifier,mt,tt,tp)
+            let testAssay = ArcAssay.create(identifier = assayIdentifier, measurementType = mt, technologyType = tt, technologyPlatform = tp)
 
             let arc = ARC.load(testDirectory)
-            let investigation = arc.ISA.Value
+            //let investigation = arc.ISA.Value
             // Positive control
-            Expect.equal investigation.Studies.[0].RegisteredAssays.[0] testAssay "The assay in the file should match the one created per hand but did not"
+            Expect.equal arc.Studies.[0].RegisteredAssays.[0] testAssay "The assay in the file should match the one created per hand but did not"
             // Negative control
-            Expect.notEqual investigation.Studies.[0].RegisteredAssays.[1] testAssay "The assay in the file did not match the one created per hand and still returned true"
+            Expect.notEqual arc.Studies.[0].RegisteredAssays.[1] testAssay "The assay in the file did not match the one created per hand and still returned true"
         )
         testCase "ListsCorrectAssaysInCorrectStudies" (fun () -> 
             let testAssays = [
@@ -43,11 +39,11 @@ let testAssayTestFunction =
             ]
 
             let arc = ARC.load(testDirectory)
-            let investigation = arc.ISA.Value
+            //let investigation = arc.ISA.Value
 
             testAssays
             |> List.iter (fun (studyIdentifier,assayIdentifiers) ->
-                match investigation.TryGetStudy studyIdentifier with
+                match arc.TryGetStudy studyIdentifier with
                 | Some study ->
                     Expect.sequenceEqual study.RegisteredAssayIdentifiers assayIdentifiers "Assay Filenames did not match the expected ones"
                 | None -> failwith "Study %s could not be taken from the ivnestigation even though it should be there"                    
@@ -88,7 +84,7 @@ let testAssayRegister =
             processCommand configuration AssayAPI.register assayRegisterArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             match isa.TryGetStudy studyIdentifier with
             | Some study ->
@@ -127,7 +123,7 @@ let testAssayRegister =
             Expect.throws (fun () -> processCommand configuration AssayAPI.add assay2Args) "trying to create a second, nearly identical assay which shall NOT work"
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             match isa.TryGetStudy studyIdentifier with
             | Some study ->
@@ -177,7 +173,7 @@ let testAssayRegister =
             processCommand configuration AssayAPI.register  assayRegisterArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             match isa.TryGetStudy studyIdentifier with
             | Some study ->
@@ -208,7 +204,7 @@ let testAssayRegister =
             processCommand configuration AssayAPI.add assayArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             let studyOption = isa.TryGetStudy studyIdentifier
             Expect.isSome studyOption "Study should have been created in order for assay to be placed in it"     
@@ -234,7 +230,7 @@ let testAssayRegister =
             processCommand configuration AssayAPI.add assayArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             let studyOption = isa.TryGetStudy assayIdentifier
             Expect.isSome studyOption "Study should have been created with the name of the assay but was not"     
@@ -257,7 +253,7 @@ let testAssayRegister =
             let testAssay = ArcAssay.create (assayIdentifier)
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
             
             let studiesWithIdentifiers = isa.StudyIdentifiers |> Seq.toList |> List.filter ((=) assayIdentifier)
             
@@ -282,7 +278,7 @@ let testAssayRegister =
             Expect.throws (fun () -> processCommand configuration AssayAPI.add assayArgs)  "trying to create a second, nearly identical assay which shall NOT work"
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
             
             let studiesWithIdentifiers = isa.StudyIdentifiers |> Seq.toList |> List.filter ((=) assayIdentifier)
             
@@ -341,7 +337,7 @@ let testAssayRemove =
             processCommand config AssayAPI.remove assayRemoveArgs
 
             let arc = ARC.load(config)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa.AssayCount 0 "Assay was not deleted"
             let study = Expect.wantSome (isa.TryGetStudy studyIdentifier) "Study was removed from the investigation"
@@ -359,7 +355,7 @@ let testAssayUpdate =
             let configuration = createConfigFromDir "AssayUpdateTests" "UpdateStandard"
             setupArc configuration
             let studyIdentifier = "Study1"
-            let assayIdentifier = "Assay2"
+            let assayIdentifier = "Assay2" 
 
             let assay1Args = [
                 AssayAddArgs.StudyIdentifier studyIdentifier
@@ -385,7 +381,7 @@ let testAssayUpdate =
             let measurementType = "NewMeasurementType"
             let mt = OntologyAnnotation(measurementType)
             let tt = OntologyAnnotation("Assay2Tech")
-            let testAssay = ArcAssay.create(assayIdentifier,mt,tt)
+            let testAssay = ArcAssay.create(identifier = assayIdentifier, measurementType = mt, technologyType = tt)
 
             let assayUpdateArgs : AssayUpdateArgs list = [
                 AssayUpdateArgs.AssayIdentifier assayIdentifier
@@ -393,26 +389,34 @@ let testAssayUpdate =
             ]
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
-
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             processCommand configuration AssayAPI.update assayUpdateArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
             
-            Expect.equal (isa.GetStudyAt(1).RegisteredAssays[0]) (isaBeforeUpdate.GetStudyAt(1).RegisteredAssays[0]) "Only assay in first study was supposed to be updated, but study 2 is also different"
-            
-            let study = isa.GetStudyAt 0
-            let studyBeforeUpdate = isaBeforeUpdate.GetStudyAt 0
+            let study2 = isa.GetStudy "Study2"
+            let study2BeforeUpdate = isaBeforeUpdate.GetStudy "Study2"
 
-            Expect.equal (study.RegisteredAssays[0]) (studyBeforeUpdate.RegisteredAssays[0]) "Only assay number 1 in first study was supposed to be updated, but first assay is also different"
+            Expect.equal
+                (study2.GetRegisteredAssay "Assay3")
+                (study2BeforeUpdate.GetRegisteredAssay "Assay3")
+                "Study2 should not have changed"
 
-            let assay = study.RegisteredAssays[1]
+            let study1 = isa.GetStudy "Study1"
+            let study1BeforeUpdate = isaBeforeUpdate.GetStudy "Study1"
 
-            Expect.equal assay.Identifier testAssay.Identifier "Assay Filename has changed even though it shouldn't"
-            Expect.equal assay.TechnologyType testAssay.TechnologyType "Assay technology type has changed, even though no value was given and the \"ReplaceWithEmptyValues\" flag was not set"
-            Expect.equal assay.MeasurementType testAssay.MeasurementType "Assay Measurement type was not updated correctly"
+            Expect.equal
+                (study1.GetRegisteredAssay "Assay1")
+                (study1BeforeUpdate.GetRegisteredAssay "Assay1")
+                "Assay1 should not have changed"
+
+            let assay = study1.GetRegisteredAssay assayIdentifier
+
+            Expect.equal assay.Identifier testAssay.Identifier "Assay identifier changed"
+            Expect.equal assay.TechnologyType testAssay.TechnologyType "Technology type changed unexpectedly"
+            Expect.equal assay.MeasurementType testAssay.MeasurementType "Measurement type was not updated correctly"
 
         )
         testCase "UpdateReplaceWithEmpty" (fun () -> 
@@ -444,7 +448,7 @@ let testAssayUpdate =
 
             let newMeasurementType = "NewMeasurementType"
             let mt = OntologyAnnotation(newMeasurementType)
-            let testAssay = ArcAssay.create(assayIdentifier2,mt)
+            let testAssay = ArcAssay.create(identifier = assayIdentifier2, measurementType = mt)
 
             let assayUpdateArgs : AssayUpdateArgs list = [
                 AssayUpdateArgs.ReplaceWithEmptyValues
@@ -453,12 +457,12 @@ let testAssayUpdate =
             ]           
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             processCommand configuration AssayAPI.update assayUpdateArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"          
+            let isa = Expect.wantSome (Some arc) "Investigation was not created"          
 
             Expect.equal (isa.GetStudyAt(0)) (isaBeforeUpdate.GetStudyAt(0))  "Only assay in second study was supposed to be updated, but study 1 is also different"
             
@@ -512,12 +516,12 @@ let testAssayUnregister =
             processCommand configuration AssayAPI.add assay3Args
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             processCommand configuration AssayAPI.unregister assayArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"              
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"              
 
             Expect.equal (isa.RegisteredStudies[1]) (isaBeforeUpdate.RegisteredStudies[1])  "Only assay in first study was supposed to be unregistered, but study 2 is also different"
             
@@ -539,12 +543,12 @@ let testAssayUnregister =
             let assayArgs : AssayUnregisterArgs list = [AssayUnregisterArgs.StudyIdentifier studyIdentifier;AssayUnregisterArgs.AssayIdentifier assayIdentifier]
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             processCommand configuration AssayAPI.unregister assayArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"           
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"           
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been removed"
             
@@ -563,12 +567,12 @@ let testAssayUnregister =
             ]
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             processCommand configuration AssayAPI.unregister assayUnrArgs
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"              
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"              
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given study does not exist and none should have been removed"
             
@@ -619,20 +623,25 @@ let testAssayMove =
 
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
-            let testAssay = isaBeforeUpdate.GetStudyAt(0).RegisteredAssays[1]
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate)"Investigation was not created"
+            let sourceStudyBeforeUpdate = isaBeforeUpdate.GetStudy studyIdentifier
+            let testAssay = sourceStudyBeforeUpdate.GetRegisteredAssay assayIdentifier
 
             processCommand configuration AssayAPI.move assayMovArgs
 
-            
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"  
+            let isa =
+                Expect.wantSome (Some arc) "Investigation was not created"
 
-            Expect.equal (isa.GetStudyAt(0).RegisteredAssayCount) (isaBeforeUpdate.GetStudyAt(0).RegisteredAssayCount - 1) "Assay was not removed from source study"
+            let sourceStudy = isa.GetStudy studyIdentifier
+            let targetStudy = isa.GetStudy targetStudyIdentfier
 
-            let assay = isa.GetStudyAt(1).GetRegisteredAssay assayIdentifier
+            Expect.equal
+                sourceStudy.RegisteredAssayCount
+                (sourceStudyBeforeUpdate.RegisteredAssayCount - 1)
+                "Assay was not removed from source study"
 
-            //Expect.isSome assay "Assay was not added to target study"
+            let assay = targetStudy.GetRegisteredAssay assayIdentifier
 
             Expect.equal assay testAssay "Assay was moved but some values are not correct"
             
@@ -663,26 +672,31 @@ let testAssayMove =
 
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
             let testAssay = isaBeforeUpdate.GetStudyAt(0).RegisteredAssays[0]
 
             processCommand configuration AssayAPI.move assayMovArgs
 
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"  
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"  
 
-            Expect.isNone (isa.GetStudyAt(0).TryGetRegisteredAssay assayIdentifier) "Assay was not removed from source study"
+            let sourceStudy = isa.GetStudy studyIdentifier
 
-            let study = isa.TryGetStudy "NewStudy"
+            Expect.isNone
+                (sourceStudy.TryGetRegisteredAssay assayIdentifier)
+                "Assay was not removed from source study"
 
-            Expect.isSome study "New Study was not created"
+            let targetStudy =
+                isa
+                |> fun investigation -> investigation.TryGetStudy targetStudyIdentfier
 
-            let assay = study.Value.TryGetRegisteredAssay assayIdentifier
+            let targetStudy =
+                Expect.wantSome targetStudy "New Study was not created"
 
-            Expect.isSome assay "Assay was not added to target study"
+            let assay = targetStudy.GetRegisteredAssay assayIdentifier
 
-            Expect.equal assay.Value testAssay "Assay was moved but some values are not correct"
+            Expect.equal assay testAssay "Assay was not added to the new study correctly"
             
         )
         testCase "AssayDoesNotExist" (fun () -> 
@@ -698,13 +712,13 @@ let testAssayMove =
 
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate)"Investigation was not created"
 
             processCommand configuration AssayAPI.move assayArgs
 
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"           
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"           
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been moved"
             
@@ -739,7 +753,7 @@ let testAssayRename =
             processCommand configuration AssayAPI.rename assayRenameArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc) "Investigation was not created"
 
             Expect.equal isa.AssayCount 1 "Assay count is incorrect after renaming assay"
 
@@ -772,7 +786,7 @@ let testAssayRename =
             processCommand configuration AssayAPI.init assayInitArgs2
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             Expect.equal isaBeforeUpdate.AssayCount 2 "Assay count is incorrect before renaming assay"
 
@@ -784,7 +798,7 @@ let testAssayRename =
             processCommand configuration AssayAPI.rename assayRenameArgs          
             
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the target assay identifier already exists and no renaming should have happened"
         )
@@ -802,12 +816,12 @@ let testAssayRename =
             ]
 
             let arcBeforeUpdate = ARC.load(configuration)
-            let isaBeforeUpdate = Expect.wantSome arcBeforeUpdate.ISA "Investigation was not created"
+            let isaBeforeUpdate = Expect.wantSome (Some arcBeforeUpdate) "Investigation was not created"
 
             processCommand configuration AssayAPI.rename assayArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             Expect.equal isa isaBeforeUpdate "Investigation values did change even though the given assay does not exist and none should have been renamed"
                     
@@ -846,7 +860,7 @@ let testAssayPerformers =
             processCommand configuration AssayAPI.Contacts.register personRegisterArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
             Expect.equal assay.Performers.Count 1 "Person was not added to assay"
@@ -892,7 +906,7 @@ let testAssayPerformers =
             processCommand configuration AssayAPI.Contacts.register secondPersonRegisterArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
             Expect.equal assay.Performers.Count 2 "Person was not added to assay"
@@ -940,7 +954,7 @@ let testAssayPerformers =
 
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
             Expect.equal assay.Performers.Count 2 "Identical person was added to assay"
@@ -1000,7 +1014,7 @@ let testAssayPerformers =
             processCommand configuration AssayAPI.Contacts.update secondPersonUpdateArgs
 
             let arc = ARC.load(configuration)
-            let isa = Expect.wantSome arc.ISA "Investigation was not created"
+            let isa = Expect.wantSome (Some arc)"Investigation was not created"
 
             let assay = isa.GetAssay assayIdentifier
             Expect.equal assay.Performers.Count 2 "Identical person was added to assay"

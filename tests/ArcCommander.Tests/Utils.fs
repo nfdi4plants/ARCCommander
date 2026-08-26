@@ -6,6 +6,8 @@ open System.IO
 open ARCtrl
 open ARCtrl.Spreadsheet
 open ArcCommander
+open ArcCommander.CLIArguments
+open ArcCommander.APIs
 open ArgumentProcessing
 open Argu
 
@@ -81,7 +83,19 @@ let processCommand (arcConfiguration : ArcConfiguration) (commandF : _ -> ArcPar
 
 let processCommandWoArgs (arcConfiguration : ArcConfiguration) commandF = commandF arcConfiguration
 
+let resetArc (arcConfiguration: ArcConfiguration) =
+    let testDir = arcConfiguration.General.["workdir"]
 
+    if Directory.Exists(testDir) then
+        Directory.Delete(testDir, true)
+
+let setupArc (arcConfiguration: ArcConfiguration) =
+    resetArc arcConfiguration
+
+    let arcArgs =
+        [ArcInitArgs.InvestigationIdentifier "TestInvestigation"]
+
+    processCommand arcConfiguration ArcAPI.init arcArgs
 module Result =
 
     let getMessage res =
