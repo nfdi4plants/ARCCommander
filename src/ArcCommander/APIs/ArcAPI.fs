@@ -71,8 +71,7 @@ module ArcAPI =
         log.Trace("Initiate folder structure")
 
         let isa = ArcInvestigation.create(identifier)
-        ARC(isa.Identifier).Write(arcConfiguration)     
-
+        ARC(identifier).Write(arcConfiguration)     
         GeneralConfiguration.tryGetRootfolder arcConfiguration
         |> Option.iter (fun p -> 
             let dir = Path.Combine(workDir,p)

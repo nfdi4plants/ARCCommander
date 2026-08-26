@@ -52,14 +52,12 @@ module StudyAPI =
                 ?publicReleaseDate = studyArgs.TryGetFieldValue StudyInitArgs.PublicReleaseDate
                 )
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
-        if isa.StudyIdentifiers |> Seq.contains identifier then
+        if arc.StudyIdentifiers |> Seq.contains identifier then
             log.Error($"Study with identifier {identifier} already exists.")
         
-        isa.AddStudy(study)
-        arc <- isa
+        arc.AddStudy(study)
         arc.Update(arcConfiguration)
 
     /// Updates an existing study info in the ARC with the given study metadata contained in cliArgs.
@@ -83,23 +81,21 @@ module StudyAPI =
                 ?publicReleaseDate = studyArgs.TryGetFieldValue StudyUpdateArgs.PublicReleaseDate
                 )
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
         let msg = $"Study with the identifier {identifier} does not exist."
-        match isa.TryGetStudy identifier with
+        match arc.TryGetStudy identifier with
         | Some s ->
             
             s.UpdateTopLevelInfo(study,replaceWithEmptyValues)        
         | None when addIfMissing ->
             log.Warn($"{msg}")
             log.Info("Registering study as AddIfMissing Flag was set.")
-            isa.AddStudy(study)
+            arc.AddStudy(study)
         | None -> 
             log.Error($"{msg}")
             log.Trace("AddIfMissing argument can be used to register study with the update command if it is missing.")
 
-        arc <- isa
         arc.Update(arcConfiguration)        
 
     // /// Opens an existing study file in the ARC with the text editor set in globalArgs, additionally setting the given study metadata contained in cliArgs.
@@ -121,17 +117,15 @@ module StudyAPI =
                 (Studies.fromRows 1 >> fun (_,_,_,items) -> items.Value |> fst) 
                 oldStudy
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
-        match isa.TryGetStudy studyIdentifier with 
+        match arc.TryGetStudy studyIdentifier with 
         | Some study ->
             let newStudy = getNewStudy study
             study.UpdateTopLevelInfo(newStudy,true)      
         | None ->
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
 
-        arc <- isa
         arc.Update(arcConfiguration)
 
     /// Registers an existing study in the ARC's investigation file with the given study metadata contained in cliArgs.
@@ -143,14 +137,12 @@ module StudyAPI =
 
         let identifier = studyArgs.GetFieldValue StudyRegisterArgs.StudyIdentifier
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
-        if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
+        if arc.RegisteredStudyIdentifiers |> Seq.contains identifier then
             log.Error($"Study with identifier {identifier} is already registered.")
         else
-        isa.RegisterStudy(identifier)
-        arc <- isa
+        arc.RegisterStudy(identifier)
         arc.Update(arcConfiguration)
 
     /// Creates a new study file in the ARC and registers it in the ARC's investigation file with the given study metadata contained in cliArgs.
@@ -213,12 +205,10 @@ module StudyAPI =
 
         let identifier = studyArgs.GetFieldValue StudyUnregisterArgs.StudyIdentifier
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
-        if isa.RegisteredStudyIdentifiers |> Seq.contains identifier then
-            isa.DeregisterStudy(identifier) |> ignore
-            arc <- isa
+        if arc.RegisteredStudyIdentifiers |> Seq.contains identifier then
+            arc.DeregisterStudy(identifier) |> ignore
             arc.Update(arcConfiguration)
         else
             log.Error($"Study with identifier {identifier} is not registered.")
@@ -240,10 +230,9 @@ module StudyAPI =
 
         let arc = ARC.load(arcConfiguration)
         let arcPath = GeneralConfiguration.getWorkDirectory arcConfiguration
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-        if isa.StudyIdentifiers |> Seq.contains oldIdentifier then
-            if isa.StudyIdentifiers |> Seq.contains newIdentifier then
+        if arc.StudyIdentifiers |> Seq.contains oldIdentifier then
+            if arc.StudyIdentifiers |> Seq.contains newIdentifier then
                 log.Error($"Study with identifier {newIdentifier} already exists.")
             else
                 arc.RenameStudy(arcPath, oldIdentifier, newIdentifier)
@@ -260,9 +249,8 @@ module StudyAPI =
         let identifier = studyArgs.GetFieldValue StudyShowArgs.StudyIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-        match isa.TryGetStudy identifier with
+        match arc.TryGetStudy identifier with
         | Some study -> 
             study
             |> Prompt.serializeXSLXWriterOutput Spreadsheet.Studies.StudyInfo.toRows
@@ -276,12 +264,11 @@ module StudyAPI =
         let log = Logging.createLogger "StudyListLog"
         
         let arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         let registered = 
-            isa.RegisteredStudyIdentifiers
+            arc.RegisteredStudyIdentifiers
             
-        let unregistered = isa.StudyIdentifiers |> Seq.except registered |> Seq.toList
+        let unregistered = arc.StudyIdentifiers |> Seq.except registered |> Seq.toList
 
         registered
         |> Seq.iter (fun (studyIdentifier) ->
@@ -334,9 +321,8 @@ module StudyAPI =
             let studyIdentifier = personArgs.GetFieldValue PersonUpdateArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq s.Contacts) with
                 | Some p ->
@@ -346,7 +332,7 @@ module StudyAPI =
                     if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
                         log.Warn($"{msg}")
                         log.Info("Registering person as AddIfMissing Flag was set.")
-                        isa.Contacts.Add person
+                        arc.Contacts.Add person
                     else 
                         log.Error(msg)          
                 arc.Update(arcConfiguration)
@@ -372,9 +358,8 @@ module StudyAPI =
             let studyIdentifier = personArgs.GetFieldValue PersonEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
 
                 match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq s.Contacts) with
@@ -425,9 +410,8 @@ module StudyAPI =
             person.ORCID <- orcid
                        
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName (Seq.toArray
                  s.Contacts) then
@@ -454,7 +438,7 @@ module StudyAPI =
             let midInitials = personArgs.TryGetFieldValue PersonUnregisterArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+
 
             let tryGetIndex (persons : Person seq) =
                 persons
@@ -464,7 +448,7 @@ module StudyAPI =
                     && p.LastName = Some lastName
                 )
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 match tryGetIndex s.Contacts with
                 | Some index ->
@@ -490,9 +474,8 @@ module StudyAPI =
             let midInitials = personArgs.TryGetFieldValue PersonShowArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq s.Contacts) with
                 | Some person ->
@@ -513,9 +496,8 @@ module StudyAPI =
             log.Info("Start Person List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            isa.Studies
+            arc.Studies
             |> Seq.iter (fun a ->
                 log.Debug($"Study: {a.Identifier}")
                 a.Contacts
@@ -560,11 +542,10 @@ module StudyAPI =
                      (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = publicationArgs.GetFieldValue PublicationUpdateArgs.StudyIdentifier
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 
                 match Publication.tryGetByDOI doi s.Publications with
@@ -598,9 +579,8 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
 
                 match Publication.tryGetByDOI doi s.Publications with
@@ -639,11 +619,10 @@ module StudyAPI =
                     (ResizeArray())
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = publicationArgs.GetFieldValue PublicationRegisterArgs.StudyIdentifier
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->             
                 if Publication.existsByDOI doi s.Publications then
                     let msg = $"Publication with the doi {doi} already exists in the study with the identifier {studyIdentifier}."                       
@@ -667,9 +646,8 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationUnregisterArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 match Publication.tryFindIndexByDOI doi s.Publications with
                 | Some index ->
@@ -694,9 +672,8 @@ module StudyAPI =
             let studyIdentifier = publicationArgs.GetFieldValue PublicationShowArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy(studyIdentifier) with
+            match arc.TryGetStudy(studyIdentifier) with
             | Some s ->
                 match Publication.tryGetByDOI doi s.Publications with
                 | Some publication ->
@@ -716,9 +693,8 @@ module StudyAPI =
             log.Info("Start Publication List")
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            isa.Studies
+            arc.Studies
             |> Seq.iter (fun study ->
                 match study.Publications with
                 | publications when Seq.isEmpty publications -> 
@@ -781,11 +757,10 @@ module StudyAPI =
                     )
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let studyIdentifier = designArgs.GetFieldValue DesignUpdateArgs.StudyIdentifier
 
-            match isa.TryGetStudy studyIdentifier with
+            match arc.TryGetStudy studyIdentifier with
             | Some s ->
 
                 match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
@@ -818,9 +793,8 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignEditArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
             
-            match isa.TryGetStudy studyIdentifier with
+            match arc.TryGetStudy studyIdentifier with
             | Some s ->
                 match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
                 | Some design ->
@@ -854,9 +828,8 @@ module StudyAPI =
                     )
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
-
-            match isa.TryGetStudy studyIdentifier with
+            
+            match arc.TryGetStudy studyIdentifier with
             | Some s ->
                 if OntologyAnnotation.existsByName name s.StudyDesignDescriptors then
                     log.Error($"Design with the name {name} already exists in the study with the identifier {studyIdentifier}.")
@@ -878,9 +851,8 @@ module StudyAPI =
             let studyIdentifier = designArgs.GetFieldValue DesignUnregisterArgs.StudyIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy studyIdentifier with
+            match arc.TryGetStudy studyIdentifier with
             | Some s ->
                 match OntologyAnnotation.tryFindIndexByName name s.StudyDesignDescriptors with
                 | Some index ->
@@ -899,9 +871,8 @@ module StudyAPI =
             let name = designArgs.GetFieldValue DesignShowArgs.DesignType
             let studyIdentifier = designArgs.GetFieldValue DesignShowArgs.StudyIdentifier
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetStudy studyIdentifier with
+            match arc.TryGetStudy studyIdentifier with
             | Some s ->
                 match OntologyAnnotation.tryGetByName name s.StudyDesignDescriptors with
                 | Some design ->
@@ -921,9 +892,8 @@ module StudyAPI =
             
             log.Info("Start Design List")
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            isa.Studies
+            arc.Studies
             |> Seq.iter (fun study ->
                 match study.StudyDesignDescriptors with
                 | designs when Seq.isEmpty designs -> 

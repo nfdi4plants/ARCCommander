@@ -67,16 +67,16 @@ module AssayAPI =
             
         let assay = 
             ArcAssay.create(assayIdentifier, ?measurementType = mt,?technologyType = tt, ?technologyPlatform = tp)
-        
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-        if isa.AssayIdentifiers |> Array.contains assayIdentifier then
+        let arc = ARC.load arcConfiguration 
+
+        if arc.AssayIdentifiers |> Array.contains assayIdentifier then
             log.Error($"Assay with identifier {assayIdentifier} already exists.")
         else
-        isa.AddAssay(assay)
-        arc <- isa
-        arc.Update(arcConfiguration)
+            arc.AddAssay assay
+
+        arc.Update arcConfiguration
+
 
     /// Updates an existing assay file in the ARC with the given assay metadata contained in cliArgs.
     let update (arcConfiguration : ArcConfiguration) (assayArgs : ArcParseResults<AssayUpdateArgs>) =
@@ -120,24 +120,21 @@ module AssayAPI =
                 None
                 (ResizeArray())
             
-
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load arcConfiguration 
 
         let msg = $"Assay with the identifier {assayIdentifier} does not exist."
         try 
-            let a = isa.GetAssay assayIdentifier
+            let a = arc.GetAssay assayIdentifier
             a.UpdateTopLevelInfo(assay,replaceWithEmptyValues)
         with 
         | _ when addIfMissing ->
             log.Warn($"{msg}")
             log.Info("Registering assay as AddIfMissing Flag was set.")
-            isa.AddAssay(assay)
+            arc.AddAssay(assay)
         | _ -> 
             log.Error($"{msg}")
             log.Trace("AddIfMissing argument can be used to register assay with the update command if it is missing.")
 
-        arc <- isa
         arc.Update(arcConfiguration)
 
     /// Opens an existing assay file in the ARC with the text editor set in globalArgs, additionally setting the given assay metadata contained in assayArgs.
@@ -158,18 +155,16 @@ module AssayAPI =
                 (Assays.fromRows None 1 >> fun (_,_,_,items) -> items.Head) 
                 oldAssay
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load arcConfiguration 
 
         try 
-            let assay = isa.GetAssay assayIdentifier
+            let assay = arc.GetAssay assayIdentifier
             let newAssay = getNewAssay assay
             assay.UpdateTopLevelInfo(newAssay,true)
         with
         | _ ->
             log.Error($"Assay with the identifier {assayIdentifier} does not exist.")
 
-        arc <- isa
         arc.Update(arcConfiguration)
 
 
@@ -182,8 +177,7 @@ module AssayAPI =
 
         let assayIdentifier = assayArgs.GetFieldValue AssayRegisterArgs.AssayIdentifier
                 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load arcConfiguration 
 
         let studyIdentifier = 
             match assayArgs.TryGetFieldValue AssayRegisterArgs.StudyIdentifier with
@@ -193,16 +187,15 @@ module AssayAPI =
             | Some s -> s
 
         let s = 
-            if isa.StudyIdentifiers |> Seq.contains studyIdentifier then
-                isa.GetStudy studyIdentifier
+            if arc.StudyIdentifiers |> Seq.contains studyIdentifier then
+                arc.GetStudy studyIdentifier
             else
                 log.Info($"Study with the identifier {studyIdentifier} does not exist yet, creating it now.")
-                isa.AddRegisteredStudy (ArcStudy(studyIdentifier))
-                isa.GetStudy studyIdentifier
+                arc.AddRegisteredStudy (ArcStudy(studyIdentifier))
+                arc.GetStudy studyIdentifier
 
         s.RegisterAssay assayIdentifier
 
-        arc <- isa
         arc.Update(arcConfiguration)
     
     /// Creates a new assay file and associated folder structure in the ARC and registers it in the ARC's investigation file with the given assay metadata contained in assayArgs.
@@ -228,17 +221,15 @@ module AssayAPI =
                 assayIdentifier
             | Some s -> s
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration)
 
 
-        if isa.StudyIdentifiers |> Seq.contains studyIdentifier then
-            isa.GetStudy studyIdentifier
+        if arc.StudyIdentifiers |> Seq.contains studyIdentifier then
+            arc.GetStudy studyIdentifier
             |> fun s -> s.DeregisterAssay assayIdentifier
         else
             log.Error($"Study with the identifier {studyIdentifier} does not exist.")
         
-        arc <- isa
         arc.Update(arcConfiguration)
     
     /// Deletes an assay's folder and underlying file structure from the ARC.
@@ -296,13 +287,11 @@ module AssayAPI =
 
         let assayIdentifier = assayArgs.GetFieldValue AssayRemoveArgs.AssayIdentifier
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
-        isa.RegisteredStudies
+        arc.RegisteredStudies
         |> Seq.iter (fun s -> s.DeregisterAssay assayIdentifier)
 
-        arc <- isa
         arc.Update(arcConfiguration)
 
         delete arcConfiguration (assayArgs.Cast<AssayDeleteArgs>())
@@ -319,26 +308,24 @@ module AssayAPI =
         let studyIdentifier = assayArgs.GetFieldValue AssayMoveArgs.StudyIdentifier
         let targetStudyIdentifer = assayArgs.GetFieldValue AssayMoveArgs.TargetStudyIdentifier
 
-        let mutable arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
+        let arc = ARC.load(arcConfiguration) 
 
         
-        if isa.StudyIdentifiers |> Seq.contains studyIdentifier then
-            let s = isa.GetStudy studyIdentifier
+        if arc.StudyIdentifiers |> Seq.contains studyIdentifier then
+            let s = arc.GetStudy studyIdentifier
             if s.RegisteredAssayIdentifiers |> Seq.contains assayIdentifier then
 
                 s.DeregisterAssay assayIdentifier             
                 let targetStudy = 
-                    if isa.StudyIdentifiers |> Seq.contains targetStudyIdentifer then
-                        isa.GetStudy targetStudyIdentifer
+                    if arc.StudyIdentifiers |> Seq.contains targetStudyIdentifer then
+                        arc.GetStudy targetStudyIdentifer
                     else
                         log.Info($"Study with the identifier {targetStudyIdentifer} does not exist yet, creating it now.")
-                        isa.AddRegisteredStudy (ArcStudy(targetStudyIdentifer))
-                        isa.GetStudy targetStudyIdentifer
+                        arc.AddRegisteredStudy (ArcStudy(targetStudyIdentifer))
+                        arc.GetStudy targetStudyIdentifer
 
                 targetStudy.RegisterAssay assayIdentifier
 
-                arc <- isa
                 arc.Update(arcConfiguration)
 
             else 
@@ -359,10 +346,9 @@ module AssayAPI =
 
         let arc = ARC.load(arcConfiguration)
         let arcPath = GeneralConfiguration.getWorkDirectory arcConfiguration
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-        if isa.AssayIdentifiers |> Seq.contains assayIdentifier then
-            if isa.AssayIdentifiers |> Seq.contains newAssayIdentifier then
+        if arc.AssayIdentifiers |> Seq.contains assayIdentifier then
+            if arc.AssayIdentifiers |> Seq.contains newAssayIdentifier then
                 log.Error($"Assay with the identifier {newAssayIdentifier} already exists.")
             else
                 arc.RenameAssay(arcPath, assayIdentifier, newAssayIdentifier)
@@ -380,10 +366,9 @@ module AssayAPI =
         let assayIdentifier = assayArgs.GetFieldValue AssayShowArgs.AssayIdentifier
 
         let arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         try 
-            isa.GetAssay assayIdentifier 
+            arc.GetAssay assayIdentifier 
             |> List.singleton
             |> Prompt.serializeXSLXWriterOutput (Assays.toRows None)
             |> log.Debug
@@ -399,13 +384,12 @@ module AssayAPI =
         log.Info("Start Assay List")
         
         let arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
         let studies = 
-            isa.RegisteredStudies
+            arc.RegisteredStudies
             |> Seq.map (fun s -> s.Identifier, s.RegisteredAssayIdentifiers)
             
-        let unregistered = isa.AssayIdentifiers |> Seq.except (studies |> Seq.collect snd) |> Seq.toList
+        let unregistered = arc.AssayIdentifiers |> Seq.except (studies |> Seq.collect snd) |> Seq.toList
 
         studies
         |> Seq.iter (fun (studyIdentifier,assayIdentifiers) ->
@@ -429,11 +413,10 @@ module AssayAPI =
         let assayIdentifier = assayArgs.GetFieldValue AssayExportArgs.AssayIdentifier
         
         let arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-        if isa.ContainsAssay assayIdentifier then
+        if arc.ContainsAssay assayIdentifier then
             
-            let a = isa.GetAssay assayIdentifier
+            let a = arc.GetAssay assayIdentifier
 
             let output = 
 
@@ -461,11 +444,10 @@ module AssayAPI =
         log.Info("Start exporting all assays")
         
         let arc = ARC.load(arcConfiguration)
-        let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-        if isa.AssayCount > 0 then
+        if arc.AssayCount > 0 then
             
-            let ass = isa.Assays
+            let ass = arc.Assays
 
             let output = 
 
@@ -542,10 +524,9 @@ module AssayAPI =
             let assayIdentifier = personArgs.GetFieldValue PersonUpdateArgs.AssayIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
 
-            match isa.TryGetAssay(assayIdentifier) with
+            match arc.TryGetAssay(assayIdentifier) with
             | Some a ->
                 match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq a.Performers) with
                 | Some p ->
@@ -555,7 +536,7 @@ module AssayAPI =
                 if personArgs.ContainsFlag PersonUpdateArgs.AddIfMissing then
                     log.Warn($"{msg}")
                     log.Info("Registering person as AddIfMissing Flag was set.")
-                    isa.Contacts.Add person
+                    arc.Contacts.Add person
                 else 
                     log.Error(msg)           
             | None ->
@@ -581,9 +562,8 @@ module AssayAPI =
             let assayIdentifier = personArgs.GetFieldValue PersonEditArgs.AssayIdentifier
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetAssay(assayIdentifier) with
+            match arc.TryGetAssay(assayIdentifier) with
             | Some a ->
 
                 match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq a.Performers) with
@@ -634,9 +614,8 @@ module AssayAPI =
             person.ORCID <- orcid
                        
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetAssay(assayIdentifier) with
+            match arc.TryGetAssay(assayIdentifier) with
             | Some a ->
                 if Person.existsByFullName firstName (midInitials |> Option.defaultValue "") lastName (Seq.toArray
                  a.Performers) then
@@ -663,7 +642,6 @@ module AssayAPI =
             let midInitials = personArgs.TryGetFieldValue PersonUnregisterArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
             let tryGetIndex (persons : Person seq) =
                 persons
@@ -673,7 +651,7 @@ module AssayAPI =
                     && p.LastName = Some lastName
                 )
 
-            match isa.TryGetAssay(assayIdentifier) with
+            match arc.TryGetAssay(assayIdentifier) with
             | Some a ->
                 match tryGetIndex a.Performers with
                 | Some index ->
@@ -699,9 +677,8 @@ module AssayAPI =
             let midInitials = personArgs.TryGetFieldValue PersonShowArgs.MidInitials
 
             let arc = ARC.load(arcConfiguration)
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            match isa.TryGetAssay(assayIdentifier) with
+            match arc.TryGetAssay(assayIdentifier) with
             | Some a ->
                 match Person.tryGetByFullName firstName (midInitials |> Option.defaultValue "") lastName (Array.ofSeq a.Performers) with
                 | Some person ->
@@ -723,9 +700,8 @@ module AssayAPI =
 
             let arc = ARC.load(arcConfiguration)
             
-            let isa = (Some arc) |> Option.defaultValue (ARC(Helper.Identifier.createMissingIdentifier()))
 
-            isa.Assays
+            arc.Assays
             |> Seq.iter (fun a ->
                 log.Debug($"Assay: {a.Identifier}")
                 a.Performers
