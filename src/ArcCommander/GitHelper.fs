@@ -116,11 +116,11 @@ module GitHelper =
     let clone dir url =
         executeGitCommand dir (sprintf "clone %s" url)
 
-    let noLFSConfig = "-c \"filter.lfs.smudge = git-lfs smudge --skip -- %f\" -c \"filter.lfs.process = git-lfs filter-process --skip\""
+    let noLFSConfig = "-c \"filter.lfs.smudge=git-lfs smudge --skip -- %f\" -c \"filter.lfs.process=git-lfs filter-process --skip\""
 
     let setNoLFSConfig dir =
         executeGitCommand dir ("config --local --replace-all \"filter.lfs.process\" \"git-lfs filter-process --skip\"")
-        executeGitCommand dir ("config --local --replace-all \"git-lfs smudge --skip -- %f\" \"git-lfs filter-process --skip\"")
+        executeGitCommand dir ("config --local --replace-all \"filter.lfs.smudge\" \"git-lfs smudge --skip -- %f\"")
 
     let cloneNoLFS dir url =
         executeGitCommand dir (sprintf "clone %s %s" noLFSConfig url)        
